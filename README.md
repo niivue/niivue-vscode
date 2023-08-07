@@ -18,3 +18,17 @@ NiiVue can open several formats popular with brain imaging:
 - DICOM: [DICOM](https://dicom.nema.org/medical/dicom/current/output/chtml/part10/chapter_7.html) and [DICOM Manifests](docs/development-notes/dicom-manifests.md)
 
 Not all of the formats might be working inside VSCode yet.
+
+## Developing in VSCode
+
+- Clone this repository and open in VSCode.
+- Run in terminal
+
+```bash
+    npm install
+    npm run watch
+```
+
+- Press `F5` (a new VSCode window opens)
+- Test the extension in the new window
+- Press `Ctrl+R` for reload after a code change
