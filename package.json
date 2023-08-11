@@ -3,12 +3,15 @@
   "displayName": "NiiVue",
   "description": "View NIfTI images (and a lot of other formats)",
   "version": "0.0.1",
+  "publisher": "Korbinian Eckstein",
+  "repository": "https://github.com/korbinian90/vscode-niivue",
   "engines": {
     "vscode": "^1.70.0"
   },
   "categories": [
-    "Other"
+    "Visualization"
   ],
+  "keywords": ["MRI", "NIfTI", "DICOM", "imaging"],
   "main": "./dist/extension.js",
   "contributes": {
     "customEditors": [
@@ -65,7 +68,7 @@
 			}
     ]
   },
-  "activationEvents": [],
+  "activationEvents": ["onCustomEditor:niiVue.default"],
   "scripts": {
     "vscode:prepublish": "npm run package",
     "compile": "webpack",
@@ -78,7 +81,7 @@
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
-    "@types/vscode": "^1.81.0",
+    "@types/vscode": "^1.70.0",
     "@types/glob": "^8.1.0",
     "@types/mocha": "^10.0.1",
     "@types/node": "20.2.5",
