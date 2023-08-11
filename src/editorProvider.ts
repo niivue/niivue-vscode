@@ -55,8 +55,8 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     }
 
     private async getHtmlForWebview(webview: vscode.Webview): Promise<string> {
-        const niiVue = webview.asWebviewUri(vscode.Uri.joinPath(this._context.extensionUri, 'node_modules', '@niivue', 'niivue', 'dist', 'niivue.umd.js'));
-        const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._context.extensionUri, 'src', 'main.js'));
+        const niiVue = webview.asWebviewUri(vscode.Uri.joinPath(this._context.extensionUri, 'media', 'node_modules', '@niivue', 'niivue', 'dist', 'niivue.umd.js'));
+        const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._context.extensionUri, 'media', 'main.js'));
         return `<!DOCTYPE html>
             <html lang="en">
                 <head>

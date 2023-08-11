@@ -4,21 +4,37 @@
   "description": "View NIfTI images (and a lot of other formats)",
   "version": "0.0.1",
   "publisher": "Korbinian Eckstein",
-  "repository": "https://github.com/korbinian90/vscode-niivue",
+  "bugs": {
+    "url": "https://github.com/korbinian90/vscode-niivue/issues",
+    "email": "korbinian90+niivue@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/korbinian90/vscode-niivue"
+  },
+  "homepage": "https://github.com/niivue/niivue",
   "engines": {
     "vscode": "^1.70.0"
   },
+  "license": "MIT",
   "categories": [
     "Visualization"
   ],
-  "keywords": ["MRI", "NIfTI", "DICOM", "imaging"],
+  "preview": true,
+  "keywords": [
+    "MRI",
+    "NIfTI",
+    "DICOM",
+    "imaging"
+  ],
   "main": "./dist/extension.js",
+  "browser": "./dist/extension.js",
   "contributes": {
     "customEditors": [
-			{
-				"viewType": "niiVue.default",
-				"displayName": "NiiVue",
-				"selector": [
+      {
+        "viewType": "niiVue.default",
+        "displayName": "NiiVue",
+        "selector": [
           {
             "filenamePattern": "*.nii"
           },
@@ -64,15 +80,23 @@
           {
             "filenamePattern": "*.head"
           }
-				]
-			}
+        ]
+      }
     ]
   },
-  "activationEvents": ["onCustomEditor:niiVue.default"],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": true
+    }
+  },
+  "activationEvents": [
+    "onCustomEditor:niiVue.default"
+  ],
   "scripts": {
     "vscode:prepublish": "npm run package",
     "compile": "webpack",
     "watch": "webpack --watch",
+    "prepackage": "copyfiles node_modules/@niivue/niivue/dist/niivue.umd.js media",
     "package": "webpack --mode production --devtool hidden-source-map",
     "compile-tests": "tsc -p . --outDir out",
     "watch-tests": "tsc -p . -w --outDir out",
@@ -81,6 +105,8 @@
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
+    "@niivue/niivue": "^0.36.0",
+    "copyfiles": "^2.4.1",
     "@types/vscode": "^1.70.0",
     "@types/glob": "^8.1.0",
     "@types/mocha": "^10.0.1",
