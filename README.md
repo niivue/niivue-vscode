@@ -1,6 +1,6 @@
 # NiiVue README
 
-NiiVue is a WebGL 2.0 medical image viewer.
+[NiiVue](https://github.com/niivue/niivue) is a WebGL 2.0 medical image viewer. This extension uses NiiVue to display images selected in VSCode.
 
 ## Features
 
