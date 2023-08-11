@@ -3,7 +3,7 @@
   "displayName": "NiiVue",
   "description": "View NIfTI images (and a lot of other formats)",
   "version": "0.0.1",
-  "publisher": "Korbinian Eckstein",
+  "publisher": "KorbinianEckstein",
   "bugs": {
     "url": "https://github.com/korbinian90/vscode-niivue/issues",
     "email": "korbinian90+niivue@gmail.com"
