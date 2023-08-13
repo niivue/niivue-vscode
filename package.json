@@ -5,12 +5,12 @@
   "version": "0.0.2",
   "publisher": "KorbinianEckstein",
   "bugs": {
-    "url": "https://github.com/niivue/vscode-niivue/issues",
+    "url": "https://github.com/niivue/niivue-vscode/issues",
     "email": "korbinian90+niivue@gmail.com"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/niivue/vscode-niivue"
+    "url": "https://github.com/niivue/niivue-vscode"
   },
   "homepage": "https://github.com/niivue",
   "engines": {
