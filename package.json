@@ -2,7 +2,7 @@
   "name": "niivue",
   "displayName": "NiiVue",
   "description": "View NIfTI images (and a lot of other formats)",
-  "version": "0.0.3",
+  "version": "0.1.0",
   "publisher": "KorbinianEckstein",
   "bugs": {
     "url": "https://github.com/niivue/niivue-vscode/issues",
@@ -30,7 +30,7 @@
   "main": "./dist/extension.js",
   "browser": "./dist/extension.js",
   "contributes": {
-    "commands":[
+    "commands": [
       {
         "command": "niiVue.open",
         "title": "NiiVue: Open Image"
