@@ -38,6 +38,10 @@
       {
         "command": "niiVue.openLink",
         "title": "NiiVue: Open Link"
+      },
+      {
+        "command": "niiVue.openLocal",
+        "title": "NiiVue: Open Local File"
       }
     ],
     "customEditors": [

@@ -7,7 +7,7 @@
 
 - Open local files by selecting them in the VSCode explorer
 - Open remote files with the command "NiiVue: Open Image" (`Ctr+Shift+P`)
-- Open remote files when hovering over the link
+- Open local or remote files when hovering over the link
 - NiiVue hotkeys
 - contrast adjustment by windowing with right mouse button
 - Works in web-based VSCode
