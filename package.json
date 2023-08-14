@@ -34,6 +34,10 @@
       {
         "command": "niiVue.open",
         "title": "NiiVue: Open Image"
+      },
+      {
+        "command": "niiVue.openLink",
+        "title": "NiiVue: Open Link"
       }
     ],
     "customEditors": [
@@ -96,8 +100,7 @@
     }
   },
   "activationEvents": [
-    "onCustomEditor:niiVue.default",
-    "onCommand:niiVue.open"
+    "*"
   ],
   "scripts": {
     "vscode:prepublish": "npm run package",
