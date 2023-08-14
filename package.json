@@ -30,6 +30,12 @@
   "main": "./dist/extension.js",
   "browser": "./dist/extension.js",
   "contributes": {
+    "commands":[
+      {
+        "command": "niiVue.open",
+        "title": "NiiVue: Open Image"
+      }
+    ],
     "customEditors": [
       {
         "viewType": "niiVue.default",
@@ -90,7 +96,8 @@
     }
   },
   "activationEvents": [
-    "onCustomEditor:niiVue.default"
+    "onCustomEditor:niiVue.default",
+    "onCommand:niiVue.open"
   ],
   "scripts": {
     "vscode:prepublish": "npm run package",
