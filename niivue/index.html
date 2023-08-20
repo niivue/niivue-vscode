@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>NiiVue</title>
+    </head>
+    <body>
+        <canvas id="gl" width="640" height="640">
+        </canvas>
+
+        <script src=${niiVue}></script>
+        <script src=${scriptUri}></script>
+        <script>
+            document.addEventListener("DOMContentLoaded", function(event) {
+            const vscode = acquireVsCodeApi();
+            vscode.postMessage({ type: 'ready' });
+            });
+        </script>
+    </body>
+</html>

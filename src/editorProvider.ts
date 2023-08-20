@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
 import { NiiVueDocument } from './document';
 
 export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider<NiiVueDocument> {
@@ -55,26 +56,12 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     }
 
     private async getHtmlForWebview(webview: vscode.Webview): Promise<string> {
-        const niiVue = webview.asWebviewUri(vscode.Uri.joinPath(this._context.extensionUri, 'media', 'node_modules', '@niivue', 'niivue', 'dist', 'niivue.umd.js'));
-        const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._context.extensionUri, 'media', 'main.js'));
-        return `<!DOCTYPE html>
-            <html lang="en">
-                <head>
-                    <meta charset="utf-8" />
-                    <title>NiiVue</title>
-                </head>
-                <body>
-                    <canvas id="gl" width="640" height="640"></canvas>
-                    <script src=${niiVue}></script>
-                    <script src=${scriptUri}></script>
-                    <script>
-                        document.addEventListener("DOMContentLoaded", function(event) {
-                        const vscode = acquireVsCodeApi();
-                        vscode.postMessage({ type: 'ready' });
-                        });
-                    </script>
-                </body>
-            </html>`;
+        // const niiVue = webview.asWebviewUri(vscode.Uri.joinPath(this._context.extensionUri, 'media', 'node_modules', '@niivue', 'niivue', 'dist', 'niivue.umd.js'));
+        const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._context.extensionUri, 'dist/niivue', 'main.js'));
+        const uri = vscode.Uri.file(path.join(this._context.extensionPath, 'dist/niivue', 'index.html'));
+        const html = await vscode.workspace.fs.readFile(uri);
+        return Buffer.from(html).toString('utf8')
+            .replace(/\$\{scriptUri\}/g, scriptUri.toString());
     }
 }
 

@@ -1,4 +1,6 @@
-var nv = new niivue.Niivue({ isResizeCanvas: false });
+import { Niivue, NVImage } from '@niivue/niivue';
+
+let nv = new Niivue({ isResizeCanvas: false });
 nv.attachTo("gl");
 
 window.addEventListener('message', async (e) => {
@@ -6,7 +8,7 @@ window.addEventListener('message', async (e) => {
     switch (type) {
         case 'init':
             {
-                let image = new niivue.NVImage(body.data, body.uri);
+                let image = new NVImage(body.data, body.uri);
                 nv.addVolume(image);
             }
             break;

@@ -1,12 +1,19 @@
 {
-	"compilerOptions": {
-		"module": "commonjs",
-		"target": "ES2020",
-		"lib": [
-			"ES2020"
-		],
-		"sourceMap": true,
-		"rootDir": "src",
-		"strict": true,
-	}
+    "compilerOptions": {
+        "module": "commonjs",
+        "target": "es2020",
+        "lib": ["es2020", "dom"],
+        "outDir": "dist",
+        "rootDir": ".",
+        "sourceMap": true,
+        "esModuleInterop": true,
+        "strict": true,
+        "typeRoots": ["./types", "./node_modules/@types"]
+    },
+    "include": [
+        "types.d.ts",
+        "src/**/*",
+        "niivue/**/*",
+         ],
+    "exclude": ["node_modules", "dist", ".vscode-test", ".vscode-test-web", ".test_output", ".nyc_output"]
 }

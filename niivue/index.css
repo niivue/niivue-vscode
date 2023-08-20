@@ -1,0 +1,27 @@
+#slicer {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    background: var(--vscode-sideBar-background);
+    padding-bottom: 0.5em;
+}
+body[data-vscode-theme-kind="vscode-high-contrast"] #slicer {
+    border: 1px solid var(--vscode-menu-foreground);
+}
+
+#slice {
+    color: var(--vscode-activityBar-foreground);
+    padding: 10px 0;
+    text-align: center;
+    font-weight: bold;
+    background: var(--vscode-activityBar-background);
+    margin-bottom: 0.5em;
+}
+body[data-vscode-theme-kind="vscode-high-contrast"] #slice {
+    border-bottom: 1px solid var(--vscode-menu-foreground);
+}
+
+#range {
+    position: relative;
+    flex-grow: 1;
+}
