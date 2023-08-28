@@ -62,6 +62,7 @@ export class NiiVueWebPanel {
                 <title>NiiVue</title>
             </head>
             <body>
+                <p id="MetaData">MetaData</p>
                 <canvas id="gl" width="640" height="640"></canvas>
                 <script src=${niiVue}></script>
                 <script src=${scriptUri}></script>
