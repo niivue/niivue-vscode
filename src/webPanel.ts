@@ -1,5 +1,5 @@
-import { get } from 'http';
 import * as vscode from 'vscode';
+import { getNonce } from './util';
 
 export class NiiVueWebPanel {
     public static currentPanel: NiiVueWebPanel | undefined;
@@ -55,6 +55,8 @@ export class NiiVueWebPanel {
     private _getHtmlForWebview(webview: vscode.Webview, extensionUri: vscode.Uri, uri: vscode.Uri) {
         const niiVue = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'media', 'node_modules', '@niivue', 'niivue', 'dist', 'niivue.umd.js'));
         const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'media', 'main.js'));
+        const nonce = getNonce(); // Whitelist which scripts can be run
+
         return `<!DOCTYPE html>
         <html lang="en">
             <head>
@@ -64,8 +66,8 @@ export class NiiVueWebPanel {
             <body>
                 <div id="MetaData" style="color: white">empty</div>
                 <canvas id="gl" width="640" height="640"></canvas>
-                <script src=${niiVue}></script>
-                <script src=${scriptUri}></script>
+                <script nonce="${nonce}" src=${niiVue}></script>
+                <script nonce="${nonce}" src=${scriptUri}></script>
                 <script>
                 var volumeList = [
                     { url: "${uri}" },

@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { NiiVueDocument } from './document';
+import { getNonce } from './util';
 
 export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider<NiiVueDocument> {
 
@@ -57,6 +58,8 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     private async getHtmlForWebview(webview: vscode.Webview): Promise<string> {
         const niiVue = webview.asWebviewUri(vscode.Uri.joinPath(this._context.extensionUri, 'media', 'node_modules', '@niivue', 'niivue', 'dist', 'niivue.umd.js'));
         const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._context.extensionUri, 'media', 'main.js'));
+        const nonce = getNonce(); // Whitelist which scripts can be run
+
         return `<!DOCTYPE html>
             <html lang="en">
                 <head>
@@ -66,8 +69,8 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
                 <body>
                     <div id="MetaData" style="color: white">empty</div>
                     <canvas id="gl" width="640" height="640"></canvas>
-                    <script src=${niiVue}></script>
-                    <script src=${scriptUri}></script>
+                    <script nonce="${nonce}" src=${niiVue}></script>
+                    <script nonce="${nonce}" src=${scriptUri}></script>
                     <script>
                         document.addEventListener("DOMContentLoaded", function(event) {
                         const vscode = acquireVsCodeApi();
