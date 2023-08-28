@@ -20,12 +20,19 @@
   "categories": [
     "Visualization"
   ],
-  "preview": true,
   "keywords": [
     "MRI",
     "NIfTI",
     "DICOM",
-    "imaging"
+    "imaging",
+    "medical",
+    "neuroimaging",
+    "neuroscience",
+    "neuro",
+    "brain",
+    "fMRI",
+    "DTI",
+    "viewer"
   ],
   "main": "./dist/extension.js",
   "browser": "./dist/extension.js",
