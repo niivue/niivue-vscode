@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 export class LinkHoverProvider implements vscode.HoverProvider {
 
     provideHover(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Thenable<vscode.Hover> {
-        const extensions = ['.txt', '.nii.gz', '.nii', '.dcm', '.mih', '.mif', '.nhdr', '.nrrd', '.mhd', '.mha', '.mgh', '.mgz', '.v', '.v16', '.vmr', '.head'];
+        const extensions = ['.nii.gz', '.nii', '.dcm', '.mih', '.mif', '.nhdr', '.nrrd', '.mhd', '.mha', '.mgh', '.mgz', '.v', '.v16', '.vmr', '.head'];
 
         return new Promise((resolve, reject) => {
             const webPattern = new RegExp(`https?:\\/\\/(?:[\\w.-]+)\\/(\\S+(${extensions.map(ext => ext.replace('.', '\\.')).join('|')})\\b)`, 'i');
