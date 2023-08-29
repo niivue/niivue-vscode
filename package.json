@@ -49,19 +49,22 @@
         "displayName": "NiiVue",
         "selector": [
           {
+            "filenamePattern": "*.dcm"
+          },
+          {
             "filenamePattern": "*.nii"
           },
           {
             "filenamePattern": "*.nii.gz"
           },
           {
-            "filenamePattern": "*.dcm"
-          },
-          {
             "filenamePattern": "*.mih"
           },
           {
             "filenamePattern": "*.mif"
+          },
+          {
+            "filenamePattern": "*.mif.gz"
           },
           {
             "filenamePattern": "*.nhdr"
@@ -89,9 +92,6 @@
           },
           {
             "filenamePattern": "*.vmr"
-          },
-          {
-            "filenamePattern": "*.head"
           }
         ]
       }
