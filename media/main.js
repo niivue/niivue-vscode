@@ -69,6 +69,10 @@
         });
     });
 
+    document.getElementById("NearestInterpolation").addEventListener('change', () => {
+        nv.setInterpolation(document.getElementById("NearestInterpolation").checked);
+    });
+
     const nv = new niivue.Niivue({ isResizeCanvas: false, onLocationChange: handleIntensityChange });
     nv.attachTo("gl");
 
