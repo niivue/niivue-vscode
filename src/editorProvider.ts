@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { NiiVueDocument } from './document';
-import { getNonce } from './util';
+import { getHtmlForWebview } from './html';
 
 export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider<NiiVueDocument> {
 
@@ -9,9 +9,7 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
             NiiVueEditorProvider.viewType,
             new NiiVueEditorProvider(context),
             {
-                webviewOptions: {
-                    retainContextWhenHidden: true,
-                },
+                webviewOptions: { retainContextWhenHidden: true },
                 supportsMultipleEditorsPerDocument: false,
             }
         );
@@ -25,27 +23,20 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     ) {
     }
 
-    async openCustomDocument(
-        uri: vscode.Uri
-    ): Promise<NiiVueDocument> {
+    async openCustomDocument(uri: vscode.Uri): Promise<NiiVueDocument> {
         console.log(`Open document now ${uri}`);
         const data: Uint8Array = await vscode.workspace.fs.readFile(uri);
         return new NiiVueDocument(uri, data);
     }
 
-    async resolveCustomEditor(
-        document: NiiVueDocument,
-        webviewPanel: vscode.WebviewPanel,
-    ): Promise<void> {
+    async resolveCustomEditor(document: NiiVueDocument, webviewPanel: vscode.WebviewPanel): Promise<void> {
         this.webviews.add(document.uri, webviewPanel);
-        webviewPanel.webview.options = {
-            enableScripts: true,
-        };
-        webviewPanel.webview.html = await this.getHtmlForWebview(webviewPanel.webview);
-        webviewPanel.webview.onDidReceiveMessage(async (e) => {
-            if (e.type === 'ready') {
+        webviewPanel.webview.options = { enableScripts: true };
+        webviewPanel.webview.html = getHtmlForWebview(webviewPanel.webview, this._context.extensionUri);
+        webviewPanel.webview.onDidReceiveMessage(async (message) => {
+            if (message.type === 'ready') {
                 webviewPanel.webview.postMessage({
-                    type: 'init',
+                    type: 'localDocument',
                     body: {
                         data: document.data.buffer,
                         uri: document.uri.toString(),
@@ -53,32 +44,6 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
                 });
             }
         });
-    }
-
-    private async getHtmlForWebview(webview: vscode.Webview): Promise<string> {
-        const niiVue = webview.asWebviewUri(vscode.Uri.joinPath(this._context.extensionUri, 'media', 'node_modules', '@niivue', 'niivue', 'dist', 'niivue.umd.js'));
-        const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._context.extensionUri, 'media', 'main.js'));
-        const nonce = getNonce(); // Whitelist which scripts can be run
-
-        return `<!DOCTYPE html>
-            <html lang="en">
-                <head>
-                    <meta charset="utf-8" />
-                    <title>NiiVue</title>
-                </head>
-                <body>
-                    <div id="MetaData" style="color: white">empty</div>
-                    <canvas id="gl" width="640" height="640"></canvas>
-                    <script nonce="${nonce}" src=${niiVue}></script>
-                    <script nonce="${nonce}" src=${scriptUri}></script>
-                    <script>
-                        document.addEventListener("DOMContentLoaded", function(event) {
-                        const vscode = acquireVsCodeApi();
-                        vscode.postMessage({ type: 'ready' });
-                        });
-                    </script>
-                </body>
-            </html>`;
     }
 }
 

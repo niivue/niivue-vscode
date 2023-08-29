@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { getNonce } from './util';
+import { getHtmlForWebview } from './html';
 
 export class NiiVueWebPanel {
     public static currentPanel: NiiVueWebPanel | undefined;
@@ -9,7 +9,7 @@ export class NiiVueWebPanel {
     private _disposables: vscode.Disposable[] = [];
 
     public static createOrShow(extensionUri: vscode.Uri, uri: vscode.Uri) {
-        const name = vscode.Uri.parse("https://niivue.github.io/niivue-demo-images/mni152.nii.gz").path.split("/").pop();
+        const name = vscode.Uri.parse(uri.toString()).path.split("/").pop();
         const panel = vscode.window.createWebviewPanel(
             NiiVueWebPanel.viewType,
             name ? `web: ${name}` : "NiiVue Web Panel",
@@ -24,7 +24,15 @@ export class NiiVueWebPanel {
 
     private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, uri: vscode.Uri) {
         this._panel = panel;
-        this._panel.webview.html = this._getHtmlForWebview(this._panel.webview, extensionUri, uri);
+        this._panel.webview.html = getHtmlForWebview(this._panel.webview, extensionUri);
+        this._panel.webview.onDidReceiveMessage(async (e) => {
+            if (e.type === 'ready') {
+                this._panel.webview.postMessage({
+                    type: 'webUrl',
+                    body: { url: uri.toString() }
+                });
+            }
+        });
         this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
         this._panel.webview.onDidReceiveMessage(
             message => {
@@ -41,9 +49,7 @@ export class NiiVueWebPanel {
 
     public dispose() {
         NiiVueWebPanel.currentPanel = undefined;
-
         this._panel.dispose();
-
         while (this._disposables.length) {
             const x = this._disposables.pop();
             if (x) {
@@ -51,33 +57,4 @@ export class NiiVueWebPanel {
             }
         }
     }
-
-    private _getHtmlForWebview(webview: vscode.Webview, extensionUri: vscode.Uri, uri: vscode.Uri) {
-        const niiVue = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'media', 'node_modules', '@niivue', 'niivue', 'dist', 'niivue.umd.js'));
-        const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'media', 'main.js'));
-        const nonce = getNonce(); // Whitelist which scripts can be run
-
-        return `<!DOCTYPE html>
-        <html lang="en">
-            <head>
-                <meta charset="utf-8" />
-                <title>NiiVue</title>
-            </head>
-            <body>
-                <div id="MetaData" style="color: white">empty</div>
-                <canvas id="gl" width="640" height="640"></canvas>
-                <script nonce="${nonce}" src=${niiVue}></script>
-                <script nonce="${nonce}" src=${scriptUri}></script>
-                <script>
-                var volumeList = [
-                    { url: "${uri}" },
-                  ];
-                  var nv = new niivue.Niivue({ isResizeCanvas: false });
-                  nv.attachTo("gl");
-                  nv.loadVolumes(volumeList);
-                </script>
-            </body>
-        </html>`;
-    }
-    
 }
