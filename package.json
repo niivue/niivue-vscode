@@ -4,6 +4,7 @@
   "description": "View NIfTI images (and a lot of other medical imaging formats)",
   "version": "0.2.2",
   "publisher": "KorbinianEckstein",
+  "icon": "niivue_icon.png",
   "bugs": {
     "url": "https://github.com/niivue/niivue-vscode/issues",
     "email": "korbinian90+niivue@gmail.com"
