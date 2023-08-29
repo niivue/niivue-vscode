@@ -58,6 +58,19 @@
         }
     }
 
+    function addOverlay(image) {
+        nv.addVolume(image);
+        if (nv.volumes.length > 1) {
+            nv.setColormap(nv.volumes[nv.volumes.length - 1].id, 'redyell');
+        }
+    }
+
+    document.getElementById("AddOverlayButton").addEventListener('click', () => {
+        vscode.postMessage({
+            type: 'addOverlay'
+        });
+    });
+
     // Main
     const nv = new niivue.Niivue({ isResizeCanvas: false });
     nv.attachTo("gl");
@@ -78,6 +91,12 @@
                     nv.loadVolumes(volumeList).then(function () {
                         showMetadata(nv.volumes[0]);
                     });
+                }
+                break;
+            case 'overlay':
+                {
+                    const image = new niivue.NVImage(body.data, body.uri);
+                    addOverlay(image);
                 }
                 break;
         }

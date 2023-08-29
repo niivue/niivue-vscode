@@ -23,6 +23,8 @@ export function getHtmlForWebview(webview: vscode.Webview, extensionUri: vscode.
 			<body>
 				<div id="MetaData" style="color: white">MetaData</div>
 				<canvas id="gl" width="640" height="640"></canvas>
+				<button id="AddOverlayButton">Add Overlay</button>
+
 				<script nonce="${nonce}" src=${niiVue}></script>
 				<script nonce="${nonce}" src=${scriptUri}></script>
 			</body>

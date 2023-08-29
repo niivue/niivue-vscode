@@ -24,7 +24,7 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     }
 
     async openCustomDocument(uri: vscode.Uri): Promise<NiiVueDocument> {
-        console.log(`Open document now ${uri}`);
+        console.log(`Opening document ${uri}`);
         const data: Uint8Array = await vscode.workspace.fs.readFile(uri);
         return new NiiVueDocument(uri, data);
     }
@@ -34,14 +34,47 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
         webviewPanel.webview.options = { enableScripts: true };
         webviewPanel.webview.html = getHtmlForWebview(webviewPanel.webview, this._context.extensionUri);
         webviewPanel.webview.onDidReceiveMessage(async (message) => {
-            if (message.type === 'ready') {
-                webviewPanel.webview.postMessage({
-                    type: 'localDocument',
-                    body: {
-                        data: document.data.buffer,
-                        uri: document.uri.toString(),
-                    }
-                });
+            switch (message.type) {
+                case 'ready':
+                    webviewPanel.webview.postMessage({
+                        type: 'localDocument',
+                        body: {
+                            data: document.data.buffer,
+                            uri: document.uri.toString(),
+                        }
+                    });
+                    return;
+                case 'addOverlay':
+                    // open file picker
+                    vscode.window.showOpenDialog({
+                        canSelectFiles: true,
+                        canSelectFolders: false,
+                        canSelectMany: false,
+                        openLabel: 'Open Overlay',
+                        filters: {
+                            'NIfTI Images': ['nii', 'nii.gz'],
+                            'DICOM Images': ['dcm'],
+                            'NRRD Images': ['mha', 'mhd', 'nhdr', 'nrrd'],
+                            'MGH Images': ['mgh', 'mgz'],
+                            'MGZ Images': ['mgh', 'mgz'],
+                            'Vista Images': ['v', 'v16', 'vmr'],
+                        }
+                    }).then((uris) => {
+                        if (uris && uris.length > 0) {
+                            vscode.workspace.fs.readFile(uris[0]).then((data) => {
+                                document.overlay = data;
+                                webviewPanel.webview.postMessage({
+                                    type: 'overlay',
+                                    body: {
+                                        data: document.overlay.buffer,
+                                        uri: uris[0].toString(),
+                                    }
+                                });
+                            });
+
+
+                        }
+                    });
             }
         });
     }
