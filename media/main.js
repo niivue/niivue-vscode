@@ -58,14 +58,18 @@
         }
     }
 
+    function handleIntensityChange(data) {
+        document.getElementById("intensity").innerHTML = "&nbsp;&nbsp;" + data.string;
+    }
+
+    // Main
     document.getElementById("AddOverlayButton").addEventListener('click', () => {
         vscode.postMessage({
             type: 'addOverlay'
         });
     });
 
-    // Main
-    const nv = new niivue.Niivue({ isResizeCanvas: false });
+    const nv = new niivue.Niivue({ isResizeCanvas: false, onLocationChange: handleIntensityChange });
     nv.attachTo("gl");
 
     window.addEventListener('message', async (e) => {
