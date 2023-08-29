@@ -4,19 +4,9 @@
 This extension uses [NiiVue](https://github.com/niivue/niivue) to display images selected in VSCode.  
 ![Default View when opening an image](media/default_view.png)
 
-## Features
-
-- Open local files by selecting them in the VSCode explorer
-- Open web links to files with the command "NiiVue: Open Image" (`Ctr+Shift+P`)
-- Open local or remote files when hovering over the link in an open editor
-- Add overlays
-- Contrast adjustment by windowing with right mouse button
-- NiiVue hotkeys (See below)
-- Works in web-based VSCode
-![NiiVue in web-based VSCode](media/web_based.png)
-
 ## List of Hotkeys
 
+- `Right Mouse`: Draw a rectangle to window the intensity range
 - `Mouse Scroll`: Scroll currently hovered image
 - `← →`: change volume in 4D image
 - `V`: Cycle through viewmodes
@@ -28,6 +18,15 @@ This extension uses [NiiVue](https://github.com/niivue/niivue) to display images
 - `K`: Move the cross to A
 - `ctrl+U`: Move the cross to S
 - `ctrl+D`: Move the cross to I
+
+## Features
+
+- Open local files by selecting them in the VSCode explorer
+- Open web links to files with the command "NiiVue: Open Image" (`Ctr+Shift+P`)
+- Open local or remote files when hovering over the link in an open editor
+- Add overlays
+- Works in web-based VSCode
+![NiiVue in web-based VSCode](media/web_based.png)
 
 ## Supported Formats
 
