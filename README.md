@@ -1,4 +1,4 @@
-# NiiVue README
+# NiiVue VSCode README
 
 **WebGL 2.0 medical image viewer**  
 This extension uses [NiiVue](https://github.com/niivue/niivue) to display images selected in VSCode.  
