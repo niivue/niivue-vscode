@@ -11,9 +11,23 @@ This extension uses [NiiVue](https://github.com/niivue/niivue) to display images
 - Open local or remote files when hovering over the link in an open editor
 - Add overlays
 - Contrast adjustment by windowing with right mouse button
-- NiiVue hotkeys
+- NiiVue hotkeys (See below)
 - Works in web-based VSCode
 ![NiiVue in web-based VSCode](media/web_based.png)
+
+## List of Hotkeys
+
+- `Mouse Scroll`: Scroll currently hovered image
+- `← →`: change volume in 4D image
+- `V`: Cycle through viewmodes
+- `C`: Cycle through clip plane orientations in 3D render
+- `shift`: Changes mouse behaviour to 2D dragging and 3D viewplane rotation
+- `H`: Move the cross to R
+- `L`: Move the cross to L
+- `J`: Move the cross to P
+- `K`: Move the cross to A
+- `ctrl+U`: Move the cross to S
+- `ctrl+D`: Move the cross to I
 
 ## Supported Formats
 
