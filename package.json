@@ -41,14 +41,6 @@
       {
         "command": "niiVue.open",
         "title": "NiiVue: Open Image"
-      },
-      {
-        "command": "niiVue.openLink",
-        "title": "NiiVue: Open Link"
-      },
-      {
-        "command": "niiVue.openLocal",
-        "title": "NiiVue: Open Local File"
       }
     ],
     "customEditors": [
