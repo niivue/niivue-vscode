@@ -58,13 +58,6 @@
         }
     }
 
-    function addOverlay(image) {
-        nv.addVolume(image);
-        if (nv.volumes.length > 1) {
-            nv.setColormap(nv.volumes[nv.volumes.length - 1].id, 'redyell');
-        }
-    }
-
     document.getElementById("AddOverlayButton").addEventListener('click', () => {
         vscode.postMessage({
             type: 'addOverlay'
@@ -95,8 +88,8 @@
                 break;
             case 'overlay':
                 {
-                    const image = new niivue.NVImage(body.data, body.uri);
-                    addOverlay(image);
+                    const image = new niivue.NVImage(body.data, body.uri, 'redyell');
+                    nv.addVolume(image);
                 }
                 break;
         }
