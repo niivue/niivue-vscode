@@ -1,15 +1,17 @@
 # NiiVue README
 
-[NiiVue](https://github.com/niivue/niivue) is a WebGL 2.0 medical image viewer. This extension uses NiiVue to display images selected in VSCode.  
+**WebGL 2.0 medical image viewer**  
+This extension uses [NiiVue](https://github.com/niivue/niivue) to display images selected in VSCode.  
 ![Default View when opening an image](media/default_view.png)
 
 ## Features
 
 - Open local files by selecting them in the VSCode explorer
-- Open remote files with the command "NiiVue: Open Image" (`Ctr+Shift+P`)
-- Open local or remote files when hovering over the link
+- Open web links to files with the command "NiiVue: Open Image" (`Ctr+Shift+P`)
+- Open local or remote files when hovering over the link in an open editor
+- Add overlays
+- Contrast adjustment by windowing with right mouse button
 - NiiVue hotkeys
-- contrast adjustment by windowing with right mouse button
 - Works in web-based VSCode
 ![NiiVue in web-based VSCode](media/web_based.png)
 
@@ -23,7 +25,7 @@ NiiVue can open several formats popular with brain imaging:
 - Tractography formats: [TCK](https://mrtrix.readthedocs.io/en/latest/getting_started/image_data.html#tracks-file-format-tck), [TRK](http://trackvis.org/docs/?subsect=fileformat), [TRX](https://github.com/frheault/tractography_file_format), VTK, AFNI .niml.tract
 - DICOM: [DICOM](https://dicom.nema.org/medical/dicom/current/output/chtml/part10/chapter_7.html) and [DICOM Manifests](docs/development-notes/dicom-manifests.md)
 
-Not all of the formats might be working in the VSCode extension yet.
+If niivue-vscode fails to open any of these files, please create an issue.
 
 ## Developing this extension in VSCode
 
