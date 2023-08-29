@@ -23,10 +23,10 @@ export function getHtmlForWebview(webview: vscode.Webview, extensionUri: vscode.
 			<body>
 				<div id="MetaData" style="color: white">MetaData</div>
 				<canvas id="gl" width="640" height="640"></canvas>
-				<footer id="intensity">&nbsp;</footer>
+				<footer id="intensity" style="color: white">&nbsp;</footer>
 				<button id="AddOverlayButton">Add Overlay</button>
 				<input type="checkbox" id="NearestInterpolation">
-				<label for="checkbox">No Interpolation</label>
+				<label for="checkbox" style="color: white">No Interpolation</label>
 
 				<script nonce="${nonce}" src=${niiVue}></script>
 				<script nonce="${nonce}" src=${scriptUri}></script>
