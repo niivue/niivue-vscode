@@ -2,7 +2,7 @@
   "name": "niivue",
   "displayName": "NiiVue",
   "description": "View NIfTI images (and a lot of other formats)",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "publisher": "KorbinianEckstein",
   "bugs": {
     "url": "https://github.com/niivue/niivue-vscode/issues",
