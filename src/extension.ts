@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { NiiVueEditorProvider } from './editorProvider';
-import { NiiVueWebPanel } from './webPanel';
+import { NiiVueWebViewPanel } from './webViewPanel';
 import { LinkHoverProvider } from './HoverProvider';
 
 export function activate(context: vscode.ExtensionContext) {
@@ -13,13 +13,13 @@ export function activate(context: vscode.ExtensionContext) {
 		}).then((input) => {
 			if (input) {
 				const uri = vscode.Uri.parse(input);
-				NiiVueWebPanel.createOrShow(context.extensionUri, uri);
+				NiiVueWebViewPanel.createOrShow(context.extensionUri, uri);
 			}
 		});
 	}
 	));
 	context.subscriptions.push(vscode.commands.registerCommand('niiVue.openLink', async (args: any) => {
-		NiiVueWebPanel.createOrShow(context.extensionUri, args.resourceUri);
+		NiiVueWebViewPanel.createOrShow(context.extensionUri, args.resourceUri);
 	}
 	));
 	context.subscriptions.push(vscode.commands.registerCommand('niiVue.openLocal', async (args: any) => {

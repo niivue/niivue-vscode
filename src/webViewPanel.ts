@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
 import { getHtmlForWebview } from './html';
 
-export class NiiVueWebPanel {
-    public static currentPanel: NiiVueWebPanel | undefined;
+export class NiiVueWebViewPanel {
+    public static currentPanel: NiiVueWebViewPanel | undefined;
     public static readonly viewType = 'niivue.webPanel';
 
     private readonly _panel: vscode.WebviewPanel;
@@ -11,7 +11,7 @@ export class NiiVueWebPanel {
     public static createOrShow(extensionUri: vscode.Uri, uri: vscode.Uri) {
         const name = vscode.Uri.parse(uri.toString()).path.split("/").pop();
         const panel = vscode.window.createWebviewPanel(
-            NiiVueWebPanel.viewType,
+            NiiVueWebViewPanel.viewType,
             name ? `web: ${name}` : "NiiVue Web Panel",
             vscode.ViewColumn.One,
             {
@@ -19,7 +19,7 @@ export class NiiVueWebPanel {
                 retainContextWhenHidden: true,
             }
         );
-        NiiVueWebPanel.currentPanel = new NiiVueWebPanel(panel, extensionUri, uri);
+        NiiVueWebViewPanel.currentPanel = new NiiVueWebViewPanel(panel, extensionUri, uri);
     }
 
     private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, uri: vscode.Uri) {
@@ -48,7 +48,7 @@ export class NiiVueWebPanel {
     }
 
     public dispose() {
-        NiiVueWebPanel.currentPanel = undefined;
+        NiiVueWebViewPanel.currentPanel = undefined;
         this._panel.dispose();
         while (this._disposables.length) {
             const x = this._disposables.pop();
