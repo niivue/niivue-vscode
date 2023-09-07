@@ -110,7 +110,7 @@
     "vscode:prepublish": "npm run package",
     "compile": "webpack",
     "watch": "webpack --watch",
-    "prepackage": "copyfiles node_modules/@niivue/niivue/dist/niivue.umd.js media",
+    "dependencies": "copyfiles node_modules/@niivue/niivue/dist/niivue.umd.js media",
     "package": "webpack --mode production --devtool hidden-source-map",
     "compile-tests": "tsc -p . --outDir out",
     "watch-tests": "tsc -p . -w --outDir out",
@@ -119,7 +119,7 @@
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
-    "@niivue/niivue": "^0.36.0",
+    "@niivue/niivue": "^0.37.0",
     "copyfiles": "^2.4.1",
     "@types/vscode": "^1.70.0",
     "@types/glob": "^8.1.0",
