@@ -26,6 +26,10 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.commands.executeCommand('vscode.openWith', args.resourceUri, "niiVue.default");
 	}
 	));
+	context.subscriptions.push(vscode.commands.registerCommand('niiVue.compareFromExplorer', async (_activeItem: any, items: any) => {
+		NiiVueWebViewPanel.createCompareView(context.extensionUri, items);
+	}
+	));
 }
 
 export function deactivate() { }

@@ -69,6 +69,49 @@
         });
     });
 
+    function compareView(items) {
+        // Empty Container
+        const container = document.getElementById("container");
+        while (container.firstChild) {
+            container.removeChild(container.firstChild);
+        }
+        // Create view dropdown menu
+        const view = document.createElement("select");
+        view.id = "view";
+        view.innerHTML = "<option value=0>Axial</option><option value=1>Coronal</option><option value=2>Sagittal</option>";
+        document.getElementById("container").appendChild(view);
+        // Ddd event listener to view dropdown menu
+        view.addEventListener('change', () => {
+            const val = document.getElementById("view").value;
+            nvArray.forEach((item) => item.setSliceType(val));
+        });
+
+        n = items.length;
+        const nvArray = [];
+        for (i = 0; i < n; i++) {
+            // create canvas with id = "gl" + i, width of 400 and height of 300
+            // dynamically adjust the size of the canvas to the size of the div
+            const canvas = document.createElement("canvas");
+            canvas.id = "gl" + i;
+            canvas.width = 200;
+            canvas.height = 300;
+
+            document.getElementById("container").appendChild(canvas);
+            // div.innerHTML = "div id: " + div.id + " canvas id: " + canvas.id;
+
+            // create new niivue with slice view
+            const nvTemp = new niivue.Niivue({ isResizeCanvas: false });
+            nvArray.push(nvTemp);
+            nvTemp.attachTo(canvas.id);
+            nvTemp.setSliceType(0);
+            const image = new niivue.NVImage(items[i].data, items[i].uri);
+            nvTemp.addVolume(image);
+        }
+        for (i = 0; i < n - 1; i++) {
+            nvArray[i].syncWith(nvArray[i + 1]);
+        }
+    }
+
     document.getElementById("NearestInterpolation").addEventListener('change', () => {
         nv.setInterpolation(document.getElementById("NearestInterpolation").checked);
     });
@@ -100,6 +143,10 @@
                     nv.addVolume(image);
                 }
                 break;
+            case 'compare':
+                {
+                    compareView(body);
+                }
         }
     });
 

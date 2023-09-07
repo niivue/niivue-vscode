@@ -3,7 +3,8 @@ import { getHtmlForWebview } from './html';
 
 export class NiiVueWebViewPanel {
     public static currentPanel: NiiVueWebViewPanel | undefined;
-    public static readonly viewType = 'niivue.webPanel';
+    public static readonly webViewType = 'niivue.webPanel';
+    public static readonly compareViewType = 'niivue.comparePanel';
 
     private readonly _panel: vscode.WebviewPanel;
     private _disposables: vscode.Disposable[] = [];
@@ -11,7 +12,7 @@ export class NiiVueWebViewPanel {
     public static createOrShow(extensionUri: vscode.Uri, uri: vscode.Uri) {
         const name = vscode.Uri.parse(uri.toString()).path.split("/").pop();
         const panel = vscode.window.createWebviewPanel(
-            NiiVueWebViewPanel.viewType,
+            NiiVueWebViewPanel.webViewType,
             name ? `web: ${name}` : "NiiVue Web Panel",
             vscode.ViewColumn.One,
             {
@@ -19,20 +20,46 @@ export class NiiVueWebViewPanel {
                 retainContextWhenHidden: true,
             }
         );
-        NiiVueWebViewPanel.currentPanel = new NiiVueWebViewPanel(panel, extensionUri, uri);
-    }
-
-    private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, uri: vscode.Uri) {
-        this._panel = panel;
-        this._panel.webview.html = getHtmlForWebview(this._panel.webview, extensionUri);
-        this._panel.webview.onDidReceiveMessage(async (e) => {
+        panel.webview.onDidReceiveMessage(async (e) => {
             if (e.type === 'ready') {
-                this._panel.webview.postMessage({
+                panel.webview.postMessage({
                     type: 'webUrl',
                     body: { url: uri.toString() }
                 });
             }
         });
+        NiiVueWebViewPanel.currentPanel = new NiiVueWebViewPanel(panel, extensionUri);
+    }
+
+    public static createCompareView(extensionUri: vscode.Uri, items: any) {
+        const uris = items.map((item: any) => vscode.Uri.parse(item));
+        const panel = vscode.window.createWebviewPanel(
+            this.compareViewType,
+            "NiiVue Compare Panel",
+            vscode.ViewColumn.One,
+            {
+                enableScripts: true,
+                retainContextWhenHidden: true,
+            }
+        );
+        panel.webview.onDidReceiveMessage(async (e) => {
+            const images = await Promise.all(uris.map(async (uri: vscode.Uri) => {
+                const data: Uint8Array = await vscode.workspace.fs.readFile(uri);
+                return { data: data.buffer, uri: uri.toString() };
+            }));
+            if (e.type === 'ready') {
+                panel.webview.postMessage({
+                    type: 'compare',
+                    body: images
+                });
+            }
+        });
+        NiiVueWebViewPanel.currentPanel = new NiiVueWebViewPanel(panel, extensionUri);
+    }
+
+    private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
+        this._panel = panel;
+        this._panel.webview.html = getHtmlForWebview(this._panel.webview, extensionUri);
         this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
         this._panel.webview.onDidReceiveMessage(
             message => {

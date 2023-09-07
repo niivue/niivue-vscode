@@ -42,7 +42,13 @@
       {
         "command": "niiVue.open",
         "title": "NiiVue: Open Image"
-      }
+      },
+      {
+				"command": "niiVue.compareFromExplorer",
+				"title": "NiiVue: Compare",
+				"category": "NiiVue",
+				"enablement": "listMultiSelection"
+			}
     ],
     "customEditors": [
       {
@@ -96,7 +102,15 @@
           }
         ]
       }
-    ]
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "niiVue.compareFromExplorer",
+          "when": "listMultiSelection"
+        }
+      ]
+    }
   },
   "capabilities": {
     "untrustedWorkspaces": {
