@@ -2,7 +2,7 @@
   "name": "niivue",
   "displayName": "NiiVue",
   "description": "View NIfTI images (and a lot of other medical imaging formats)",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "publisher": "KorbinianEckstein",
   "icon": "niivue_icon.png",
   "bugs": {
@@ -44,11 +44,11 @@
         "title": "NiiVue: Open Image"
       },
       {
-				"command": "niiVue.compareFromExplorer",
-				"title": "NiiVue: Compare",
-				"category": "NiiVue",
-				"enablement": "listMultiSelection"
-			}
+        "command": "niiVue.compareFromExplorer",
+        "title": "NiiVue: Compare",
+        "category": "NiiVue",
+        "enablement": "listMultiSelection"
+      }
     ],
     "customEditors": [
       {
