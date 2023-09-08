@@ -62,13 +62,6 @@
         document.getElementById("intensity").innerHTML = "&nbsp;&nbsp;" + data.string;
     }
 
-    // Main
-    document.getElementById("AddOverlayButton").addEventListener('click', () => {
-        vscode.postMessage({
-            type: 'addOverlay'
-        });
-    });
-
     let aspectRatio = 1;
     function setAspectRatio(vol, viewType) {
         const meta = vol.getImageMetadata();
@@ -87,23 +80,19 @@
     }
 
     function resize(n) {
-        const windowWidth = window.innerWidth;
-        const windowHeight = window.innerHeight - 40;
-
-        // let windowHeight = window.innerHeight;
-        // const select = document.getElementById("view");
-        // if (select) { windowHeight -= select.clientHeight; } else { windowHeight -= 25; }
+        const windowWidth = window.innerWidth - 50;
+        const windowHeight = window.innerHeight - 60;
 
         let bestWidth = 0;
         for (nrow = 1; nrow <= n; nrow++) {
             const ncol = Math.ceil(n / nrow);
-            const maxHeight = windowHeight / nrow;
+            const maxHeight = (windowHeight / nrow) - 20; // 17 is the height of the text
             const maxWidth = Math.min(windowWidth / ncol, maxHeight * aspectRatio);
             if (maxWidth > bestWidth) { bestWidth = maxWidth; }
         }
         for (i = 0; i < n; i++) {
             const canvas = document.getElementById("gl" + i);
-            canvas.width = Math.floor(0.95 * bestWidth);
+            canvas.width = bestWidth;
             canvas.height = canvas.width / aspectRatio;
         }
     }
@@ -153,11 +142,16 @@
             textDiv.appendChild(text);
             const canvas = document.createElement("canvas");
             div.appendChild(canvas);
+            const cursorTextDiv = document.createElement("div");
+            div.appendChild(cursorTextDiv);
+            const cursorText = document.createTextNode("0");
+            cursorTextDiv.appendChild(cursorText);
 
             div.style.float = "left";
             textDiv.style.fontSize = "20px";
             textDiv.style.position = "absolute";
             canvas.id = "gl" + i;
+            cursorTextDiv.id = "cursortext" + i;
         }
     }
 
@@ -190,7 +184,14 @@
         // Create new niivue with axial view for each volume
         const nvArray = [];
         for (i = 0; i < n; i++) {
-            const nvTemp = new niivue.Niivue({ isResizeCanvas: false });
+            const textNode = document.getElementById("cursortext" + i);
+            if (!textNode) { document.getElementById("intensity").innerHTML += "Error: textNode is null"; } else {
+                textNode.textContent = "test";
+            }
+            const handleIntensityChangeCompareView = (data) => {
+                textNode.textContent = data.string;
+            };
+            const nvTemp = new niivue.Niivue({ isResizeCanvas: false, onLocationChange: handleIntensityChangeCompareView });
             nvArray.push(nvTemp);
             nvTemp.attachTo("gl" + i);
             nvTemp.setSliceType(0);
@@ -208,6 +209,13 @@
         addOverlayButton.parentNode.removeChild(addOverlayButton);
         showMetadata(nvArray[0].volumes[0]);
     }
+
+    // Main
+    document.getElementById("AddOverlayButton").addEventListener('click', () => {
+        vscode.postMessage({
+            type: 'addOverlay'
+        });
+    });
 
     document.getElementById("NearestInterpolation").addEventListener('change', () => {
         nv.setInterpolation(document.getElementById("NearestInterpolation").checked);
