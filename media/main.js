@@ -139,7 +139,7 @@
             const val = document.getElementById("view").value;
             nvArray.forEach((item) => item.setSliceType(val));
         });
-        // window.addEventListener("resize", this.resizeListener.bind(this)); // must bind 'this' niivue object or else 'this' becomes 'window'
+        window.addEventListener("resize", () => resize(n, aspectRatio));
     }
 
     document.getElementById("NearestInterpolation").addEventListener('change', () => {
