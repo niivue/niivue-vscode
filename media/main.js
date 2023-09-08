@@ -81,7 +81,11 @@
 
     function resize(n, aspectRatio) {
         const windowWidth = window.innerWidth;
-        const windowHeight = window.innerHeight;
+        const windowHeight = window.innerHeight - 40;
+        
+        // let windowHeight = window.innerHeight;
+        // const select = document.getElementById("view");
+        // if (select) { windowHeight -= select.clientHeight; } else { windowHeight -= 25; }
 
         let bestWidth = 0;
         for (nrow = 1; nrow <= n; nrow++) {
