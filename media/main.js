@@ -161,8 +161,20 @@
         }
     }
 
+    function createViewDropdown(nvArray) {
+        const view = document.createElement("select");
+        view.id = "view";
+        view.innerHTML = "<option value='0'>Axial</option><option value='1'>Coronal</option><option value='2'>Sagittal</option><option value='3'>A+C+S+R</option><option value='4'>Render</option>";
+        document.getElementById("footer").appendChild(view);
+        view.addEventListener('change', () => {
+            const val = parseInt(document.getElementById("view").value);
+            // setAspectRatio(nvArray[0].volumes[0], val); // niivue keeps the aspect ratio
+            nvArray.forEach((item) => item.setSliceType(val));
+        });
+    }
+
     function compareView(items) {
-        const diffNames = differenceInNames(items.map((item) => item.uri));
+        const n = items.length;
 
         // Empty Container
         const container = document.getElementById("container");
@@ -170,15 +182,14 @@
             container.removeChild(container.firstChild);
         }
 
-        const n = items.length;
         setAspectRatio(new niivue.NVImage(items[0].data, items[0].uri), 0);
-
+        const diffNames = differenceInNames(items.map((item) => item.uri));
         createCanvases(n, diffNames);
         resize(n);
 
+        // Create new niivue with axial view for each volume
         const nvArray = [];
         for (i = 0; i < n; i++) {
-            // create new niivue with slice view
             const nvTemp = new niivue.Niivue({ isResizeCanvas: false });
             nvArray.push(nvTemp);
             nvTemp.attachTo("gl" + i);
@@ -186,22 +197,16 @@
             const image = new niivue.NVImage(items[i].data, items[i].uri);
             nvTemp.addVolume(image);
         }
+        // Sync only in one direction, circular syncing causes problems
         for (i = 0; i < n - 1; i++) {
             nvArray[i].syncWith(nvArray[i + 1]);
         }
 
-        // Create view dropdown menu
-        const view = document.createElement("select");
-        view.id = "view";
-        view.innerHTML = "<option value='0'>Axial</option><option value='1'>Coronal</option><option value='2'>Sagittal</option><option value='3'>A+C+S+R</option><option value='4'>Render</option>";
-        document.getElementById("footer").appendChild(view);
-        // Ddd event listener to view dropdown menu
-        view.addEventListener('change', () => {
-            const val = parseInt(document.getElementById("view").value);
-            // setAspectRatio(nvArray[0].volumes[0], val); // niivue keeps the aspect ratio
-            nvArray.forEach((item) => item.setSliceType(val));
-        });
+        createViewDropdown(nvArray);
         window.addEventListener("resize", () => resize(n));
+        const addOverlayButton = document.getElementById("AddOverlayButton");
+        addOverlayButton.parentNode.removeChild(addOverlayButton);
+        showMetadata(nvArray[0].volumes[0]);
     }
 
     document.getElementById("NearestInterpolation").addEventListener('change', () => {
