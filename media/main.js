@@ -175,6 +175,8 @@
         while (container.firstChild) {
             container.removeChild(container.firstChild);
         }
+        // Empty nvArray
+        nvArray.length = 0;
 
         setAspectRatio(new niivue.NVImage(items[0].data, items[0].uri), 0);
         const diffNames = differenceInNames(items.map((item) => item.uri));
@@ -194,10 +196,6 @@
             nvTemp.attachTo("gl" + i);
             nvTemp.setSliceType(0);
             const volume = new niivue.NVImage(items[i].data, items[i].uri);
-            if (i === 0) {
-                document.getElementById("minvalue").value = volume.cal_min.toPrecision(2);
-                document.getElementById("maxvalue").value = volume.cal_max.toPrecision(2);
-            }
             nvTemp.addVolume(volume);
         }
         // Sync only in one direction, circular syncing causes problems
@@ -210,6 +208,12 @@
         const addOverlayButton = document.getElementById("AddOverlayButton");
         addOverlayButton.parentNode.removeChild(addOverlayButton);
         showMetadata(nvArray[0].volumes[0]);
+        showScaling();
+    }
+
+    function showScaling() {
+        document.getElementById("minvalue").value = nvArray[0].volumes[0].cal_min.toPrecision(2);
+        document.getElementById("maxvalue").value = nvArray[0].volumes[0].cal_max.toPrecision(2);
     }
 
     function adaptScaling() {
@@ -222,6 +226,7 @@
     const nvArray = [];
     nv = new niivue.Niivue({ isResizeCanvas: false, onLocationChange: handleIntensityChange });
     nv.attachTo("gl");
+    nvArray.push(nv);
 
     document.getElementById("AddOverlayButton").addEventListener('click', () => {
         vscode.postMessage({
@@ -230,7 +235,6 @@
     });
 
     document.getElementById("NearestInterpolation").addEventListener('change', () => {
-        nv.setInterpolation(document.getElementById("NearestInterpolation").checked);
         nvArray.forEach((item) => item.setInterpolation(document.getElementById("NearestInterpolation").checked));
     });
 
@@ -249,6 +253,7 @@
                     const image = new niivue.NVImage(body.data, body.uri);
                     nv.addVolume(image);
                     showMetadata(nv.volumes[0]);
+                    showScaling();
                 }
                 break;
             case 'webUrl':
@@ -257,6 +262,7 @@
                     nv.loadVolumes(volumeList).then(function () {
                         showMetadata(nv.volumes[0]);
                     });
+                    showScaling();
                 }
                 break;
             case 'overlay':

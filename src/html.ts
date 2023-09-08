@@ -31,9 +31,9 @@ export function getHtmlForWebview(webview: vscode.Webview, extensionUri: vscode.
 					<label for="checkbox" style="color: white">No Interpolation</label>
 					<input type="checkbox" id="NearestInterpolation">
 					<label for="minvalue" style="color: white">Min</label>
-					<input type="number" id="minvalue" value="0" style="width: 40px">
+					<input type="number" id="minvalue" value="0" style="width: 70px">
 					<label for="maxvalue" style="color: white">Max</label>
-					<input type="number" id="maxvalue" value="0" style="width: 40px">
+					<input type="number" id="maxvalue" value="0" style="width: 70px">
 				</div>
 
 				<script nonce="${nonce}" src=${niiVue}></script>
