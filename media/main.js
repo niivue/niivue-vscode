@@ -144,7 +144,7 @@
             div.appendChild(canvas);
             const cursorTextDiv = document.createElement("div");
             div.appendChild(cursorTextDiv);
-            const cursorText = document.createTextNode("0");
+            const cursorText = document.createTextNode(" ");
             cursorTextDiv.appendChild(cursorText);
 
             div.style.float = "left";
@@ -182,14 +182,12 @@
         resize(n);
 
         // Create new niivue with axial view for each volume
-        const nvArray = [];
         for (i = 0; i < n; i++) {
             const textNode = document.getElementById("cursortext" + i);
-            if (!textNode) { document.getElementById("intensity").innerHTML += "Error: textNode is null"; } else {
-                textNode.textContent = "test";
-            }
             const handleIntensityChangeCompareView = (data) => {
-                textNode.textContent = data.string;
+                const parts = data.string.split("=");
+                textNode.textContent = parts.pop();
+                document.getElementById("intensity").innerHTML = parts.pop();
             };
             const nvTemp = new niivue.Niivue({ isResizeCanvas: false, onLocationChange: handleIntensityChangeCompareView });
             nvArray.push(nvTemp);
@@ -219,9 +217,11 @@
 
     document.getElementById("NearestInterpolation").addEventListener('change', () => {
         nv.setInterpolation(document.getElementById("NearestInterpolation").checked);
+        nvArray.forEach((item) => item.setInterpolation(document.getElementById("NearestInterpolation").checked));
     });
 
-    const nv = new niivue.Niivue({ isResizeCanvas: false, onLocationChange: handleIntensityChange });
+    const nvArray = [];
+    nv = new niivue.Niivue({ isResizeCanvas: false, onLocationChange: handleIntensityChange });
     nv.attachTo("gl");
 
     window.addEventListener('message', async (e) => {
