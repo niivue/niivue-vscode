@@ -69,40 +69,58 @@
         });
     });
 
+    function getAspectRatio(vol, viewType) {
+        const meta = vol.getImageMetadata();
+        const xSize = meta.nx * meta.dx;
+        const ySize = meta.ny * meta.dy;
+        const zSize = meta.nz * meta.dz;
+        if (viewType === 0) {
+            return xSize / ySize;
+        }
+    }
+
+    function resize(n, aspectRatio) {
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
+
+        let bestWidth = 0;
+        for (nrow = 1; nrow <= n; nrow++) {
+            const ncol = Math.ceil(n / nrow);
+            const maxHeight = windowHeight / nrow;
+            const maxWidth = Math.min(windowWidth / ncol, maxHeight * aspectRatio);
+            if (maxWidth > bestWidth) { bestWidth = maxWidth; }
+        }
+        for (i = 0; i < n; i++) {
+            const canvas = document.getElementById("gl" + i);
+            canvas.width = Math.floor(0.95 * bestWidth);
+            canvas.height = canvas.width / aspectRatio;
+        }
+    }
+
     function compareView(items) {
         // Empty Container
         const container = document.getElementById("container");
         while (container.firstChild) {
             container.removeChild(container.firstChild);
         }
-        // Create view dropdown menu
-        const view = document.createElement("select");
-        view.id = "view";
-        view.innerHTML = "<option value=0>Axial</option><option value=1>Coronal</option><option value=2>Sagittal</option>";
-        document.getElementById("container").appendChild(view);
-        // Ddd event listener to view dropdown menu
-        view.addEventListener('change', () => {
-            const val = document.getElementById("view").value;
-            nvArray.forEach((item) => item.setSliceType(val));
-        });
 
-        n = items.length;
-        const nvArray = [];
+        const n = items.length;
+        const aspectRatio = getAspectRatio(new niivue.NVImage(items[0].data, items[0].uri), 0);
+
+        // Create canvases
         for (i = 0; i < n; i++) {
-            // create canvas with id = "gl" + i, width of 400 and height of 300
-            // dynamically adjust the size of the canvas to the size of the div
             const canvas = document.createElement("canvas");
             canvas.id = "gl" + i;
-            canvas.width = 200;
-            canvas.height = 300;
-
             document.getElementById("container").appendChild(canvas);
-            // div.innerHTML = "div id: " + div.id + " canvas id: " + canvas.id;
+        }
+        resize(n, aspectRatio);
 
+        const nvArray = [];
+        for (i = 0; i < n; i++) {
             // create new niivue with slice view
             const nvTemp = new niivue.Niivue({ isResizeCanvas: false });
             nvArray.push(nvTemp);
-            nvTemp.attachTo(canvas.id);
+            nvTemp.attachTo("gl" + i);
             nvTemp.setSliceType(0);
             const image = new niivue.NVImage(items[i].data, items[i].uri);
             nvTemp.addVolume(image);
@@ -110,6 +128,18 @@
         for (i = 0; i < n - 1; i++) {
             nvArray[i].syncWith(nvArray[i + 1]);
         }
+
+        // Create view dropdown menu
+        const view = document.createElement("select");
+        view.id = "view";
+        view.innerHTML = "<option value=0>Axial</option><option value=1>Coronal</option><option value=2>Sagittal</option>";
+        container.appendChild(view);
+        // Ddd event listener to view dropdown menu
+        view.addEventListener('change', () => {
+            const val = document.getElementById("view").value;
+            nvArray.forEach((item) => item.setSliceType(val));
+        });
+        // window.addEventListener("resize", this.resizeListener.bind(this)); // must bind 'this' niivue object or else 'this' becomes 'window'
     }
 
     document.getElementById("NearestInterpolation").addEventListener('change', () => {
