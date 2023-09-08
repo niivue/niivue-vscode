@@ -82,7 +82,7 @@
     function resize(n, aspectRatio) {
         const windowWidth = window.innerWidth;
         const windowHeight = window.innerHeight - 40;
-        
+
         // let windowHeight = window.innerHeight;
         // const select = document.getElementById("view");
         // if (select) { windowHeight -= select.clientHeight; } else { windowHeight -= 25; }
@@ -101,7 +101,62 @@
         }
     }
 
+    // This function finds common patterns in the names and only returns the parts of the names that are different
+    function differenceInNames(names) {
+        const minLen = Math.min(...names.map((name) => name.length));
+        let startCommon = minLen;
+        outer:
+        while (startCommon > 0) {
+            const chars = names[0].slice(0, startCommon);
+            for (i = 1; i < names.length; i++) {
+                if (names[i].slice(0, startCommon) !== chars) {
+                    startCommon -= 1;
+                    continue outer;
+                }
+            }
+            break;
+        }
+        let endCommon = minLen;
+        outer:
+        while (endCommon > 0) {
+            const chars = names[0].slice(-endCommon);
+            for (i = 1; i < names.length; i++) {
+                if (names[i].slice(-endCommon) !== chars) {
+                    endCommon -= 1;
+                    continue outer;
+                }
+            }
+            break;
+        }
+        // if endCommon points to a number then include all following numbers as well
+        while (endCommon > 0 && names[0].slice(-endCommon, -endCommon + 1) >= '0' && names[0].slice(-endCommon, -endCommon + 1) <= '9') {
+            endCommon -= 1;
+        }
+        return names.map((name) => name.slice(startCommon, -endCommon));
+    }
+
+    function createCanvases(n, names) {
+        for (i = 0; i < n; i++) {
+            // Create a div that contains a name and a canvas
+            const div = document.createElement("div");
+            document.getElementById("container").appendChild(div);
+            const textDiv = document.createElement("div");
+            div.appendChild(textDiv);
+            const text = document.createTextNode(names[i]);
+            textDiv.appendChild(text);
+            const canvas = document.createElement("canvas");
+            div.appendChild(canvas);
+
+            div.style.float = "left";
+            textDiv.style.fontSize = "20px";
+            textDiv.style.position = "absolute";
+            canvas.id = "gl" + i;
+        }
+    }
+
     function compareView(items) {
+        const diffNames = differenceInNames(items.map((item) => item.uri));
+
         // Empty Container
         const container = document.getElementById("container");
         while (container.firstChild) {
@@ -111,12 +166,7 @@
         const n = items.length;
         const aspectRatio = getAspectRatio(new niivue.NVImage(items[0].data, items[0].uri), 0);
 
-        // Create canvases
-        for (i = 0; i < n; i++) {
-            const canvas = document.createElement("canvas");
-            canvas.id = "gl" + i;
-            document.getElementById("container").appendChild(canvas);
-        }
+        createCanvases(n, diffNames);
         resize(n, aspectRatio);
 
         const nvArray = [];
