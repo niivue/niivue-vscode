@@ -69,17 +69,24 @@
         });
     });
 
-    function getAspectRatio(vol, viewType) {
+    let aspectRatio = 1;
+    function setAspectRatio(vol, viewType) {
         const meta = vol.getImageMetadata();
         const xSize = meta.nx * meta.dx;
         const ySize = meta.ny * meta.dy;
         const zSize = meta.nz * meta.dz;
         if (viewType === 0) {
-            return xSize / ySize;
+            aspectRatio = xSize / ySize;
+        } else if (viewType === 1) {
+            aspectRatio = xSize / zSize;
+        } else if (viewType === 2) {
+            aspectRatio = ySize / zSize;
+        } else {
+            aspectRatio = 1;
         }
     }
 
-    function resize(n, aspectRatio) {
+    function resize(n) {
         const windowWidth = window.innerWidth;
         const windowHeight = window.innerHeight - 40;
 
@@ -164,10 +171,10 @@
         }
 
         const n = items.length;
-        const aspectRatio = getAspectRatio(new niivue.NVImage(items[0].data, items[0].uri), 0);
+        setAspectRatio(new niivue.NVImage(items[0].data, items[0].uri), 0);
 
         createCanvases(n, diffNames);
-        resize(n, aspectRatio);
+        resize(n);
 
         const nvArray = [];
         for (i = 0; i < n; i++) {
@@ -186,14 +193,15 @@
         // Create view dropdown menu
         const view = document.createElement("select");
         view.id = "view";
-        view.innerHTML = "<option value=0>Axial</option><option value=1>Coronal</option><option value=2>Sagittal</option>";
-        container.appendChild(view);
+        view.innerHTML = "<option value='0'>Axial</option><option value='1'>Coronal</option><option value='2'>Sagittal</option><option value='3'>A+C+S+R</option><option value='4'>Render</option>";
+        document.getElementById("footer").appendChild(view);
         // Ddd event listener to view dropdown menu
         view.addEventListener('change', () => {
-            const val = document.getElementById("view").value;
+            const val = parseInt(document.getElementById("view").value);
+            // setAspectRatio(nvArray[0].volumes[0], val); // niivue keeps the aspect ratio
             nvArray.forEach((item) => item.setSliceType(val));
         });
-        window.addEventListener("resize", () => resize(n, aspectRatio));
+        window.addEventListener("resize", () => resize(n));
     }
 
     document.getElementById("NearestInterpolation").addEventListener('change', () => {
