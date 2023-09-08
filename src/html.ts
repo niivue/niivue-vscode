@@ -20,7 +20,7 @@ export function getHtmlForWebview(webview: vscode.Webview, extensionUri: vscode.
 				<meta charset="utf-8" />
 				<title>NiiVue</title>
 			</head>
-			<body>
+			<body style="background-color:#181818">
 				<div id="MetaData" style="color: white">MetaData</div>
 				<div id="container">
 					<canvas id="gl" width="640" height="640"></canvas>
@@ -28,8 +28,12 @@ export function getHtmlForWebview(webview: vscode.Webview, extensionUri: vscode.
 				<div id="footer" style="clear: left">
 					<footer id="intensity" style="color: white">&nbsp;</footer>
 					<button id="AddOverlayButton">Add Overlay</button>
-					<input type="checkbox" id="NearestInterpolation">
 					<label for="checkbox" style="color: white">No Interpolation</label>
+					<input type="checkbox" id="NearestInterpolation">
+					<label for="minvalue" style="color: white">Min</label>
+					<input type="number" id="minvalue" value="0" style="width: 40px">
+					<label for="maxvalue" style="color: white">Max</label>
+					<input type="number" id="maxvalue" value="0" style="width: 40px">
 				</div>
 
 				<script nonce="${nonce}" src=${niiVue}></script>

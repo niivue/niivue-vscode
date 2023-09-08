@@ -193,8 +193,12 @@
             nvArray.push(nvTemp);
             nvTemp.attachTo("gl" + i);
             nvTemp.setSliceType(0);
-            const image = new niivue.NVImage(items[i].data, items[i].uri);
-            nvTemp.addVolume(image);
+            const volume = new niivue.NVImage(items[i].data, items[i].uri);
+            if (i === 0) {
+                document.getElementById("minvalue").value = volume.cal_min.toPrecision(2);
+                document.getElementById("maxvalue").value = volume.cal_max.toPrecision(2);
+            }
+            nvTemp.addVolume(volume);
         }
         // Sync only in one direction, circular syncing causes problems
         for (i = 0; i < n - 1; i++) {
@@ -208,7 +212,17 @@
         showMetadata(nvArray[0].volumes[0]);
     }
 
+    function adaptScaling() {
+        const min = document.getElementById("minvalue").value;
+        const max = document.getElementById("maxvalue").value;
+        nvArray.forEach((niv) => { niv.volumes[0].cal_min = min; niv.volumes[0].cal_max = max; niv.updateGLVolume(); });
+    }
+
     // Main
+    const nvArray = [];
+    nv = new niivue.Niivue({ isResizeCanvas: false, onLocationChange: handleIntensityChange });
+    nv.attachTo("gl");
+
     document.getElementById("AddOverlayButton").addEventListener('click', () => {
         vscode.postMessage({
             type: 'addOverlay'
@@ -220,9 +234,12 @@
         nvArray.forEach((item) => item.setInterpolation(document.getElementById("NearestInterpolation").checked));
     });
 
-    const nvArray = [];
-    nv = new niivue.Niivue({ isResizeCanvas: false, onLocationChange: handleIntensityChange });
-    nv.attachTo("gl");
+    document.getElementById("minvalue").addEventListener('change', () => {
+        adaptScaling();
+    });
+    document.getElementById("maxvalue").addEventListener('change', () => {
+        adaptScaling();
+    });
 
     window.addEventListener('message', async (e) => {
         const { type, body } = e.data;
