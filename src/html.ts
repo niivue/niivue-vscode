@@ -15,5 +15,8 @@ export async function getHtmlForWebview(webview: vscode.Webview, extensionUri: v
 	const nonce = getNonce(); // Whitelist which scripts can be run
 
 	const html = await vscode.workspace.fs.readFile(vscode.Uri.joinPath(extensionUri, 'media', 'webview.html')).then((buffer) => buffer.toString());
-	return html.replace(/\${nonce}/g, nonce).replace(/\${niiVue}/g, niiVue.toString()).replace(/\${scriptUri}/g, scriptUri.toString());
+	const noncePlaceholder = '${nonce}';
+	const niiVuePlaceholder = '"node_modules\\@niivue\\niivue\\dist\\niivue.umd.js"';
+	const scriptUriPlaceholder = '"main.js"';
+	return html.replace(noncePlaceholder, nonce).replace(niiVuePlaceholder, niiVue.toString()).replace(scriptUriPlaceholder, scriptUri.toString());
 }

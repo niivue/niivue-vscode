@@ -1,5 +1,4 @@
 (function () {
-    const vscode = acquireVsCodeApi();
     // Utility
     function datatypeCodeToString(datatypeCode) {
         switch (datatypeCode) {
@@ -228,12 +227,6 @@
     nv.attachTo("gl");
     nvArray.push(nv);
 
-    document.getElementById("AddOverlayButton").addEventListener('click', () => {
-        vscode.postMessage({
-            type: 'addOverlay'
-        });
-    });
-
     document.getElementById("NearestInterpolation").addEventListener('change', () => {
         nvArray.forEach((item) => item.setInterpolation(document.getElementById("NearestInterpolation").checked));
     });
@@ -277,6 +270,14 @@
                 }
         }
     });
-
-    vscode.postMessage({ type: 'ready' });
+    
+    if (typeof acquireVsCodeApi === 'function') {
+        const vscode = acquireVsCodeApi();
+        document.getElementById("AddOverlayButton").addEventListener('click', () => {
+            vscode.postMessage({
+                type: 'addOverlay'
+            });
+        });
+        vscode.postMessage({ type: 'ready' });
+    }
 }());
