@@ -277,6 +277,11 @@
 
     if (typeof acquireVsCodeApi === 'function') {
         const vscode = acquireVsCodeApi();
+        document.getElementById("AddOverlayButton").addEventListener('click', () => {
+            vscode.postMessage({
+                type: 'addOverlay'
+            });
+        });
         vscode.postMessage({ type: 'ready' });
     } else { // When running in a browser
         // add event listener to AddOverlayButton that opens a file picker dialog
