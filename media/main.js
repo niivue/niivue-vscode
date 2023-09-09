@@ -211,8 +211,12 @@
     }
 
     function showScaling() {
-        document.getElementById("minvalue").value = nvArray[0].volumes[0].cal_min.toPrecision(2);
-        document.getElementById("maxvalue").value = nvArray[0].volumes[0].cal_max.toPrecision(2);
+        try {
+            document.getElementById("minvalue").value = nvArray[0].volumes[0].cal_min.toPrecision(2);
+            document.getElementById("maxvalue").value = nvArray[0].volumes[0].cal_max.toPrecision(2);
+        } catch (e) {
+            // do nothing, find out why cal_min is not always present and what to use instead
+        }
     }
 
     function adaptScaling() {
@@ -270,14 +274,29 @@
                 }
         }
     });
-    
+
     if (typeof acquireVsCodeApi === 'function') {
         const vscode = acquireVsCodeApi();
-        document.getElementById("AddOverlayButton").addEventListener('click', () => {
-            vscode.postMessage({
-                type: 'addOverlay'
-            });
-        });
         vscode.postMessage({ type: 'ready' });
+    } else { // When running in a browser
+        // add event listener to AddOverlayButton that opens a file picker dialog
+        document.getElementById("AddOverlayButton").addEventListener('click', () => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                const image = await niivue.NVImage.loadFromFile({file: file, name: file.name, colormap: 'redyell'});
+                nv.addVolume(image);
+            };
+            input.click();
+        });
+
+        // post webUrl message to window with default url
+        window.postMessage({
+            type: 'webUrl',
+            body: {
+                url: 'https://niivue.github.io/niivue-demo-images/mni152.nii.gz'
+            }
+        });
     }
 }());
