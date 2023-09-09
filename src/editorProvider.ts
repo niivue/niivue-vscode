@@ -32,7 +32,7 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     async resolveCustomEditor(document: NiiVueDocument, webviewPanel: vscode.WebviewPanel): Promise<void> {
         this.webviews.add(document.uri, webviewPanel);
         webviewPanel.webview.options = { enableScripts: true };
-        webviewPanel.webview.html = getHtmlForWebview(webviewPanel.webview, this._context.extensionUri);
+        webviewPanel.webview.html = await getHtmlForWebview(webviewPanel.webview, this._context.extensionUri);
         webviewPanel.webview.onDidReceiveMessage(async (message) => {
             switch (message.type) {
                 case 'ready':

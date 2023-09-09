@@ -9,7 +9,7 @@ export class NiiVueWebViewPanel {
     private readonly _panel: vscode.WebviewPanel;
     private _disposables: vscode.Disposable[] = [];
 
-    public static createOrShow(extensionUri: vscode.Uri, uri: vscode.Uri) {
+    public static async createOrShow(extensionUri: vscode.Uri, uri: vscode.Uri) {
         const name = vscode.Uri.parse(uri.toString()).path.split("/").pop();
         const panel = vscode.window.createWebviewPanel(
             NiiVueWebViewPanel.webViewType,
@@ -20,6 +20,7 @@ export class NiiVueWebViewPanel {
                 retainContextWhenHidden: true,
             }
         );
+        panel.webview.html = await getHtmlForWebview(panel.webview, extensionUri);
         panel.webview.onDidReceiveMessage(async (e) => {
             if (e.type === 'ready') {
                 panel.webview.postMessage({
@@ -28,10 +29,10 @@ export class NiiVueWebViewPanel {
                 });
             }
         });
-        NiiVueWebViewPanel.currentPanel = new NiiVueWebViewPanel(panel, extensionUri);
+        NiiVueWebViewPanel.currentPanel = new NiiVueWebViewPanel(panel);
     }
 
-    public static createCompareView(extensionUri: vscode.Uri, items: any) {
+    public static async createCompareView(extensionUri: vscode.Uri, items: any) {
         const uris = items.map((item: any) => vscode.Uri.parse(item));
         const panel = vscode.window.createWebviewPanel(
             this.compareViewType,
@@ -42,6 +43,7 @@ export class NiiVueWebViewPanel {
                 retainContextWhenHidden: true,
             }
         );
+        panel.webview.html = await getHtmlForWebview(panel.webview, extensionUri);
         panel.webview.onDidReceiveMessage(async (e) => {
             const images = await Promise.all(uris.map(async (uri: vscode.Uri) => {
                 const data: Uint8Array = await vscode.workspace.fs.readFile(uri);
@@ -54,12 +56,11 @@ export class NiiVueWebViewPanel {
                 });
             }
         });
-        NiiVueWebViewPanel.currentPanel = new NiiVueWebViewPanel(panel, extensionUri);
+        NiiVueWebViewPanel.currentPanel = new NiiVueWebViewPanel(panel);
     }
 
-    private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
+    private constructor(panel: vscode.WebviewPanel) {
         this._panel = panel;
-        this._panel.webview.html = getHtmlForWebview(this._panel.webview, extensionUri);
         this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
         this._panel.webview.onDidReceiveMessage(
             message => {
