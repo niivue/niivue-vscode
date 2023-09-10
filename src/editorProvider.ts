@@ -30,6 +30,7 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     }
 
     async resolveCustomEditor(document: NiiVueDocument, webviewPanel: vscode.WebviewPanel): Promise<void> {
+        const fileTypes = { 'neuroImages': ['nii', 'nii.gz', 'dcm', 'mha', 'mhd', 'nhdr', 'nrrd', 'mgh', 'mgz', 'v', 'v16', 'vmr'] };
         this.webviews.add(document.uri, webviewPanel);
         webviewPanel.webview.options = { enableScripts: true };
         webviewPanel.webview.html = await getHtmlForWebview(webviewPanel.webview, this._context.extensionUri);
@@ -45,20 +46,12 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
                     });
                     return;
                 case 'addOverlay':
-                    // open file picker
                     vscode.window.showOpenDialog({
                         canSelectFiles: true,
                         canSelectFolders: false,
                         canSelectMany: false,
                         openLabel: 'Open Overlay',
-                        filters: {
-                            'NIfTI Images': ['nii', 'nii.gz'],
-                            'DICOM Images': ['dcm'],
-                            'NRRD Images': ['mha', 'mhd', 'nhdr', 'nrrd'],
-                            'MGH Images': ['mgh', 'mgz'],
-                            'MGZ Images': ['mgh', 'mgz'],
-                            'Vista Images': ['v', 'v16', 'vmr'],
-                        }
+                        filters: fileTypes
                     }).then((uris) => {
                         if (uris && uris.length > 0) {
                             vscode.workspace.fs.readFile(uris[0]).then((data) => {
@@ -77,23 +70,14 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
                     });
                     return;
                 case 'addImages':
-                    // open file picker
                     vscode.window.showOpenDialog({
                         canSelectFiles: true,
                         canSelectFolders: false,
                         canSelectMany: true,
                         openLabel: 'Open Images',
-                        filters: {
-                            'NIfTI Images': ['nii', 'nii.gz'],
-                            'DICOM Images': ['dcm'],
-                            'NRRD Images': ['mha', 'mhd', 'nhdr', 'nrrd'],
-                            'MGH Images': ['mgh', 'mgz'],
-                            'MGZ Images': ['mgh', 'mgz'],
-                            'Vista Images': ['v', 'v16', 'vmr'],
-                        }
+                        filters: fileTypes
                     }).then((uris) => {
                         if (uris && uris.length > 0) {
-                            // read all files and construct items with {data, uri} and send them to the webview with the message type 'compare'
                             const items = uris.map(async (uri: vscode.Uri) => {
                                 const data: Uint8Array = await vscode.workspace.fs.readFile(uri);
                                 return { data: data.buffer, uri: uri.toString() };
