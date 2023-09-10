@@ -284,6 +284,11 @@
                 type: 'addOverlay'
             });
         });
+        document.getElementById("AddImagesButton").addEventListener('click', () => {
+            vscode.postMessage({
+                type: 'addImages'
+            });
+        });
         vscode.postMessage({ type: 'ready' });
     } else { // When running in a browser
         // add event listener to AddOverlayButton that opens a file picker dialog
@@ -305,6 +310,22 @@
             };
             input.click();
         });
+
+        document.getElementById("AddImagesButton").addEventListener('click', () => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.multiple = true;
+            input.accept = '.nii,.nii.gz,.dcm,.mha,.mhd,.nhdr,.nrrd,.mgh,.mgz,.v,.v16,.vmr';
+    
+            input.onchange = async (e) => {
+                const files = e.target.files;
+                const items = [];
+                for (i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    const data = await file.arrayBuffer();
+                    items.push({ data: data, uri: file.name });
+                }            
+                compareView(items);
             };
             input.click();
         });

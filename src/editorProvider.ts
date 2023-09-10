@@ -75,6 +75,38 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
 
                         }
                     });
+                    return;
+                case 'addImages':
+                    // open file picker
+                    vscode.window.showOpenDialog({
+                        canSelectFiles: true,
+                        canSelectFolders: false,
+                        canSelectMany: true,
+                        openLabel: 'Open Images',
+                        filters: {
+                            'NIfTI Images': ['nii', 'nii.gz'],
+                            'DICOM Images': ['dcm'],
+                            'NRRD Images': ['mha', 'mhd', 'nhdr', 'nrrd'],
+                            'MGH Images': ['mgh', 'mgz'],
+                            'MGZ Images': ['mgh', 'mgz'],
+                            'Vista Images': ['v', 'v16', 'vmr'],
+                        }
+                    }).then((uris) => {
+                        if (uris && uris.length > 0) {
+                            // read all files and construct items with {data, uri} and send them to the webview with the message type 'compare'
+                            const items = uris.map(async (uri: vscode.Uri) => {
+                                const data: Uint8Array = await vscode.workspace.fs.readFile(uri);
+                                return { data: data.buffer, uri: uri.toString() };
+                            });
+                            Promise.all(items).then((items) => {
+                                webviewPanel.webview.postMessage({
+                                    type: 'compare',
+                                    body: items
+                                });
+                            });
+                        }
+                    });
+                    return;
             }
         });
     }
