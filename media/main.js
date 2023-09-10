@@ -80,7 +80,7 @@
 
     function resize(n) {
         const windowWidth = window.innerWidth - 50;
-        const windowHeight = window.innerHeight - 60;
+        const windowHeight = window.innerHeight - 75;
 
         let bestWidth = 0;
         for (nrow = 1; nrow <= n; nrow++) {
@@ -149,8 +149,10 @@
             div.style.float = "left";
             textDiv.style.fontSize = "20px";
             textDiv.style.position = "absolute";
+            textDiv.style.color = "white";
             canvas.id = "gl" + i;
             cursorTextDiv.id = "cursortext" + i;
+            cursorTextDiv.style.color = "white";
         }
     }
 
@@ -288,10 +290,21 @@
         document.getElementById("AddOverlayButton").addEventListener('click', () => {
             const input = document.createElement('input');
             input.type = 'file';
+            input.accept = '.nii,.nii.gz,.dcm,.mha,.mhd,.nhdr,.nrrd,.mgh,.mgz,.v,.v16,.vmr';
+    
             input.onchange = async (e) => {
                 const file = e.target.files[0];
-                const image = await niivue.NVImage.loadFromFile({file: file, name: file.name, colormap: 'redyell'});
-                nv.addVolume(image);
+                const arrayBuffer = await file.arrayBuffer();
+                window.postMessage({
+                    type: 'overlay',
+                    body: {
+                        data: arrayBuffer,
+                        uri: file.name
+                    }
+                });
+            };
+            input.click();
+        });
             };
             input.click();
         });
