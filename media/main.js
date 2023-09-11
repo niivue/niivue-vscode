@@ -122,7 +122,7 @@
         return names.map((name) => name.slice(startCommon, name.length - endCommon));
     }
 
-    function createCanvases(n, names = [""], existing = 0) {
+    function createCanvases(n, existing = 0) {
         for (let i = 0; i < n; i++) {
             const div = document.getElementsByName("ViewTemplate")[0].cloneNode(true);
             document.getElementById("container").appendChild(div);
@@ -134,7 +134,6 @@
             div.getElementsByTagName("canvas")[0].id = "gl" + htmlIndex;
             const subdivs = div.getElementsByTagName("div");
             subdivs[0].id = "name" + htmlIndex;
-            subdivs[0].textContent = names[i];
             subdivs[1].id = "cursortext" + htmlIndex;
         }
     }
@@ -142,10 +141,12 @@
     async function createView(items) {
         const nPrevious = nvArray.length;
         const n = items.length + nPrevious;
-        const diffNames = differenceInNames(items.map((item) => item.uri));
-        createCanvases(items.length, diffNames, nPrevious);
+        createCanvases(items.length, nPrevious);
 
         for (let i = 0; i < n; i++) {
+            if (names.length < i + 1) {
+                names.push(items[i - nPrevious].uri);
+            }
             if (nvArray.length < i + 1) {
                 const item = items[i - nPrevious];
                 const nv = new niivue.Niivue({ isResizeCanvas: false });
@@ -180,6 +181,14 @@
         // Sync only in one direction, circular syncing causes problems
         for (let i = 0; i < n - 1; i++) {
             nvArray[i].syncWith(nvArray[i + 1]);
+        }
+        setNames();
+    }
+
+    function setNames() {
+        const diffNames = differenceInNames(names);
+        for (let i = 0; i < diffNames.length; i++) {
+            document.getElementById("name" + i).textContent = diffNames[i].slice(-25);
         }
     }
 
@@ -332,6 +341,7 @@
     const nvArray = [];
     let aspectRatio = 1;
     let viewType = 3; // all views
+    let names = [];
     setViewType(viewType);
     addListeners();
 
