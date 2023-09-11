@@ -76,16 +76,22 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
                         canSelectMany: true,
                         openLabel: 'Open Images',
                         // filters: fileTypes
-                    }).then((uris) => {
-                        if (uris && uris.length > 0) {
-                            uris.forEach((uri: vscode.Uri) => {
-                                vscode.workspace.fs.readFile(uri).then((data) => {
-                                    webviewPanel.webview.postMessage({
-                                        type: 'addImage',
-                                        body: { data: data.buffer, uri: uri.toString() }
-                                    });
-                                });
+                    }).then(async (uris) => {
+                        if (uris) {
+                            webviewPanel.webview.postMessage({
+                                type: 'initCanvas',
+                                body: { n: uris.length }
                             });
+                            for (const uri of uris) {
+                                const data = await vscode.workspace.fs.readFile(uri);
+                                webviewPanel.webview.postMessage({
+                                    type: 'addImage',
+                                    body: {
+                                        data: data.buffer,
+                                        uri: uri.toString(),
+                                    }
+                                });
+                            }
                         }
                     });
                     return;

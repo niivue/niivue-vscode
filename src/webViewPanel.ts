@@ -43,20 +43,22 @@ export class NiiVueWebViewPanel {
                 retainContextWhenHidden: true,
             }
         );
-        panel.webview.onDidReceiveMessage((e) => {
+        panel.webview.onDidReceiveMessage(async (e) => {
             if (e.type === 'ready') {
                 panel.webview.postMessage({
                     type: 'initCanvas',
                     body: { n: uris.length }
                 });
-                uris.forEach(async (uri: vscode.Uri) => {
-                    vscode.workspace.fs.readFile(uri).then((data) => {
-                        panel.webview.postMessage({
-                            type: 'addImage',
-                            body: { data: data.buffer, uri: uri.toString() }
-                        });
+                for (const uri of uris) {
+                    const data = await vscode.workspace.fs.readFile(uri);
+                    panel.webview.postMessage({
+                        type: 'addImage',
+                        body: {
+                            data: data.buffer,
+                            uri: uri.toString(),
+                        }
                     });
-                });
+                }
             }
         });
         panel.webview.html = await getHtmlForWebview(panel.webview, extensionUri);
