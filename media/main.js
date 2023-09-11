@@ -70,7 +70,7 @@
         }
     }
 
-    function resize(n) {
+    function resize(n = nvArray.length) {
         const windowWidth = window.innerWidth - 50;
         const windowHeight = window.innerHeight - 75;
 
@@ -151,12 +151,12 @@
                 nv.attachTo("gl" + i);
                 nv.setSliceType(0);
                 nvArray.push(nv);
-                
+
                 if (item.data) {
                     const volume = new niivue.NVImage(item.data, item.uri);
                     nv.addVolume(volume);
                 } else {
-                    const volumeList = [{url: item.uri}];
+                    const volumeList = [{ url: item.uri }];
                     await nv.loadVolumes(volumeList);
                 }
             }
@@ -169,19 +169,17 @@
             };
             nvArray[i].onLocationChange = handleIntensityChangeCompareView;
             if (i === 0) {
-                setAspectRatio(nvArray[0].volumes[0], 0);
+                setAspectRatio(nvArray[0].volumes[0]);
                 resize(n);
                 nvArray[0].updateGLVolume();
+                showMetadata(nvArray[0].volumes[0]);
+                showScaling();
             }
         }
         // Sync only in one direction, circular syncing causes problems
         for (let i = 0; i < n - 1; i++) {
             nvArray[i].syncWith(nvArray[i + 1]);
         }
-
-        window.addEventListener("resize", () => resize(n));
-        showMetadata(nvArray[0].volumes[0]);
-        showScaling();
     }
 
     function setViewType(type) {
@@ -190,18 +188,81 @@
     }
 
     function showScaling() {
-        try {
-            document.getElementById("minvalue").value = nvArray[0].volumes[0].cal_min.toPrecision(2);
-            document.getElementById("maxvalue").value = nvArray[0].volumes[0].cal_max.toPrecision(2);
-        } catch (e) {
-            // do nothing, find out why cal_min is not always present and what to use instead
-        }
+        document.getElementById("minvalue").value = nvArray[0].volumes[0].cal_min.toPrecision(2);
+        document.getElementById("maxvalue").value = nvArray[0].volumes[0].cal_max.toPrecision(2);
     }
 
     function adaptScaling() {
         const min = document.getElementById("minvalue").value;
         const max = document.getElementById("maxvalue").value;
-        nvArray.forEach((niv) => { niv.volumes[0].cal_min = min; niv.volumes[0].cal_max = max; niv.updateGLVolume(); });
+        nvArray.forEach((niv) => {
+            niv.volumes[0].cal_min = min;
+            niv.volumes[0].cal_max = max;
+            niv.updateGLVolume();
+        });
+    }
+
+    function addOverlay(item) {
+        const image = new niivue.NVImage(item.data, item.uri, 'redyell');
+        nvArray[0].addVolume(image);
+    }
+
+    function addButtonListenersVscode() {
+        const vscode = acquireVsCodeApi();
+        document.getElementById("AddOverlayButton").addEventListener('click', () => {
+            vscode.postMessage({
+                type: 'addOverlay'
+            });
+        });
+        document.getElementById("AddImagesButton").addEventListener('click', () => {
+            vscode.postMessage({
+                type: 'addImages'
+            });
+        });
+    }
+
+    function addButtonListenersWeb() {
+        const fileTypes = '.nii,.nii.gz,.dcm,.mha,.mhd,.nhdr,.nrrd,.mgh,.mgz,.v,.v16,.vmr';
+        document.getElementById("AddOverlayButton").addEventListener('click', () => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = fileTypes;
+
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                const arrayBuffer = await file.arrayBuffer();
+                window.postMessage({
+                    type: 'overlay',
+                    body: {
+                        data: arrayBuffer,
+                        uri: file.name
+                    }
+                });
+            };
+            input.click();
+        });
+
+        document.getElementById("AddImagesButton").addEventListener('click', () => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.multiple = true;
+            input.accept = fileTypes;
+
+            input.onchange = async (e) => {
+                const files = e.target.files;
+                const items = [];
+                for (i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    const data = await file.arrayBuffer();
+                    items.push({ data: data, uri: file.name });
+                }
+                window.postMessage({
+                    type: 'compare',
+                    body: items
+                });
+            };
+            input.click();
+        });
     }
 
     function addListeners() {
@@ -218,89 +279,37 @@
             const val = parseInt(document.getElementById("view").value);
             nvArray.forEach((item) => item.setSliceType(val));
         });
-    
+        window.addEventListener("resize", () => resize());
         window.addEventListener('message', async (e) => {
             const { type, body } = e.data;
             switch (type) {
                 case 'localDocument':
                     {
-                        createView([body], 3);
+                        createView([body]);
                     }
                     break;
                 case 'webUrl':
                     {
-                        createView([{uri: body.url}], 3);
+                        createView([{ uri: body.url }]);
                     }
                     break;
                 case 'overlay':
                     {
-                        const image = new niivue.NVImage(body.data, body.uri, 'redyell');
-                        nvArray[0].addVolume(image);
+                        addOverlay(body);
                     }
                     break;
                 case 'compare':
-                    {   
+                    {
                         setViewType(0); // Axial
                         createView(body);
                     }
             }
         });
         if (typeof acquireVsCodeApi === 'function') {
-            const vscode = acquireVsCodeApi();
-            document.getElementById("AddOverlayButton").addEventListener('click', () => {
-                vscode.postMessage({
-                    type: 'addOverlay'
-                });
-            });
-            document.getElementById("AddImagesButton").addEventListener('click', () => {
-                vscode.postMessage({
-                    type: 'addImages'
-                });
-            });
+            addButtonListenersVscode();
             vscode.postMessage({ type: 'ready' });
         } else { // When running in a browser
-            // add event listener to AddOverlayButton that opens a file picker dialog
-            document.getElementById("AddOverlayButton").addEventListener('click', () => {
-                const input = document.createElement('input');
-                input.type = 'file';
-                input.accept = '.nii,.nii.gz,.dcm,.mha,.mhd,.nhdr,.nrrd,.mgh,.mgz,.v,.v16,.vmr';
-    
-                input.onchange = async (e) => {
-                    const file = e.target.files[0];
-                    const arrayBuffer = await file.arrayBuffer();
-                    window.postMessage({
-                        type: 'overlay',
-                        body: {
-                            data: arrayBuffer,
-                            uri: file.name
-                        }
-                    });
-                };
-                input.click();
-            });
-    
-            document.getElementById("AddImagesButton").addEventListener('click', () => {
-                const input = document.createElement('input');
-                input.type = 'file';
-                input.multiple = true;
-                input.accept = '.nii,.nii.gz,.dcm,.mha,.mhd,.nhdr,.nrrd,.mgh,.mgz,.v,.v16,.vmr';
-    
-                input.onchange = async (e) => {
-                    const files = e.target.files;
-                    const items = [];
-                    for (i = 0; i < files.length; i++) {
-                        const file = files[i];
-                        const data = await file.arrayBuffer();
-                        items.push({ data: data, uri: file.name });
-                    }
-                    window.postMessage({
-                        type: 'compare',
-                        body: items
-                    });
-                };
-                input.click();
-            });
-    
+            addButtonListenersWeb();
             // post webUrl message to window with default url
             window.postMessage({
                 type: 'webUrl',
