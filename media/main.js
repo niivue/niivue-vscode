@@ -47,22 +47,14 @@
 
     function showMetadata(volume) {
         const meta = volume.getImageMetadata();
-        // Write datypeCode and matrix size (nx, ny, nz) in a formatted string to message
         document.getElementById('MetaData').innerHTML = "datatype: " + datatypeCodeToString(meta.datatypeCode) + ", matrix size: " + meta.nx + " x " + meta.ny + " x " + meta.nz;
-        // Add voxelsize to MetaData (dx, dy, dz) rounded to 2 decimal places
-        document.getElementById('MetaData').innerHTML += ", voxelsize: " + meta.dx.toFixed(2) + " x " + meta.dy.toFixed(2) + " x " + meta.dz.toFixed(2);
-        // Add timepoints to the MetaData if nt > 1
+        document.getElementById('MetaData').innerHTML += ", voxelsize: " + meta.dx.toPrecision(2) + " x " + meta.dy.toPrecision(2) + " x " + meta.dz.toPrecision(2);
         if (meta.nt > 1) {
             document.getElementById('MetaData').innerHTML += ", timepoints: " + meta.nt;
         }
     }
 
-    function handleIntensityChange(data) {
-        document.getElementById("intensity").innerHTML = "&nbsp;&nbsp;" + data.string;
-    }
-
-    let aspectRatio = 1;
-    function setAspectRatio(vol, viewType) {
+    function setAspectRatio(vol) {
         const meta = vol.getImageMetadata();
         const xSize = meta.nx * meta.dx;
         const ySize = meta.ny * meta.dy;
@@ -130,86 +122,71 @@
         return names.map((name) => name.slice(startCommon, -endCommon));
     }
 
-    function createCanvases(n, names) {
-        for (i = 0; i < n; i++) {
-            // Create a div that contains a name and a canvas
-            const div = document.createElement("div");
+    function createCanvases(n, names = [""], existing = 0) {
+        for (let i = 0; i < n; i++) {
+            const div = document.getElementsByName("ViewTemplate")[0].cloneNode(true);
             document.getElementById("container").appendChild(div);
-            const textDiv = document.createElement("div");
-            div.appendChild(textDiv);
-            const text = document.createTextNode(names[i]);
-            textDiv.appendChild(text);
-            const canvas = document.createElement("canvas");
-            div.appendChild(canvas);
-            const cursorTextDiv = document.createElement("div");
-            div.appendChild(cursorTextDiv);
-            const cursorText = document.createTextNode(" ");
-            cursorTextDiv.appendChild(cursorText);
 
-            div.style.float = "left";
-            textDiv.style.fontSize = "20px";
-            textDiv.style.position = "absolute";
-            textDiv.style.color = "white";
-            canvas.id = "gl" + i;
-            cursorTextDiv.id = "cursortext" + i;
-            cursorTextDiv.style.color = "white";
+            const htmlIndex = i + existing;
+            div.id = "Volume" + htmlIndex;
+            div.style.display = "block";
+
+            div.getElementsByTagName("canvas")[0].id = "gl" + htmlIndex;
+            const subdivs = div.getElementsByTagName("div");
+            subdivs[0].id = "name" + htmlIndex;
+            subdivs[0].textContent = names[i];
+            subdivs[1].id = "cursortext" + htmlIndex;
         }
     }
 
-    function createViewDropdown(nvArray) {
-        const view = document.createElement("select");
-        view.id = "view";
-        view.innerHTML = "<option value='0'>Axial</option><option value='1'>Coronal</option><option value='2'>Sagittal</option><option value='3'>A+C+S+R</option><option value='4'>Render</option>";
-        document.getElementById("footer").appendChild(view);
-        view.addEventListener('change', () => {
-            const val = parseInt(document.getElementById("view").value);
-            // setAspectRatio(nvArray[0].volumes[0], val); // niivue keeps the aspect ratio
-            nvArray.forEach((item) => item.setSliceType(val));
-        });
-    }
-
-    function compareView(items) {
-        const n = items.length;
-
-        // Empty Container
-        const container = document.getElementById("container");
-        while (container.firstChild) {
-            container.removeChild(container.firstChild);
-        }
-        // Empty nvArray
-        nvArray.length = 0;
-
-        setAspectRatio(new niivue.NVImage(items[0].data, items[0].uri), 0);
+    async function createView(items) {
+        const n = items.length + nvArray.length;
         const diffNames = differenceInNames(items.map((item) => item.uri));
-        createCanvases(n, diffNames);
-        resize(n);
+        createCanvases(items.length, diffNames, nvArray.length);
 
-        // Create new niivue with axial view for each volume
-        for (i = 0; i < n; i++) {
+        for (let i = 0; i < n; i++) {
+            if (nvArray.length < i + 1) {
+                const item = items[i - nvArray.length];
+                const nv = new niivue.Niivue({ isResizeCanvas: false });
+                nv.attachTo("gl" + i);
+                nv.setSliceType(0);
+                nvArray.push(nv);
+                
+                if (item.data) {
+                    const volume = new niivue.NVImage(item.data, item.uri);
+                    nv.addVolume(volume);
+                } else {
+                    const volumeList = [{url: item.uri}];
+                    await nv.loadVolumes(volumeList);
+                }
+            }
+            nvArray[i].setSliceType(viewType);
             const textNode = document.getElementById("cursortext" + i);
             const handleIntensityChangeCompareView = (data) => {
                 const parts = data.string.split("=");
                 textNode.textContent = parts.pop();
                 document.getElementById("intensity").innerHTML = parts.pop();
             };
-            const nvTemp = new niivue.Niivue({ isResizeCanvas: false, onLocationChange: handleIntensityChangeCompareView });
-            nvArray.push(nvTemp);
-            nvTemp.attachTo("gl" + i);
-            nvTemp.setSliceType(0);
-            const volume = new niivue.NVImage(items[i].data, items[i].uri);
-            nvTemp.addVolume(volume);
+            nvArray[i].onLocationChange = handleIntensityChangeCompareView;
+            if (i === 0) {
+                setAspectRatio(nvArray[0].volumes[0], 0);
+                resize(n);
+                nvArray[0].updateGLVolume();
+            }
         }
         // Sync only in one direction, circular syncing causes problems
-        for (i = 0; i < n - 1; i++) {
+        for (let i = 0; i < n - 1; i++) {
             nvArray[i].syncWith(nvArray[i + 1]);
         }
 
-        createViewDropdown(nvArray);
         window.addEventListener("resize", () => resize(n));
-        const addOverlayButton = document.getElementById("AddOverlayButton");
-        addOverlayButton.parentNode.removeChild(addOverlayButton);
         showMetadata(nvArray[0].volumes[0]);
         showScaling();
+    }
+
+    function setViewType(type) {
+        viewType = type;
+        document.getElementById("view").value = viewType;
     }
 
     function showScaling() {
@@ -227,115 +204,118 @@
         nvArray.forEach((niv) => { niv.volumes[0].cal_min = min; niv.volumes[0].cal_max = max; niv.updateGLVolume(); });
     }
 
-    // Main
-    const nvArray = [];
-    nv = new niivue.Niivue({ isResizeCanvas: false, onLocationChange: handleIntensityChange });
-    nv.attachTo("gl");
-    nvArray.push(nv);
-
-    document.getElementById("NearestInterpolation").addEventListener('change', () => {
-        nvArray.forEach((item) => item.setInterpolation(document.getElementById("NearestInterpolation").checked));
-    });
-
-    document.getElementById("minvalue").addEventListener('change', () => {
-        adaptScaling();
-    });
-    document.getElementById("maxvalue").addEventListener('change', () => {
-        adaptScaling();
-    });
-
-    window.addEventListener('message', async (e) => {
-        const { type, body } = e.data;
-        switch (type) {
-            case 'localDocument':
-                {
-                    const image = new niivue.NVImage(body.data, body.uri);
-                    nv.addVolume(image);
-                    showMetadata(nv.volumes[0]);
-                    showScaling();
-                }
-                break;
-            case 'webUrl':
-                {
-                    const volumeList = [body];
-                    nv.loadVolumes(volumeList).then(function () {
-                        showMetadata(nv.volumes[0]);
-                    });
-                    showScaling();
-                }
-                break;
-            case 'overlay':
-                {
-                    const image = new niivue.NVImage(body.data, body.uri, 'redyell');
-                    nv.addVolume(image);
-                }
-                break;
-            case 'compare':
-                {
-                    compareView(body);
-                }
-        }
-    });
-
-    if (typeof acquireVsCodeApi === 'function') {
-        const vscode = acquireVsCodeApi();
-        document.getElementById("AddOverlayButton").addEventListener('click', () => {
-            vscode.postMessage({
-                type: 'addOverlay'
-            });
+    function addListeners() {
+        document.getElementById("NearestInterpolation").addEventListener('change', () => {
+            nvArray.forEach((item) => item.setInterpolation(document.getElementById("NearestInterpolation").checked));
         });
-        document.getElementById("AddImagesButton").addEventListener('click', () => {
-            vscode.postMessage({
-                type: 'addImages'
-            });
+        document.getElementById("minvalue").addEventListener('change', () => {
+            adaptScaling();
         });
-        vscode.postMessage({ type: 'ready' });
-    } else { // When running in a browser
-        // add event listener to AddOverlayButton that opens a file picker dialog
-        document.getElementById("AddOverlayButton").addEventListener('click', () => {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = '.nii,.nii.gz,.dcm,.mha,.mhd,.nhdr,.nrrd,.mgh,.mgz,.v,.v16,.vmr';
+        document.getElementById("maxvalue").addEventListener('change', () => {
+            adaptScaling();
+        });
+        document.getElementById("view").addEventListener('change', () => {
+            const val = parseInt(document.getElementById("view").value);
+            nvArray.forEach((item) => item.setSliceType(val));
+        });
     
-            input.onchange = async (e) => {
-                const file = e.target.files[0];
-                const arrayBuffer = await file.arrayBuffer();
-                window.postMessage({
-                    type: 'overlay',
-                    body: {
-                        data: arrayBuffer,
-                        uri: file.name
+        window.addEventListener('message', async (e) => {
+            const { type, body } = e.data;
+            switch (type) {
+                case 'localDocument':
+                    {
+                        createView([body], 3);
                     }
-                });
-            };
-            input.click();
-        });
-
-        document.getElementById("AddImagesButton").addEventListener('click', () => {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.multiple = true;
-            input.accept = '.nii,.nii.gz,.dcm,.mha,.mhd,.nhdr,.nrrd,.mgh,.mgz,.v,.v16,.vmr';
-    
-            input.onchange = async (e) => {
-                const files = e.target.files;
-                const items = [];
-                for (i = 0; i < files.length; i++) {
-                    const file = files[i];
-                    const data = await file.arrayBuffer();
-                    items.push({ data: data, uri: file.name });
-                }            
-                compareView(items);
-            };
-            input.click();
-        });
-
-        // post webUrl message to window with default url
-        window.postMessage({
-            type: 'webUrl',
-            body: {
-                url: 'https://niivue.github.io/niivue-demo-images/mni152.nii.gz'
+                    break;
+                case 'webUrl':
+                    {
+                        createView([{uri: body.url}], 3);
+                    }
+                    break;
+                case 'overlay':
+                    {
+                        const image = new niivue.NVImage(body.data, body.uri, 'redyell');
+                        nvArray[0].addVolume(image);
+                    }
+                    break;
+                case 'compare':
+                    {   
+                        setViewType(0); // Axial
+                        createView(body);
+                    }
             }
         });
+        if (typeof acquireVsCodeApi === 'function') {
+            const vscode = acquireVsCodeApi();
+            document.getElementById("AddOverlayButton").addEventListener('click', () => {
+                vscode.postMessage({
+                    type: 'addOverlay'
+                });
+            });
+            document.getElementById("AddImagesButton").addEventListener('click', () => {
+                vscode.postMessage({
+                    type: 'addImages'
+                });
+            });
+            vscode.postMessage({ type: 'ready' });
+        } else { // When running in a browser
+            // add event listener to AddOverlayButton that opens a file picker dialog
+            document.getElementById("AddOverlayButton").addEventListener('click', () => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.nii,.nii.gz,.dcm,.mha,.mhd,.nhdr,.nrrd,.mgh,.mgz,.v,.v16,.vmr';
+    
+                input.onchange = async (e) => {
+                    const file = e.target.files[0];
+                    const arrayBuffer = await file.arrayBuffer();
+                    window.postMessage({
+                        type: 'overlay',
+                        body: {
+                            data: arrayBuffer,
+                            uri: file.name
+                        }
+                    });
+                };
+                input.click();
+            });
+    
+            document.getElementById("AddImagesButton").addEventListener('click', () => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.multiple = true;
+                input.accept = '.nii,.nii.gz,.dcm,.mha,.mhd,.nhdr,.nrrd,.mgh,.mgz,.v,.v16,.vmr';
+    
+                input.onchange = async (e) => {
+                    const files = e.target.files;
+                    const items = [];
+                    for (i = 0; i < files.length; i++) {
+                        const file = files[i];
+                        const data = await file.arrayBuffer();
+                        items.push({ data: data, uri: file.name });
+                    }
+                    window.postMessage({
+                        type: 'compare',
+                        body: items
+                    });
+                };
+                input.click();
+            });
+    
+            // post webUrl message to window with default url
+            window.postMessage({
+                type: 'webUrl',
+                body: {
+                    url: 'https://niivue.github.io/niivue-demo-images/mni152.nii.gz'
+                }
+            });
+        }
     }
+
+    // Main
+    const nvArray = [];
+    let aspectRatio = 1;
+    let viewType = 3; // all views
+    setViewType(viewType);
+    addListeners();
+
 }());
