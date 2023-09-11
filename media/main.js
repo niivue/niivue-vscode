@@ -305,6 +305,11 @@
                         setViewType(0); // Axial
                         createView(body);
                     }
+                case 'addImage':
+                    {
+                        setViewType(0); // Axial
+                        createView([body]);
+                    }
             }
         });
         if (typeof acquireVsCodeApi === 'function') {

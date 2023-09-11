@@ -78,14 +78,12 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
                         filters: fileTypes
                     }).then((uris) => {
                         if (uris && uris.length > 0) {
-                            const items = uris.map(async (uri: vscode.Uri) => {
-                                const data: Uint8Array = await vscode.workspace.fs.readFile(uri);
-                                return { data: data.buffer, uri: uri.toString() };
-                            });
-                            Promise.all(items).then((items) => {
-                                webviewPanel.webview.postMessage({
-                                    type: 'compare',
-                                    body: items
+                            uris.forEach((uri: vscode.Uri) => {
+                                vscode.workspace.fs.readFile(uri).then((data) => {
+                                    webviewPanel.webview.postMessage({
+                                        type: 'addImage',
+                                        body: { data: data.buffer, uri: uri.toString() }
+                                    });
                                 });
                             });
                         }

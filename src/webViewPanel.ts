@@ -43,19 +43,19 @@ export class NiiVueWebViewPanel {
                 retainContextWhenHidden: true,
             }
         );
-        panel.webview.html = await getHtmlForWebview(panel.webview, extensionUri);
-        panel.webview.onDidReceiveMessage(async (e) => {
-            const images = await Promise.all(uris.map(async (uri: vscode.Uri) => {
-                const data: Uint8Array = await vscode.workspace.fs.readFile(uri);
-                return { data: data.buffer, uri: uri.toString() };
-            }));
+        panel.webview.onDidReceiveMessage((e) => {
             if (e.type === 'ready') {
-                panel.webview.postMessage({
-                    type: 'compare',
-                    body: images
+                uris.forEach(async (uri: vscode.Uri) => {
+                    vscode.workspace.fs.readFile(uri).then((data) => {
+                        panel.webview.postMessage({
+                            type: 'addImage',
+                            body: { data: data.buffer, uri: uri.toString() }
+                        });
+                    });
                 });
             }
         });
+        panel.webview.html = await getHtmlForWebview(panel.webview, extensionUri);
         NiiVueWebViewPanel.currentPanel = new NiiVueWebViewPanel(panel);
     }
 
