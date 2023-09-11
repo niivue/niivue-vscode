@@ -219,6 +219,7 @@
                 type: 'addImages'
             });
         });
+        vscode.postMessage({ type: 'ready' });
     }
 
     function addButtonListenersWeb() {
@@ -307,7 +308,6 @@
         });
         if (typeof acquireVsCodeApi === 'function') {
             addButtonListenersVscode();
-            vscode.postMessage({ type: 'ready' });
         } else { // When running in a browser
             addButtonListenersWeb();
             // post webUrl message to window with default url
@@ -320,11 +320,11 @@
         }
     }
 
-    // Main
+    // Main - Globals
     const nvArray = [];
     let aspectRatio = 1;
     let viewType = 3; // all views
     setViewType(viewType);
     addListeners();
-
+    
 }());
