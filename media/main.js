@@ -140,13 +140,14 @@
     }
 
     async function createView(items) {
-        const n = items.length + nvArray.length;
+        const nPrevious = nvArray.length;
+        const n = items.length + nPrevious;
         const diffNames = differenceInNames(items.map((item) => item.uri));
-        createCanvases(items.length, diffNames, nvArray.length);
+        createCanvases(items.length, diffNames, nPrevious);
 
         for (let i = 0; i < n; i++) {
             if (nvArray.length < i + 1) {
-                const item = items[i - nvArray.length];
+                const item = items[i - nPrevious];
                 const nv = new niivue.Niivue({ isResizeCanvas: false });
                 nv.attachTo("gl" + i);
                 nv.setSliceType(0);
