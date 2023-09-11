@@ -29,22 +29,70 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
         return new NiiVueDocument(uri, data);
     }
 
-    async resolveCustomEditor(document: NiiVueDocument, webviewPanel: vscode.WebviewPanel): Promise<void> {
-        const fileTypes = { 'neuroImages': ['nii', 'nii.gz', 'dcm', 'mha', 'mhd', 'nhdr', 'nrrd', 'mgh', 'mgz', 'v', 'v16', 'vmr'] };
-        this.webviews.add(document.uri, webviewPanel);
-        webviewPanel.webview.options = { enableScripts: true };
-        webviewPanel.webview.html = await getHtmlForWebview(webviewPanel.webview, this._context.extensionUri);
-        webviewPanel.webview.onDidReceiveMessage(async (message) => {
-            switch (message.type) {
-                case 'ready':
-                    webviewPanel.webview.postMessage({
-                        type: 'localDocument',
+    public static async createOrShow(context: vscode.ExtensionContext, uri: vscode.Uri) {
+        const name = vscode.Uri.parse(uri.toString()).path.split("/").pop();
+        const panel = vscode.window.createWebviewPanel(
+            'niiVue.webView',
+            name ? `web: ${name}` : "NiiVue Web Panel",
+            vscode.ViewColumn.One,
+            {
+                enableScripts: true,
+                retainContextWhenHidden: true,
+            }
+        );
+        panel.webview.html = await getHtmlForWebview(panel.webview, context.extensionUri);
+        const editor = new NiiVueEditorProvider(context);
+        editor.webviews.add(uri, panel);
+        NiiVueEditorProvider.addCommonListeners(panel);
+        panel.webview.onDidReceiveMessage(async (e) => {
+            if (e.type === 'ready') {
+                panel.webview.postMessage({
+                    type: 'webUrl',
+                    body: { url: uri.toString() }
+                });
+            }
+        });
+    }
+
+    public static async createCompareView(context: vscode.ExtensionContext, items: any) {
+        const uris = items.map((item: any) => vscode.Uri.parse(item));
+        const panel = vscode.window.createWebviewPanel(
+            'niiVue.compareView',
+            "NiiVue Compare Panel",
+            vscode.ViewColumn.One,
+            {
+                enableScripts: true,
+                retainContextWhenHidden: true,
+            }
+        );
+        panel.webview.html = await getHtmlForWebview(panel.webview, context.extensionUri);
+        const editor = new NiiVueEditorProvider(context);
+        editor.webviews.add(uris[0], panel);
+        NiiVueEditorProvider.addCommonListeners(panel);
+        panel.webview.onDidReceiveMessage(async (e) => {
+            if (e.type === 'ready') {
+                panel.webview.postMessage({
+                    type: 'initCanvas',
+                    body: { n: uris.length }
+                });
+                for (const uri of uris) {
+                    const data = await vscode.workspace.fs.readFile(uri);
+                    panel.webview.postMessage({
+                        type: 'addImage',
                         body: {
-                            data: document.data.buffer,
-                            uri: document.uri.toString(),
+                            data: data.buffer,
+                            uri: uri.toString(),
                         }
                     });
-                    return;
+                }
+            }
+        });
+    }
+
+    private static addCommonListeners(panel: vscode.WebviewPanel) {
+        const fileTypes = { 'neuroImages': ['nii', 'nii.gz', 'dcm', 'mha', 'mhd', 'nhdr', 'nrrd', 'mgh', 'mgz', 'v', 'v16', 'vmr'] };
+        panel.webview.onDidReceiveMessage(async (e) => {
+            switch (e.type) {
                 case 'addOverlay':
                     vscode.window.showOpenDialog({
                         canSelectFiles: true,
@@ -55,17 +103,14 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
                     }).then((uris) => {
                         if (uris && uris.length > 0) {
                             vscode.workspace.fs.readFile(uris[0]).then((data) => {
-                                document.overlay = data;
-                                webviewPanel.webview.postMessage({
+                                panel.webview.postMessage({
                                     type: 'overlay',
                                     body: {
-                                        data: document.overlay.buffer,
+                                        data: data.buffer,
                                         uri: uris[0].toString(),
                                     }
                                 });
                             });
-
-
                         }
                     });
                     return;
@@ -78,13 +123,13 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
                         // filters: fileTypes
                     }).then(async (uris) => {
                         if (uris) {
-                            webviewPanel.webview.postMessage({
+                            panel.webview.postMessage({
                                 type: 'initCanvas',
                                 body: { n: uris.length }
                             });
                             for (const uri of uris) {
                                 const data = await vscode.workspace.fs.readFile(uri);
-                                webviewPanel.webview.postMessage({
+                                panel.webview.postMessage({
                                     type: 'addImage',
                                     body: {
                                         data: data.buffer,
@@ -95,6 +140,25 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
                         }
                     });
                     return;
+            }
+        });
+    }
+
+
+    async resolveCustomEditor(document: NiiVueDocument, webviewPanel: vscode.WebviewPanel): Promise<void> {
+        this.webviews.add(document.uri, webviewPanel);
+        webviewPanel.webview.options = { enableScripts: true };
+        webviewPanel.webview.html = await getHtmlForWebview(webviewPanel.webview, this._context.extensionUri);
+        NiiVueEditorProvider.addCommonListeners(webviewPanel);
+        webviewPanel.webview.onDidReceiveMessage(async (message) => {
+            if (message.type === 'ready') {
+                webviewPanel.webview.postMessage({
+                    type: 'localDocument',
+                    body: {
+                        data: document.data.buffer,
+                        uri: document.uri.toString(),
+                    }
+                });
             }
         });
     }

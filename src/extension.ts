@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import { NiiVueEditorProvider } from './editorProvider';
-import { NiiVueWebViewPanel } from './webViewPanel';
 import { LinkHoverProvider } from './HoverProvider';
 
 export function activate(context: vscode.ExtensionContext) {
@@ -13,13 +12,13 @@ export function activate(context: vscode.ExtensionContext) {
 		}).then((input) => {
 			if (input) {
 				const uri = vscode.Uri.parse(input);
-				NiiVueWebViewPanel.createOrShow(context.extensionUri, uri);
+				NiiVueEditorProvider.createOrShow(context, uri);
 			}
 		});
 	}
 	));
 	context.subscriptions.push(vscode.commands.registerCommand('niiVue.openLink', async (args: any) => {
-		NiiVueWebViewPanel.createOrShow(context.extensionUri, args.resourceUri);
+		NiiVueEditorProvider.createOrShow(context, args.resourceUri);
 	}
 	));
 	context.subscriptions.push(vscode.commands.registerCommand('niiVue.openLocal', async (args: any) => {
@@ -27,7 +26,7 @@ export function activate(context: vscode.ExtensionContext) {
 	}
 	));
 	context.subscriptions.push(vscode.commands.registerCommand('niiVue.compareFromExplorer', async (_activeItem: any, items: any) => {
-		NiiVueWebViewPanel.createCompareView(context.extensionUri, items);
+		NiiVueEditorProvider.createCompareView(context, items);
 	}
 	));
 }
