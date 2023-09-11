@@ -45,6 +45,10 @@ export class NiiVueWebViewPanel {
         );
         panel.webview.onDidReceiveMessage((e) => {
             if (e.type === 'ready') {
+                panel.webview.postMessage({
+                    type: 'initCanvas',
+                    body: { n: uris.length }
+                });
                 uris.forEach(async (uri: vscode.Uri) => {
                     vscode.workspace.fs.readFile(uri).then((data) => {
                         panel.webview.postMessage({

@@ -70,18 +70,18 @@
         }
     }
 
-    function resize(n = nvArray.length) {
+    function resize() {
         const windowWidth = window.innerWidth - 50;
         const windowHeight = window.innerHeight - 75;
 
         let bestWidth = 0;
-        for (nrow = 1; nrow <= n; nrow++) {
-            const ncol = Math.ceil(n / nrow);
+        for (nrow = 1; nrow <= nCanvas; nrow++) {
+            const ncol = Math.ceil(nCanvas / nrow);
             const maxHeight = (windowHeight / nrow) - 20; // 17 is the height of the text
             const maxWidth = Math.min(windowWidth / ncol, maxHeight * aspectRatio);
             if (maxWidth > bestWidth) { bestWidth = maxWidth; }
         }
-        for (let i = 0; i < n; i++) {
+        for (let i = 0; i < nCanvas; i++) {
             const canvas = document.getElementById("gl" + i);
             canvas.width = bestWidth;
             canvas.height = canvas.width / aspectRatio;
@@ -122,12 +122,12 @@
         return names.map((name) => name.slice(startCommon, name.length - endCommon));
     }
 
-    function createCanvases(n, existing = 0) {
+    function createCanvases(n) {
         for (let i = 0; i < n; i++) {
             const div = document.getElementsByName("ViewTemplate")[0].cloneNode(true);
             document.getElementById("container").appendChild(div);
 
-            const htmlIndex = i + existing;
+            const htmlIndex = nCanvas;
             div.id = "Volume" + htmlIndex;
             div.style.display = "block";
 
@@ -135,66 +135,63 @@
             const subdivs = div.getElementsByTagName("div");
             subdivs[0].id = "name" + htmlIndex;
             subdivs[1].id = "cursortext" + htmlIndex;
+            nCanvas += 1;
         }
     }
 
-    async function createView(items) {
-        const nPrevious = nvArray.length;
-        const n = items.length + nPrevious;
-        createCanvases(items.length, nPrevious);
+    async function addImage(item) {
+        const index = nvArray.length;
+        if (!document.getElementById("Volume" + index)) { createCanvases(1); }
+        resize(index);
+        setViewType(viewType);
 
-        for (let i = 0; i < n; i++) {
-            if (names.length < i + 1) {
-                names.push(items[i - nPrevious].uri);
-            }
-            if (nvArray.length < i + 1) {
-                const item = items[i - nPrevious];
-                const nv = new niivue.Niivue({ isResizeCanvas: false });
-                nv.attachTo("gl" + i);
-                nv.setSliceType(0);
-                nvArray.push(nv);
+        const nv = new niivue.Niivue({ isResizeCanvas: false });
+        nvArray.push(nv);
+        
+        nv.attachTo("gl" + index);
+        nv.setSliceType(viewType);
 
-                if (item.data) {
-                    const volume = new niivue.NVImage(item.data, item.uri);
-                    nv.addVolume(volume);
-                } else {
-                    const volumeList = [{ url: item.uri }];
-                    await nv.loadVolumes(volumeList);
-                }
-            }
-            nvArray[i].setSliceType(viewType);
-            const textNode = document.getElementById("cursortext" + i);
-            const handleIntensityChangeCompareView = (data) => {
-                const parts = data.string.split("=");
-                textNode.textContent = parts.pop();
-                document.getElementById("intensity").innerHTML = parts.pop();
-            };
-            nvArray[i].onLocationChange = handleIntensityChangeCompareView;
-            if (i === 0) {
-                setAspectRatio(nvArray[0].volumes[0]);
-                resize(n);
-                nvArray[0].updateGLVolume();
-                showMetadata(nvArray[0].volumes[0]);
-                showScaling();
-            }
+        if (item.data) {
+            const volume = new niivue.NVImage(item.data, item.uri);
+            nv.addVolume(volume);
+        } else {
+            const volumeList = [{ url: item.uri }];
+            await nv.loadVolumes(volumeList);
         }
+
+        const textNode = document.getElementById("cursortext" + index);
+        const handleIntensityChangeCompareView = (data) => {
+            const parts = data.string.split("=");
+            textNode.textContent = parts.pop();
+            document.getElementById("intensity").textContent = parts.pop();
+        };
+        nv.onLocationChange = handleIntensityChangeCompareView;
+        if (nvArray.length === 1) {
+            setAspectRatio(nvArray[0].volumes[0]);
+            resize();
+            nvArray[0].updateGLVolume();
+            showMetadata(nvArray[0].volumes[0]);
+            showScaling();
+        }
+
         // Sync only in one direction, circular syncing causes problems
-        for (let i = 0; i < n - 1; i++) {
+        for (let i = 0; i < nvArray.length; i++) {
             nvArray[i].syncWith(nvArray[i + 1]);
         }
         setNames();
     }
 
     function setNames() {
-        const diffNames = differenceInNames(names);
+        const diffNames = differenceInNames(nvArray.map((item) => item.volumes[0].name));
         for (let i = 0; i < diffNames.length; i++) {
-            document.getElementById("name" + i).textContent = diffNames[i].slice(-25);
+            document.getElementById("name" + i).textContent = diffNames[i].slice(-25); // about 10px per character
         }
     }
 
     function setViewType(type) {
         viewType = type;
         document.getElementById("view").value = viewType;
+        document.getElementById("view").dispatchEvent(new Event('change'));
     }
 
     function showScaling() {
@@ -261,6 +258,12 @@
             input.accept = fileTypes;
 
             input.onchange = async (e) => {
+                window.postMessage({
+                    type: 'initCanvas',
+                    body: {
+                        n: e.target.files.length
+                    }
+                });
                 for (const file of e.target.files) {
                     file.arrayBuffer().then((data) => {
                         window.postMessage({
@@ -297,12 +300,12 @@
             switch (type) {
                 case 'localDocument':
                     {
-                        createView([body]);
+                        addImage(body);
                     }
                     break;
                 case 'webUrl':
                     {
-                        createView([{ uri: body.url }]);
+                        addImage({ uri: body.url });
                     }
                     break;
                 case 'overlay':
@@ -313,13 +316,18 @@
                 case 'compare':
                     {
                         setViewType(0); // Axial
-                        createView(body);
+                        addImage(body);
                     }
                 case 'addImage':
                     {
                         setViewType(0); // Axial
-                        createView([body]);
+                        addImage(body);
                     }
+                case 'initCanvas':
+                    {
+                        createCanvases(body.n);
+                    }
+                    break;
             }
         });
 
@@ -341,7 +349,7 @@
     const nvArray = [];
     let aspectRatio = 1;
     let viewType = 3; // all views
-    let names = [];
+    let nCanvas = 0;
     setViewType(viewType);
     addListeners();
 
