@@ -29,11 +29,10 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
         return new NiiVueDocument(uri, data);
     }
 
-    public static async createOrShow(context: vscode.ExtensionContext, uri: vscode.Uri) {
-        const name = vscode.Uri.parse(uri.toString()).path.split("/").pop();
+    private static async createPanel(context: vscode.ExtensionContext, viewType: string, tabName: string, uri: vscode.Uri) {
         const panel = vscode.window.createWebviewPanel(
-            'niiVue.webView',
-            name ? `web: ${name}` : "NiiVue Web Panel",
+            viewType,
+            tabName,
             vscode.ViewColumn.One,
             {
                 enableScripts: true,
@@ -44,48 +43,45 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
         const editor = new NiiVueEditorProvider(context);
         editor.webviews.add(uri, panel);
         NiiVueEditorProvider.addCommonListeners(panel);
-        panel.webview.onDidReceiveMessage(async (e) => {
-            if (e.type === 'ready') {
-                panel.webview.postMessage({
-                    type: 'webUrl',
-                    body: { url: uri.toString() }
-                });
-            }
+        return panel;
+    }
+
+    public static async createOrShow(context: vscode.ExtensionContext, uri: vscode.Uri) {
+        const name = vscode.Uri.parse(uri.toString()).path.split("/").pop();
+        const tabName = name ? `web: ${name}` : "NiiVue Web Panel";
+        this.createPanel(context, 'niivue.webview', tabName, uri).then((panel) => {
+            panel.webview.onDidReceiveMessage(async (e) => {
+                if (e.type === 'ready') {
+                    panel.webview.postMessage({
+                        type: 'webUrl',
+                        body: { url: uri.toString() }
+                    });
+                }
+            });
         });
     }
 
     public static async createCompareView(context: vscode.ExtensionContext, items: any) {
         const uris = items.map((item: any) => vscode.Uri.parse(item));
-        const panel = vscode.window.createWebviewPanel(
-            'niiVue.compareView',
-            "NiiVue Compare Panel",
-            vscode.ViewColumn.One,
-            {
-                enableScripts: true,
-                retainContextWhenHidden: true,
-            }
-        );
-        panel.webview.html = await getHtmlForWebview(panel.webview, context.extensionUri);
-        const editor = new NiiVueEditorProvider(context);
-        editor.webviews.add(uris[0], panel);
-        NiiVueEditorProvider.addCommonListeners(panel);
-        panel.webview.onDidReceiveMessage(async (e) => {
-            if (e.type === 'ready') {
-                panel.webview.postMessage({
-                    type: 'initCanvas',
-                    body: { n: uris.length }
-                });
-                for (const uri of uris) {
-                    const data = await vscode.workspace.fs.readFile(uri);
+        this.createPanel(context, 'niivue.compare', 'NiiVue Compare Panel', uris[0]).then((panel) => {
+            panel.webview.onDidReceiveMessage(async (e) => {
+                if (e.type === 'ready') {
                     panel.webview.postMessage({
-                        type: 'addImage',
-                        body: {
-                            data: data.buffer,
-                            uri: uri.toString(),
-                        }
+                        type: 'initCanvas',
+                        body: { n: uris.length }
                     });
+                    for (const uri of uris) {
+                        const data = await vscode.workspace.fs.readFile(uri);
+                        panel.webview.postMessage({
+                            type: 'addImage',
+                            body: {
+                                data: data.buffer,
+                                uri: uri.toString(),
+                            }
+                        });
+                    }
                 }
-            }
+            });
         });
     }
 

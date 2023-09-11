@@ -15,20 +15,16 @@ export function activate(context: vscode.ExtensionContext) {
 				NiiVueEditorProvider.createOrShow(context, uri);
 			}
 		});
-	}
-	));
+	}));
 	context.subscriptions.push(vscode.commands.registerCommand('niiVue.openLink', async (args: any) => {
 		NiiVueEditorProvider.createOrShow(context, args.resourceUri);
-	}
-	));
+	}));
 	context.subscriptions.push(vscode.commands.registerCommand('niiVue.openLocal', async (args: any) => {
 		vscode.commands.executeCommand('vscode.openWith', args.resourceUri, "niiVue.default");
-	}
-	));
+	}));
 	context.subscriptions.push(vscode.commands.registerCommand('niiVue.compareFromExplorer', async (_activeItem: any, items: any) => {
 		NiiVueEditorProvider.createCompareView(context, items);
-	}
-	));
+	}));
 }
 
 export function deactivate() { }
