@@ -232,13 +232,14 @@
 
             input.onchange = async (e) => {
                 const file = e.target.files[0];
-                const arrayBuffer = await file.arrayBuffer();
-                window.postMessage({
-                    type: 'overlay',
-                    body: {
-                        data: arrayBuffer,
-                        uri: file.name
-                    }
+                file.arrayBuffer().then((data) => {
+                    window.postMessage({
+                        type: 'overlay',
+                        body: {
+                            data: data,
+                            uri: file.name
+                        }
+                    });
                 });
             };
             input.click();
@@ -251,17 +252,17 @@
             input.accept = fileTypes;
 
             input.onchange = async (e) => {
-                const files = e.target.files;
-                const items = [];
-                for (i = 0; i < files.length; i++) {
-                    const file = files[i];
-                    const data = await file.arrayBuffer();
-                    items.push({ data: data, uri: file.name });
+                for (const file of e.target.files) {
+                    file.arrayBuffer().then((data) => {
+                        window.postMessage({
+                            type: 'addImage',
+                            body: {
+                                data: data,
+                                uri: file.name
+                            }
+                        });
+                    });
                 }
-                window.postMessage({
-                    type: 'compare',
-                    body: items
-                });
             };
             input.click();
         });
@@ -312,6 +313,7 @@
                     }
             }
         });
+
         if (typeof acquireVsCodeApi === 'function') {
             addButtonListenersVscode();
         } else { // When running in a browser
@@ -332,5 +334,5 @@
     let viewType = 3; // all views
     setViewType(viewType);
     addListeners();
-    
+
 }());
