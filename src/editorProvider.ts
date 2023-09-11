@@ -51,7 +51,7 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
                         canSelectFolders: false,
                         canSelectMany: false,
                         openLabel: 'Open Overlay',
-                        filters: fileTypes
+                        // filters: fileTypes // does't work properly in remote
                     }).then((uris) => {
                         if (uris && uris.length > 0) {
                             vscode.workspace.fs.readFile(uris[0]).then((data) => {
@@ -75,7 +75,7 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
                         canSelectFolders: false,
                         canSelectMany: true,
                         openLabel: 'Open Images',
-                        filters: fileTypes
+                        // filters: fileTypes
                     }).then((uris) => {
                         if (uris && uris.length > 0) {
                             uris.forEach((uri: vscode.Uri) => {
