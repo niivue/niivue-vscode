@@ -119,7 +119,7 @@
         while (endCommon > 0 && names[0].slice(-endCommon, -endCommon + 1) >= '0' && names[0].slice(-endCommon, -endCommon + 1) <= '9') {
             endCommon -= 1;
         }
-        return names.map((name) => name.slice(startCommon, -endCommon));
+        return names.map((name) => name.slice(startCommon, name.length - endCommon));
     }
 
     function createCanvases(n, names = [""], existing = 0) {
