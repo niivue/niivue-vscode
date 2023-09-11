@@ -81,7 +81,7 @@
             const maxWidth = Math.min(windowWidth / ncol, maxHeight * aspectRatio);
             if (maxWidth > bestWidth) { bestWidth = maxWidth; }
         }
-        for (i = 0; i < n; i++) {
+        for (let i = 0; i < n; i++) {
             const canvas = document.getElementById("gl" + i);
             canvas.width = bestWidth;
             canvas.height = canvas.width / aspectRatio;
@@ -95,7 +95,7 @@
         outer:
         while (startCommon > 0) {
             const chars = names[0].slice(0, startCommon);
-            for (i = 1; i < names.length; i++) {
+            for (let i = 1; i < names.length; i++) {
                 if (names[i].slice(0, startCommon) !== chars) {
                     startCommon -= 1;
                     continue outer;
@@ -107,7 +107,7 @@
         outer:
         while (endCommon > 0) {
             const chars = names[0].slice(-endCommon);
-            for (i = 1; i < names.length; i++) {
+            for (let i = 1; i < names.length; i++) {
                 if (names[i].slice(-endCommon) !== chars) {
                     endCommon -= 1;
                     continue outer;
