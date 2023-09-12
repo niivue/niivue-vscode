@@ -129,6 +129,7 @@
     function createCanvases(n) {
         for (let i = 0; i < n; i++) {
             const div = document.getElementsByName("ViewTemplate")[0].cloneNode(true);
+            div.removeAttribute("name");
             document.getElementById("container").appendChild(div);
 
             const htmlIndex = nCanvas;

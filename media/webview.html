@@ -4,27 +4,28 @@
 <head>
     <meta charset="utf-8" />
     <title>NiiVue</title>
+    <link rel="stylesheet" type="text/css" href="styles.css">
 </head>
 
-<body style="background-color:#181818">
-    <div id="MetaData" style="color: white">MetaData</div>
+<body>
+    <div id="MetaData">MetaData</div>
     <div id="container">
-        <div name="ViewTemplate" style="float: left; display: none;">
-            <div style="font-size: 20px; color: white; position: absolute;"></div>
+        <div name="ViewTemplate" class="view-template">
+            <div class="volume-name"></div>
             <canvas></canvas>
-            <div style="color: white"></div>
+            <div></div>
         </div>
     </div>
-    <div id="footer" style="clear: left">
-        <footer id="intensity" style="color: white">&nbsp;</footer>
+    <div class="footer">
+        <footer id="intensity">&nbsp;</footer>
         <button id="AddOverlayButton">Add Overlay</button>
         <button id="AddImagesButton">Add Images</button>
-        <label for="NearestInterpolation" style="color: white">No Interpolation</label>
+        <label for="NearestInterpolation">No Interpolation</label>
         <input type="checkbox" id="NearestInterpolation">
-        <label for="minvalue" style="color: white">Min</label>
-        <input type="number" id="minvalue" value="0" style="width: 70px">
-        <label for="maxvalue" style="color: white">Max</label>
-        <input type="number" id="maxvalue" value="0" style="width: 70px">
+        <label for="minvalue">Min</label>
+        <input type="number" id="minvalue" value="0">
+        <label for="maxvalue">Max</label>
+        <input type="number" id="maxvalue" value="0">
         <select id="view">
             <option value="0">Axial</option>
             <option value="1">Coronal</option>

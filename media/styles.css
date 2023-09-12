@@ -1,0 +1,45 @@
+body {
+    background-color:#181818;
+    color: white;
+}
+
+.view-template {
+    float: left;
+    display: none;
+}
+
+.volume-name {
+    font-size: 1.5em;
+    position: absolute;
+}
+
+.footer {
+    clear: left;
+}
+
+input[type="number"] {
+    width: 5em;
+}
+
+.context-menu {
+    position: absolute;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+    display: none;
+}
+
+.context-menu-item {
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
+.submenu {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 100%;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
