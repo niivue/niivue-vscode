@@ -77,7 +77,7 @@
         let bestWidth = 0;
         for (nrow = 1; nrow <= nCanvas; nrow++) {
             const ncol = Math.ceil(nCanvas / nrow);
-            const maxHeight = (windowHeight / nrow) - 20; // 17 is the height of the text
+            const maxHeight = (windowHeight / nrow) - 25; // 17 is the height of the text
             const maxWidth = Math.min(windowWidth / ncol, maxHeight * aspectRatio);
             if (maxWidth > bestWidth) { bestWidth = maxWidth; }
         }

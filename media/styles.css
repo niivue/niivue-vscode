@@ -9,7 +9,7 @@ body {
 }
 
 .volume-name {
-    font-size: 1.5em;
+    font-size: 1.4em;
     position: absolute;
 }
 
@@ -17,11 +17,16 @@ body {
     clear: left;
 }
 
+.image-footer {
+    font-size: 1.2em;
+}
+
 .overlay-text {
     background: linear-gradient(to right, rgba(255, 0, 0, 0.6), rgba(255, 166, 0, 0.6));
     color: white;
     float: left;
     margin-right: 1em;
+    opacity: 0.8;
 }
 
 input[type="number"] {
@@ -68,8 +73,6 @@ input[type="number"] {
     color: rgb(185, 185, 185);
     padding: 5px;
     border-radius: 5px;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
+    bottom: 100%;
     z-index: 1;
 }
