@@ -357,11 +357,6 @@
                         addOverlay(body);
                     }
                     break;
-                case 'compare':
-                    {
-                        setViewType(0); // Axial
-                        addImage(body);
-                    }
                 case 'addImage':
                     {
                         setViewType(0); // Axial
