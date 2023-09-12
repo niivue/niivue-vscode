@@ -104,6 +104,7 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
                                     body: {
                                         data: data.buffer,
                                         uri: uris[0].toString(),
+                                        index: e.body.index
                                     }
                                 });
                             });

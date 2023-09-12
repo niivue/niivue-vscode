@@ -167,29 +167,29 @@
             imageFooter.removeChild(div);
             document.removeEventListener("click", removeContextMenu);
         }
+        // Remove context menu when clicking outside of it
         document.addEventListener("click", removeContextMenu);
 
-        div.addEventListener("click", (e) => {
-            e.stopPropagation();
-        });
+        div.addEventListener("click", (e) => e.stopPropagation());
 
         div.querySelector('[name="addOverlay"]').addEventListener("click", () => {
-
+            addOverlayEvent(imageIndex);
+            removeContextMenu();
         });
 
         if (nvArray.length > imageIndex && nvArray[imageIndex].volumes.length < 2) {
             div.querySelector('[name="removeOverlay"]').style.display = "none";
-            div.querySelector('[name="setOverlayScale"]').style.display = "none";;
+            div.querySelector('[name="setOverlayScale"]').style.display = "none";
         } else {
             div.querySelector('[name="removeOverlay"]').addEventListener("click", () => {
                 nvArray[imageIndex].removeVolumeByIndex(1);
                 nvArray[imageIndex].updateGLVolume();
                 removeContextMenu();
             });
-            div.querySelector('[name="setOverlayScale"]').addEventListener("click", () => {
+            // div.querySelector('[name="setOverlayScale"]').addEventListener("click", () => {
 
-                removeContextMenu();
-            });
+            //     removeContextMenu();
+            // });
         }
         return div;
     }
@@ -266,12 +266,12 @@
 
     function addOverlay(item) {
         const image = new niivue.NVImage(item.data, item.uri, 'redyell');
-        nvArray[0].addVolume(image);
+        nvArray[item.index].addVolume(image);
     }
 
-    function addOverlayEvent() {
+    function addOverlayEvent(imageIndex) {
         if (typeof vscode === 'object') {
-            vscode.postMessage({ type: 'addOverlay' });
+            vscode.postMessage({ type: 'addOverlay', body: { index: imageIndex } });
         } else {
             const input = document.createElement('input');
             input.type = 'file';
@@ -283,7 +283,8 @@
                         type: 'overlay',
                         body: {
                             data: data,
-                            uri: file.name
+                            uri: file.name,
+                            index: imageIndex
                         }
                     });
                 });
@@ -369,8 +370,6 @@
                     break;
             }
         });
-
-        document.getElementById("AddOverlayButton").addEventListener('click', addOverlayEvent);
         document.getElementById("AddImagesButton").addEventListener('click', addImagesEvent);
     }
 
