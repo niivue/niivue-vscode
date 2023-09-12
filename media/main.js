@@ -182,7 +182,7 @@
     }
 
     function setNames() {
-        const diffNames = differenceInNames(nvArray.map((item) => item.volumes[0].name));
+        const diffNames = differenceInNames(nvArray.map((item) => decodeURIComponent(item.volumes[0].name)));
         for (let i = 0; i < diffNames.length; i++) {
             document.getElementById("name" + i).textContent = diffNames[i].slice(-25); // about 10px per character
         }
