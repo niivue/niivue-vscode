@@ -3,6 +3,7 @@
 **WebGL 2.0 medical image viewer**  
 This extension uses [NiiVue](https://github.com/niivue/niivue) to display images selected in VSCode.  
 ![Default View when opening an image](media/default_view.png)
+![Comparing multiple images](media/compare_view.png)
 
 ## List of Hotkeys
 
@@ -22,6 +23,7 @@ This extension uses [NiiVue](https://github.com/niivue/niivue) to display images
 ## Features
 
 - Open local files by selecting them in the VSCode explorer
+- Selecting multiple files -> right click -> NiiVue: Compare
 - Open web links to files with the command "NiiVue: Open Image" (`Ctr+Shift+P`)
 - Open local or remote files when hovering over the link in an open editor
 - Add overlays
