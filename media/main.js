@@ -103,6 +103,10 @@
             }
             break;
         }
+        // if startCommon points to a number then include all preceding numbers including "." as well
+        while (startCommon > 0 && (names[0].slice(startCommon - 1, startCommon) === '.' || (names[0].slice(startCommon - 1, startCommon) >= '0' && names[0].slice(startCommon - 1, startCommon) <= '9'))) {
+            startCommon -= 1;
+        }
         let endCommon = minLen;
         outer:
         while (endCommon > 0) {
