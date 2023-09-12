@@ -137,9 +137,8 @@
             div.style.display = "block";
 
             div.getElementsByTagName("canvas")[0].id = "gl" + htmlIndex;
-            const subdivs = div.getElementsByTagName("div");
-            subdivs[0].id = "name" + htmlIndex;
-            subdivs[1].id = "cursortext" + htmlIndex;
+            div.getElementsByClassName("volume-name")[0].id = "name" + htmlIndex;
+            div.getElementsByClassName("intensity")[0].id = "intensity" + htmlIndex;
             nCanvas += 1;
         }
     }
@@ -164,7 +163,7 @@
             await nv.loadVolumes(volumeList);
         }
 
-        const textNode = document.getElementById("cursortext" + index);
+        const textNode = document.getElementById("intensity" + index);
         const handleIntensityChangeCompareView = (data) => {
             const parts = data.string.split("=");
             textNode.textContent = parts.pop();
