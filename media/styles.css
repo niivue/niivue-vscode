@@ -35,10 +35,11 @@ input[type="number"] {
 
 .context-menu {
     position: absolute;
-    background-color: #fff;
-    border: 1px solid #ccc;
+    background-color: #181818;
+    border: 1px solid #292929;
     box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
     display: none;
+    z-index: 1;
 }
 
 .context-menu-item {
@@ -49,10 +50,10 @@ input[type="number"] {
 .submenu {
     display: none;
     position: absolute;
+    background-color: #181818;
+    border: 1px solid #292929;
     top: 0;
     left: 100%;
-    background-color: #fff;
-    border: 1px solid #ccc;
     box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
 }
 

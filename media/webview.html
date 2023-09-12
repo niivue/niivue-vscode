@@ -41,6 +41,16 @@
         </select>
     </div>
 
+    <div class="context-menu" name="ContextMenuTemplate">
+        <div name="addOverlay" class="context-menu-item">Add</div>
+        <div name="removeOverlay" class="context-menu-item">Remove</div>
+        <div name="setOverlayScale" class="context-menu-item submenu-trigger">Color Scale</div>
+        <div class="submenu" id="submenu">
+            <div class="context-menu-item">Option 1</div>
+            <div class="context-menu-item">Option 2</div>
+        </div>
+    </div>
+
     <script nonce="${nonce}" src="node_modules\@niivue\niivue\dist\niivue.umd.js"></script>
     <script nonce="${nonce}" src="main.js"></script>
 </body>

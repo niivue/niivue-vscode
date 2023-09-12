@@ -132,15 +132,66 @@
             div.removeAttribute("name");
             document.getElementById("container").appendChild(div);
 
-            const htmlIndex = nCanvas;
-            div.id = "Volume" + htmlIndex;
+            const imageIndex = nCanvas;
+            div.id = "Volume" + imageIndex;
             div.style.display = "block";
 
-            div.getElementsByTagName("canvas")[0].id = "gl" + htmlIndex;
-            div.getElementsByClassName("volume-name")[0].id = "name" + htmlIndex;
-            div.getElementsByClassName("intensity")[0].id = "intensity" + htmlIndex;
+            div.getElementsByTagName("canvas")[0].id = "gl" + imageIndex;
+            div.getElementsByClassName("volume-name")[0].id = "name" + imageIndex;
+            div.getElementsByClassName("intensity")[0].id = "intensity" + imageIndex;
+            div.getElementsByClassName("image-footer")[0].id = "image-footer" + imageIndex;
             nCanvas += 1;
+
+            addContextMenuListener(imageIndex);
         }
+    }
+
+    function addContextMenuListener(imageIndex) {
+        const field = document.getElementById("image-footer" + imageIndex);
+        field.addEventListener("contextmenu", (e) => {
+            e.preventDefault();
+            const contextMenu = createContextMenu(imageIndex);
+            contextMenu.style.left = `${e.clientX}px`;
+            contextMenu.style.top = `${e.clientY}px`;
+            contextMenu.style.display = "block";
+        });
+    }
+
+    function createContextMenu(imageIndex) {
+        const div = document.getElementsByName("ContextMenuTemplate")[0].cloneNode(true);
+        div.removeAttribute("name");
+        const imageFooter = document.getElementById("image-footer" + imageIndex);
+        imageFooter.appendChild(div);
+
+        function removeContextMenu() {
+            imageFooter.removeChild(div);
+            document.removeEventListener("click", removeContextMenu);
+        }
+        document.addEventListener("click", removeContextMenu);
+
+        div.addEventListener("click", (e) => {
+            e.stopPropagation();
+        });
+
+        div.querySelector('[name="addOverlay"]').addEventListener("click", () => {
+
+        });
+
+        if (nvArray.length > imageIndex && nvArray[imageIndex].volumes.length < 2) {
+            div.querySelector('[name="removeOverlay"]').style.display = "none";
+            div.querySelector('[name="setOverlayScale"]').style.display = "none";;
+        } else {
+            div.querySelector('[name="removeOverlay"]').addEventListener("click", () => {
+                nvArray[imageIndex].removeVolumeByIndex(1);
+                nvArray[imageIndex].updateGLVolume();
+                removeContextMenu();
+            });
+            div.querySelector('[name="setOverlayScale"]').addEventListener("click", () => {
+
+                removeContextMenu();
+            });
+        }
+        return div;
     }
 
     async function addImage(item) {
@@ -151,7 +202,7 @@
 
         const nv = new niivue.Niivue({ isResizeCanvas: false });
         nvArray.push(nv);
-        
+
         nv.attachTo("gl" + index);
         nv.setSliceType(viewType);
 
@@ -218,27 +269,12 @@
         nvArray[0].addVolume(image);
     }
 
-    function addButtonListenersVscode() {
-        const vscode = acquireVsCodeApi();
-        document.getElementById("AddOverlayButton").addEventListener('click', () => {
-            vscode.postMessage({
-                type: 'addOverlay'
-            });
-        });
-        document.getElementById("AddImagesButton").addEventListener('click', () => {
-            vscode.postMessage({
-                type: 'addImages'
-            });
-        });
-        vscode.postMessage({ type: 'ready' });
-    }
-
-    function addButtonListenersWeb() {
-        const fileTypes = '.nii,.nii.gz,.dcm,.mha,.mhd,.nhdr,.nrrd,.mgh,.mgz,.v,.v16,.vmr';
-        document.getElementById("AddOverlayButton").addEventListener('click', () => {
+    function addOverlayEvent() {
+        if (typeof vscode === 'object') {
+            vscode.postMessage({ type: 'addOverlay' });
+        } else {
             const input = document.createElement('input');
             input.type = 'file';
-            input.accept = fileTypes;
 
             input.onchange = async (e) => {
                 const file = e.target.files[0];
@@ -253,9 +289,13 @@
                 });
             };
             input.click();
-        });
+        }
+    }
 
-        document.getElementById("AddImagesButton").addEventListener('click', () => {
+    function addImagesEvent() {
+        if (typeof vscode === 'object') {
+            vscode.postMessage({ type: 'addImages' });
+        } else {
             const input = document.createElement('input');
             input.type = 'file';
             input.multiple = true;
@@ -281,7 +321,7 @@
                 }
             };
             input.click();
-        });
+        }
     }
 
     function addListeners() {
@@ -335,26 +375,29 @@
             }
         });
 
-        if (typeof acquireVsCodeApi === 'function') {
-            addButtonListenersVscode();
-        } else { // When running in a browser
-            addButtonListenersWeb();
-            // post webUrl message to window with default url
-            window.postMessage({
-                type: 'webUrl',
-                body: {
-                    url: 'https://niivue.github.io/niivue-demo-images/mni152.nii.gz'
-                }
-            });
-        }
+        document.getElementById("AddOverlayButton").addEventListener('click', addOverlayEvent);
+        document.getElementById("AddImagesButton").addEventListener('click', addImagesEvent);
     }
 
     // Main - Globals
+    if (typeof acquireVsCodeApi === 'function') {
+        var vscode = acquireVsCodeApi();
+    }
+    const fileTypes = '.nii,.nii.gz,.dcm,.mha,.mhd,.nhdr,.nrrd,.mgh,.mgz,.v,.v16,.vmr';
     const nvArray = [];
     let aspectRatio = 1;
     let viewType = 3; // all views
     let nCanvas = 0;
     setViewType(viewType);
     addListeners();
+
+    if (typeof vscode === 'object') {
+        vscode.postMessage({ type: 'ready' });
+    } else {
+        window.postMessage({
+            type: 'webUrl',
+            body: { url: 'https://niivue.github.io/niivue-demo-images/mni152.nii.gz' }
+        });
+    }
 
 }());
