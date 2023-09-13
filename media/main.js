@@ -89,7 +89,7 @@
     }
 
     // This function finds common patterns in the names and only returns the parts of the names that are different
-    function differenceInNames(names) {
+    function differenceInNames(names, rec = true) {
         const minLen = Math.min(...names.map((name) => name.length));
         let startCommon = minLen;
         outer:
@@ -123,7 +123,23 @@
         while (endCommon > 0 && names[0].slice(-endCommon, -endCommon + 1) >= '0' && names[0].slice(-endCommon, -endCommon + 1) <= '9') {
             endCommon -= 1;
         }
-        return names.map((name) => name.slice(startCommon, name.length - endCommon));
+        const diffNames = names.map((name) => name.slice(startCommon, name.length - endCommon));
+
+        // If length is greater than display length, then split by folder and diff again for first folder and filename and join
+        if (rec) {
+            const folders = diffNames.map((name) => name.split('/').slice(0, -1).join('/'));
+            const diffFolders = differenceInNames(folders, false);
+            const filenames = diffNames.map((name) => name.split('/').slice(-1)[0]);
+            const diffFilenames = differenceInNames(filenames, false);
+            diffNames.forEach((name, i) => {
+                let seperator = ' - ';
+                if (!diffFolders[i] || !diffFilenames[i]) {
+                    seperator = '';
+                }
+                diffNames[i] = diffFolders[i] + seperator + diffFilenames[i];
+            });
+        }
+        return diffNames;
     }
 
     function createCanvases(n) {
