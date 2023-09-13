@@ -53,8 +53,8 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
             panel.webview.onDidReceiveMessage(async (e) => {
                 if (e.type === 'ready') {
                     panel.webview.postMessage({
-                        type: 'webUrl',
-                        body: { url: uri.toString() }
+                        type: 'addImage',
+                        body: { uri: uri.toString() }
                     });
                 }
             });
@@ -150,7 +150,7 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
         webviewPanel.webview.onDidReceiveMessage(async (message) => {
             if (message.type === 'ready') {
                 webviewPanel.webview.postMessage({
-                    type: 'localDocument',
+                    type: 'addImage',
                     body: {
                         data: document.data.buffer,
                         uri: document.uri.toString(),

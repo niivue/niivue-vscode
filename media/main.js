@@ -343,16 +343,6 @@
         window.addEventListener('message', async (e) => {
             const { type, body } = e.data;
             switch (type) {
-                case 'localDocument':
-                    {
-                        addImage(body);
-                    }
-                    break;
-                case 'webUrl':
-                    {
-                        addImage({ uri: body.url });
-                    }
-                    break;
                 case 'overlay':
                     {
                         addOverlay(body);
@@ -360,11 +350,12 @@
                     break;
                 case 'addImage':
                     {
-                        setViewType(0); // Axial
                         addImage(body);
                     }
+                    break;
                 case 'initCanvas':
                     {
+                        setViewType(0); // Axial
                         createCanvases(body.n);
                     }
                     break;
@@ -387,10 +378,10 @@
 
     if (typeof vscode === 'object') {
         vscode.postMessage({ type: 'ready' });
-    } else {
+    } else { // Running in browser
         window.postMessage({
-            type: 'webUrl',
-            body: { url: 'https://niivue.github.io/niivue-demo-images/mni152.nii.gz' }
+            type: 'addImage',
+            body: { uri: 'https://niivue.github.io/niivue-demo-images/mni152.nii.gz' }
         });
     }
 
