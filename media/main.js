@@ -210,6 +210,11 @@
         return div;
     }
 
+    function isImageType(item) {
+        const fileTypesArray = imageFileTypes.split(',');
+        return fileTypesArray.find((fileType) => item.uri.endsWith(fileType));
+    }
+
     async function addImage(item) {
         const index = nvArray.length;
         if (!document.getElementById("Volume" + index)) { createCanvases(1); }
@@ -222,12 +227,22 @@
         nv.attachTo("gl" + index);
         nv.setSliceType(viewType);
 
-        if (item.data) {
-            const volume = new niivue.NVImage(item.data, item.uri);
-            nv.addVolume(volume);
+        if (isImageType(item)) {
+            if (item.data) {
+                const volume = new niivue.NVImage(item.data, item.uri);
+                nv.addVolume(volume);
+            } else {
+                const volumeList = [{ url: item.uri }];
+                await nv.loadVolumes(volumeList);
+            }
         } else {
-            const volumeList = [{ url: item.uri }];
-            await nv.loadVolumes(volumeList);
+            if (item.data) {
+                const mesh = await niivue.NVMesh.readMesh(item.data, item.uri, nv.gl);
+                nv.addMesh(mesh);
+            } else {
+                const meshList = [{ url: item.uri }];
+                await nv.loadMeshes(meshList);
+            }
         }
 
         const textNode = document.getElementById("intensity" + index);
@@ -238,11 +253,13 @@
         };
         nv.onLocationChange = handleIntensityChangeCompareView;
         if (nvArray.length === 1) {
-            setAspectRatio(nvArray[0].volumes[0]);
-            resize();
-            nvArray[0].updateGLVolume();
-            showMetadata(nvArray[0].volumes[0]);
-            showScaling();
+            if (nvArray[0].volumes.length > 0) {
+                setAspectRatio(nvArray[0].volumes[0]);
+                resize();
+                nvArray[0].updateGLVolume();
+                showMetadata(nvArray[0].volumes[0]);
+                showScaling();
+            }
         }
 
         // Sync only in one direction, circular syncing causes problems
@@ -252,8 +269,18 @@
         setNames();
     }
 
+    function getNames() {
+        return nvArray.map((item) => {
+            if (item.volumes.length > 0) {
+                return decodeURIComponent(item.volumes[0].name);
+            } else {
+                return decodeURIComponent(item.meshes[0].name);
+            }
+        });
+    }
+
     function setNames() {
-        const diffNames = differenceInNames(nvArray.map((item) => decodeURIComponent(item.volumes[0].name)));
+        const diffNames = differenceInNames(getNames());
         for (let i = 0; i < diffNames.length; i++) {
             document.getElementById("name" + i).textContent = diffNames[i].slice(-25); // about 10px per character
         }
@@ -280,9 +307,14 @@
         });
     }
 
-    function addOverlay(item) {
-        const image = new niivue.NVImage(item.data, item.uri, 'redyell', 0.5);
-        nvArray[item.index].addVolume(image);
+    async function addOverlay(item) {
+        if (isImageType(item)) {
+            const image = new niivue.NVImage(item.data, item.uri, 'redyell', 0.5);
+            nvArray[item.index].addVolume(image);
+        } else {
+            const mesh = await niivue.NVMesh.readMesh(item.data, item.uri, nvArray[item.index].gl, 0.5);
+            nvArray[item.index].addMesh(mesh);
+        }
     }
 
     function addOverlayEvent(imageIndex) {
@@ -316,7 +348,7 @@
             const input = document.createElement('input');
             input.type = 'file';
             input.multiple = true;
-            input.accept = fileTypes;
+            // input.accept = imageFileTypes;
 
             input.onchange = async (e) => {
                 window.postMessage({
@@ -384,7 +416,7 @@
     if (typeof acquireVsCodeApi === 'function') {
         var vscode = acquireVsCodeApi();
     }
-    const fileTypes = '.nii,.nii.gz,.dcm,.mha,.mhd,.nhdr,.nrrd,.mgh,.mgz,.v,.v16,.vmr';
+    const imageFileTypes = '.nii,.nii.gz,.dcm,.mha,.mhd,.nhdr,.nrrd,.mgh,.mgz,.v,.v16,.vmr';
     const nvArray = [];
     let aspectRatio = 1;
     let viewType = 3; // all views

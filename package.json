@@ -48,6 +48,12 @@
         "title": "NiiVue: Compare",
         "category": "NiiVue",
         "enablement": "listMultiSelection"
+      },
+      {
+        "command": "niiVue.openFromExplorer",
+        "title": "NiiVue: Open",
+        "category": "NiiVue",
+        "enablement": "!listMultiSelection"
       }
     ],
     "customEditors": [
@@ -108,6 +114,10 @@
         {
           "command": "niiVue.compareFromExplorer",
           "when": "listMultiSelection"
+        },
+        {
+          "command": "niiVue.openFromExplorer",
+          "when": "!listMultiSelection"
         }
       ]
     }
