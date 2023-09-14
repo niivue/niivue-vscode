@@ -281,7 +281,7 @@
     }
 
     function addOverlay(item) {
-        const image = new niivue.NVImage(item.data, item.uri, 'redyell');
+        const image = new niivue.NVImage(item.data, item.uri, 'redyell', 0.5);
         nvArray[item.index].addVolume(image);
     }
 
