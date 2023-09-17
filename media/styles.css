@@ -4,9 +4,19 @@ body {
     color: white;
 }
 
+.header-info-button {
+    display: inline-block;
+}
+
 .view-template {
-    float: left;
     display: none;
+    position: relative;
+}
+
+#container {
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
 }
 
 .volume-name {
@@ -14,20 +24,21 @@ body {
     position: absolute;
 }
 
-.footer {
-    clear: left;
-}
-
 .image-footer {
     font-size: 1.2em;
+    position: absolute;
+    bottom: 0.2em;
+    left: 0;
+    display: flex;
+    gap: 10px;
+    flex-direction: row;
 }
 
 .overlay-text {
     background: linear-gradient(to right, rgba(255, 0, 0, 0.6), rgba(255, 166, 0, 0.6));
     color: white;
-    float: left;
-    margin-right: 1em;
     opacity: 0.8;
+    padding: 0 0.2em;
 }
 
 input[type="number"] {
@@ -63,9 +74,6 @@ input[type="number"] {
     float: left;
 }
 
-.overlay-text:hover + .tooltip {
-    display: block;
-}
 
 .tooltip {
     opacity: 0.9;

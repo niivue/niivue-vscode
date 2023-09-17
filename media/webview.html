@@ -8,22 +8,29 @@
 </head>
 
 <body>
-    <div id="MetaData">MetaData</div>
+    <!-- dialog tag for header info... document.getElementById("header-info-dialog").showModal() -->
+    <dialog id="header-info-dialog">
+        <form>
+            <div id="header-info"></div>
+            <button formmethod="dialog" value="cancel">Close</button>
+        </form>
+    </dialog>
+    <div>
+        <button id="header-info-button">Header</button>
+        <span id="MetaData">MetaData</div>
+    </div>
     <div id="container">
         <div name="ViewTemplate" class="view-template"> <!-- use <template> tag? -->
             <div class="volume-name"></div>
             <canvas></canvas>
             <div class="image-footer">
-                <div class="overlay-container">
-                    <div class="overlay-text">Overlay</div>
-                    <div class="tooltip">Right&nbsp;Click or Drop&nbsp;File&nbsp;(not&nbsp;implemented)</div>
-                </div>
-                <div class="intensity"></div>
+                <span class="overlay-text" title="Right&nbsp;Click or Drop&nbsp;File&nbsp;(not&nbsp;implemented)">Overlay</span>
+                <span class="intensity"></span>
             </div>
         </div>
     </div>
     <div class="footer">
-        <footer id="intensity">&nbsp;</footer>
+        <div id="intensity">&nbsp;</div>
         <button id="AddImagesButton">Add Images</button>
         <label for="NearestInterpolation">No Interpolation</label>
         <input type="checkbox" id="NearestInterpolation">

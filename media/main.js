@@ -77,7 +77,7 @@
         let bestWidth = 0;
         for (nrow = 1; nrow <= nCanvas; nrow++) {
             const ncol = Math.ceil(nCanvas / nrow);
-            const maxHeight = (windowHeight / nrow) - 25; // 17 is the height of the text
+            const maxHeight = (windowHeight / nrow); // - 25; // 17 is the height of the text
             const maxWidth = Math.min(windowWidth / ncol, maxHeight * aspectRatio);
             if (maxWidth > bestWidth) { bestWidth = maxWidth; }
         }
@@ -167,20 +167,20 @@
         field.addEventListener("contextmenu", (e) => {
             e.preventDefault();
             const contextMenu = createContextMenu(imageIndex);
-            contextMenu.style.left = `${e.clientX}px`;
-            contextMenu.style.top = `${e.clientY}px`;
             contextMenu.style.display = "block";
+            contextMenu.style.left = `${e.clientX}px`;
+            contextMenu.style.top = `${e.clientY - contextMenu.offsetHeight}px`;
         });
     }
 
     function createContextMenu(imageIndex) {
         const div = document.getElementsByName("ContextMenuTemplate")[0].cloneNode(true);
         div.removeAttribute("name");
-        const imageFooter = document.getElementById("image-footer" + imageIndex);
-        imageFooter.appendChild(div);
+        const body = document.getElementsByTagName("body")[0];
+        body.appendChild(div);
 
         function removeContextMenu() {
-            imageFooter.removeChild(div);
+            body.removeChild(div);
             document.removeEventListener("click", removeContextMenu);
         }
         // Remove context menu when clicking outside of it
@@ -387,6 +387,7 @@
             const val = parseInt(document.getElementById("view").value);
             nvArray.forEach((item) => item.setSliceType(val));
         });
+        document.getElementById("header-info-button").addEventListener('click', () => document.getElementById("header-info-dialog").showModal());
         window.addEventListener("resize", () => resize());
         window.addEventListener('message', async (e) => {
             const { type, body } = e.data;
