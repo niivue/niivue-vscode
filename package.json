@@ -46,13 +46,11 @@
       {
         "command": "niiVue.compareFromExplorer",
         "title": "NiiVue: Compare",
-        "category": "NiiVue",
         "enablement": "listMultiSelection"
       },
       {
         "command": "niiVue.openFromExplorer",
         "title": "NiiVue: Open",
-        "category": "NiiVue",
         "enablement": "!listMultiSelection"
       }
     ],
