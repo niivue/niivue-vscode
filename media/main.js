@@ -387,7 +387,19 @@
             const val = parseInt(document.getElementById("view").value);
             nvArray.forEach((item) => item.setSliceType(val));
         });
-        document.getElementById("header-info-button").addEventListener('click', () => document.getElementById("header-info-dialog").showModal());
+        document.getElementById("header-info-button").addEventListener('click', () => {
+            const headerInfo = document.getElementById("header-info");
+            while (headerInfo.firstChild) {
+                headerInfo.removeChild(headerInfo.firstChild);
+            }
+            const lines = nvArray[0].volumes[0].hdr.toFormattedString().split('\n');
+            lines.forEach((line) => {
+                const div = document.createElement('div');
+                div.textContent = line;
+                headerInfo.appendChild(div);
+            });
+            document.getElementById("header-info-dialog").showModal();
+        });
         window.addEventListener("resize", () => resize());
         window.addEventListener('message', async (e) => {
             const { type, body } = e.data;
