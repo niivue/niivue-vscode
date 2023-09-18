@@ -1,53 +1,7 @@
 (function () {
-    // Utility
-    function datatypeCodeToString(datatypeCode) {
-        switch (datatypeCode) {
-            case 0:
-                return "unknown";
-            case 1:
-                return "binary";
-            case 2:
-                return "uint8";
-            case 4:
-                return "int16";
-            case 8:
-                return "int32";
-            case 16:
-                return "float32";
-            case 32:
-                return "complex64";
-            case 64:
-                return "float64";
-            case 128:
-                return "rgb24";
-            case 255:
-                return "all";
-            case 256:
-                return "int8";
-            case 512:
-                return "uint16";
-            case 768:
-                return "uint32";
-            case 1024:
-                return "int64";
-            case 1280:
-                return "uint64";
-            case 1536:
-                return "float128";
-            case 1792:
-                return "complex128";
-            case 2048:
-                return "complex256";
-            case 2304:
-                return "rgba32";
-            default:
-                return "unknown datatype code";
-        }
-    }
-
     function showMetadata(volume) {
         const meta = volume.getImageMetadata();
-        document.getElementById('MetaData').innerHTML = "datatype: " + datatypeCodeToString(meta.datatypeCode) + ", matrix size: " + meta.nx + " x " + meta.ny + " x " + meta.nz;
+        document.getElementById('MetaData').innerHTML = "matrix size: " + meta.nx + " x " + meta.ny + " x " + meta.nz;
         document.getElementById('MetaData').innerHTML += ", voxelsize: " + meta.dx.toPrecision(2) + " x " + meta.dy.toPrecision(2) + " x " + meta.dz.toPrecision(2);
         if (meta.nt > 1) {
             document.getElementById('MetaData').innerHTML += ", timepoints: " + meta.nt;
