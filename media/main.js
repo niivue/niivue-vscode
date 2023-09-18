@@ -13,32 +13,32 @@
         const xSize = meta.nx * meta.dx;
         const ySize = meta.ny * meta.dy;
         const zSize = meta.nz * meta.dz;
-        if (viewType === 0) {
-            aspectRatio = xSize / ySize;
-        } else if (viewType === 1) {
-            aspectRatio = xSize / zSize;
-        } else if (viewType === 2) {
-            aspectRatio = ySize / zSize;
+        if (state.viewType === 0) {
+            state.aspectRatio = xSize / ySize;
+        } else if (state.viewType === 1) {
+            state.aspectRatio = xSize / zSize;
+        } else if (state.viewType === 2) {
+            state.aspectRatio = ySize / zSize;
         } else {
-            aspectRatio = 1;
+            state.aspectRatio = 1;
         }
     }
 
     function resize() {
-        const windowWidth = window.innerWidth - 50;
+        const windowWidth = window.innerWidth - 25;
         const windowHeight = window.innerHeight - 75;
 
         let bestWidth = 0;
-        for (nrow = 1; nrow <= nCanvas; nrow++) {
-            const ncol = Math.ceil(nCanvas / nrow);
-            const maxHeight = (windowHeight / nrow); // - 25; // 17 is the height of the text
-            const maxWidth = Math.min(windowWidth / ncol, maxHeight * aspectRatio);
+        for (nrow = 1; nrow <= state.nCanvas; nrow++) {
+            const ncol = Math.ceil(state.nCanvas / nrow);
+            const maxHeight = (windowHeight / nrow);
+            const maxWidth = Math.min(windowWidth / ncol, maxHeight * state.aspectRatio);
             if (maxWidth > bestWidth) { bestWidth = maxWidth; }
         }
-        for (let i = 0; i < nCanvas; i++) {
+        for (let i = 0; i < state.nCanvas; i++) {
             const canvas = document.getElementById("gl" + i);
             canvas.width = bestWidth;
-            canvas.height = canvas.width / aspectRatio;
+            canvas.height = canvas.width / state.aspectRatio;
         }
     }
 
@@ -102,7 +102,7 @@
             div.removeAttribute("name");
             document.getElementById("container").appendChild(div);
 
-            const imageIndex = nCanvas;
+            const imageIndex = state.nCanvas;
             div.id = "Volume" + imageIndex;
             div.style.display = "block";
 
@@ -110,7 +110,7 @@
             div.getElementsByClassName("volume-name")[0].id = "name" + imageIndex;
             div.getElementsByClassName("intensity")[0].id = "intensity" + imageIndex;
             div.getElementsByClassName("image-footer")[0].id = "image-footer" + imageIndex;
-            nCanvas += 1;
+            state.nCanvas += 1;
 
             addContextMenuListener(imageIndex);
         }
@@ -173,13 +173,13 @@
         const index = nvArray.length;
         if (!document.getElementById("Volume" + index)) { createCanvases(1); }
         resize(index);
-        setViewType(viewType);
+        setViewType(state.viewType);
 
         const nv = new niivue.Niivue({ isResizeCanvas: false });
         nvArray.push(nv);
 
         nv.attachTo("gl" + index);
-        nv.setSliceType(viewType);
+        nv.setSliceType(state.viewType);
 
         if (isImageType(item)) {
             if (item.data) {
@@ -206,14 +206,12 @@
             document.getElementById("intensity").textContent = parts.pop();
         };
         nv.onLocationChange = handleIntensityChangeCompareView;
-        if (nvArray.length === 1) {
-            if (nvArray[0].volumes.length > 0) {
-                setAspectRatio(nvArray[0].volumes[0]);
-                resize();
-                nvArray[0].updateGLVolume();
-                showMetadata(nvArray[0].volumes[0]);
-                showScaling();
-            }
+        if (nvArray.length === 1 && nvArray[0].volumes.length > 0) {
+            setAspectRatio(nvArray[0].volumes[0]);
+            resize();
+            nvArray[0].updateGLVolume();
+            showMetadata(nvArray[0].volumes[0]);
+            showScaling();
         }
 
         // Sync only in one direction, circular syncing causes problems
@@ -241,8 +239,8 @@
     }
 
     function setViewType(type) {
-        viewType = type;
-        document.getElementById("view").value = viewType;
+        state.viewType = type;
+        document.getElementById("view").value = state.viewType;
         document.getElementById("view").dispatchEvent(new Event('change'));
     }
 
@@ -385,10 +383,18 @@
     }
     const imageFileTypes = '.nii,.nii.gz,.dcm,.mha,.mhd,.nhdr,.nrrd,.mgh,.mgz,.v,.v16,.vmr';
     const nvArray = [];
-    let aspectRatio = 1;
-    let viewType = 3; // all views
-    let nCanvas = 0;
-    setViewType(viewType);
+    const state = {
+        aspectRatio: 1,
+        viewType: 3, // all views
+        nCanvas: 0,
+        interpolation: true,
+        scaling: {
+            isManual: false,
+            min: 0,
+            max: 0,
+        }
+    };
+    setViewType(state.viewType);
     addListeners();
 
     if (typeof vscode === 'object') {
