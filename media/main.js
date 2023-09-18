@@ -198,7 +198,10 @@
                 await nv.loadMeshes(meshList);
             }
         }
-
+        if (state.scaling.isManual && nv.volumes.length > 0) {
+            nv.volumes[0].cal_min = state.scaling.min;
+            nv.volumes[0].cal_max = state.scaling.max;
+        }
         const textNode = document.getElementById("intensity" + index);
         const handleIntensityChangeCompareView = (data) => {
             const parts = data.string.split("=");
@@ -207,11 +210,7 @@
         };
         nv.onLocationChange = handleIntensityChangeCompareView;
         if (nvArray.length === 1 && nvArray[0].volumes.length > 0) {
-            setAspectRatio(nvArray[0].volumes[0]);
-            resize();
-            nvArray[0].updateGLVolume();
-            showMetadata(nvArray[0].volumes[0]);
-            showScaling();
+            initializationFirstVolume();
         }
 
         // Sync only in one direction, circular syncing causes problems
@@ -219,6 +218,22 @@
             nvArray[i].syncWith(nvArray[i + 1]);
         }
         setNames();
+    }
+
+    function initializationFirstVolume() {
+        setAspectRatio(nvArray[0].volumes[0]);
+        resize();
+        nvArray[0].updateGLVolume();
+        showMetadata(nvArray[0].volumes[0]);
+        initializeMinMaxInput();
+    }
+
+    function initializeMinMaxInput() {
+        const stepSize = (nvArray[0].volumes[0].cal_max - nvArray[0].volumes[0].cal_min) / 10;
+        document.getElementById("minvalue").value = nvArray[0].volumes[0].cal_min.toPrecision(2);
+        document.getElementById("maxvalue").value = nvArray[0].volumes[0].cal_max.toPrecision(2);        
+        document.getElementById("minvalue").step = stepSize.toPrecision(2);
+        document.getElementById("maxvalue").step = stepSize.toPrecision(2);
     }
 
     function getNames() {
@@ -244,17 +259,17 @@
         document.getElementById("view").dispatchEvent(new Event('change'));
     }
 
-    function showScaling() {
-        document.getElementById("minvalue").value = nvArray[0].volumes[0].cal_min.toPrecision(2);
-        document.getElementById("maxvalue").value = nvArray[0].volumes[0].cal_max.toPrecision(2);
+    function changeScalingEvent() {
+        state.scaling.isManual = true;
+        state.scaling.min = document.getElementById("minvalue").value;
+        state.scaling.max = document.getElementById("maxvalue").value;
+        applyScaling();
     }
 
-    function adaptScaling() {
-        const min = document.getElementById("minvalue").value;
-        const max = document.getElementById("maxvalue").value;
+    function applyScaling() {
         nvArray.forEach((niv) => {
-            niv.volumes[0].cal_min = min;
-            niv.volumes[0].cal_max = max;
+            niv.volumes[0].cal_min = state.scaling.min;
+            niv.volumes[0].cal_max = state.scaling.max;
             niv.updateGLVolume();
         });
     }
@@ -330,10 +345,10 @@
             nvArray.forEach((item) => item.setInterpolation(document.getElementById("NearestInterpolation").checked));
         });
         document.getElementById("minvalue").addEventListener('change', () => {
-            adaptScaling();
+            changeScalingEvent();
         });
         document.getElementById("maxvalue").addEventListener('change', () => {
-            adaptScaling();
+            changeScalingEvent();
         });
         document.getElementById("view").addEventListener('change', () => {
             const val = parseInt(document.getElementById("view").value);
