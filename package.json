@@ -141,7 +141,7 @@
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
-    "@niivue/niivue": "^0.37.0",
+    "@niivue/niivue": "^0.37.1",
     "copyfiles": "^2.4.1",
     "@types/vscode": "^1.70.0",
     "@types/glob": "^8.1.0",
