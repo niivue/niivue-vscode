@@ -16,20 +16,24 @@
     </dialog>
     <div>
         <button id="header-info-button">Header</button>
-        <span id="MetaData">MetaData</div>
+        <span id="MetaData">MetaData
+    </div>
     </div>
     <div id="container">
-        <div name="ViewTemplate" class="view-template"> <!-- use <template> tag? -->
-            <div class="volume-name"></div>
-            <canvas></canvas>
-            <div class="image-footer">
-                <span class="overlay-text" title="Right&nbsp;Click or Drop&nbsp;File&nbsp;(not&nbsp;implemented)">Overlay</span>
-                <span class="intensity"></span>
+        <template id="volumeTemplate">
+            <div class="volume">
+                <div class="volume-name"></div>
+                <canvas></canvas>
+                <div class="volume-footer">
+                    <span class="volume-overlay"
+                        title="Right Click">Overlay</span>
+                    <span class="volume-intensity"></span>
+                </div>
             </div>
-        </div>
+        </template>
     </div>
     <div class="footer">
-        <div id="intensity">&nbsp;</div>
+        <div id="location">&nbsp;</div>
         <button id="AddImagesButton">Add Images</button>
         <label for="NearestInterpolation">No Interpolation</label>
         <input type="checkbox" id="NearestInterpolation">
@@ -46,15 +50,17 @@
         </select>
     </div>
 
-    <div class="context-menu" name="ContextMenuTemplate">
-        <div name="addOverlay" class="context-menu-item">Add</div>
-        <div name="removeOverlay" class="context-menu-item">Remove</div>
-        <div name="setOverlayScale" class="context-menu-item submenu-trigger">Color Scale (not implemented)</div>
-        <div class="submenu" id="submenu">
-            <div class="context-menu-item">Option 1</div>
-            <div class="context-menu-item">Option 2</div>
+    <template id="contextMenuTemplate">
+        <div class="context-menu">
+            <div name="addOverlay" class="context-menu-item">Add</div>
+            <div name="removeOverlay" class="context-menu-item">Remove</div>
+            <div name="setOverlayScale" class="context-menu-item submenu-trigger">Color Scale (not implemented)</div>
+            <div class="submenu" id="submenu">
+                <div class="context-menu-item">Option 1</div>
+                <div class="context-menu-item">Option 2</div>
+            </div>
         </div>
-    </div>
+    </template>
 
     <script nonce="${nonce}" src="node_modules\@niivue\niivue\dist\niivue.umd.js"></script>
     <script nonce="${nonce}" src="main.js"></script>

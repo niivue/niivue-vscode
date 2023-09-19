@@ -98,18 +98,17 @@
 
     function createCanvases(n) {
         for (let i = 0; i < n; i++) {
-            const div = document.getElementsByName("ViewTemplate")[0].cloneNode(true);
-            div.removeAttribute("name");
-            document.getElementById("container").appendChild(div);
-
             const imageIndex = state.nCanvas;
-            div.id = "Volume" + imageIndex;
-            div.style.display = "block";
 
-            div.getElementsByTagName("canvas")[0].id = "gl" + imageIndex;
-            div.getElementsByClassName("volume-name")[0].id = "name" + imageIndex;
-            div.getElementsByClassName("intensity")[0].id = "intensity" + imageIndex;
-            div.getElementsByClassName("image-footer")[0].id = "image-footer" + imageIndex;
+            const volume = document.getElementById("volumeTemplate").content.cloneNode(true).firstElementChild;
+            volume.id = "volume" + imageIndex;
+            document.getElementById("container").appendChild(volume);
+
+            volume.getElementsByTagName("canvas")[0].id = "gl" + imageIndex;
+            volume.getElementsByClassName("volume-name")[0].id = "volume-name" + imageIndex;
+            volume.getElementsByClassName("volume-intensity")[0].id = "volume-intensity" + imageIndex;
+            volume.getElementsByClassName("volume-footer")[0].id = "volume-footer" + imageIndex;
+
             state.nCanvas += 1;
 
             addContextMenuListener(imageIndex);
@@ -117,7 +116,7 @@
     }
 
     function addContextMenuListener(imageIndex) {
-        const field = document.getElementById("image-footer" + imageIndex);
+        const field = document.getElementById("volume-footer" + imageIndex);
         field.addEventListener("contextmenu", (e) => {
             e.preventDefault();
             const contextMenu = createContextMenu(imageIndex);
@@ -128,8 +127,7 @@
     }
 
     function createContextMenu(imageIndex) {
-        const div = document.getElementsByName("ContextMenuTemplate")[0].cloneNode(true);
-        div.removeAttribute("name");
+        const div = document.getElementById("contextMenuTemplate").content.cloneNode(true).firstElementChild;
         const body = document.getElementsByTagName("body")[0];
         body.appendChild(div);
 
@@ -171,7 +169,7 @@
 
     async function addImage(item) {
         const index = nvArray.length;
-        if (!document.getElementById("Volume" + index)) { createCanvases(1); }
+        if (!document.getElementById("volume" + index)) { createCanvases(1); }
         resize(index);
         setViewType(state.viewType);
 
@@ -202,11 +200,11 @@
             nv.volumes[0].cal_min = state.scaling.min;
             nv.volumes[0].cal_max = state.scaling.max;
         }
-        const textNode = document.getElementById("intensity" + index);
+        const textNode = document.getElementById("volume-intensity" + index);
         const handleIntensityChangeCompareView = (data) => {
             const parts = data.string.split("=");
             textNode.textContent = parts.pop();
-            document.getElementById("intensity").textContent = parts.pop();
+            document.getElementById("location").textContent = parts.pop();
         };
         nv.onLocationChange = handleIntensityChangeCompareView;
         if (nvArray.length === 1 && nvArray[0].volumes.length > 0) {
@@ -249,7 +247,7 @@
     function setNames() {
         const diffNames = differenceInNames(getNames());
         for (let i = 0; i < diffNames.length; i++) {
-            document.getElementById("name" + i).textContent = diffNames[i].slice(-25); // about 10px per character
+            document.getElementById("volume-name" + i).textContent = diffNames[i].slice(-25); // about 10px per character
         }
     }
 

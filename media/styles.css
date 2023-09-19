@@ -35,8 +35,7 @@ img {
     height: auto;
 }
 
-/* end css-reset */
-
+/* Main CSS */
 body {
     background-color: #181818;
     color: white;
@@ -46,8 +45,7 @@ body {
     display: inline-block;
 }
 
-.view-template {
-    display: none;
+.volume {
     position: relative;
 }
 
@@ -63,7 +61,7 @@ body {
     position: absolute;
 }
 
-.image-footer {
+.volume-footer {
     font-size: 1.2em;
     position: absolute;
     bottom: 0.2em;
@@ -73,7 +71,7 @@ body {
     flex-direction: row;
 }
 
-.overlay-text {
+.volume-overlay {
     background: linear-gradient(to right, rgba(255, 0, 0, 0.6), rgba(255, 166, 0, 0.6));
     color: white;
     opacity: 0.8;
@@ -89,7 +87,6 @@ input[type="number"] {
     background-color: #181818;
     border: 1px solid #292929;
     box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-    display: none;
     z-index: 1;
 }
 
@@ -106,22 +103,4 @@ input[type="number"] {
     top: 0;
     left: 100%;
     box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-.overlay-container {
-    position: relative;
-    float: left;
-}
-
-
-.tooltip {
-    opacity: 0.9;
-    display: none;
-    position: absolute;
-    background-color: #333;
-    color: rgb(185, 185, 185);
-    padding: 5px;
-    border-radius: 5px;
-    bottom: 100%;
-    z-index: 1;
 }

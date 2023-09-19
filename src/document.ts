@@ -7,8 +7,7 @@ export class NiiVueDocument extends Disposable implements vscode.CustomDocument 
 
     constructor(
         uri: vscode.Uri,
-        data: Uint8Array,
-        overlay: Uint8Array | undefined = undefined,
+        data: Uint8Array
     ) {
         super();
         this._uri = uri;
@@ -17,7 +16,6 @@ export class NiiVueDocument extends Disposable implements vscode.CustomDocument 
 
     public get uri() { return this._uri; }
     public get data() { return this._data; }
-    // Workaround that returns data if overlay is undefined
 
     private readonly _onDidDispose = this._register(new vscode.EventEmitter<void>());
     public readonly onDidDispose = this._onDidDispose.event;
