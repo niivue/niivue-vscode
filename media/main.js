@@ -119,6 +119,7 @@
         const field = document.getElementById("volume-footer" + imageIndex);
         field.addEventListener("contextmenu", (e) => {
             e.preventDefault();
+            e.stopPropagation();
             const contextMenu = createContextMenu(imageIndex);
             contextMenu.style.display = "block";
             contextMenu.style.left = `${e.clientX}px`;
@@ -134,30 +135,40 @@
         function removeContextMenu() {
             body.removeChild(div);
             document.removeEventListener("click", removeContextMenu);
+            document.removeEventListener("contextmenu", removeContextMenu);
         }
         // Remove context menu when clicking outside of it
         document.addEventListener("click", removeContextMenu);
-
-        div.addEventListener("click", (e) => e.stopPropagation());
+        document.addEventListener("contextmenu", removeContextMenu);
 
         div.querySelector('[name="addOverlay"]').addEventListener("click", () => {
             addOverlayEvent(imageIndex);
             removeContextMenu();
         });
 
-        if (nvArray.length > imageIndex && nvArray[imageIndex].volumes.length < 2) {
-            div.querySelector('[name="removeOverlay"]').style.display = "none";
-            div.querySelector('[name="setOverlayScale"]').style.display = "none";
-        } else {
-            div.querySelector('[name="removeOverlay"]').addEventListener("click", () => {
-                nvArray[imageIndex].removeVolumeByIndex(1);
-                nvArray[imageIndex].updateGLVolume();
-                removeContextMenu();
-            });
-            // div.querySelector('[name="setOverlayScale"]').addEventListener("click", () => {
-
-            //     removeContextMenu();
-            // });
+        if (nvArray.length > imageIndex) { // Is volume and not mesh
+            const nv = nvArray[imageIndex];
+            if (nv.volumes.length < 2) {
+                div.querySelector('[name="removeOverlay"]').style.display = "none";
+                div.querySelector('[name="setOverlayScale"]').style.display = "none";
+            } else {
+                div.querySelector('[name="removeOverlay"]').addEventListener("click", () => {
+                    nv.removeVolumeByIndex(1);
+                    nv.updateGLVolume();
+                    removeContextMenu();
+                });
+                div.querySelector('[name="setOverlayScale"]').addEventListener("click", () => {
+                    const submenu = div.querySelector('[name="setOverlayScale"]').nextElementSibling; // TODO hack
+                    submenu.style.display = "block";
+                    nv.colormaps().forEach((cmap) => {
+                        const cmapItem = document.createElement("div");
+                        cmapItem.className = "context-menu-item";
+                        cmapItem.textContent = cmap;
+                        cmapItem.addEventListener("click", () => nv.setColormap(nv.volumes[1].id, cmap));
+                        submenu.appendChild(cmapItem);
+                    });
+                });
+            }
         }
         return div;
     }
@@ -229,7 +240,7 @@
     function initializeMinMaxInput() {
         const stepSize = (nvArray[0].volumes[0].cal_max - nvArray[0].volumes[0].cal_min) / 10;
         document.getElementById("minvalue").value = nvArray[0].volumes[0].cal_min.toPrecision(2);
-        document.getElementById("maxvalue").value = nvArray[0].volumes[0].cal_max.toPrecision(2);        
+        document.getElementById("maxvalue").value = nvArray[0].volumes[0].cal_max.toPrecision(2);
         document.getElementById("minvalue").step = stepSize.toPrecision(2);
         document.getElementById("maxvalue").step = stepSize.toPrecision(2);
     }
