@@ -142,11 +142,11 @@
         document.addEventListener("contextmenu", removeContextMenu);
 
         div.querySelector('[name="addOverlay"]').addEventListener("click", () => {
-            addOverlayEvent(imageIndex);
+            addOverlayEvent(imageIndex, 'overlay');
             removeContextMenu();
         });
 
-        if (nvArray.length > imageIndex) { // Is volume and not mesh
+        if (nvArray.length > imageIndex) { // Is volume and not mesh // TODO is this correct?
             const nv = nvArray[imageIndex];
             if (nv.volumes.length < 2) {
                 div.querySelector('[name="removeOverlay"]').style.display = "none";
@@ -167,6 +167,16 @@
                         cmapItem.addEventListener("click", () => nv.setColormap(nv.volumes[1].id, cmap));
                         submenu.appendChild(cmapItem);
                     });
+                });
+            }
+            if (nv.meshes.length >= 1) {
+                div.querySelector('[name="addMeshOverlay"]').addEventListener("click", () => {
+                    addOverlayEvent(imageIndex, 'addMeshOverlay');
+                    removeContextMenu();
+                });
+                div.querySelector('[name="addMeshCurvature"]').addEventListener("click", () => {
+                    addOverlayEvent(imageIndex, 'addMeshCurvature');
+                    removeContextMenu();
                 });
             }
         }
@@ -283,17 +293,56 @@
         });
     }
 
-    async function addOverlay(item) {
-        if (isImageType(item)) {
-            const image = new niivue.NVImage(item.data, item.uri, 'redyell', 0.5);
-            nvArray[item.index].addVolume(image);
-        } else {
-            const mesh = await niivue.NVMesh.readMesh(item.data, item.uri, nvArray[item.index].gl, 0.5);
-            nvArray[item.index].addMesh(mesh);
+    function addMeshOverlay(item, type) {
+        const nv = nvArray[item.index];
+        if (nv.meshes.length === 0) { return; };
+
+        const a = {};
+        switch (type) {
+            case "curvature":
+                {
+                    a.opacity = 0.7;
+                    a.colormap = "gray";
+                    a.colormapNegative = "winter";
+                    a.useNegativeCmap = false;
+                    a.calMin = 0.3;
+                    a.calMax = 0.5;
+                }
+                break;
+            case "overlay":
+                {
+                    a.opacity = 0.7;
+                    a.colormap = "warm"; // ge_color, hsv one direction
+                    a.colormapNegative = "winter";
+                    a.useNegativeCmap = true;
+                    a.calMin = 1.64;
+                    a.calMax = 5;
+                }
+                break;
+        }
+
+        const mesh = nv.meshes[0];
+        niivue.NVMesh.readLayer(item.uri, item.data, mesh, a.opacity, a.colormap, a.colormapNegative, a.useNegativeCmap, a.calMin, a.calMax);
+        mesh.updateMesh(nv.gl);
+        nv.opts.isColorbar = true;
+        nv.updateGLVolume();
+        if (type === "curvature") {
+            nv.setMeshLayerProperty(nv.meshes[0].id, nv.meshes[0].layers.length - 1, "colorbarVisible", false);
         }
     }
 
-    function addOverlayEvent(imageIndex) {
+    async function addOverlay(item) {
+        const nv = nvArray[item.index];
+        if (isImageType(item)) {
+            const image = new niivue.NVImage(item.data, item.uri, 'redyell', 0.5);
+            nv.addVolume(image);
+        } else {
+            const mesh = await niivue.NVMesh.readMesh(item.data, item.uri, nv.gl, 0.5);
+            nv.addMesh(mesh);
+        }
+    }
+
+    function addOverlayEvent(imageIndex, type) {
         if (typeof vscode === 'object') {
             vscode.postMessage({ type: 'addOverlay', body: { index: imageIndex } });
         } else {
@@ -304,7 +353,7 @@
                 const file = e.target.files[0];
                 file.arrayBuffer().then((data) => {
                     window.postMessage({
-                        type: 'overlay',
+                        type: type,
                         body: {
                             data: data,
                             uri: file.name,
@@ -380,6 +429,16 @@
         window.addEventListener('message', async (e) => {
             const { type, body } = e.data;
             switch (type) {
+                case 'addMeshOverlay':
+                    {
+                        addMeshOverlay(body, "overlay");
+                    }
+                    break;
+                case 'addMeshCurvature':
+                    {
+                        addMeshOverlay(body, "curvature");
+                    }
+                    break;
                 case 'overlay':
                     {
                         addOverlay(body);
@@ -426,7 +485,7 @@
     } else { // Running in browser
         window.postMessage({
             type: 'addImage',
-            body: { uri: 'https://niivue.github.io/niivue-demo-images/mni152.nii.gz' }
+            body: { uri: 'https://niivue.github.io/niivue/images/BrainMesh_ICBM152.lh.mz3' }
         });
     }
 
