@@ -158,7 +158,7 @@
                     removeContextMenu();
                 });
                 div.querySelector('[name="setOverlayScale"]').addEventListener("click", () => {
-                    const submenu = div.querySelector('[name="setOverlayScale"]').nextElementSibling; // TODO hack
+                    const submenu = div.querySelector('[name="setOverlayScale"]').nextElementSibling; // TODO this is a hack
                     submenu.style.display = "block";
                     nv.colormaps().forEach((cmap) => {
                         const cmapItem = document.createElement("div");
@@ -178,6 +178,18 @@
                     addOverlayEvent(imageIndex, 'addMeshCurvature');
                     removeContextMenu();
                 });
+                if (nv.meshes[0].layers.length >= 1) {
+                    div.querySelector('[name="replaceMeshOverlay"]').addEventListener("click", () => {
+                        addOverlayEvent(imageIndex, 'replaceMeshOverlay');
+                        removeContextMenu();
+                    });
+                } else {
+                    div.querySelector('[name="replaceMeshOverlay"]').style.display = "none";
+                }
+            } else {
+                div.querySelector('[name="addMeshOverlay"]').style.display = "none";
+                div.querySelector('[name="addMeshCurvature"]').style.display = "none";
+                div.querySelector('[name="replaceMeshOverlay"]').style.display = "none";
             }
         }
         return div;
@@ -310,6 +322,7 @@
                 }
                 break;
             case "overlay":
+            case "replaceOverlay":
                 {
                     a.opacity = 0.7;
                     a.colormap = "hsv"; // ge_color, hsv one direction
@@ -317,8 +330,15 @@
                 }
                 break;
         }
-
+        const scaling = state.mesh.overlay.scaling;
+        if (scaling.isManual) {
+            a.calMin = scaling.min;
+            a.calMax = scaling.max;
+        }
         const mesh = nv.meshes[0];
+        if (type === "replaceOverlay") {
+            mesh.layers.pop();
+        }
         niivue.NVMesh.readLayer(item.uri, item.data, mesh, a.opacity, a.colormap, a.colormapNegative, a.useNegativeCmap, a.calMin, a.calMax);
         mesh.updateMesh(nv.gl);
         nv.opts.isColorbar = true;
@@ -329,23 +349,29 @@
             nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "colorbarVisible", false);
         }
         if (type === "overlay") {
+            scaling.min = layer.cal_min;
+            scaling.max = layer.cal_max;
             const minInput = document.getElementById("overlay-minvalue");
             const maxInput = document.getElementById("overlay-maxvalue");
             minInput.style.display = "block";
             maxInput.style.display = "block";
-            minInput.value = layer.cal_min.toPrecision(2);
-            maxInput.value = layer.cal_max.toPrecision(2);
-            minInput.step = ((layer.cal_max - layer.cal_min) / 10).toPrecision(2);
-            maxInput.step = ((layer.cal_max - layer.cal_min) / 10).toPrecision(2);
+            minInput.value = scaling.min.toPrecision(2);
+            maxInput.value = scaling.max.toPrecision(2);
+            minInput.step = ((scaling.max - scaling.min) / 10).toPrecision(2);
+            maxInput.step = ((scaling.max - scaling.min) / 10).toPrecision(2);
             minInput.addEventListener('change', () => {
-                minInput.step = ((layer.cal_max - layer.cal_min) / 10).toPrecision(2);
-                nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "cal_min", minInput.value);
+                scaling.isManual = true;
+                scaling.min = minInput.value;
+                nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "cal_min", scaling.min);
                 nv.updateGLVolume();
+                minInput.step = ((scaling.max - scaling.min) / 10).toPrecision(2);
             });
             maxInput.addEventListener('change', () => {
-                maxInput.step = ((layer.cal_max - layer.cal_min) / 10).toPrecision(2);
-                nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "cal_max", maxInput.value);
+                scaling.isManual = true;
+                scaling.max = maxInput.value;
+                nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "cal_max", scaling.max);
                 nv.updateGLVolume();
+                maxInput.step = ((scaling.max - scaling.min) / 10).toPrecision(2);
             });
             const colormap = document.getElementById("overlay-colormap");
             colormap.value = a.colormap;
@@ -356,7 +382,7 @@
                     nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "colormap", "warm");
                 } else {
                     nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "useNegativeCmap", false);
-                    nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "colormap", colormap.value);    
+                    nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "colormap", colormap.value);
                 }
                 nv.updateGLVolume();
             });
@@ -471,6 +497,11 @@
                         addMeshOverlay(body, "curvature");
                     }
                     break;
+                case 'replaceMeshOverlay':
+                    {
+                        addMeshOverlay(body, "replaceOverlay");
+                    }
+                    break;
                 case 'overlay':
                     {
                         addOverlay(body);
@@ -507,6 +538,15 @@
             isManual: false,
             min: 0,
             max: 0,
+        },
+        mesh: {
+            overlay: {
+                scaling: {
+                    isManual: false,
+                    min: 0,
+                    max: 0,
+                }
+            }
         }
     };
     setViewType(state.viewType);
