@@ -112,3 +112,7 @@ input[type="number"] {
 #overlay-maxvalue {
     display: none;
 }
+
+#overlay-colormap {
+    display: none;
+}

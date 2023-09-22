@@ -312,11 +312,8 @@
             case "overlay":
                 {
                     a.opacity = 0.7;
-                    a.colormap = "warm"; // ge_color, hsv one direction
-                    a.colormapNegative = "winter";
-                    a.useNegativeCmap = true;
-                    a.calMin = 1.64;
-                    a.calMax = 5;
+                    a.colormap = "hsv"; // ge_color, hsv one direction
+                    a.useNegativeCmap = false;
                 }
                 break;
         }
@@ -327,6 +324,7 @@
         nv.opts.isColorbar = true;
         nv.updateGLVolume();
         const layerNumber = nv.meshes[0].layers.length - 1;
+        const layer = nv.meshes[0].layers[layerNumber];
         if (type === "curvature") {
             nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "colorbarVisible", false);
         }
@@ -335,16 +333,31 @@
             const maxInput = document.getElementById("overlay-maxvalue");
             minInput.style.display = "block";
             maxInput.style.display = "block";
-            minInput.value = a.calMin.toPrecision(2);
-            maxInput.value = a.calMax.toPrecision(2);
-            minInput.step = ((a.calMax - a.calMin) / 10).toPrecision(2);
-            maxInput.step = ((a.calMax - a.calMin) / 10).toPrecision(2);
+            minInput.value = layer.cal_min.toPrecision(2);
+            maxInput.value = layer.cal_max.toPrecision(2);
+            minInput.step = ((layer.cal_max - layer.cal_min) / 10).toPrecision(2);
+            maxInput.step = ((layer.cal_max - layer.cal_min) / 10).toPrecision(2);
             minInput.addEventListener('change', () => {
+                minInput.step = ((layer.cal_max - layer.cal_min) / 10).toPrecision(2);
                 nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "cal_min", minInput.value);
                 nv.updateGLVolume();
             });
             maxInput.addEventListener('change', () => {
+                maxInput.step = ((layer.cal_max - layer.cal_min) / 10).toPrecision(2);
                 nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "cal_max", maxInput.value);
+                nv.updateGLVolume();
+            });
+            const colormap = document.getElementById("overlay-colormap");
+            colormap.value = a.colormap;
+            colormap.style.display = "block";
+            colormap.addEventListener('change', () => {
+                if (colormap.value === "symmetric") {
+                    nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "useNegativeCmap", true);
+                    nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "colormap", "warm");
+                } else {
+                    nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "useNegativeCmap", false);
+                    nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "colormap", colormap.value);    
+                }
                 nv.updateGLVolume();
             });
         }
