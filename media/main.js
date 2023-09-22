@@ -325,7 +325,8 @@
             case "replaceOverlay":
                 {
                     a.opacity = 0.7;
-                    a.colormap = "hsv"; // ge_color, hsv one direction
+                    a.colormap = "hsv";
+                    a.colormapNegative = "";
                     a.useNegativeCmap = false;
                 }
                 break;
@@ -383,6 +384,7 @@
                 } else {
                     nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "useNegativeCmap", false);
                     nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "colormap", colormap.value);
+                    nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "colormapNegative", "");
                 }
                 nv.updateGLVolume();
             });
