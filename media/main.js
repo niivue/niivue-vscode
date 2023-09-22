@@ -326,8 +326,9 @@
         mesh.updateMesh(nv.gl);
         nv.opts.isColorbar = true;
         nv.updateGLVolume();
+        const layerNumber = nv.meshes[0].layers.length - 1;
         if (type === "curvature") {
-            nv.setMeshLayerProperty(nv.meshes[0].id, nv.meshes[0].layers.length - 1, "colorbarVisible", false);
+            nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "colorbarVisible", false);
         }
         if (type === "overlay") {
             const minInput = document.getElementById("overlay-minvalue");
@@ -339,11 +340,11 @@
             minInput.step = ((a.calMax - a.calMin) / 10).toPrecision(2);
             maxInput.step = ((a.calMax - a.calMin) / 10).toPrecision(2);
             minInput.addEventListener('change', () => {
-                nv.setMeshLayerProperty(nv.meshes[0].id, nv.meshes[0].layers.length - 1, "cal_min", minInput.value);
+                nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "cal_min", minInput.value);
                 nv.updateGLVolume();
             });
             maxInput.addEventListener('change', () => {
-                nv.setMeshLayerProperty(nv.meshes[0].id, nv.meshes[0].layers.length - 1, "cal_max", maxInput.value);
+                nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "cal_max", maxInput.value);
                 nv.updateGLVolume();
             });
         }
@@ -362,7 +363,7 @@
 
     function addOverlayEvent(imageIndex, type) {
         if (typeof vscode === 'object') {
-            vscode.postMessage({ type: 'addOverlay', body: { index: imageIndex } });
+            vscode.postMessage({ type: 'addOverlay', body: { type: type, index: imageIndex } });
         } else {
             const input = document.createElement('input');
             input.type = 'file';

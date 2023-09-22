@@ -100,7 +100,7 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
                         if (uris && uris.length > 0) {
                             vscode.workspace.fs.readFile(uris[0]).then((data) => {
                                 panel.webview.postMessage({
-                                    type: 'overlay',
+                                    type: e.body.type,
                                     body: {
                                         data: data.buffer,
                                         uri: uris[0].toString(),
