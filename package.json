@@ -40,8 +40,8 @@
   "contributes": {
     "commands": [
       {
-        "command": "niiVue.open",
-        "title": "NiiVue: Open Image"
+        "command": "niivue.openWebLink",
+        "title": "NiiVue: Open Web Link"
       },
       {
         "command": "niiVue.compareFromExplorer",

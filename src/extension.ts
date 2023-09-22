@@ -5,7 +5,7 @@ import { LinkHoverProvider } from './HoverProvider';
 export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(NiiVueEditorProvider.register(context));
 	context.subscriptions.push(vscode.languages.registerHoverProvider('*', new LinkHoverProvider()));
-	context.subscriptions.push(vscode.commands.registerCommand('niiVue.open', async () => {
+	context.subscriptions.push(vscode.commands.registerCommand('niivue.openWebLink', async () => {
 		vscode.window.showInputBox({
 			prompt: 'File Path',
 			placeHolder: 'https://niivue.github.io/niivue-demo-images/mni152.nii.gz'
@@ -26,7 +26,18 @@ export function activate(context: vscode.ExtensionContext) {
 		NiiVueEditorProvider.createCompareView(context, items);
 	}));
 	context.subscriptions.push(vscode.commands.registerCommand('niiVue.openFromExplorer', async (_activeItem: any, items: any) => {
-		vscode.commands.executeCommand('vscode.openWith', vscode.Uri.parse(items[0]) , "niiVue.default");
+		if (items && items.length > 1) {
+			vscode.commands.executeCommand('vscode.openWith', vscode.Uri.parse(items[0]) , "niiVue.default");
+		} else {
+			vscode.window.showOpenDialog({
+				canSelectFiles: true,
+				canSelectFolders: false,
+				canSelectMany: true,
+				openLabel: 'Open Image or Mesh',
+			}).then((uris) => {
+				NiiVueEditorProvider.createCompareView(context, uris);
+			});
+		}
 	}));
 }
 
