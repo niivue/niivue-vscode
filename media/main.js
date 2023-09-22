@@ -108,6 +108,7 @@
             volume.getElementsByClassName("volume-name")[0].id = "volume-name" + imageIndex;
             volume.getElementsByClassName("volume-intensity")[0].id = "volume-intensity" + imageIndex;
             volume.getElementsByClassName("volume-footer")[0].id = "volume-footer" + imageIndex;
+            volume.getElementsByClassName("volume-overlay-options")[0].id = "volume-overlay-options" + imageIndex;
 
             state.nCanvas += 1;
 
@@ -315,7 +316,6 @@
                 {
                     a.opacity = 0.7;
                     a.colormap = "gray";
-                    a.colormapNegative = "winter";
                     a.useNegativeCmap = false;
                     a.calMin = 0.3;
                     a.calMax = 0.5;
@@ -350,12 +350,11 @@
             nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "colorbarVisible", false);
         }
         if (type === "overlay") {
+            document.getElementById("volume-overlay-options" + item.index).style.display = "block";
             scaling.min = layer.cal_min;
             scaling.max = layer.cal_max;
             const minInput = document.getElementById("overlay-minvalue");
             const maxInput = document.getElementById("overlay-maxvalue");
-            minInput.style.display = "block";
-            maxInput.style.display = "block";
             minInput.value = scaling.min.toPrecision(2);
             maxInput.value = scaling.max.toPrecision(2);
             minInput.step = ((scaling.max - scaling.min) / 10).toPrecision(2);
@@ -376,11 +375,11 @@
             });
             const colormap = document.getElementById("overlay-colormap");
             colormap.value = a.colormap;
-            colormap.style.display = "block";
             colormap.addEventListener('change', () => {
                 if (colormap.value === "symmetric") {
                     nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "useNegativeCmap", true);
                     nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "colormap", "warm");
+                    nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "colormapNegative", "winter");
                 } else {
                     nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "useNegativeCmap", false);
                     nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "colormap", colormap.value);
