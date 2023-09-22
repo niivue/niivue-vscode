@@ -104,3 +104,11 @@ input[type="number"] {
     left: 100%;
     box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
 }
+
+#overlay-minvalue {
+    display: none;
+}
+
+#overlay-maxvalue {
+    display: none;
+}

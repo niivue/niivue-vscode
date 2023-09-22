@@ -329,6 +329,24 @@
         if (type === "curvature") {
             nv.setMeshLayerProperty(nv.meshes[0].id, nv.meshes[0].layers.length - 1, "colorbarVisible", false);
         }
+        if (type === "overlay") {
+            const minInput = document.getElementById("overlay-minvalue");
+            const maxInput = document.getElementById("overlay-maxvalue");
+            minInput.style.display = "block";
+            maxInput.style.display = "block";
+            minInput.value = a.calMin.toPrecision(2);
+            maxInput.value = a.calMax.toPrecision(2);
+            minInput.step = ((a.calMax - a.calMin) / 10).toPrecision(2);
+            maxInput.step = ((a.calMax - a.calMin) / 10).toPrecision(2);
+            minInput.addEventListener('change', () => {
+                nv.setMeshLayerProperty(nv.meshes[0].id, nv.meshes[0].layers.length - 1, "cal_min", minInput.value);
+                nv.updateGLVolume();
+            });
+            maxInput.addEventListener('change', () => {
+                nv.setMeshLayerProperty(nv.meshes[0].id, nv.meshes[0].layers.length - 1, "cal_max", maxInput.value);
+                nv.updateGLVolume();
+            });
+        }
     }
 
     async function addOverlay(item) {
