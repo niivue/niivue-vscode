@@ -47,6 +47,7 @@ body {
 
 .volume {
     position: relative;
+    background: gray;
 }
 
 #container {

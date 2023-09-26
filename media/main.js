@@ -202,6 +202,9 @@
     }
 
     async function addImage(item) {
+        if (state.nCanvas < state.nTotalCanvas) {
+            createCanvases(state.nTotalCanvas - state.nCanvas);
+        }
         const index = nvArray.length;
         if (!document.getElementById("volume" + index)) { createCanvases(1); }
         resize(index);
@@ -516,7 +519,7 @@
                 case 'initCanvas':
                     {
                         setViewType(0); // Axial
-                        createCanvases(body.n);
+                        state.nTotalCanvas += body.n;
                     }
                     break;
             }
@@ -534,6 +537,7 @@
         aspectRatio: 1,
         viewType: 3, // all views
         nCanvas: 0,
+        nTotalCanvas: 0,
         interpolation: true,
         scaling: {
             isManual: false,
