@@ -74,7 +74,7 @@
             break;
         }
         // if endCommon points to a number then include all following numbers as well
-        while (endCommon > 0 && names[0].slice(-endCommon, -endCommon + 1) >= '0' && names[0].slice(-endCommon, -endCommon + 1) <= '9') {
+        while (endCommon > 0 && names[0].slice(-endCommon, names[0].length - endCommon + 1) >= '0' && names[0].slice(-endCommon, names[0].length - endCommon + 1) <= '9') {
             endCommon -= 1;
         }
         const diffNames = names.map((name) => name.slice(startCommon, name.length - endCommon));
@@ -334,11 +334,6 @@
                 }
                 break;
         }
-        const scaling = state.mesh.overlay.scaling;
-        if (scaling.isManual) {
-            a.calMin = scaling.min;
-            a.calMax = scaling.max;
-        }
         const mesh = nv.meshes[0];
         if (type === "replaceOverlay") {
             mesh.layers.pop();
@@ -354,25 +349,17 @@
         }
         if (type === "overlay") {
             document.getElementById("volume-overlay-options" + item.index).style.display = "block";
-            scaling.min = layer.cal_min;
-            scaling.max = layer.cal_max;
             const minInput = document.getElementById("overlay-minvalue");
             const maxInput = document.getElementById("overlay-maxvalue");
-            minInput.value = scaling.min.toPrecision(2);
-            maxInput.value = scaling.max.toPrecision(2);
             minInput.step = ((scaling.max - scaling.min) / 10).toPrecision(2);
             maxInput.step = ((scaling.max - scaling.min) / 10).toPrecision(2);
             minInput.addEventListener('change', () => {
-                scaling.isManual = true;
-                scaling.min = minInput.value;
-                nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "cal_min", scaling.min);
+                nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "cal_min", minInput.value.toPrecision(2));
                 nv.updateGLVolume();
                 minInput.step = ((scaling.max - scaling.min) / 10).toPrecision(2);
             });
             maxInput.addEventListener('change', () => {
-                scaling.isManual = true;
-                scaling.max = maxInput.value;
-                nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "cal_max", scaling.max);
+                nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "cal_max", maxInput.value.toPrecision(2));
                 nv.updateGLVolume();
                 maxInput.step = ((scaling.max - scaling.min) / 10).toPrecision(2);
             });
@@ -543,15 +530,6 @@
             isManual: false,
             min: 0,
             max: 0,
-        },
-        mesh: {
-            overlay: {
-                scaling: {
-                    isManual: false,
-                    min: 0,
-                    max: 0,
-                }
-            }
         }
     };
     setViewType(state.viewType);
@@ -560,10 +538,10 @@
     if (typeof vscode === 'object') {
         vscode.postMessage({ type: 'ready' });
     } else { // Running in browser
-        window.postMessage({
-            type: 'addImage',
-            body: { uri: 'https://niivue.github.io/niivue/images/BrainMesh_ICBM152.lh.mz3' }
-        });
+        // window.postMessage({
+        //     type: 'addImage',
+        //     body: { uri: 'https://niivue.github.io/niivue/images/BrainMesh_ICBM152.lh.mz3' }
+        // });
     }
 
 }());
