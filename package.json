@@ -35,6 +35,7 @@
     "DTI",
     "viewer"
   ],
+  "extensionKind": ["ui", "workspace"],
   "main": "./dist/extension.js",
   "browser": "./dist/extension.js",
   "contributes": {
