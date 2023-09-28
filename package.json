@@ -2,7 +2,7 @@
   "name": "niivue",
   "displayName": "NiiVue",
   "description": "View NIfTI images (and a lot of other medical imaging formats)",
-  "version": "0.5.12",
+  "version": "0.5.13",
   "publisher": "KorbinianEckstein",
   "icon": "niivue_icon.png",
   "bugs": {
@@ -35,7 +35,10 @@
     "DTI",
     "viewer"
   ],
-  "extensionKind": ["ui", "workspace"],
+  "extensionKind": [
+    "ui",
+    "workspace"
+  ],
   "main": "./dist/extension.js",
   "browser": "./dist/extension.js",
   "contributes": {
