@@ -1,5 +1,34 @@
 (function () {
-    const { h, Component, render, html } = htmPreact;
+    const { render, html, useRef, useState } = htmPreact;
+
+    Header = () => html`
+        <${ShowHeaderButton} />
+        <span id="MetaData" style=${{padding: "0.3em"}}></span>
+    `;
+
+    ShowHeaderButton = () => {
+        const dialog = useRef();
+        const [text, setText] = useState('Header');
+
+        const headerButtonClick = () => {
+            setText(nvArray[0].volumes[0].hdr.toFormattedString());
+            dialog.current.showModal();
+        };
+
+        return html`
+            <button onClick=${headerButtonClick}>Header</button>
+            <dialog ref=${dialog}>
+                <form>
+                    ${text.split('\n').map((line) => html`
+                        <p>${line}</p>
+                    `)}
+                    <button formmethod="dialog" value="cancel">Close</button>
+                </form>
+            </dialog>
+        `;
+    };
+
+    render(html`<${Header} />`, document.getElementById("header"));
 
     Footer = () => html`
         <div id="location"></div>
@@ -37,7 +66,7 @@
         </select>
     `;
 
-    render(html`<${Footer} />`, document.getElementById('preact'));
+    render(html`<${Footer} />`, document.getElementById("footer"));
 
     // Functions
     function showMetadata(volume) {
@@ -503,19 +532,6 @@
             const val = parseInt(document.getElementById("view").value);
             nvArray.forEach((item) => item.setSliceType(val));
         });
-        document.getElementById("header-info-button").addEventListener('click', () => {
-            const headerInfo = document.getElementById("header-info");
-            while (headerInfo.firstChild) {
-                headerInfo.removeChild(headerInfo.firstChild);
-            }
-            const lines = nvArray[0].volumes[0].hdr.toFormattedString().split('\n');
-            lines.forEach((line) => {
-                const div = document.createElement('div');
-                div.textContent = line;
-                headerInfo.appendChild(div);
-            });
-            document.getElementById("header-info-dialog").showModal();
-        });
         window.addEventListener("resize", () => resize());
         window.addEventListener('message', async (e) => {
             const { type, body } = e.data;
@@ -579,9 +595,9 @@
     if (typeof vscode === 'object') {
         vscode.postMessage({ type: 'ready' });
     } else { // Running in browser
-        // window.postMessage({
-        //     type: 'addImage',
-        //     body: { uri: 'https://niivue.github.io/niivue/images/BrainMesh_ICBM152.lh.mz3' }
-        // });
+        window.postMessage({
+            type: 'addImage',
+            body: { uri: 'https://niivue.github.io/niivue/images/mni152.nii.gz' }
+        });
     }
 }());
