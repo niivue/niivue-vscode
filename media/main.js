@@ -544,4 +544,20 @@
         // });
     }
 
+    const { h, Component, render, html } = htmPreact;
+
+    function App() {
+        return html`
+          <div class="app">
+            <h1>Hello, World!</h1>
+            <ol>
+              <li>Item One</li>
+              <li>Item Two</li>
+            </ol>
+          </div>
+        `;
+      }
+    
+      render(h(App), document.getElementById('preact'));
+
 }());
