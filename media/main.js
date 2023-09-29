@@ -1,4 +1,45 @@
 (function () {
+    const { h, Component, render, html } = htmPreact;
+
+    Footer = () => html`
+        <div id="location"></div>
+        <${AddImagesButton} />
+        <${NearestInterpolation} />
+        <${MinValue} />
+        <${MaxValue} />
+        <${SelectView} />
+    `;
+
+    AddImagesButton = () => html`<button id="AddImagesButton" onClick=${addImagesEvent}> Add Images </button>`;
+
+    NearestInterpolation = () => html`
+        <label for="NearestInterpolation">No Interpolation</label>
+        <input type="checkbox" id="NearestInterpolation" />
+    `;
+
+    MinValue = () => html`
+        <label for="minvalue">Min</label>
+        <input type="number" id="minvalue" value="0" />
+    `;
+
+    MaxValue = () => html`
+        <label for="maxvalue">Max</label>
+        <input type="number" id="maxvalue" value="0" />
+    `;
+
+    SelectView = () => html`
+        <select id="view">
+            <option value="0">Axial</option>
+            <option value="1">Coronal</option>
+            <option value="2">Sagittal</option>
+            <option value="3">A+C+S+R</option>
+            <option value="4">Render</option>
+        </select>
+    `;
+
+    render(html`<${Footer} />`, document.getElementById('preact'));
+
+    // Functions
     function showMetadata(volume) {
         const meta = volume.getImageMetadata();
         document.getElementById('MetaData').innerHTML = "matrix size: " + meta.nx + " x " + meta.ny + " x " + meta.nz;
@@ -244,6 +285,7 @@
             document.getElementById("location").textContent = parts.pop();
         };
         nv.onLocationChange = handleIntensityChangeCompareView;
+        nv.createOnLocationChange();
         if (nvArray.length === 1 && nvArray[0].volumes.length > 0) {
             initializationFirstVolume();
         }
@@ -511,7 +553,6 @@
                     break;
             }
         });
-        document.getElementById("AddImagesButton").addEventListener('click', addImagesEvent);
     }
 
     // Main - Globals
@@ -543,21 +584,4 @@
         //     body: { uri: 'https://niivue.github.io/niivue/images/BrainMesh_ICBM152.lh.mz3' }
         // });
     }
-
-    const { h, Component, render, html } = htmPreact;
-
-    function App() {
-        return html`
-          <div class="app">
-            <h1>Hello, World!</h1>
-            <ol>
-              <li>Item One</li>
-              <li>Item Two</li>
-            </ol>
-          </div>
-        `;
-      }
-    
-      render(h(App), document.getElementById('preact'));
-
 }());
