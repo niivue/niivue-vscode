@@ -72,6 +72,12 @@ body {
     flex-direction: row;
 }
 
+.horizontal-layout {
+    display: flex;
+    gap: 0.2em;
+    flex-wrap: wrap;
+}
+
 .volume-overlay {
     background: linear-gradient(to right, rgba(255, 0, 0, 0.6), rgba(255, 166, 0, 0.6));
     color: white;

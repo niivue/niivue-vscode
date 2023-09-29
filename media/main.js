@@ -2,7 +2,7 @@ const { render, html, useRef, useState } = htmPreact;
 
 Header = () => html`
     <${ShowHeaderButton} />
-    <span id="MetaData" style=${{padding: "0.3em"}}></span>
+    <span id="MetaData"></span>
 `;
 
 ShowHeaderButton = () => {
@@ -30,7 +30,6 @@ ShowHeaderButton = () => {
 render(html`<${Header} />`, document.getElementById("header"));
 
 Footer = () => html`
-    <div id="location"></div>
     <${AddImagesButton} />
     <${NearestInterpolation} />
     <${MinValue} />
@@ -38,7 +37,7 @@ Footer = () => html`
     <${SelectView} />
 `;
 
-AddImagesButton = () => html`<button id="AddImagesButton" onClick=${addImagesEvent}> Add Images </button>`;
+AddImagesButton = () => html`<button onClick=${addImagesEvent}>Add Images</button>`;
 
 NearestInterpolation = () => html`
     <label for="NearestInterpolation">No Interpolation</label>
