@@ -1,77 +1,69 @@
 const { render, html, useRef, useState, useEffect } = htmPreact;
+const { Niivue, NVImage, NVMesh } = niivue;
 const imageFileTypes = '.nii,.nii.gz,.dcm,.mha,.mhd,.nhdr,.nrrd,.mgh,.mgz,.v,.v16,.vmr';
-const nvArray = [];
-
 
 const App = () => {
-    const [meta, setMeta] = useState({});
-
-    useEffect(() => {
-        nvArray[0].onImageLoaded = (volume) => {
-            setMeta(volume.getImageMetadata());
-        };
-    }, []);
-
     return html`
-        <${Header} meta=${meta} />
-        <${Container} nvArray=${nvArray} />
+        <${Header} />
+        <${Container} />
         <${Footer} />
     `;
 };
 
-const Container = ({ nvArray }) => html`
-    <div id="container">
-        ${nvArray.map((nv) => html`<${Volume} nv=${nv} />`)}
-    </div>
-`;
+const Container = () => {
+    const [nvArray, setNvArray] = useState([]);
+    const [[windowWidth, windowHeight], setDimensions] = useState([window.innerWidth, window.innerHeight]);
+    useEffect(() => {
+        window.addEventListener("message", createMessageListener(setNvArray));
+        window.addEventListener("resize", () => setDimensions([window.innerWidth, window.innerHeight]));
+    }, []);
 
-{/* <div class="volume">
-    <div class="volume-name"></div>
-    <canvas></canvas>
-    <div class="volume-footer">
-        <span class="volume-overlay" title="Right Click">Overlay</span>
-        <div class="volume-overlay-options">
-            <input type="number" id="overlay-minvalue">
-            <input type="number" id="overlay-maxvalue">
-            <select id="overlay-colormap">
-                <option value="ge_color">ge_color</option>
-                <option value="hsv">hsv</option>
-                <option value="symmetric">symmetric</option>
-                <option value="warm">warm</option>
-            </select>
+    const [width, height] = resize(nvArray.length, 1, windowWidth, windowHeight);
+    return html`
+        <div id="container">
+            ${nvArray.map((nv) => html`<${Volume} nv=${nv} width=${width} height=${height} />`)}
         </div>
-        <span class="volume-intensity"></span>
-    </div>
-</div> */}
+    `;
+};
 
-
-const Volume = ({ nv }) => html`
-    <div class="volume">
-        <div class="volume-name"></div>
-        <${NiiVue} nv=${nv} />
-        <div class="volume-footer">
-            <span class="volume-overlay" title="Right Click">Overlay</span>
+const Volume = ({ nv, width, height }) => {
+    const intensityRef = useRef();
+    return html`
+        <div class="volume">
+            <div class="volume-name"></div>
+            <${NiiVue} nv=${nv} intensityRef=${intensityRef} width=${width} height=${height} />
+            <div class="volume-footer">
+                <span class="volume-overlay" title="Right Click">Overlay</span>
+                <span class="volume-intensity" ref=${intensityRef}></span>
+            </div>
         </div>
-    </div>
-`;
+    `;
+};
 
-const NiiVue = ({ nv }) => {
+const NiiVue = ({ nv, intensityRef, width, height}) => {
     const canvasRef = useRef();
     useEffect(() => {
         nv.attachToCanvas(canvasRef.current);
-        nv.loadVolumes([{ url: 'https://niivue.github.io/niivue/images/mni152.nii.gz' }]);
+        loadVolume(nv, nv.body);
+        nv.body = null;
+        nv.onLocationChange = createIntensityChangeHandler(intensityRef.current);
     }, []);
-    return html`<canvas ref=${canvasRef}></canvas>`;
+    return html`<canvas ref=${canvasRef} width=${width} height=${height}></canvas>`;
 };
 
-const Header = ({meta}) => html`
+const Header = () => html`
     <div class="horizontal-layout">
         <${ShowHeaderButton} />
-        ${(meta.nx) ? html`<${MetaData} meta=${meta} />` : html``}
+        <${MetaData} />
     </div>
 `;
 
-const MetaData = ({ meta }) => {
+const MetaData = () => {
+    return html``;
+    const [meta, setMeta] = useState({});
+    useEffect(() => nvArray[0].onImageLoaded = (volume) => setMeta(volume.getImageMetadata()), []);
+
+    if (!meta.nx) { return html``; }
     const matrixString = "matrix size: " + meta.nx + " x " + meta.ny + " x " + meta.nz;
     const voxelString = "voxelsize: " + meta.dx.toPrecision(2) + " x " + meta.dy.toPrecision(2) + " x " + meta.dz.toPrecision(2);
     const timeString = meta.nt > 1 ? ", timepoints: " + meta.nt : "";
@@ -138,26 +130,59 @@ const SelectView = () => html`
     </select>
 `;
 
-for (let i = 0; i < 3; i++) {
-    nvArray.push(new niivue.Niivue({ isResizeCanvas: false }));
-}
-render(html`<${App} nvArray=${nvArray}/>`, document.getElementById("app"));
-for (let i = 0; i < 3; i++) {
-    nvArray.push(new niivue.Niivue({ isResizeCanvas: false }));
-}
-render(html`<${App} nvArray=${nvArray}/>`, document.getElementById("app"));
-// render(html`<${Footer} />`, document.getElementById("footer"));
+render(html`<${App} />`, document.getElementById("app"));
 
-// Functions
-function showMetadata(volume) {
-    const meta = volume.getImageMetadata();
-    document.getElementById('MetaData').innerHTML = "matrix size: " + meta.nx + " x " + meta.ny + " x " + meta.nz;
-    document.getElementById('MetaData').innerHTML += ", voxelsize: " + meta.dx.toPrecision(2) + " x " + meta.dy.toPrecision(2) + " x " + meta.dz.toPrecision(2);
-    if (meta.nt > 1) {
-        document.getElementById('MetaData').innerHTML += ", timepoints: " + meta.nt;
+function createMessageListener(setNvArray) {
+    async function messageListener(e) {
+        const { type, body } = e.data;
+        switch (type) {
+            case "addImage":
+                {
+                    const nv = new Niivue({ isResizeCanvas: false });
+                    nv.body = body;
+                    setNvArray((prev) => [...prev, nv]);
+                }
+                break;
+            case "initCanvas":
+                {
+                    // setViewType(0); // Axial
+                    // state.nTotalCanvas += body.n;
+                }
+                break;
+        }
+    }
+    return messageListener;
+}
+
+function createIntensityChangeHandler(intensityRef) {
+    return (data) => {
+        const parts = data.string.split("=");
+        intensityRef.textContent = parts.pop();
+        document.getElementById("location").textContent = parts.pop();
+    };
+}
+
+function loadVolume(nv, item) {
+    if (isImageType(item)) {
+        if (item.data) {
+            const volume = new NVImage(item.data, item.uri);
+            nv.addVolume(volume);
+        } else {
+            const volumeList = [{ url: item.uri }];
+            nv.loadVolumes(volumeList);
+        }
+    } else {
+        if (item.data) {
+            const mesh = NVMesh.readMesh(item.data, item.uri, nv.gl);
+            nv.addMesh(mesh);
+        } else {
+            const meshList = [{ url: item.uri }];
+            nv.loadMeshes(meshList);
+        }
     }
 }
 
+// Before PREACT
 function setAspectRatio(vol) {
     const meta = vol.getImageMetadata();
     const xSize = meta.nx * meta.dx;
@@ -174,22 +199,19 @@ function setAspectRatio(vol) {
     }
 }
 
-function resize() {
-    const windowWidth = window.innerWidth - 25;
-    const windowHeight = window.innerHeight - 75;
+function resize(nCanvas, aspectRatio, windowWidthExt, windowHeightExt) {
+    if (nCanvas === 0) { nCanvas = 1; }
+    const windowWidth = windowWidthExt - 25;
+    const windowHeight = windowHeightExt - 75;
 
     let bestWidth = 0;
-    for (nrow = 1; nrow <= state.nCanvas; nrow++) {
-        const ncol = Math.ceil(state.nCanvas / nrow);
+    for (nrow = 1; nrow <= nCanvas; nrow++) {
+        const ncol = Math.ceil(nCanvas / nrow);
         const maxHeight = (windowHeight / nrow);
-        const maxWidth = Math.min(windowWidth / ncol, maxHeight * state.aspectRatio);
+        const maxWidth = Math.min(windowWidth / ncol, maxHeight * aspectRatio);
         if (maxWidth > bestWidth) { bestWidth = maxWidth; }
     }
-    for (let i = 0; i < state.nCanvas; i++) {
-        const canvas = document.getElementById("gl" + i);
-        canvas.width = bestWidth;
-        canvas.height = canvas.width / state.aspectRatio;
-    }
+    return [bestWidth, bestWidth / aspectRatio];
 }
 
 // This function finds common patterns in the names and only returns the parts of the names that are different
@@ -360,7 +382,7 @@ async function addImage(item) {
     resize(index);
     setViewType(state.viewType);
 
-    const nv = new niivue.Niivue({ isResizeCanvas: false });
+    const nv = new Niivue({ isResizeCanvas: false });
     nvArray.push(nv);
 
     nv.attachTo("gl" + index);
@@ -667,8 +689,8 @@ const state = {
         max: 0,
     }
 };
-setViewType(state.viewType);
-addListeners();
+// setViewType(state.viewType);
+// addListeners();
 
 if (typeof vscode === 'object') {
     vscode.postMessage({ type: 'ready' });
