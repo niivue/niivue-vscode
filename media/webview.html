@@ -8,32 +8,7 @@
 </head>
 
 <body>
-    <div class="horizontal-layout" id="header"></div>
-    <div id="container">
-        <template id="volumeTemplate">
-            <div class="volume">
-                <div class="volume-name"></div>
-                <canvas></canvas>
-                <div class="volume-footer">
-                    <span class="volume-overlay" title="Right Click">Overlay</span>
-                    <div class="volume-overlay-options">
-                        <input type="number" id="overlay-minvalue">
-                        <input type="number" id="overlay-maxvalue">
-                        <select id="overlay-colormap">
-                            <option value="ge_color">ge_color</option>
-                            <option value="hsv">hsv</option>
-                            <option value="symmetric">symmetric</option>
-                            <option value="warm">warm</option>
-                        </select>
-                    </div>
-                    <span class="volume-intensity"></span>
-                </div>
-            </div>
-        </template>
-    </div>
-
-    <div id="location"></div>
-    <div class="horizontal-layout" id="footer"></div>
+    <div id="app"></div>
     <template id="contextMenuTemplate">
         <div class="context-menu">
             <div name="addOverlay" class="context-menu-item">Add</div> <!-- replace name with id -->

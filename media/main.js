@@ -1,11 +1,84 @@
-const { render, html, useRef, useState } = htmPreact;
+const { render, html, useRef, useState, useEffect } = htmPreact;
+const imageFileTypes = '.nii,.nii.gz,.dcm,.mha,.mhd,.nhdr,.nrrd,.mgh,.mgz,.v,.v16,.vmr';
+const nvArray = [];
 
-Header = () => html`
-    <${ShowHeaderButton} />
-    <span id="MetaData"></span>
+
+const App = () => {
+    const [meta, setMeta] = useState({});
+
+    useEffect(() => {
+        nvArray[0].onImageLoaded = (volume) => {
+            setMeta(volume.getImageMetadata());
+        };
+    }, []);
+
+    return html`
+        <${Header} meta=${meta} />
+        <${Container} nvArray=${nvArray} />
+        <${Footer} />
+    `;
+};
+
+const Container = ({ nvArray }) => html`
+    <div id="container">
+        ${nvArray.map((nv) => html`<${Volume} nv=${nv} />`)}
+    </div>
 `;
 
-ShowHeaderButton = () => {
+{/* <div class="volume">
+    <div class="volume-name"></div>
+    <canvas></canvas>
+    <div class="volume-footer">
+        <span class="volume-overlay" title="Right Click">Overlay</span>
+        <div class="volume-overlay-options">
+            <input type="number" id="overlay-minvalue">
+            <input type="number" id="overlay-maxvalue">
+            <select id="overlay-colormap">
+                <option value="ge_color">ge_color</option>
+                <option value="hsv">hsv</option>
+                <option value="symmetric">symmetric</option>
+                <option value="warm">warm</option>
+            </select>
+        </div>
+        <span class="volume-intensity"></span>
+    </div>
+</div> */}
+
+
+const Volume = ({ nv }) => html`
+    <div class="volume">
+        <div class="volume-name"></div>
+        <${NiiVue} nv=${nv} />
+        <div class="volume-footer">
+            <span class="volume-overlay" title="Right Click">Overlay</span>
+        </div>
+    </div>
+`;
+
+const NiiVue = ({ nv }) => {
+    const canvasRef = useRef();
+    useEffect(() => {
+        nv.attachToCanvas(canvasRef.current);
+        nv.loadVolumes([{ url: 'https://niivue.github.io/niivue/images/mni152.nii.gz' }]);
+    }, []);
+    return html`<canvas ref=${canvasRef}></canvas>`;
+};
+
+const Header = ({meta}) => html`
+    <div class="horizontal-layout">
+        <${ShowHeaderButton} />
+        ${(meta.nx) ? html`<${MetaData} meta=${meta} />` : html``}
+    </div>
+`;
+
+const MetaData = ({ meta }) => {
+    const matrixString = "matrix size: " + meta.nx + " x " + meta.ny + " x " + meta.nz;
+    const voxelString = "voxelsize: " + meta.dx.toPrecision(2) + " x " + meta.dy.toPrecision(2) + " x " + meta.dz.toPrecision(2);
+    const timeString = meta.nt > 1 ? ", timepoints: " + meta.nt : "";
+    return html`<p>${matrixString}, ${voxelString}${timeString}</p>`;
+};
+
+const ShowHeaderButton = () => {
     const dialog = useRef();
     const [text, setText] = useState('Header');
 
@@ -27,34 +100,35 @@ ShowHeaderButton = () => {
     `;
 };
 
-render(html`<${Header} />`, document.getElementById("header"));
-
-Footer = () => html`
-    <${AddImagesButton} />
-    <${NearestInterpolation} />
-    <${MinValue} />
-    <${MaxValue} />
-    <${SelectView} />
+const Footer = () => html`
+    <div id="location"></div>
+    <div class="horizontal-layout">
+        <${AddImagesButton} />
+        <${NearestInterpolation} />
+        <${MinValue} />
+        <${MaxValue} />
+        <${SelectView} />
+    </div>
 `;
 
-AddImagesButton = () => html`<button onClick=${addImagesEvent}>Add Images</button>`;
+const AddImagesButton = () => html`<button onClick=${addImagesEvent}>Add Images</button>`;
 
-NearestInterpolation = () => html`
+const NearestInterpolation = () => html`
     <label for="NearestInterpolation">No Interpolation</label>
     <input type="checkbox" id="NearestInterpolation" />
 `;
 
-MinValue = () => html`
+const MinValue = () => html`
     <label for="minvalue">Min</label>
     <input type="number" id="minvalue" value="0" />
 `;
 
-MaxValue = () => html`
+const MaxValue = () => html`
     <label for="maxvalue">Max</label>
     <input type="number" id="maxvalue" value="0" />
 `;
 
-SelectView = () => html`
+const SelectView = () => html`
     <select id="view">
         <option value="0">Axial</option>
         <option value="1">Coronal</option>
@@ -64,7 +138,15 @@ SelectView = () => html`
     </select>
 `;
 
-render(html`<${Footer} />`, document.getElementById("footer"));
+for (let i = 0; i < 3; i++) {
+    nvArray.push(new niivue.Niivue({ isResizeCanvas: false }));
+}
+render(html`<${App} nvArray=${nvArray}/>`, document.getElementById("app"));
+for (let i = 0; i < 3; i++) {
+    nvArray.push(new niivue.Niivue({ isResizeCanvas: false }));
+}
+render(html`<${App} nvArray=${nvArray}/>`, document.getElementById("app"));
+// render(html`<${Footer} />`, document.getElementById("footer"));
 
 // Functions
 function showMetadata(volume) {
@@ -573,8 +655,6 @@ function addListeners() {
 if (typeof acquireVsCodeApi === 'function') {
     var vscode = acquireVsCodeApi();
 }
-const imageFileTypes = '.nii,.nii.gz,.dcm,.mha,.mhd,.nhdr,.nrrd,.mgh,.mgz,.v,.v16,.vmr';
-const nvArray = [];
 const state = {
     aspectRatio: 1,
     viewType: 3, // all views

@@ -76,6 +76,7 @@ body {
     display: flex;
     gap: 0.2em;
     flex-wrap: wrap;
+    align-items: flex-end;
 }
 
 .volume-overlay {
