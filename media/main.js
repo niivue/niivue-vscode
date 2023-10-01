@@ -3,22 +3,27 @@ const { Niivue, NVImage, NVMesh } = niivue;
 const imageFileTypes = '.nii,.nii.gz,.dcm,.mha,.mhd,.nhdr,.nrrd,.mgh,.mgz,.v,.v16,.vmr';
 
 const App = () => {
+    const [nvArray, setNvArray] = useState([]);
+    useEffect(() => {
+        window.addEventListener("message", createMessageListener(setNvArray));
+    }, []);
+    const vol0 = nvArray.length > 0 && nvArray[0].volumes.length > 0 ? nvArray[0].volumes[0] : {};
     return html`
-        <${Header} />
-        <${Container} />
+        ${vol0.hdr && html`<${Header} vol0=${vol0} />`}
+        <${Container} nvArray=${nvArray} />
         <${Footer} />
     `;
 };
 
-const Container = () => {
-    const [nvArray, setNvArray] = useState([]);
+const Container = ({ nvArray }) => {
     const [[windowWidth, windowHeight], setDimensions] = useState([window.innerWidth, window.innerHeight]);
     useEffect(() => {
-        window.addEventListener("message", createMessageListener(setNvArray));
         window.addEventListener("resize", () => setDimensions([window.innerWidth, window.innerHeight]));
     }, []);
 
-    const [width, height] = resize(nvArray.length, 1, windowWidth, windowHeight);
+    const meta = nvArray.length > 0 && nvArray[0].volumes.length > 0 ? nvArray[0].volumes[0].getImageMetadata() : {};
+    const viewType = 3;
+    const [width, height] = getCanvasSize(nvArray.length, meta, viewType, windowWidth, windowHeight);
     return html`
         <div id="container">
             ${nvArray.map((nv) => html`<${Volume} nv=${nv} width=${width} height=${height} />`)}
@@ -40,7 +45,7 @@ const Volume = ({ nv, width, height }) => {
     `;
 };
 
-const NiiVue = ({ nv, intensityRef, width, height}) => {
+const NiiVue = ({ nv, intensityRef, width, height }) => {
     const canvasRef = useRef();
     useEffect(() => {
         nv.attachToCanvas(canvasRef.current);
@@ -51,18 +56,14 @@ const NiiVue = ({ nv, intensityRef, width, height}) => {
     return html`<canvas ref=${canvasRef} width=${width} height=${height}></canvas>`;
 };
 
-const Header = () => html`
+const Header = ({ vol0 }) => html`
     <div class="horizontal-layout">
-        <${ShowHeaderButton} />
-        <${MetaData} />
+        <${ShowHeaderButton} info=${vol0.hdr.toFormattedString()} />
+        <${MetaData} meta=${vol0.getImageMetadata()} />
     </div>
 `;
 
-const MetaData = () => {
-    return html``;
-    const [meta, setMeta] = useState({});
-    useEffect(() => nvArray[0].onImageLoaded = (volume) => setMeta(volume.getImageMetadata()), []);
-
+const MetaData = ({ meta }) => {
     if (!meta.nx) { return html``; }
     const matrixString = "matrix size: " + meta.nx + " x " + meta.ny + " x " + meta.nz;
     const voxelString = "voxelsize: " + meta.dx.toPrecision(2) + " x " + meta.dy.toPrecision(2) + " x " + meta.dz.toPrecision(2);
@@ -70,12 +71,12 @@ const MetaData = () => {
     return html`<p>${matrixString}, ${voxelString}${timeString}</p>`;
 };
 
-const ShowHeaderButton = () => {
+const ShowHeaderButton = ({ info }) => {
     const dialog = useRef();
-    const [text, setText] = useState('Header');
+    const [text, setText] = useState("Header");
 
     const headerButtonClick = () => {
-        setText(nvArray[0].volumes[0].hdr.toFormattedString());
+        setText(info);
         dialog.current.showModal();
     };
 
@@ -182,24 +183,23 @@ function loadVolume(nv, item) {
     }
 }
 
-// Before PREACT
-function setAspectRatio(vol) {
-    const meta = vol.getImageMetadata();
+function getAspectRatio(meta, viewType) {
+    if (!meta.nx) { return 1; }
     const xSize = meta.nx * meta.dx;
     const ySize = meta.ny * meta.dy;
     const zSize = meta.nz * meta.dz;
-    if (state.viewType === 0) {
-        state.aspectRatio = xSize / ySize;
-    } else if (state.viewType === 1) {
-        state.aspectRatio = xSize / zSize;
-    } else if (state.viewType === 2) {
-        state.aspectRatio = ySize / zSize;
-    } else {
-        state.aspectRatio = 1;
+    if (viewType === 0) {
+        return xSize / ySize;
+    } else if (viewType === 1) {
+        return xSize / zSize;
+    } else if (viewType === 2) {
+        return ySize / zSize;
     }
+    return 1;
 }
 
-function resize(nCanvas, aspectRatio, windowWidthExt, windowHeightExt) {
+function getCanvasSize(nCanvas, meta, viewType, windowWidthExt, windowHeightExt) {
+    const aspectRatio = getAspectRatio(meta, viewType);
     if (nCanvas === 0) { nCanvas = 1; }
     const windowWidth = windowWidthExt - 25;
     const windowHeight = windowHeightExt - 75;
@@ -213,6 +213,8 @@ function resize(nCanvas, aspectRatio, windowWidthExt, windowHeightExt) {
     }
     return [bestWidth, bestWidth / aspectRatio];
 }
+
+// Before PREACT
 
 // This function finds common patterns in the names and only returns the parts of the names that are different
 function differenceInNames(names, rec = true) {
@@ -379,7 +381,7 @@ async function addImage(item) {
     }
     const index = nvArray.length;
     if (!document.getElementById("volume" + index)) { createCanvases(1); }
-    resize(index);
+    getCanvasSize(index);
     setViewType(state.viewType);
 
     const nv = new Niivue({ isResizeCanvas: false });
@@ -430,7 +432,7 @@ async function addImage(item) {
 
 function initializationFirstVolume() {
     setAspectRatio(nvArray[0].volumes[0]);
-    resize();
+    getCanvasSize();
     nvArray[0].updateGLVolume();
     showMetadata(nvArray[0].volumes[0]);
     initializeMinMaxInput();
@@ -634,7 +636,7 @@ function addListeners() {
         const val = parseInt(document.getElementById("view").value);
         nvArray.forEach((item) => item.setSliceType(val));
     });
-    window.addEventListener("resize", () => resize());
+    window.addEventListener("getCanvasSize", () => getCanvasSize());
     window.addEventListener('message', async (e) => {
         const { type, body } = e.data;
         switch (type) {
