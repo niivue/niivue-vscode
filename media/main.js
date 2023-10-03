@@ -6,29 +6,30 @@
     const App = () => {
         const [nvArray, setNvArray] = useState([]);
         const [vol0, setVol0] = useState({});
-        useEffect(() => {
-            window.addEventListener("message", createMessageListener(setNvArray));
-        }, []);
+        const [viewType, setViewType] = useState(3); // all views
+        const [interpolation, setInterpolation] = useState(true);
+        const [scaling, setScaling] = useState({ isManual: false, min: 0, max: 0 });
+        useEffect(() => window.addEventListener("message", createMessageListener(setNvArray)), []);
+
         return html`
-        ${vol0.hdr && html`<${Header} vol0=${vol0} />`}
-        <${Container} nvArray=${nvArray} setVol0=${setVol0} />
-        <${Footer} />
-    `;
+            <${Header} vol0=${vol0} />
+            <${Container} nvArray=${nvArray} setVol0=${setVol0} viewType=${viewType} interpolation=${interpolation} scaling=${scaling} />
+            <${Footer} setViewType=${setViewType} setInterpolation=${setInterpolation} setScaling=${setScaling} vol0=${vol0} />
+        `;
     };
 
-    const Container = ({ nvArray, setVol0 }) => {
+    const Container = ({ nvArray, ...props }) => {
         const [[windowWidth, windowHeight], setDimensions] = useState([window.innerWidth, window.innerHeight]);
         useEffect(() => {
             window.addEventListener("resize", () => setDimensions([window.innerWidth, window.innerHeight]));
         }, []);
 
         const meta = nvArray.length > 0 && nvArray[0].volumes.length > 0 ? nvArray[0].volumes[0].getImageMetadata() : {};
-        const viewType = 3;
-        const [width, height] = getCanvasSize(nvArray.length, meta, viewType, windowWidth, windowHeight);
+        const [width, height] = getCanvasSize(nvArray.length, meta, props.viewType, windowWidth, windowHeight);
         return html`
-        <div id="container">
-            ${nvArray.map((nv, i) => html`<${Volume} nv=${nv} width=${width} height=${height} volumeNumber=${i} setVol0=${setVol0} />`)}
-        </div>
+            <div id="container">
+                ${nvArray.map((nv, i) => html`<${Volume} nv=${nv} width=${width} height=${height} volumeNumber=${i} ...${props} />`)}
+            </div>
     `;
     };
 
@@ -36,18 +37,18 @@
         const intensityRef = useRef();
         props.intensityRef = intensityRef;
         return html`
-        <div class="volume">
-            <div class="volume-name"></div>
-            <${NiiVue} ...${props} />
-            <div class="volume-footer">
-                <span class="volume-overlay" title="Right Click">Overlay</span>
-                <span class="volume-intensity" ref=${intensityRef}></span>
+            <div class="volume">
+                <div class="volume-name"></div>
+                <${NiiVue} ...${props} />
+                <div class="volume-footer">
+                    <span class="volume-overlay" title="Right Click">Overlay</span>
+                    <span class="volume-intensity" ref=${intensityRef}></span>
+                </div>
             </div>
-        </div>
-    `;
+        `;
     };
 
-    const NiiVue = ({ nv, intensityRef, width, height, volumeNumber, setVol0 }) => {
+    const NiiVue = ({ nv, intensityRef, width, height, volumeNumber, setVol0, viewType, interpolation, scaling }) => {
         const canvasRef = useRef();
         useEffect(() => {
             nv.attachToCanvas(canvasRef.current);
@@ -58,14 +59,24 @@
                 setVol0(nv.volumes[0]);
             }
         }, []);
+        useEffect(() => nv.setSliceType(viewType), [viewType]);
+        useEffect(() => nv.setInterpolation(!interpolation), [interpolation]);
+        useEffect(() => {
+            if (scaling.isManual) {
+                nv.volumes[0].cal_min = scaling.min;
+                nv.volumes[0].cal_max = scaling.max;
+                nv.updateGLVolume();
+            }
+        }, [scaling]);
+
         return html`<canvas ref=${canvasRef} width=${width} height=${height}></canvas>`;
     };
 
-    const Header = ({ vol0 }) => html`
-    <div class="horizontal-layout">
-        <${ShowHeaderButton} info=${vol0.hdr.toFormattedString()} />
-        <${MetaData} meta=${vol0.getImageMetadata()} />
-    </div>
+    const Header = ({ vol0 }) => vol0.hdr && html`
+        <div class="horizontal-layout">
+            <${ShowHeaderButton} info=${vol0.hdr.toFormattedString()} />
+            <${MetaData} meta=${vol0.getImageMetadata()} />
+        </div>
 `;
 
     const MetaData = ({ meta }) => {
@@ -98,43 +109,67 @@
     `;
     };
 
-    const Footer = () => html`
-    <div id="location"></div>
-    <div class="horizontal-layout">
-        <${AddImagesButton} />
-        <${NearestInterpolation} />
-        <${MinValue} />
-        <${MaxValue} />
-        <${SelectView} />
-    </div>
+    const Footer = ({ setViewType, setInterpolation, setScaling, vol0 }) => html`
+        <div id="location"></div>
+        <div class="horizontal-layout">
+            <${AddImagesButton} />
+            <${NearestInterpolation} setInterpolation=${setInterpolation} />
+            <${Scaling} setScaling=${setScaling} vol0=${vol0} />
+            <${SelectView} setViewType=${setViewType} />
+        </div>
 `;
 
     const AddImagesButton = () => html`<button onClick=${addImagesEvent}>Add Images</button>`;
 
-    const NearestInterpolation = () => html`
-    <label for="NearestInterpolation">No Interpolation</label>
-    <input type="checkbox" id="NearestInterpolation" />
-`;
+    const NearestInterpolation = ({ setInterpolation }) => {
+        const checkboxRef = useRef();
+        useEffect(() => {
+            checkboxRef.current.checked = true;
+            checkboxRef.current.addEventListener('change', () => setInterpolation(checkboxRef.current.checked));
+        }, []);
+        return html`
+            <label for="Interpolation">Interpolation</label>
+            <input type="checkbox" id="Interpolation" ref=${checkboxRef} />
+        `;
+    };
 
-    const MinValue = () => html`
-    <label for="minvalue">Min</label>
-    <input type="number" id="minvalue" value="0" />
-`;
+    const Scaling = ({ setScaling, vol0 }) => {
+        const minRef = useRef();
+        const maxRef = useRef();
+        const [step, setStep] = useState("0.0");
+        useEffect(() => {
+            if (!vol0.hdr) { return; }
+            minRef.current.value = vol0.cal_min.toPrecision(2);
+            maxRef.current.value = vol0.cal_max.toPrecision(2);
+            setStep(((vol0.cal_max - vol0.cal_min) / 10).toPrecision(2));
+            const update = () => setScaling({ isManual: true, min: parseFloat(minRef.current.value), max: parseFloat(maxRef.current.value) });
+            minRef.current.addEventListener('change', update);
+            maxRef.current.addEventListener('change', update);
+        }, [vol0]);
 
-    const MaxValue = () => html`
-    <label for="maxvalue">Max</label>
-    <input type="number" id="maxvalue" value="0" />
-`;
+        return html`
+            <label for="minvalue">Min</label>
+            <input type="number" ref=${minRef} step=${step} />
+            <label for="maxvalue">Max</label>
+            <input type="number" ref=${maxRef} step=${step} />
+        `;
+    };
 
-    const SelectView = () => html`
-    <select id="view">
-        <option value="0">Axial</option>
-        <option value="1">Coronal</option>
-        <option value="2">Sagittal</option>
-        <option value="3">A+C+S+R</option>
-        <option value="4">Render</option>
-    </select>
-`;
+    const SelectView = ({ setViewType }) => {
+        const selectRef = useRef();
+        useEffect(() => {
+            selectRef.current.addEventListener('change', () => setViewType(parseInt(selectRef.current.value)));
+        }, []);
+        return html`
+            <select ref=${selectRef}>
+                <option value="0">Axial</option>
+                <option value="1">Coronal</option>
+                <option value="2">Sagittal</option>
+                <option value="3">A+C+S+R</option>
+                <option value="4">Render</option>
+            </select>
+        `;
+    };
 
     render(html`<${App} />`, document.getElementById("app"));
 
@@ -468,12 +503,6 @@
         }
     }
 
-    function setViewType(type) {
-        state.viewType = type;
-        document.getElementById("view").value = state.viewType;
-        document.getElementById("view").dispatchEvent(new Event('change'));
-    }
-
     function changeScalingEvent() {
         state.scaling.isManual = true;
         state.scaling.min = document.getElementById("minvalue").value;
@@ -628,20 +657,12 @@
     }
 
     function addListeners() {
-        document.getElementById("NearestInterpolation").addEventListener('change', () => {
-            nvArray.forEach((item) => item.setInterpolation(document.getElementById("NearestInterpolation").checked));
-        });
         document.getElementById("minvalue").addEventListener('change', () => {
             changeScalingEvent();
         });
         document.getElementById("maxvalue").addEventListener('change', () => {
             changeScalingEvent();
         });
-        document.getElementById("view").addEventListener('change', () => {
-            const val = parseInt(document.getElementById("view").value);
-            nvArray.forEach((item) => item.setSliceType(val));
-        });
-        window.addEventListener("getCanvasSize", () => getCanvasSize());
         window.addEventListener('message', async (e) => {
             const { type, body } = e.data;
             switch (type) {
