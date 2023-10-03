@@ -12,10 +12,10 @@
         const [location, setLocation] = useState("");
         useEffect(() => window.addEventListener("message", createMessageListener(setNvArray)), []);
 
-        useEffect(() => window.postMessage({
-            type: 'addImage',
-            body: { uri: 'https://niivue.github.io/niivue/images/mni152.nii.gz' }
-        }), []);
+        // useEffect(() => window.postMessage({
+        //     type: 'addImage',
+        //     body: { uri: 'https://niivue.github.io/niivue/images/mni152.nii.gz' }
+        // }), []);
 
 
         return html`
@@ -41,7 +41,7 @@
     };
 
     const Volume = (props) => {
-        const [intensity, setIntensity] = useState(0);
+        const [intensity, setIntensity] = useState("");
         return html`
             <div class="volume">
                 <div class="volume-name"></div>
@@ -58,12 +58,19 @@
         const overlayRef = useRef();
         const [clickPosition, setClickPosition] = useState({ x: 0, y: 0 });
         const [isOpen, setIsOpen] = useState(false);
+        const removeContextMenu = () => {
+            setIsOpen(false);
+            document.removeEventListener("click", removeContextMenu);
+            document.removeEventListener("contextmenu", removeContextMenu);
+        };
         useEffect(() => {
             overlayRef.current.addEventListener("contextmenu", (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 setIsOpen(true);
                 setClickPosition({ x: e.clientX, y: e.clientY });
+                document.addEventListener("click", removeContextMenu);
+                document.addEventListener("contextmenu", removeContextMenu);
             });
         }, []);
         return html`
@@ -72,15 +79,20 @@
         `;
     };
 
-    const ContextMenu = ({ clickPosition }) => {
+    const ContextMenu = ({ clickPosition, imageIndex, removeLastVolume }) => {
         const contextMenu = useRef();
+        const nVolumes = 2;
+        const nMeshes = 1;
+        const nMeshLayers = 1;
         return html`
             <div class="context-menu" ref=${contextMenu} style=${`left: ${clickPosition.x}px; top: ${clickPosition.y - contextMenu.offsetHeight}px;`}>
-                <div name="addOverlay" class="context-menu-item">Add</div>
-                <div name="removeOverlay" class="context-menu-item">Remove</div>
-                <div name="addMeshCurvature" class="context-menu-item">Add Mesh Curvature</div>
-                <div name="addMeshOverlay" class="context-menu-item">Add Mesh Overlay</div>
-                <div name="replaceMeshOverlay" class="context-menu-item">Replace Mesh Overlay</div>
+                <div name="addOverlay" class="context-menu-item" onclick=${() => addOverlayEvent(0, "overlay")}>Add</div>
+                ${nVolumes > 1 && html`<div name="removeOverlay" class="context-menu-item" onclick=${removeLastVolume}>Remove</div>`}
+                ${nMeshes > 0 && html`
+                    <div name="addMeshCurvature" class="context-menu-item" onclick=${() => addOverlayEvent(0, "addMeshCurvature")}>Add Mesh Curvature</div>
+                    <div name="addMeshOverlay" class="context-menu-item" onclick=${() => addOverlayEvent(0, "addMeshOverlay")}>Add Mesh Overlay</div>
+                    ${nMeshLayers > 0 && html`<div name="replaceMeshOverlay" class="context-menu-item" onclick=${() => addOverlayEvent(0, "replaceMeshOverlay")}>Replace Mesh Overlay</div>`}
+                `}
             </div>
         `;
     };
@@ -93,19 +105,11 @@
             nv.body = null;
             nv.onLocationChange = (data) => setIntensityAndLocation(data, setIntensity, setLocation);
             nv.createOnLocationChange();
-            if (volumeNumber === 0) {
-                setVol0(nv.volumes[0]);
-            }
+            setVol0((vol0) => (nv.volumes.length > 0 && !vol0.hdr) ? nv.volumes[0] : vol0);
         }, []);
         useEffect(() => nv.setSliceType(viewType), [viewType]);
         useEffect(() => nv.setInterpolation(!interpolation), [interpolation]);
-        useEffect(() => {
-            if (scaling.isManual) {
-                nv.volumes[0].cal_min = scaling.min;
-                nv.volumes[0].cal_max = scaling.max;
-                nv.updateGLVolume();
-            }
-        }, [scaling]);
+        useEffect(() => applyScale(nv, scaling), [scaling]);
 
         return html`<canvas ref=${canvasRef} width=${width} height=${height}></canvas>`;
     };
@@ -115,7 +119,7 @@
             <${ShowHeaderButton} info=${vol0.hdr.toFormattedString()} />
             <${MetaData} meta=${vol0.getImageMetadata()} />
         </div>
-`;
+    `;
 
     const MetaData = ({ meta }) => {
         if (!meta.nx) { return html``; }
@@ -219,29 +223,54 @@
 
     function createMessageListener(setNvArray) {
         async function messageListener(e) {
-            const { type, body } = e.data;
-            switch (type) {
-                case "addImage":
-                    {
-                        const nv = new Niivue({ isResizeCanvas: false });
-                        nv.body = body;
-                        setNvArray((prev) => [...prev, nv]);
-                    }
-                    break;
-                case "initCanvas":
-                    {
-                        // setViewType(0); // Axial
-                        // state.nTotalCanvas += body.n;
-                    }
-                    break;
-            }
+            setNvArray((nvArray) => {
+                const { type, body } = e.data;
+                switch (type) {
+                    case 'addMeshOverlay':
+                        {
+                            addMeshOverlay(nvArray[body.index], body, "overlay");
+                        }
+                        break;
+                    case 'addMeshCurvature':
+                        {
+                            addMeshOverlay(nvArray[body.index], body, "curvature");
+                        }
+                        break;
+                    case 'replaceMeshOverlay':
+                        {
+                            addMeshOverlay(nvArray[body.index], body, "replaceOverlay");
+                        }
+                        break;
+                    case 'overlay':
+                        {
+                            addOverlay(nvArray[body.index], body);
+                        }
+                        break;
+                    case "addImage":
+                        {
+                            const nv = new Niivue({ isResizeCanvas: false });
+                            nv.body = body;
+                            nvArray = [...nvArray, nv]; // changes nvArray and triggers rerender
+                        }
+                        break;
+                    case "initCanvas":
+                        {
+                            // setViewType(0); // Axial
+                            // state.nTotalCanvas += body.n;
+                        }
+                        break;
+                }
+                return nvArray;
+            });
         }
         return messageListener;
     }
 
     function setIntensityAndLocation(data, setIntensity, setLocation) {
         const parts = data.string.split("=");
-        setIntensity(parts.pop());
+        if (parts.length === 2) {
+            setIntensity(parts.pop());
+        }
         setLocation(parts.pop());
     }
 
@@ -256,8 +285,9 @@
             }
         } else {
             if (item.data) {
-                const mesh = NVMesh.readMesh(item.data, item.uri, nv.gl);
-                nv.addMesh(mesh);
+                NVMesh.readMesh(item.data, item.uri, nv.gl).then((mesh) => {
+                    nv.addMesh(mesh);
+                });
             } else {
                 const meshList = [{ url: item.uri }];
                 nv.loadMeshes(meshList);
@@ -278,6 +308,14 @@
             return ySize / zSize;
         }
         return 1;
+    }
+
+    function applyScale(nv, scaling) {
+        if (scaling.isManual) {
+            nv.volumes[0].cal_min = scaling.min;
+            nv.volumes[0].cal_max = scaling.max;
+            nv.updateGLVolume();
+        }
     }
 
     function getCanvasSize(nCanvas, meta, viewType, windowWidthExt, windowHeightExt) {
@@ -540,8 +578,7 @@
         });
     }
 
-    function addMeshOverlay(item, type) {
-        const nv = nvArray[item.index];
+    function addMeshOverlay(nv, item, type) {
         if (nv.meshes.length === 0) { return; };
 
         const a = {};
@@ -578,41 +615,40 @@
         if (type === "curvature") {
             nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "colorbarVisible", false);
         }
-        if (type === "overlay") {
-            document.getElementById("volume-overlay-options" + item.index).style.display = "block";
-            const minInput = document.getElementById("overlay-minvalue");
-            const maxInput = document.getElementById("overlay-maxvalue");
-            minInput.step = ((scaling.max - scaling.min) / 10).toPrecision(2);
-            maxInput.step = ((scaling.max - scaling.min) / 10).toPrecision(2);
-            minInput.addEventListener('change', () => {
-                nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "cal_min", minInput.value.toPrecision(2));
-                nv.updateGLVolume();
-                minInput.step = ((scaling.max - scaling.min) / 10).toPrecision(2);
-            });
-            maxInput.addEventListener('change', () => {
-                nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "cal_max", maxInput.value.toPrecision(2));
-                nv.updateGLVolume();
-                maxInput.step = ((scaling.max - scaling.min) / 10).toPrecision(2);
-            });
-            const colormap = document.getElementById("overlay-colormap");
-            colormap.value = a.colormap;
-            colormap.addEventListener('change', () => {
-                if (colormap.value === "symmetric") {
-                    nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "useNegativeCmap", true);
-                    nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "colormap", "warm");
-                    nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "colormapNegative", "winter");
-                } else {
-                    nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "useNegativeCmap", false);
-                    nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "colormap", colormap.value);
-                    nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "colormapNegative", "");
-                }
-                nv.updateGLVolume();
-            });
-        }
+        // if (type === "overlay") {
+        //     document.getElementById("volume-overlay-options" + item.index).style.display = "block";
+        //     const minInput = document.getElementById("overlay-minvalue");
+        //     const maxInput = document.getElementById("overlay-maxvalue");
+        //     minInput.step = ((scaling.max - scaling.min) / 10).toPrecision(2);
+        //     maxInput.step = ((scaling.max - scaling.min) / 10).toPrecision(2);
+        //     minInput.addEventListener('change', () => {
+        //         nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "cal_min", minInput.value.toPrecision(2));
+        //         nv.updateGLVolume();
+        //         minInput.step = ((scaling.max - scaling.min) / 10).toPrecision(2);
+        //     });
+        //     maxInput.addEventListener('change', () => {
+        //         nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "cal_max", maxInput.value.toPrecision(2));
+        //         nv.updateGLVolume();
+        //         maxInput.step = ((scaling.max - scaling.min) / 10).toPrecision(2);
+        //     });
+        //     const colormap = document.getElementById("overlay-colormap");
+        //     colormap.value = a.colormap;
+        //     colormap.addEventListener('change', () => {
+        //         if (colormap.value === "symmetric") {
+        //             nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "useNegativeCmap", true);
+        //             nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "colormap", "warm");
+        //             nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "colormapNegative", "winter");
+        //         } else {
+        //             nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "useNegativeCmap", false);
+        //             nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "colormap", colormap.value);
+        //             nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "colormapNegative", "");
+        //         }
+        //         nv.updateGLVolume();
+        //     });
+        // }
     }
 
-    async function addOverlay(item) {
-        const nv = nvArray[item.index];
+    async function addOverlay(nv, item) {
         if (isImageType(item)) {
             const image = new niivue.NVImage(item.data, item.uri, 'redyell', 0.5);
             nv.addVolume(image);
