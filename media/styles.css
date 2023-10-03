@@ -66,10 +66,6 @@ body {
     font-size: 1.2em;
     position: absolute;
     bottom: 0.2em;
-    left: 0;
-    display: flex;
-    gap: 10px;
-    flex-direction: row;
 }
 
 .horizontal-layout {

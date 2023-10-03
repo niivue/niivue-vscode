@@ -12,16 +12,10 @@
         const [location, setLocation] = useState("");
         useEffect(() => window.addEventListener("message", createMessageListener(setNvArray)), []);
 
-        // useEffect(() => window.postMessage({
-        //     type: 'addImage',
-        //     body: { uri: 'https://niivue.github.io/niivue/images/mni152.nii.gz' }
-        // }), []);
-
-        // for (let i = 0; i < nvArray.length; i++) {
-        //     nvArray[i].syncWith(nvArray[i + 1]);
-        // }
-        // setNames();
-
+        useEffect(() => window.postMessage({
+            type: 'addImage',
+            body: { uri: 'https://niivue.github.io/niivue/images/mni152.nii.gz' }
+        }), []);
 
         return html`
             <${Header} vol0=${vol0} />
@@ -36,6 +30,10 @@
             window.addEventListener("resize", () => setDimensions([window.innerWidth, window.innerHeight]));
         }, []);
 
+        for (let i = 0; i < nvArray.length; i++) {
+            nvArray[i].syncWith(nvArray[i + 1]);
+        }
+
         const meta = nvArray.length > 0 && nvArray[0].volumes.length > 0 ? nvArray[0].volumes[0].getImageMetadata() : {};
         const [width, height] = getCanvasSize(nvArray.length, meta, props.viewType, windowWidth, windowHeight);
         const names = differenceInNames(getNames(nvArray));
@@ -43,24 +41,25 @@
             <div class="container">
                 ${nvArray.map((nv, i) => html`<${Volume} nv=${nv} width=${width} height=${height} volumeNumber=${i} name=${names[i]} ...${props} />`)}
             </div>
-    `;
+        `;
     };
 
-    const Volume = ({name, ...props}) => {
+    const Volume = ({ name, ...props }) => {
         const [intensity, setIntensity] = useState("");
+        const colormaps = ["gray", "redyell", "hot", "hsv", "cool", "bone", "pink", "jet", "symmetric"];
         return html`
             <div class="volume">
                 <div class="volume-name">${name}</div>
                 <${NiiVue} ...${props} setIntensity=${setIntensity} />
-                <div class="volume-footer">
-                    <${VolumeOverlay} />                
+                <div class="volume-footer" class="horizontal-layout">
+                    <${VolumeOverlay} nv=${props.nv} colormaps=${colormaps} />                
                     <span class="volume-intensity">${intensity}</span>
                 </div>
             </div>
         `;
     };
 
-    const VolumeOverlay = () => {
+    const VolumeOverlay = ({ colormaps, nv }) => {
         const overlayRef = useRef();
         const [clickPosition, setClickPosition] = useState({ x: 0, y: 0 });
         const [isOpen, setIsOpen] = useState(false);
@@ -79,12 +78,38 @@
                 document.addEventListener("contextmenu", removeContextMenu);
             });
         }, []);
+
         return html`
             <span class="volume-overlay" title="Right Click" ref=${overlayRef}>Overlay</span>
+            <${OverlayOptions} colormaps=${colormaps} nv=${nv} />
             ${isOpen && html`<${ContextMenu} clickPosition=${clickPosition} />`}
         `;
     };
 
+    const OverlayOptions = ({ nv, colormaps }) => {
+        if (nv.volumes.length < 2 && (nv.meshes.length === 0 || nv.meshes[0].layers.length === 0)) { return html``; }
+        const [init, setScaling] = nv.volumes.length > 1 ? 
+            [nv.volumes[nv.volumes.length - 1], (scaling) => {
+                nv.volumes[nv.volumes.length - 1].cal_min = scaling.min;
+                nv.volumes[nv.volumes.length - 1].cal_max = scaling.max;
+                nv.updateGLVolume();
+            }] :
+            [nv.meshes[0].layers[nv.meshes[0].layers.length - 1], (scaling) => {
+                nv.setMeshLayerProperty(nv.meshes[0].id, nv.meshes[0].layers.length - 1, "cal_min", scaling.min);
+                nv.setMeshLayerProperty(nv.meshes[0].id, nv.meshes[0].layers.length - 1, "cal_max", scaling.max);
+                nv.updateGLVolume();
+            }];
+        
+        // TODO colormap
+        return html`
+            <${Scaling} setScaling=${setScaling} init=${init} />
+            <select id="overlay-colormap">
+                ${colormaps.map((colormap) => html`<option value=${colormap}>${colormap}</option>`)}
+            </select>
+        `;
+    };
+
+    // TODO remove last volume + layout
     const ContextMenu = ({ clickPosition, imageIndex, removeLastVolume }) => {
         const contextMenu = useRef();
         const nVolumes = 2;
@@ -162,7 +187,7 @@
         <div class="horizontal-layout">
             <${AddImagesButton} />
             <${NearestInterpolation} setInterpolation=${setInterpolation} />
-            <${Scaling} setScaling=${setScaling} vol0=${vol0} />
+            <${Scaling} setScaling=${setScaling} init=${vol0} />
             <${SelectView} setViewType=${setViewType} />
         </div>
 `;
@@ -183,28 +208,26 @@
         `;
     };
 
-    const Scaling = ({ setScaling, vol0 }) => {
+    const Scaling = ({ setScaling, init }) => {
         const minRef = useRef();
         const maxRef = useRef();
-        const [step, setStep] = useState("0.0");
         useEffect(() => {
-            if (!vol0.hdr) { return; }
-            minRef.current.value = vol0.cal_min.toPrecision(2);
-            maxRef.current.value = vol0.cal_max.toPrecision(2);
-            setStep(((vol0.cal_max - vol0.cal_min) / 10).toPrecision(2));
-            const update = () => setScaling({ isManual: true, min: parseFloat(minRef.current.value), max: parseFloat(maxRef.current.value) });
-            minRef.current.addEventListener('change', update);
-            maxRef.current.addEventListener('change', update);
-        }, [vol0]);
-
+            if (!init.cal_min) { return; }
+            minRef.current.value = init.cal_min.toPrecision(2);
+            maxRef.current.value = init.cal_max.toPrecision(2);
+            const step = ((init.cal_max - init.cal_min) / 10).toPrecision(2);
+            minRef.current.step = step;
+            maxRef.current.step = step;
+        }, [init]);
+        const update = () => setScaling({ isManual: true, min: parseFloat(minRef.current.value), max: parseFloat(maxRef.current.value) });
         return html`
             <label>
                 <span>Min </span>
-                <input type="number" ref=${minRef} step=${step} />
+                <input type="number" ref=${minRef} onchange=${update} />
             </label>
             <label>
                 <span>Max </span>
-                <input type="number" ref=${maxRef} step=${step} />
+                <input type="number" ref=${maxRef} onchange=${update} />
             </label>
         `;
     };
@@ -407,7 +430,7 @@
             if (item.volumes.length > 0) {
                 return decodeURIComponent(item.volumes[0].name);
             }
-            if (item.meshes.length > 0){
+            if (item.meshes.length > 0) {
                 return decodeURIComponent(item.meshes[0].name);
             }
             return "";
