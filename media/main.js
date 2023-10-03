@@ -41,7 +41,7 @@
                 <div class="volume-name"></div>
                 <${NiiVue} ...${props} />
                 <div class="volume-footer">
-                    <span class="volume-overlay" title="Right Click">Overlay</span>
+                    <${VolumeOverlay} />                
                     <span class="volume-intensity" ref=${intensityRef}></span>
                 </div>
             </div>
@@ -50,9 +50,9 @@
 
     const NiiVue = ({ nv, intensityRef, width, height, volumeNumber, setVol0, viewType, interpolation, scaling }) => {
         const canvasRef = useRef();
-        useEffect(() => {
+        useEffect(async () => {
             nv.attachToCanvas(canvasRef.current);
-            loadVolume(nv, nv.body);
+            await loadVolume(nv, nv.body);
             nv.body = null;
             nv.onLocationChange = createIntensityChangeHandler(intensityRef.current);
             if (volumeNumber === 0) {
@@ -128,8 +128,10 @@
             checkboxRef.current.addEventListener('change', () => setInterpolation(checkboxRef.current.checked));
         }, []);
         return html`
-            <label for="Interpolation">Interpolation</label>
-            <input type="checkbox" id="Interpolation" ref=${checkboxRef} />
+            <div>
+                <label for="Interpolation">Interpolation </label>
+                <input type="checkbox" id="Interpolation" ref=${checkboxRef} />
+            </div>
         `;
     };
 
@@ -148,10 +150,14 @@
         }, [vol0]);
 
         return html`
-            <label for="minvalue">Min</label>
-            <input type="number" ref=${minRef} step=${step} />
-            <label for="maxvalue">Max</label>
-            <input type="number" ref=${maxRef} step=${step} />
+            <div>
+                <label for="minvalue">Min </label>
+                <input type="number" ref=${minRef} step=${step} />
+            </div>
+            <div>
+                <label for="maxvalue">Max </label>
+                <input type="number" ref=${maxRef} step=${step} />
+            </div>
         `;
     };
 
@@ -203,14 +209,14 @@
         };
     }
 
-    function loadVolume(nv, item) {
+    async function loadVolume(nv, item) {
         if (isImageType(item)) {
             if (item.data) {
                 const volume = new NVImage(item.data, item.uri);
                 nv.addVolume(volume);
             } else {
                 const volumeList = [{ url: item.uri }];
-                nv.loadVolumes(volumeList);
+                await nv.loadVolumes(volumeList);
             }
         } else {
             if (item.data) {
@@ -253,8 +259,6 @@
         }
         return [bestWidth, bestWidth / aspectRatio];
     }
-
-    // Before PREACT
 
     // This function finds common patterns in the names and only returns the parts of the names that are different
     function differenceInNames(names, rec = true) {
@@ -310,25 +314,7 @@
         return diffNames;
     }
 
-    function createCanvases(n) {
-        for (let i = 0; i < n; i++) {
-            const imageIndex = state.nCanvas;
-
-            const volume = document.getElementById("volumeTemplate").content.cloneNode(true).firstElementChild;
-            volume.id = "volume" + imageIndex;
-            document.getElementById("container").appendChild(volume);
-
-            volume.getElementsByTagName("canvas")[0].id = "gl" + imageIndex;
-            volume.getElementsByClassName("volume-name")[0].id = "volume-name" + imageIndex;
-            volume.getElementsByClassName("volume-intensity")[0].id = "volume-intensity" + imageIndex;
-            volume.getElementsByClassName("volume-footer")[0].id = "volume-footer" + imageIndex;
-            volume.getElementsByClassName("volume-overlay-options")[0].id = "volume-overlay-options" + imageIndex;
-
-            state.nCanvas += 1;
-
-            addContextMenuListener(imageIndex);
-        }
-    }
+    // Before PREACT
 
     function addContextMenuListener(imageIndex) {
         const field = document.getElementById("volume-footer" + imageIndex);
@@ -703,29 +689,6 @@
 
     // Main - Globals
     if (typeof acquireVsCodeApi === 'function') {
-        var vscode = acquireVsCodeApi();
-    }
-    const state = {
-        aspectRatio: 1,
-        viewType: 3, // all views
-        nCanvas: 0,
-        nTotalCanvas: 0,
-        interpolation: true,
-        scaling: {
-            isManual: false,
-            min: 0,
-            max: 0,
-        }
-    };
-    // setViewType(state.viewType);
-    // addListeners();
-
-    if (typeof vscode === 'object') {
-        vscode.postMessage({ type: 'ready' });
-    } else { // Running in browser
-        window.postMessage({
-            type: 'addImage',
-            body: { uri: 'https://niivue.github.io/niivue/images/mni152.nii.gz' }
-        });
+        acquireVsCodeApi().postMessage({ type: 'ready' });
     }
 }());
