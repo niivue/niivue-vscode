@@ -38,18 +38,19 @@
 
         const meta = nvArray.length > 0 && nvArray[0].volumes.length > 0 ? nvArray[0].volumes[0].getImageMetadata() : {};
         const [width, height] = getCanvasSize(nvArray.length, meta, props.viewType, windowWidth, windowHeight);
+        const names = differenceInNames(getNames(nvArray));
         return html`
             <div class="container">
-                ${nvArray.map((nv, i) => html`<${Volume} nv=${nv} width=${width} height=${height} volumeNumber=${i} ...${props} />`)}
+                ${nvArray.map((nv, i) => html`<${Volume} nv=${nv} width=${width} height=${height} volumeNumber=${i} name=${names[i]} ...${props} />`)}
             </div>
     `;
     };
 
-    const Volume = (props) => {
+    const Volume = ({name, ...props}) => {
         const [intensity, setIntensity] = useState("");
         return html`
             <div class="volume">
-                <div class="volume-name"></div>
+                <div class="volume-name">${name}</div>
                 <${NiiVue} ...${props} setIntensity=${setIntensity} />
                 <div class="volume-footer">
                     <${VolumeOverlay} />                
@@ -341,6 +342,7 @@
 
     // This function finds common patterns in the names and only returns the parts of the names that are different
     function differenceInNames(names, rec = true) {
+        if (names.length === 0) { return []; }
         const minLen = Math.min(...names.map((name) => name.length));
         let startCommon = minLen;
         outer:
@@ -400,21 +402,16 @@
         return fileTypesArray.find((fileType) => item.uri.endsWith(fileType));
     }
 
-    function getNames() {
+    function getNames(nvArray) {
         return nvArray.map((item) => {
             if (item.volumes.length > 0) {
                 return decodeURIComponent(item.volumes[0].name);
-            } else {
+            }
+            if (item.meshes.length > 0){
                 return decodeURIComponent(item.meshes[0].name);
             }
+            return "";
         });
-    }
-
-    function setNames() {
-        const diffNames = differenceInNames(getNames());
-        for (let i = 0; i < diffNames.length; i++) {
-            document.getElementById("volume-name" + i).textContent = diffNames[i].slice(-25); // about 10px per character
-        }
     }
 
     function addMeshOverlay(nv, item, type) {
