@@ -9,12 +9,19 @@
         const [viewType, setViewType] = useState(3); // all views
         const [interpolation, setInterpolation] = useState(true);
         const [scaling, setScaling] = useState({ isManual: false, min: 0, max: 0 });
+        const [location, setLocation] = useState("");
         useEffect(() => window.addEventListener("message", createMessageListener(setNvArray)), []);
+
+        useEffect(() => window.postMessage({
+            type: 'addImage',
+            body: { uri: 'https://niivue.github.io/niivue/images/mni152.nii.gz' }
+        }), []);
+
 
         return html`
             <${Header} vol0=${vol0} />
-            <${Container} nvArray=${nvArray} setVol0=${setVol0} viewType=${viewType} interpolation=${interpolation} scaling=${scaling} />
-            <${Footer} setViewType=${setViewType} setInterpolation=${setInterpolation} setScaling=${setScaling} vol0=${vol0} />
+            <${Container} nvArray=${nvArray} setVol0=${setVol0} viewType=${viewType} interpolation=${interpolation} scaling=${scaling} setLocation=${setLocation} />
+            <${Footer} setViewType=${setViewType} setInterpolation=${setInterpolation} setScaling=${setScaling} vol0=${vol0} location=${location} />
         `;
     };
 
@@ -27,34 +34,65 @@
         const meta = nvArray.length > 0 && nvArray[0].volumes.length > 0 ? nvArray[0].volumes[0].getImageMetadata() : {};
         const [width, height] = getCanvasSize(nvArray.length, meta, props.viewType, windowWidth, windowHeight);
         return html`
-            <div id="container">
+            <div class="container">
                 ${nvArray.map((nv, i) => html`<${Volume} nv=${nv} width=${width} height=${height} volumeNumber=${i} ...${props} />`)}
             </div>
     `;
     };
 
     const Volume = (props) => {
-        const intensityRef = useRef();
-        props.intensityRef = intensityRef;
+        const [intensity, setIntensity] = useState(0);
         return html`
             <div class="volume">
                 <div class="volume-name"></div>
-                <${NiiVue} ...${props} />
+                <${NiiVue} ...${props} setIntensity=${setIntensity} />
                 <div class="volume-footer">
                     <${VolumeOverlay} />                
-                    <span class="volume-intensity" ref=${intensityRef}></span>
+                    <span class="volume-intensity">${intensity}</span>
                 </div>
             </div>
         `;
     };
 
-    const NiiVue = ({ nv, intensityRef, width, height, volumeNumber, setVol0, viewType, interpolation, scaling }) => {
+    const VolumeOverlay = () => {
+        const overlayRef = useRef();
+        const [clickPosition, setClickPosition] = useState({ x: 0, y: 0 });
+        const [isOpen, setIsOpen] = useState(false);
+        useEffect(() => {
+            overlayRef.current.addEventListener("contextmenu", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsOpen(true);
+                setClickPosition({ x: e.clientX, y: e.clientY });
+            });
+        }, []);
+        return html`
+            <span class="volume-overlay" title="Right Click" ref=${overlayRef}>Overlay</span>
+            ${isOpen && html`<${ContextMenu} clickPosition=${clickPosition} />`}
+        `;
+    };
+
+    const ContextMenu = ({ clickPosition }) => {
+        const contextMenu = useRef();
+        return html`
+            <div class="context-menu" ref=${contextMenu} style=${`left: ${clickPosition.x}px; top: ${clickPosition.y - contextMenu.offsetHeight}px;`}>
+                <div name="addOverlay" class="context-menu-item">Add</div>
+                <div name="removeOverlay" class="context-menu-item">Remove</div>
+                <div name="addMeshCurvature" class="context-menu-item">Add Mesh Curvature</div>
+                <div name="addMeshOverlay" class="context-menu-item">Add Mesh Overlay</div>
+                <div name="replaceMeshOverlay" class="context-menu-item">Replace Mesh Overlay</div>
+            </div>
+        `;
+    };
+
+    const NiiVue = ({ nv, setIntensity, width, height, volumeNumber, setVol0, viewType, interpolation, scaling, setLocation }) => {
         const canvasRef = useRef();
         useEffect(async () => {
             nv.attachToCanvas(canvasRef.current);
             await loadVolume(nv, nv.body);
             nv.body = null;
-            nv.onLocationChange = createIntensityChangeHandler(intensityRef.current);
+            nv.onLocationChange = (data) => setIntensityAndLocation(data, setIntensity, setLocation);
+            nv.createOnLocationChange();
             if (volumeNumber === 0) {
                 setVol0(nv.volumes[0]);
             }
@@ -109,8 +147,8 @@
     `;
     };
 
-    const Footer = ({ setViewType, setInterpolation, setScaling, vol0 }) => html`
-        <div id="location"></div>
+    const Footer = ({ setViewType, setInterpolation, setScaling, vol0, location }) => html`
+        <div>${location}</div>
         <div class="horizontal-layout">
             <${AddImagesButton} />
             <${NearestInterpolation} setInterpolation=${setInterpolation} />
@@ -128,10 +166,10 @@
             checkboxRef.current.addEventListener('change', () => setInterpolation(checkboxRef.current.checked));
         }, []);
         return html`
-            <div>
-                <label for="Interpolation">Interpolation </label>
-                <input type="checkbox" id="Interpolation" ref=${checkboxRef} />
-            </div>
+            <label>
+                <span>Interpolation</span>
+                <input type="checkbox" ref=${checkboxRef} />
+            </label>
         `;
     };
 
@@ -150,14 +188,14 @@
         }, [vol0]);
 
         return html`
-            <div>
-                <label for="minvalue">Min </label>
+            <label>
+                <span>Min </span>
                 <input type="number" ref=${minRef} step=${step} />
-            </div>
-            <div>
-                <label for="maxvalue">Max </label>
+            </label>
+            <label>
+                <span>Max </span>
                 <input type="number" ref=${maxRef} step=${step} />
-            </div>
+            </label>
         `;
     };
 
@@ -201,12 +239,10 @@
         return messageListener;
     }
 
-    function createIntensityChangeHandler(intensityRef) {
-        return (data) => {
-            const parts = data.string.split("=");
-            intensityRef.textContent = parts.pop();
-            document.getElementById("location").textContent = parts.pop();
-        };
+    function setIntensityAndLocation(data, setIntensity, setLocation) {
+        const parts = data.string.split("=");
+        setIntensity(parts.pop());
+        setLocation(parts.pop());
     }
 
     async function loadVolume(nv, item) {
