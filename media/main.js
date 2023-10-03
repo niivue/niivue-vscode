@@ -4,18 +4,18 @@ const imageFileTypes = '.nii,.nii.gz,.dcm,.mha,.mhd,.nhdr,.nrrd,.mgh,.mgz,.v,.v1
 
 const App = () => {
     const [nvArray, setNvArray] = useState([]);
+    const [vol0, setVol0] = useState({});
     useEffect(() => {
         window.addEventListener("message", createMessageListener(setNvArray));
     }, []);
-    const vol0 = nvArray.length > 0 && nvArray[0].volumes.length > 0 ? nvArray[0].volumes[0] : {};
     return html`
         ${vol0.hdr && html`<${Header} vol0=${vol0} />`}
-        <${Container} nvArray=${nvArray} />
+        <${Container} nvArray=${nvArray} setVol0=${setVol0} />
         <${Footer} />
     `;
 };
 
-const Container = ({ nvArray }) => {
+const Container = ({ nvArray, setVol0 }) => {
     const [[windowWidth, windowHeight], setDimensions] = useState([window.innerWidth, window.innerHeight]);
     useEffect(() => {
         window.addEventListener("resize", () => setDimensions([window.innerWidth, window.innerHeight]));
@@ -26,17 +26,18 @@ const Container = ({ nvArray }) => {
     const [width, height] = getCanvasSize(nvArray.length, meta, viewType, windowWidth, windowHeight);
     return html`
         <div id="container">
-            ${nvArray.map((nv) => html`<${Volume} nv=${nv} width=${width} height=${height} />`)}
+            ${nvArray.map((nv, i) => html`<${Volume} nv=${nv} width=${width} height=${height} key=${i} setVol0=${setVol0} />`)}
         </div>
     `;
 };
 
-const Volume = ({ nv, width, height }) => {
+const Volume = (props) => {
     const intensityRef = useRef();
+    props.intensityRef = intensityRef;
     return html`
         <div class="volume">
             <div class="volume-name"></div>
-            <${NiiVue} nv=${nv} intensityRef=${intensityRef} width=${width} height=${height} />
+            <${NiiVue} ...${props} />
             <div class="volume-footer">
                 <span class="volume-overlay" title="Right Click">Overlay</span>
                 <span class="volume-intensity" ref=${intensityRef}></span>
@@ -45,13 +46,16 @@ const Volume = ({ nv, width, height }) => {
     `;
 };
 
-const NiiVue = ({ nv, intensityRef, width, height }) => {
+const NiiVue = ({ nv, intensityRef, width, height, key, setVol0 }) => {
     const canvasRef = useRef();
     useEffect(() => {
         nv.attachToCanvas(canvasRef.current);
         loadVolume(nv, nv.body);
         nv.body = null;
         nv.onLocationChange = createIntensityChangeHandler(intensityRef.current);
+        if (key === 0) {
+            setVol0(nv.volumes[0]);
+        }
     }, []);
     return html`<canvas ref=${canvasRef} width=${width} height=${height}></canvas>`;
 };
