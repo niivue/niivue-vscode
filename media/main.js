@@ -27,7 +27,7 @@
         const [width, height] = getCanvasSize(nvArray.length, meta, viewType, windowWidth, windowHeight);
         return html`
         <div id="container">
-            ${nvArray.map((nv, i) => html`<${Volume} nv=${nv} width=${width} height=${height} key=${i} setVol0=${setVol0} />`)}
+            ${nvArray.map((nv, i) => html`<${Volume} nv=${nv} width=${width} height=${height} volumeNumber=${i} setVol0=${setVol0} />`)}
         </div>
     `;
     };
@@ -47,14 +47,14 @@
     `;
     };
 
-    const NiiVue = ({ nv, intensityRef, width, height, key, setVol0 }) => {
+    const NiiVue = ({ nv, intensityRef, width, height, volumeNumber, setVol0 }) => {
         const canvasRef = useRef();
         useEffect(() => {
             nv.attachToCanvas(canvasRef.current);
             loadVolume(nv, nv.body);
             nv.body = null;
             nv.onLocationChange = createIntensityChangeHandler(intensityRef.current);
-            if (key === 0) {
+            if (volumeNumber === 0) {
                 setVol0(nv.volumes[0]);
             }
         }, []);
