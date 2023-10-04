@@ -12,10 +12,10 @@
         const [location, setLocation] = useState("");
         useEffect(() => window.onmessage = createMessageListener(setNvArray, setViewType), []);
 
-        useEffect(() => window.postMessage({
-            type: 'addImage',
-            body: { uri: 'https://niivue.github.io/niivue/images/mni152.nii.gz' }
-        }), []);
+        // useEffect(() => window.postMessage({
+        //     type: 'addImage',
+        //     body: { uri: 'https://niivue.github.io/niivue/images/mni152.nii.gz' }
+        // }), []);
 
         return html`
             <${Header} vol0=${vol0} />
@@ -26,6 +26,7 @@
 
     const Container = ({ nvArray, ...props }) => {
         const [[windowWidth, windowHeight], setDimensions] = useState([window.innerWidth, window.innerHeight]);
+        const [change, triggerRender] = useState(false);
         useEffect(() => window.onresize = () => setDimensions([window.innerWidth, window.innerHeight]), []);
         nvArray.forEach((nv) => nv.broadcastTo(nvArray.filter((nvi) => nvi !== nv)));
 
@@ -34,7 +35,7 @@
         const names = differenceInNames(getNames(nvArray));
         return html`
             <div class="container">
-                ${nvArray.map((nv, i) => html`<${Volume} nv=${nv} width=${width} height=${height} volumeIndex=${i} name=${names[i]} ...${props} />`)}
+                ${nvArray.map((nv, i) => html`<${Volume} nv=${nv} width=${width} height=${height} volumeIndex=${i} name=${names[i]} triggerRender=${triggerRender} ...${props} />`)}
             </div>
         `;
     };
@@ -157,7 +158,7 @@
         `;
     };
 
-    const NiiVue = ({ nv, setIntensity, width, height, setVol0, viewType, interpolation, scaling, setLocation }) => {
+    const NiiVue = ({ nv, setIntensity, width, height, setVol0, viewType, interpolation, scaling, setLocation, triggerRender }) => {
         const canvasRef = useRef();
         useEffect(() => nv.attachToCanvas(canvasRef.current), []);
         useEffect(async () => {
@@ -166,6 +167,7 @@
             nv.body = null;
             nv.onLocationChange = (data) => setIntensityAndLocation(data, setIntensity, setLocation);
             nv.createOnLocationChange();
+            triggerRender((change) => !change);
             setVol0((vol0) => (nv.volumes.length > 0 && !vol0.hdr) ? nv.volumes[0] : vol0);
         }, [nv.body]);
         useEffect(() => nv.setSliceType(viewType), [viewType]);
@@ -174,7 +176,7 @@
 
         return html`<canvas ref=${canvasRef} width=${width} height=${height}></canvas>`;
     };
-    
+
     const Header = ({ vol0 }) => vol0.hdr && html`
         <div class="horizontal-layout">
             <${ShowHeaderButton} info=${vol0.hdr.toFormattedString()} />
