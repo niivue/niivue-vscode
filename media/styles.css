@@ -41,10 +41,6 @@ body {
     color: white;
 }
 
-.header-info-button {
-    display: inline-block;
-}
-
 .volume {
     position: relative;
     background: gray;
@@ -63,9 +59,9 @@ body {
 }
 
 .volume-footer {
-    font-size: 1.2em;
     position: absolute;
     bottom: 0.2em;
+    opacity: 0.8;
 }
 
 .horizontal-layout {
@@ -99,16 +95,3 @@ input[type="number"] {
     cursor: pointer;
 }
 
-.submenu {
-    display: none;
-    position: absolute;
-    background-color: #181818;
-    border: 1px solid #292929;
-    top: 0;
-    left: 100%;
-    box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-.volume-overlay-options {
-    display: none;
-}
