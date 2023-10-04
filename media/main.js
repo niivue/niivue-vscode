@@ -20,7 +20,7 @@
         return html`
             <${Header} vol0=${vol0} />
             <${Container} nvArray=${nvArray} setVol0=${setVol0} viewType=${viewType} interpolation=${interpolation} scaling=${scaling} setLocation=${setLocation} />
-            <${Footer} setViewType=${setViewType} interpolation=${interpolation} setInterpolation=${setInterpolation} setScaling=${setScaling} vol0=${vol0} location=${location} />
+            <${Footer} viewType=${viewType} setViewType=${setViewType} interpolation=${interpolation} setInterpolation=${setInterpolation} setScaling=${setScaling} vol0=${vol0} location=${location} />
         `;
     };
 
@@ -34,27 +34,26 @@
         const names = differenceInNames(getNames(nvArray));
         return html`
             <div class="container">
-                ${nvArray.map((nv, i) => html`<${Volume} nv=${nv} width=${width} height=${height} volumeNumber=${i} name=${names[i]} ...${props} />`)}
+                ${nvArray.map((nv, i) => html`<${Volume} nv=${nv} width=${width} height=${height} volumeIndex=${i} name=${names[i]} ...${props} />`)}
             </div>
         `;
     };
 
-    const Volume = ({ name, ...props }) => {
+    const Volume = ({ name, volumeIndex, ...props }) => {
         const [intensity, setIntensity] = useState("");
-        const colormaps = ["gray", "redyell", "hot", "hsv", "cool", "bone", "pink", "jet", "symmetric"];
         return html`
             <div class="volume">
                 <div class="volume-name">${name}</div>
                 <${NiiVue} ...${props} setIntensity=${setIntensity} />
                 <div class="volume-footer" class="horizontal-layout">
-                    <${VolumeOverlay} nv=${props.nv} colormaps=${colormaps} />                
+                    <${VolumeOverlay} nv=${props.nv} volumeIndex=${volumeIndex} />                
                     <span class="volume-intensity">${intensity}</span>
                 </div>
             </div>
         `;
     };
 
-    const VolumeOverlay = ({ colormaps, nv }) => {
+    const VolumeOverlay = ({ colormaps, nv, volumeIndex }) => {
         const [clickPosition, setClickPosition] = useState({ x: 0, y: 0 });
         const [isOpen, setIsOpen] = useState(false);
         const removeContextMenu = () => {
@@ -74,47 +73,70 @@
         return html`
             <span class="volume-overlay" title="Right Click" oncontextmenu=${onContextmenu}>Overlay</span>
             <${OverlayOptions} colormaps=${colormaps} nv=${nv} />
-            ${isOpen && html`<${ContextMenu} clickPosition=${clickPosition} nv=${nv} />`}
+            ${isOpen && html`<${ContextMenu} clickPosition=${clickPosition} nv=${nv} volumeIndex=${volumeIndex} />`}
         `;
     };
 
-    const OverlayOptions = ({ nv, colormaps }) => {
+    const OverlayOptions = ({ nv }) => {
         const isVolumeOverlay = nv.volumes.length > 1;
         const isMeshOverlay = nv.meshes.length > 0 && nv.meshes[0].layers.length > 0;
 
         if (!isVolumeOverlay && !isMeshOverlay) { return html``; }
 
-        const layers = (isVolumeOverlay ? nv.volumes : nv.meshes[0].layers);
+        const layers = isVolumeOverlay ? nv.volumes : nv.meshes[0].layers;
         const overlay = layers[layers.length - 1];
 
-        const setScaling = (scaling) => {
+        const colormaps = isVolumeOverlay ? ["symmetric", ...nv.colormaps()] : ["ge_color", "hsv", "symmetric", "warm"];
+        return html`
+            <${Scaling} setScaling=${(scaling) => setOverlayScaling(nv, isVolumeOverlay, scaling)} init=${overlay} />
+            <select onchange=${(e) => setOverlayColormap(nv, isVolumeOverlay, e.target.value)} value=${overlay.colormap}>
+                ${colormaps.map((c) => html`<option value=${c}>${c}</option>`)}
+            </select>
+        `;
+    };
+
+    function setOverlayScaling(nv, isVolumeOverlay, scaling) {
+        if (isVolumeOverlay) {
+            const overlay = nv.volumes[nv.volumes.length - 1];
             overlay.cal_min = scaling.min;
             overlay.cal_max = scaling.max;
-            nv.updateGLVolume();
-        };
+        } else {
+            const layerNumber = nv.meshes[0].layers.length - 1;
+            nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "cal_min", scaling.min);
+            nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "cal_max", scaling.max);
+        }
+        nv.updateGLVolume();
+    }
 
-        const setColormap = (e) => {
-            if (e.target.value === "symmetric") {
+    function setOverlayColormap(nv, isVolumeOverlay, colormap) {
+        if (isVolumeOverlay) {
+            const overlay = nv.volumes[nv.volumes.length - 1];
+            if (colormap === "symmetric") {
                 overlay.useNegativeCmap = true;
                 overlay.colormap = "warm";
                 overlay.colormapNegative = "winter";
             } else {
                 overlay.useNegativeCmap = false;
-                overlay.colormap = e.target.value;
+                overlay.colormap = colormap;
                 overlay.colormapNegative = "";
             }
-            nv.updateGLVolume();
-        };
+        } else {
+            const layerNumber = nv.meshes[0].layers.length - 1;
+            if (colormap === "symmetric") {
+                nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "useNegativeCmap", true);
+                nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "colormap", "warm");
+                nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "colormapNegative", "winter");
+            } else {
+                nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "useNegativeCmap", false);
+                nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "colormap", colormap);
+                nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "colormapNegative", "");
+            }
+        }
+        nv.updateGLVolume();
+    }
 
-        return html`
-            <${Scaling} setScaling=${setScaling} init=${overlay} />
-            <select onchange=${setColormap}>
-                ${colormaps.map((colormap) => html`<option value=${colormap}>${colormap}</option>`)}
-            </select>
-        `;
-    };
 
-    const ContextMenu = ({ clickPosition, nv }) => {
+    const ContextMenu = ({ clickPosition, nv, volumeIndex }) => {
         const contextMenu = useRef();
         const nVolumes = nv.volumes.length;
         const nMeshes = nv.meshes.length;
@@ -125,18 +147,18 @@
         };
         return html`
             <div class="context-menu" ref=${contextMenu} style=${`left: ${clickPosition.x}px; top: ${clickPosition.y - contextMenu.offsetHeight}px;`}>
-                <div class="context-menu-item" onclick=${() => addOverlayEvent(0, "overlay")}>Add</div>
+                <div class="context-menu-item" onclick=${() => addOverlayEvent(volumeIndex, "overlay")}>Add</div>
                 ${nVolumes > 1 && html`<div class="context-menu-item" onclick=${removeLastVolume}>Remove</div>`}
                 ${nMeshes > 0 && html`
-                    <div class="context-menu-item" onclick=${() => addOverlayEvent(0, "addMeshCurvature")}>Add Mesh Curvature</div>
-                    <div class="context-menu-item" onclick=${() => addOverlayEvent(0, "addMeshOverlay")}>Add Mesh Overlay</div>
-                    ${nMeshLayers > 0 && html`<div class="context-menu-item" onclick=${() => addOverlayEvent(0, "replaceMeshOverlay")}>Replace Mesh Overlay</div>`}
+                    <div class="context-menu-item" onclick=${() => addOverlayEvent(volumeIndex, "addMeshCurvature")}>Add Mesh Curvature</div>
+                    <div class="context-menu-item" onclick=${() => addOverlayEvent(volumeIndex, "addMeshOverlay")}>Add Mesh Overlay</div>
+                    ${nMeshLayers > 0 && html`<div class="context-menu-item" onclick=${() => addOverlayEvent(volumeIndex, "replaceMeshOverlay")}>Replace Mesh Overlay</div>`}
                 `}
             </div>
         `;
     };
 
-    const NiiVue = ({ nv, setIntensity, width, height, volumeNumber, setVol0, viewType, interpolation, scaling, setLocation }) => {
+    const NiiVue = ({ nv, setIntensity, width, height, setVol0, viewType, interpolation, scaling, setLocation }) => {
         const canvasRef = useRef();
         useEffect(async () => {
             nv.attachToCanvas(canvasRef.current);
@@ -178,27 +200,27 @@
         };
 
         return html`
-        <button onClick=${headerButtonClick}>Header</button>
-        <dialog ref=${dialog}>
-            <form>
-                ${text.split('\n').map((line) => html`
-                    <p>${line}</p>
-                `)}
-                <button formmethod="dialog" value="cancel">Close</button>
-            </form>
-        </dialog>
-    `;
+            <button onClick=${headerButtonClick}>Header</button>
+            <dialog ref=${dialog}>
+                <form>
+                    ${text.split('\n').map((line) => html`
+                        <p>${line}</p>
+                    `)}
+                    <button formmethod="dialog" value="cancel">Close</button>
+                </form>
+            </dialog>
+        `;
     };
 
-    const Footer = ({ setViewType, interpolation, setInterpolation, setScaling, vol0, location }) => html`
+    const Footer = ({ viewType, setViewType, interpolation, setInterpolation, setScaling, vol0, location }) => html`
         <div>${location}</div>
         <div class="horizontal-layout">
             <${AddImagesButton} />
             <${NearestInterpolation} interpolation=${interpolation} setInterpolation=${setInterpolation} />
             <${Scaling} setScaling=${setScaling} init=${vol0} />
-            <${SelectView} setViewType=${setViewType} />
+            <${SelectView} viewType=${viewType} setViewType=${setViewType} />
         </div>
-`;
+    `;
 
     const AddImagesButton = () => html`<button onClick=${addImagesEvent}>Add Images</button>`;
 
@@ -233,19 +255,15 @@
         `;
     };
 
-    const SelectView = ({ setViewType }) => {
-        return html`
-            <select onchange=${(e) => setViewType(parseInt(e.target.value))}>
-                <option value="0">Axial</option>
-                <option value="1">Coronal</option>
-                <option value="2">Sagittal</option>
-                <option value="3">A+C+S+R</option>
-                <option value="4">Render</option>
-            </select>
-        `;
-    };
-
-    render(html`<${App} />`, document.getElementById("app"));
+    const SelectView = ({ viewType, setViewType }) => html`
+        <select onchange=${(e) => setViewType(parseInt(e.target.value))} value=${viewType}>
+            <option value="0">Axial</option>
+            <option value="1">Coronal</option>
+            <option value="2">Sagittal</option>
+            <option value="3">A+C+S+R</option>
+            <option value="4">Render</option>
+        </select>
+    `;
 
     function createMessageListener(setNvArray) {
         async function messageListener(e) {
@@ -276,7 +294,7 @@
                         {
                             const nv = new Niivue({ isResizeCanvas: false });
                             nv.body = body;
-                            nvArray = [...nvArray, nv]; // changes nvArray and triggers rerender
+                            nvArray.push(nv);
                         }
                         break;
                     case "initCanvas":
@@ -286,7 +304,7 @@
                         }
                         break;
                 }
-                return nvArray;
+                return [...nvArray]; // triggers rerender after each received message
             });
         }
         return messageListener;
@@ -535,6 +553,8 @@
             input.click();
         }
     }
+
+    render(html`<${App} />`, document.getElementById("app"));
 
     if (typeof acquireVsCodeApi === 'function') {
         acquireVsCodeApi().postMessage({ type: 'ready' });
