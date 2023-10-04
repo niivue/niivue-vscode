@@ -14,10 +14,16 @@
         const [location, setLocation] = useState("");
         useEffect(() => window.onmessage = createMessageListener(setNvArray, setViewType), []);
 
-        // useEffect(() => window.postMessage({
-        //     type: 'addImage',
-        //     body: { uri: 'https://niivue.github.io/niivue/images/mni152.nii.gz' }
-        // }), []);
+        useEffect(() => {
+            if (typeof acquireVsCodeApi === 'function') {
+                acquireVsCodeApi().postMessage({ type: 'ready' });
+            } else {
+                // window.postMessage({
+                //     type: 'addImage',
+                //     body: { uri: 'https://niivue.github.io/niivue/images/mni152.nii.gz' }
+                // });
+            }
+        }, []);
 
         return html`
             <${Header} heightRef=${headerRef} vol0=${vol0} />
@@ -28,13 +34,13 @@
 
     const Container = ({ nvArray, headerRef, footerRef, ...props }) => {
         const [[windowWidth, windowHeight], setDimensions] = useState([window.innerWidth, window.innerHeight]);
-        const [change, triggerRender] = useState(false);
+        const [change, triggerRender] = useState(0);
         const updateDimensions = () => {
             if (!headerRef.current || !footerRef.current) { return; }
             setDimensions([window.innerWidth - 10, window.innerHeight - headerRef.current.offsetHeight - footerRef.current.offsetHeight]);
         };
         useEffect(updateDimensions, [change]);
-        useEffect(() => {window.onresize = updateDimensions; updateDimensions();}, []);
+        useEffect(() => { window.onresize = updateDimensions; updateDimensions(); }, []);
         nvArray.forEach((nv) => nv.broadcastTo(nvArray.filter((nvi) => nvi !== nv)));
 
         const meta = nvArray.length > 0 && nvArray[0].volumes.length > 0 ? nvArray[0].volumes[0].getImageMetadata() : {};
@@ -143,7 +149,6 @@
         nv.updateGLVolume();
     }
 
-
     const ContextMenu = ({ nv, volumeIndex }) => {
         const contextMenu = useRef();
         const nVolumes = nv.volumes.length;
@@ -175,8 +180,19 @@
             nv.body = null;
             nv.onLocationChange = (data) => setIntensityAndLocation(data, setIntensity, setLocation);
             nv.createOnLocationChange();
-            triggerRender((change) => !change);
             setVol0((vol0) => (nv.volumes.length > 0 && !vol0.hdr) ? nv.volumes[0] : vol0);
+            
+            // simulate click on canvas to adjust aspect ratio of nv instance
+            const canvas = canvasRef.current;
+            const rect = canvas.getBoundingClientRect();
+            const factor = viewType === 3 ? 4 : 2;
+            const x = rect.left + rect.width / factor;
+            const y = rect.top + rect.height / factor;
+            canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: x, clientY: y }));
+            canvas.dispatchEvent(new MouseEvent('mouseup', { clientX: x, clientY: y }));
+            // sleep to avoid black images
+            await new Promise(resolve => setTimeout(resolve, 100));
+            triggerRender((change) => change + 1);
         }, [nv.body]);
         useEffect(() => nv.setSliceType(viewType), [viewType]);
         useEffect(() => nv.setInterpolation(!interpolation), [interpolation]);
@@ -311,7 +327,9 @@
                         break;
                     case "initCanvas":
                         {
-                            setViewType(0); // Axial
+                            if (nvArray.length + body.n > 1) {
+                                setViewType(0); // Axial
+                            }
                             growNvArrayBy(nvArray, body.n);
                         }
                         break;
@@ -592,8 +610,4 @@
     }
 
     render(html`<${App} />`, document.getElementById("app"));
-
-    if (typeof acquireVsCodeApi === 'function') {
-        acquireVsCodeApi().postMessage({ type: 'ready' });
-    }
 }());
