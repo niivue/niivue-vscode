@@ -74,58 +74,55 @@
         return html`
             <span class="volume-overlay" title="Right Click" oncontextmenu=${onContextmenu}>Overlay</span>
             <${OverlayOptions} colormaps=${colormaps} nv=${nv} />
-            ${isOpen && html`<${ContextMenu} clickPosition=${clickPosition} />`}
+            ${isOpen && html`<${ContextMenu} clickPosition=${clickPosition} nv=${nv} />`}
         `;
     };
 
     const OverlayOptions = ({ nv, colormaps }) => {
-        if (nv.volumes.length < 2 && (nv.meshes.length === 0 || nv.meshes[0].layers.length === 0)) { return html``; }
-        const [init, setScaling, setColormap] = nv.volumes.length > 1 ?
-            [nv.volumes[nv.volumes.length - 1],
-            (scaling) => {
-                nv.volumes[nv.volumes.length - 1].cal_min = scaling.min;
-                nv.volumes[nv.volumes.length - 1].cal_max = scaling.max;
-                nv.updateGLVolume();
-            },
-            (e) => {
-                nv.volumes[nv.volumes.length - 1].colormap = e.target.value;
-                nv.updateGLVolume();
-            }]
-            :
-            [nv.meshes[0].layers[nv.meshes[0].layers.length - 1],
-            (scaling) => {
-                nv.setMeshLayerProperty(nv.meshes[0].id, nv.meshes[0].layers.length - 1, "cal_min", scaling.min);
-                nv.setMeshLayerProperty(nv.meshes[0].id, nv.meshes[0].layers.length - 1, "cal_max", scaling.max);
-                nv.updateGLVolume();
-            },
-            (e) => {
-                if (e.target.value === "symmetric") {
-                    nv.setMeshLayerProperty(nv.meshes[0].id, nv.meshes[0].layers.length - 1, "useNegativeCmap", true);
-                    nv.setMeshLayerProperty(nv.meshes[0].id, nv.meshes[0].layers.length - 1, "colormap", "warm");
-                    nv.setMeshLayerProperty(nv.meshes[0].id, nv.meshes[0].layers.length - 1, "colormapNegative", "winter");
-                } else {
-                    nv.setMeshLayerProperty(nv.meshes[0].id, nv.meshes[0].layers.length - 1, "useNegativeCmap", false);
-                    nv.setMeshLayerProperty(nv.meshes[0].id, nv.meshes[0].layers.length - 1, "colormap", e.target.value);
-                    nv.setMeshLayerProperty(nv.meshes[0].id, nv.meshes[0].layers.length - 1, "colormapNegative", "");
-                }
-                nv.updateGLVolume();
+        const isVolumeOverlay = nv.volumes.length > 1;
+        const isMeshOverlay = nv.meshes.length > 0 && nv.meshes[0].layers.length > 0;
+
+        if (!isVolumeOverlay && !isMeshOverlay) { return html``; }
+
+        const layers = (isVolumeOverlay ? nv.volumes : nv.meshes[0].layers);
+        const overlay = layers[layers.length - 1];
+
+        const setScaling = (scaling) => {
+            overlay.cal_min = scaling.min;
+            overlay.cal_max = scaling.max;
+            nv.updateGLVolume();
+        };
+
+        const setColormap = (e) => {
+            if (e.target.value === "symmetric") {
+                overlay.useNegativeCmap = true;
+                overlay.colormap = "warm";
+                overlay.colormapNegative = "winter";
+            } else {
+                overlay.useNegativeCmap = false;
+                overlay.colormap = e.target.value;
+                overlay.colormapNegative = "";
             }
-            ];
+            nv.updateGLVolume();
+        };
 
         return html`
-            <${Scaling} setScaling=${setScaling} init=${init} />
+            <${Scaling} setScaling=${setScaling} init=${overlay} />
             <select onchange=${setColormap}>
                 ${colormaps.map((colormap) => html`<option value=${colormap}>${colormap}</option>`)}
             </select>
         `;
     };
 
-    // TODO remove last volume + layout
-    const ContextMenu = ({ clickPosition, imageIndex, removeLastVolume }) => {
+    const ContextMenu = ({ clickPosition, nv }) => {
         const contextMenu = useRef();
-        const nVolumes = 2;
-        const nMeshes = 1;
-        const nMeshLayers = 1;
+        const nVolumes = nv.volumes.length;
+        const nMeshes = nv.meshes.length;
+        const nMeshLayers = nMeshes > 0 ? nv.meshes[0].layers.length : 0;
+        const removeLastVolume = () => {
+            nv.removeVolumeByIndex(nVolumes - 1);
+            nv.updateGLVolume();
+        };
         return html`
             <div class="context-menu" ref=${contextMenu} style=${`left: ${clickPosition.x}px; top: ${clickPosition.y - contextMenu.offsetHeight}px;`}>
                 <div class="context-menu-item" onclick=${() => addOverlayEvent(0, "overlay")}>Add</div>
@@ -418,8 +415,6 @@
         return diffNames;
     }
 
-    // Before PREACT
-
     function isImageType(item) {
         const fileTypesArray = imageFileTypes.split(',');
         return fileTypesArray.find((fileType) => item.uri.endsWith(fileType));
@@ -465,46 +460,14 @@
         if (type === "replaceOverlay") {
             mesh.layers.pop();
         }
-        niivue.NVMesh.readLayer(item.uri, item.data, mesh, a.opacity, a.colormap, a.colormapNegative, a.useNegativeCmap, a.calMin, a.calMax);
+        NVMesh.readLayer(item.uri, item.data, mesh, a.opacity, a.colormap, a.colormapNegative, a.useNegativeCmap, a.calMin, a.calMax);
         mesh.updateMesh(nv.gl);
         nv.opts.isColorbar = true;
         nv.updateGLVolume();
         const layerNumber = nv.meshes[0].layers.length - 1;
-        const layer = nv.meshes[0].layers[layerNumber];
         if (type === "curvature") {
             nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "colorbarVisible", false);
         }
-        // if (type === "overlay") {
-        //     document.getElementById("volume-overlay-options" + item.index).style.display = "block";
-        //     const minInput = document.getElementById("overlay-minvalue");
-        //     const maxInput = document.getElementById("overlay-maxvalue");
-        //     minInput.step = ((scaling.max - scaling.min) / 10).toPrecision(2);
-        //     maxInput.step = ((scaling.max - scaling.min) / 10).toPrecision(2);
-        //     minInput.addEventListener('change', () => {
-        //         nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "cal_min", minInput.value.toPrecision(2));
-        //         nv.updateGLVolume();
-        //         minInput.step = ((scaling.max - scaling.min) / 10).toPrecision(2);
-        //     });
-        //     maxInput.addEventListener('change', () => {
-        //         nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "cal_max", maxInput.value.toPrecision(2));
-        //         nv.updateGLVolume();
-        //         maxInput.step = ((scaling.max - scaling.min) / 10).toPrecision(2);
-        //     });
-        //     const colormap = document.getElementById("overlay-colormap");
-        //     colormap.value = a.colormap;
-        //     colormap.addEventListener('change', () => {
-        //         if (colormap.value === "symmetric") {
-        //             nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "useNegativeCmap", true);
-        //             nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "colormap", "warm");
-        //             nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "colormapNegative", "winter");
-        //         } else {
-        //             nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "useNegativeCmap", false);
-        //             nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "colormap", colormap.value);
-        //             nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, "colormapNegative", "");
-        //         }
-        //         nv.updateGLVolume();
-        //     });
-        // }
     }
 
     async function addOverlay(nv, item) {
@@ -573,7 +536,6 @@
         }
     }
 
-    // Main - Globals
     if (typeof acquireVsCodeApi === 'function') {
         acquireVsCodeApi().postMessage({ type: 'ready' });
     }
