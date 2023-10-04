@@ -4,13 +4,14 @@
     const imageFileTypes = '.nii,.nii.gz,.dcm,.mha,.mhd,.nhdr,.nrrd,.mgh,.mgz,.v,.v16,.vmr';
 
     const App = () => {
+        const [nCanvas, setNCanvas] = useState(1);
         const [nvArray, setNvArray] = useState([]);
         const [vol0, setVol0] = useState({});
         const [viewType, setViewType] = useState(3); // all views
         const [interpolation, setInterpolation] = useState(true);
         const [scaling, setScaling] = useState({ isManual: false, min: 0, max: 0 });
         const [location, setLocation] = useState("");
-        useEffect(() => window.onmessage = createMessageListener(setNvArray), []);
+        useEffect(() => window.onmessage = createMessageListener(setNvArray, setViewType, setNCanvas), []);
 
         useEffect(() => window.postMessage({
             type: 'addImage',
@@ -19,7 +20,7 @@
 
         return html`
             <${Header} vol0=${vol0} />
-            <${Container} nvArray=${nvArray} setVol0=${setVol0} viewType=${viewType} interpolation=${interpolation} scaling=${scaling} setLocation=${setLocation} />
+            <${Container} nCanvas=${nCanvas} nvArray=${nvArray} setVol0=${setVol0} viewType=${viewType} interpolation=${interpolation} scaling=${scaling} setLocation=${setLocation} />
             <${Footer} viewType=${viewType} setViewType=${setViewType} interpolation=${interpolation} setInterpolation=${setInterpolation} setScaling=${setScaling} vol0=${vol0} location=${location} />
         `;
     };
@@ -41,39 +42,38 @@
 
     const Volume = ({ name, volumeIndex, ...props }) => {
         const [intensity, setIntensity] = useState("");
+        const volumeRef = useRef();
         return html`
-            <div class="volume">
+            <div class="volume" ref=${volumeRef}>
                 <div class="volume-name">${name}</div>
                 <${NiiVue} ...${props} setIntensity=${setIntensity} />
-                <div class="volume-footer" class="horizontal-layout">
-                    <${VolumeOverlay} nv=${props.nv} volumeIndex=${volumeIndex} />                
+                <div class="horizontal-layout volume-footer">
+                    <${VolumeOverlay} nv=${props.nv} volumeIndex=${volumeIndex} volumeRef=${volumeRef} />
                     <span class="volume-intensity">${intensity}</span>
                 </div>
             </div>
         `;
     };
 
-    const VolumeOverlay = ({ colormaps, nv, volumeIndex }) => {
-        const [clickPosition, setClickPosition] = useState({ x: 0, y: 0 });
+    const VolumeOverlay = ({ nv, volumeIndex, volumeRef }) => {
         const [isOpen, setIsOpen] = useState(false);
         const removeContextMenu = () => {
             setIsOpen(false);
-            document.onclick -= removeContextMenu;
-            document.oncontextmenu -= removeContextMenu;
+            volumeRef.current.onclick -= removeContextMenu;
+            volumeRef.current.oncontextmenu -= removeContextMenu;
         };
         const onContextmenu = (e) => {
             e.preventDefault();
             e.stopPropagation();
             setIsOpen(true);
-            setClickPosition({ x: e.clientX, y: e.clientY });
-            document.onclick = removeContextMenu;
-            document.oncontextmenu = removeContextMenu;
+            volumeRef.current.onclick = removeContextMenu;
+            volumeRef.current.oncontextmenu = removeContextMenu;
         };
 
         return html`
             <span class="volume-overlay" title="Right Click" oncontextmenu=${onContextmenu}>Overlay</span>
-            <${OverlayOptions} colormaps=${colormaps} nv=${nv} />
-            ${isOpen && html`<${ContextMenu} clickPosition=${clickPosition} nv=${nv} volumeIndex=${volumeIndex} />`}
+            <${OverlayOptions} nv=${nv} />
+            ${isOpen && html`<${ContextMenu} nv=${nv} volumeIndex=${volumeIndex} />`}
         `;
     };
 
@@ -146,12 +146,12 @@
             nv.updateGLVolume();
         };
         return html`
-            <div class="context-menu" ref=${contextMenu} style=${`left: ${clickPosition.x}px; top: ${clickPosition.y - contextMenu.offsetHeight}px;`}>
+            <div class="context-menu" ref=${contextMenu} style=${`left: 30px; bottom: 20px;`}>
                 <div class="context-menu-item" onclick=${() => addOverlayEvent(volumeIndex, "overlay")}>Add</div>
                 ${nVolumes > 1 && html`<div class="context-menu-item" onclick=${removeLastVolume}>Remove</div>`}
                 ${nMeshes > 0 && html`
-                    <div class="context-menu-item" onclick=${() => addOverlayEvent(volumeIndex, "addMeshCurvature")}>Add Mesh Curvature</div>
-                    <div class="context-menu-item" onclick=${() => addOverlayEvent(volumeIndex, "addMeshOverlay")}>Add Mesh Overlay</div>
+                    <div class="context-menu-item" onclick=${() => addOverlayEvent(volumeIndex, "addMeshCurvature")}>Add Mesh Curvature</div>
+                    <div class="context-menu-item" onclick=${() => addOverlayEvent(volumeIndex, "addMeshOverlay")}>Add Mesh Overlay</div>
                     ${nMeshLayers > 0 && html`<div class="context-menu-item" onclick=${() => addOverlayEvent(volumeIndex, "replaceMeshOverlay")}>Replace Mesh Overlay</div>`}
                 `}
             </div>
@@ -265,7 +265,7 @@
         </select>
     `;
 
-    function createMessageListener(setNvArray) {
+    function createMessageListener(setNvArray, setViewType, setNCanvas) {
         async function messageListener(e) {
             setNvArray((nvArray) => {
                 const { type, body } = e.data;
@@ -299,8 +299,8 @@
                         break;
                     case "initCanvas":
                         {
-                            // setViewType(0); // Axial
-                            // state.nTotalCanvas += body.n;
+                            setViewType(0); // Axial
+                            setNCanvas((nCanvas) => nCanvas + body.n);
                         }
                         break;
                 }
