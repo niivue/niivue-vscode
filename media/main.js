@@ -136,7 +136,7 @@
     }
 
 
-    const ContextMenu = ({ clickPosition, nv, volumeIndex }) => {
+    const ContextMenu = ({ nv, volumeIndex }) => {
         const contextMenu = useRef();
         const nVolumes = nv.volumes.length;
         const nMeshes = nv.meshes.length;
@@ -539,14 +539,13 @@
                     }
                 });
                 for (const file of e.target.files) {
-                    file.arrayBuffer().then((data) => {
-                        window.postMessage({
-                            type: 'addImage',
-                            body: {
-                                data: data,
-                                uri: file.name
-                            }
-                        });
+                    data = await file.arrayBuffer();
+                    window.postMessage({
+                        type: 'addImage',
+                        body: {
+                            data: data,
+                            uri: file.name
+                        }
                     });
                 }
             };
