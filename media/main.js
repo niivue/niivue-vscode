@@ -10,7 +10,7 @@
         const [interpolation, setInterpolation] = useState(true);
         const [scaling, setScaling] = useState({ isManual: false, min: 0, max: 0 });
         const [location, setLocation] = useState("");
-        useEffect(() => window.addEventListener("message", createMessageListener(setNvArray)), []);
+        useEffect(() => window.onmessage = createMessageListener(setNvArray), []);
 
         useEffect(() => window.postMessage({
             type: 'addImage',
@@ -26,10 +26,7 @@
 
     const Container = ({ nvArray, ...props }) => {
         const [[windowWidth, windowHeight], setDimensions] = useState([window.innerWidth, window.innerHeight]);
-        useEffect(() => {
-            window.addEventListener("resize", () => setDimensions([window.innerWidth, window.innerHeight]));
-        }, []);
-
+        useEffect(() => window.onresize = () => setDimensions([window.innerWidth, window.innerHeight]), []);
         nvArray.forEach((nv) => nv.broadcastTo(nvArray.filter((nvi) => nvi !== nv)));
 
         const meta = nvArray.length > 0 && nvArray[0].volumes.length > 0 ? nvArray[0].volumes[0].getImageMetadata() : {};
@@ -58,27 +55,24 @@
     };
 
     const VolumeOverlay = ({ colormaps, nv }) => {
-        const overlayRef = useRef();
         const [clickPosition, setClickPosition] = useState({ x: 0, y: 0 });
         const [isOpen, setIsOpen] = useState(false);
         const removeContextMenu = () => {
             setIsOpen(false);
-            document.removeEventListener("click", removeContextMenu);
-            document.removeEventListener("contextmenu", removeContextMenu);
+            document.onclick -= removeContextMenu;
+            document.oncontextmenu -= removeContextMenu;
         };
-        useEffect(() => {
-            overlayRef.current.addEventListener("contextmenu", (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setIsOpen(true);
-                setClickPosition({ x: e.clientX, y: e.clientY });
-                document.addEventListener("click", removeContextMenu);
-                document.addEventListener("contextmenu", removeContextMenu);
-            });
-        }, []);
+        const onContextmenu = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsOpen(true);
+            setClickPosition({ x: e.clientX, y: e.clientY });
+            document.onclick = removeContextMenu;
+            document.oncontextmenu = removeContextMenu;
+        };
 
         return html`
-            <span class="volume-overlay" title="Right Click" ref=${overlayRef}>Overlay</span>
+            <span class="volume-overlay" title="Right Click" oncontextmenu=${onContextmenu}>Overlay</span>
             <${OverlayOptions} colormaps=${colormaps} nv=${nv} />
             ${isOpen && html`<${ContextMenu} clickPosition=${clickPosition} />`}
         `;
@@ -243,12 +237,8 @@
     };
 
     const SelectView = ({ setViewType }) => {
-        const selectRef = useRef();
-        useEffect(() => {
-            selectRef.current.addEventListener('change', () => setViewType(parseInt(selectRef.current.value)));
-        }, []);
         return html`
-            <select ref=${selectRef}>
+            <select onchange=${(e) => setViewType(parseInt(e.target.value))}>
                 <option value="0">Axial</option>
                 <option value="1">Coronal</option>
                 <option value="2">Sagittal</option>
