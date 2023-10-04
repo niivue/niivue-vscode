@@ -4,14 +4,13 @@
     const imageFileTypes = '.nii,.nii.gz,.dcm,.mha,.mhd,.nhdr,.nrrd,.mgh,.mgz,.v,.v16,.vmr';
 
     const App = () => {
-        const [nCanvas, setNCanvas] = useState(1);
         const [nvArray, setNvArray] = useState([]);
         const [vol0, setVol0] = useState({});
         const [viewType, setViewType] = useState(3); // all views
         const [interpolation, setInterpolation] = useState(true);
         const [scaling, setScaling] = useState({ isManual: false, min: 0, max: 0 });
         const [location, setLocation] = useState("");
-        useEffect(() => window.onmessage = createMessageListener(setNvArray, setViewType, setNCanvas), []);
+        useEffect(() => window.onmessage = createMessageListener(setNvArray, setViewType), []);
 
         useEffect(() => window.postMessage({
             type: 'addImage',
@@ -20,7 +19,7 @@
 
         return html`
             <${Header} vol0=${vol0} />
-            <${Container} nCanvas=${nCanvas} nvArray=${nvArray} setVol0=${setVol0} viewType=${viewType} interpolation=${interpolation} scaling=${scaling} setLocation=${setLocation} />
+            <${Container} nvArray=${nvArray} setVol0=${setVol0} viewType=${viewType} interpolation=${interpolation} scaling=${scaling} setLocation=${setLocation} />
             <${Footer} viewType=${viewType} setViewType=${setViewType} interpolation=${interpolation} setInterpolation=${setInterpolation} setScaling=${setScaling} vol0=${vol0} location=${location} />
         `;
     };
@@ -160,21 +159,22 @@
 
     const NiiVue = ({ nv, setIntensity, width, height, setVol0, viewType, interpolation, scaling, setLocation }) => {
         const canvasRef = useRef();
+        useEffect(() => nv.attachToCanvas(canvasRef.current), []);
         useEffect(async () => {
-            nv.attachToCanvas(canvasRef.current);
+            if (!nv.body) { return; }
             await loadVolume(nv, nv.body);
             nv.body = null;
             nv.onLocationChange = (data) => setIntensityAndLocation(data, setIntensity, setLocation);
             nv.createOnLocationChange();
             setVol0((vol0) => (nv.volumes.length > 0 && !vol0.hdr) ? nv.volumes[0] : vol0);
-        }, []);
+        }, [nv.body]);
         useEffect(() => nv.setSliceType(viewType), [viewType]);
         useEffect(() => nv.setInterpolation(!interpolation), [interpolation]);
         useEffect(() => applyScale(nv, scaling), [scaling]);
 
         return html`<canvas ref=${canvasRef} width=${width} height=${height}></canvas>`;
     };
-
+    
     const Header = ({ vol0 }) => vol0.hdr && html`
         <div class="horizontal-layout">
             <${ShowHeaderButton} info=${vol0.hdr.toFormattedString()} />
@@ -265,7 +265,7 @@
         </select>
     `;
 
-    function createMessageListener(setNvArray, setViewType, setNCanvas) {
+    function createMessageListener(setNvArray, setViewType) {
         async function messageListener(e) {
             setNvArray((nvArray) => {
                 const { type, body } = e.data;
@@ -292,15 +292,14 @@
                         break;
                     case "addImage":
                         {
-                            const nv = new Niivue({ isResizeCanvas: false });
+                            const nv = getUnitinializedNvInstance(nvArray);
                             nv.body = body;
-                            nvArray.push(nv);
                         }
                         break;
                     case "initCanvas":
                         {
                             setViewType(0); // Axial
-                            setNCanvas((nCanvas) => nCanvas + body.n);
+                            growNvArrayBy(nvArray, body.n);
                         }
                         break;
                 }
@@ -308,6 +307,20 @@
             });
         }
         return messageListener;
+    }
+
+    function getUnitinializedNvInstance(nvArray) {
+        const nv = nvArray.find((nv) => nv.volumes.length === 0 && nv.meshes.length === 0);
+        if (nv) { return nv; }
+        growNvArrayBy(nvArray, 1);
+        return nvArray[nvArray.length - 1];
+    }
+
+    function growNvArrayBy(nvArray, n) {
+        for (let i = 0; i < n; i++) {
+            const nv = new Niivue({ isResizeCanvas: false });
+            nvArray.push(nv);
+        }
     }
 
     function setIntensityAndLocation(data, setIntensity, setLocation) {
