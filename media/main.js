@@ -43,9 +43,10 @@
     const Volume = ({ name, volumeIndex, ...props }) => {
         const [intensity, setIntensity] = useState("");
         const volumeRef = useRef();
+        const dispName = name.length > 20 ? name.slice(0, 20) + "..." : name;
         return html`
             <div class="volume" ref=${volumeRef}>
-                <div class="volume-name">${name}</div>
+                <div class="volume-name">${dispName}</div>
                 <${NiiVue} ...${props} setIntensity=${setIntensity} />
                 <div class="horizontal-layout volume-footer">
                     <${VolumeOverlay} nv=${props.nv} volumeIndex=${volumeIndex} volumeRef=${volumeRef} />
@@ -413,6 +414,11 @@
         while (startCommon > 0 && (names[0].slice(startCommon - 1, startCommon) === '.' || (names[0].slice(startCommon - 1, startCommon) >= '0' && names[0].slice(startCommon - 1, startCommon) <= '9'))) {
             startCommon -= 1;
         }
+        // if startCommon points to a letter then include all preceding letters as well
+        while (startCommon > 0 && (names[0].slice(startCommon - 1, startCommon) >= 'a' && names[0].slice(startCommon - 1, startCommon) <= 'z')) {
+            startCommon -= 1;
+        }
+
         let endCommon = minLen;
         outer:
         while (endCommon > 0) {
@@ -429,6 +435,11 @@
         while (endCommon > 0 && names[0].slice(-endCommon, names[0].length - endCommon + 1) >= '0' && names[0].slice(-endCommon, names[0].length - endCommon + 1) <= '9') {
             endCommon -= 1;
         }
+        // if endCommon points to a letter then include all following letters as well
+        while (endCommon > 0 && names[0].slice(-endCommon, names[0].length - endCommon + 1) >= 'a' && names[0].slice(-endCommon, names[0].length - endCommon + 1) <= 'z') {
+            endCommon -= 1;
+        }
+
         const diffNames = names.map((name) => name.slice(startCommon, name.length - endCommon));
 
         // If length is greater than display length, then split by folder and diff again for first folder and filename and join
