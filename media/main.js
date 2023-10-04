@@ -1,9 +1,11 @@
 (function () {
-    const { render, html, useRef, useState, useEffect } = htmPreact;
+    const { render, html, useRef, useState, useEffect, useLayoutEffect } = htmPreact;
     const { Niivue, NVImage, NVMesh } = niivue;
     const imageFileTypes = '.nii,.nii.gz,.dcm,.mha,.mhd,.nhdr,.nrrd,.mgh,.mgz,.v,.v16,.vmr';
 
     const App = () => {
+        const headerRef = useRef();
+        const footerRef = useRef();
         const [nvArray, setNvArray] = useState([]);
         const [vol0, setVol0] = useState({});
         const [viewType, setViewType] = useState(3); // all views
@@ -18,16 +20,21 @@
         // }), []);
 
         return html`
-            <${Header} vol0=${vol0} />
-            <${Container} nvArray=${nvArray} setVol0=${setVol0} viewType=${viewType} interpolation=${interpolation} scaling=${scaling} setLocation=${setLocation} />
-            <${Footer} viewType=${viewType} setViewType=${setViewType} interpolation=${interpolation} setInterpolation=${setInterpolation} setScaling=${setScaling} vol0=${vol0} location=${location} />
+            <${Header} heightRef=${headerRef} vol0=${vol0} />
+            <${Container} nvArray=${nvArray} setVol0=${setVol0} viewType=${viewType} interpolation=${interpolation} scaling=${scaling} setLocation=${setLocation} headerRef=${headerRef} footerRef=${footerRef} />
+            <${Footer} heightRef=${footerRef} viewType=${viewType} setViewType=${setViewType} interpolation=${interpolation} setInterpolation=${setInterpolation} setScaling=${setScaling} vol0=${vol0} location=${location} />
         `;
     };
 
-    const Container = ({ nvArray, ...props }) => {
+    const Container = ({ nvArray, headerRef, footerRef, ...props }) => {
         const [[windowWidth, windowHeight], setDimensions] = useState([window.innerWidth, window.innerHeight]);
         const [change, triggerRender] = useState(false);
-        useEffect(() => window.onresize = () => setDimensions([window.innerWidth, window.innerHeight]), []);
+        const updateDimensions = () => {
+            if (!headerRef.current || !footerRef.current) { return; }
+            setDimensions([window.innerWidth - 10, window.innerHeight - headerRef.current.offsetHeight - footerRef.current.offsetHeight]);
+        };
+        useEffect(updateDimensions, [change]);
+        useEffect(() => {window.onresize = updateDimensions; updateDimensions();}, []);
         nvArray.forEach((nv) => nv.broadcastTo(nvArray.filter((nvi) => nvi !== nv)));
 
         const meta = nvArray.length > 0 && nvArray[0].volumes.length > 0 ? nvArray[0].volumes[0].getImageMetadata() : {};
@@ -178,8 +185,8 @@
         return html`<canvas ref=${canvasRef} width=${width} height=${height}></canvas>`;
     };
 
-    const Header = ({ vol0 }) => vol0.hdr && html`
-        <div class="horizontal-layout">
+    const Header = ({ vol0, heightRef }) => vol0.hdr && html`
+        <div class="horizontal-layout" ref=${heightRef}>
             <${ShowHeaderButton} info=${vol0.hdr.toFormattedString()} />
             <${MetaData} meta=${vol0.getImageMetadata()} />
         </div>
@@ -215,13 +222,15 @@
         `;
     };
 
-    const Footer = ({ viewType, setViewType, interpolation, setInterpolation, setScaling, vol0, location }) => html`
-        <div>${location}</div>
-        <div class="horizontal-layout">
-            <${AddImagesButton} />
-            <${NearestInterpolation} interpolation=${interpolation} setInterpolation=${setInterpolation} />
-            <${Scaling} setScaling=${setScaling} init=${vol0} />
-            <${SelectView} viewType=${viewType} setViewType=${setViewType} />
+    const Footer = ({ heightRef, viewType, setViewType, interpolation, setInterpolation, setScaling, vol0, location }) => html`
+        <div ref=${heightRef}>
+            <div>${location}</div>
+            <div class="horizontal-layout">
+                <${AddImagesButton} />
+                <${NearestInterpolation} interpolation=${interpolation} setInterpolation=${setInterpolation} />
+                <${Scaling} setScaling=${setScaling} init=${vol0} />
+                <${SelectView} viewType=${viewType} setViewType=${setViewType} />
+            </div>
         </div>
     `;
 
@@ -379,16 +388,17 @@
     }
 
     function getCanvasSize(nCanvas, meta, viewType, windowWidthExt, windowHeightExt) {
+        const gap = 4;
         const aspectRatio = getAspectRatio(meta, viewType);
         if (nCanvas === 0) { nCanvas = 1; }
-        const windowWidth = windowWidthExt - 25;
-        const windowHeight = windowHeightExt - 75;
+        const windowWidth = windowWidthExt;
+        const windowHeight = windowHeightExt;
 
         let bestWidth = 0;
         for (nrow = 1; nrow <= nCanvas; nrow++) {
             const ncol = Math.ceil(nCanvas / nrow);
-            const maxHeight = (windowHeight / nrow);
-            const maxWidth = Math.min(windowWidth / ncol, maxHeight * aspectRatio);
+            const maxHeight = Math.floor(windowHeight / nrow - gap);
+            const maxWidth = Math.floor(Math.min(windowWidth / ncol - gap, maxHeight * aspectRatio));
             if (maxWidth > bestWidth) { bestWidth = maxWidth; }
         }
         return [bestWidth, bestWidth / aspectRatio];
