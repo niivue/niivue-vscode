@@ -306,6 +306,7 @@
                         {
                             const nv = getUnitinializedNvInstance(nvArray);
                             nv.body = body;
+                            nv.isNew = false;
                         }
                         break;
                     case "initCanvas":
@@ -322,7 +323,7 @@
     }
 
     function getUnitinializedNvInstance(nvArray) {
-        const nv = nvArray.find((nv) => nv.volumes.length === 0 && nv.meshes.length === 0);
+        const nv = nvArray.find((nv) => nv.isNew);
         if (nv) { return nv; }
         growNvArrayBy(nvArray, 1);
         return nvArray[nvArray.length - 1];
@@ -331,6 +332,7 @@
     function growNvArrayBy(nvArray, n) {
         for (let i = 0; i < n; i++) {
             const nv = new Niivue({ isResizeCanvas: false });
+            nv.isNew = true;
             nvArray.push(nv);
         }
     }
