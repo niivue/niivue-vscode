@@ -36,8 +36,9 @@
         const [[windowWidth, windowHeight], setDimensions] = useState([window.innerWidth, window.innerHeight]);
         const [change, triggerRender] = useState(0);
         const updateDimensions = () => {
-            if (!headerRef.current || !footerRef.current) { return; }
-            setDimensions([window.innerWidth - 10, window.innerHeight - headerRef.current.offsetHeight - footerRef.current.offsetHeight]);
+            const headerHeight = headerRef.current ? headerRef.current.offsetHeight : 20;
+            const footerHeight = footerRef.current ? footerRef.current.offsetHeight : 20;
+            setDimensions([window.innerWidth - 10, window.innerHeight - headerHeight - footerHeight]);
         };
         useEffect(updateDimensions, [change]);
         useEffect(() => { window.onresize = updateDimensions; updateDimensions(); }, []);
@@ -56,7 +57,7 @@
     const Volume = ({ name, volumeIndex, ...props }) => {
         const [intensity, setIntensity] = useState("");
         const volumeRef = useRef();
-        const dispName = name.length > 20 ? name.slice(0, 20) + "..." : name;
+        const dispName = name.length > 20 ? "..." + name.slice(-20) : name;
         return html`
             <div class="volume" ref=${volumeRef}>
                 <div class="volume-name">${dispName}</div>
@@ -67,6 +68,36 @@
                 </div>
             </div>
         `;
+    };
+
+    const NiiVue = ({ nv, setIntensity, width, height, setVol0, viewType, interpolation, scaling, setLocation, triggerRender }) => {
+        const canvasRef = useRef();
+        useEffect(() => nv.attachToCanvas(canvasRef.current), []);
+        useEffect(async () => {
+            if (!nv.body) { return; }
+            await loadVolume(nv, nv.body);
+            nv.body = null;
+            nv.onLocationChange = (data) => setIntensityAndLocation(data, setIntensity, setLocation);
+            nv.createOnLocationChange();
+            setVol0((vol0) => (nv.volumes.length > 0 && !vol0.hdr) ? nv.volumes[0] : vol0);
+
+            // simulate click on canvas to adjust aspect ratio of nv instance
+            const canvas = canvasRef.current;
+            const rect = canvas.getBoundingClientRect();
+            const factor = viewType === 3 ? 4 : 2;
+            const x = rect.left + rect.width / factor;
+            const y = rect.top + rect.height / factor;
+            canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: x, clientY: y }));
+            canvas.dispatchEvent(new MouseEvent('mouseup', { clientX: x, clientY: y }));
+            // sleep to avoid black images
+            await new Promise(resolve => setTimeout(resolve, 100));
+            triggerRender((change) => change + 1);
+        }, [nv.body]);
+        useEffect(() => nv.setSliceType(viewType), [viewType]);
+        useEffect(() => nv.setInterpolation(!interpolation), [interpolation]);
+        useEffect(() => applyScale(nv, scaling), [scaling]);
+
+        return html`<canvas ref=${canvasRef} width=${width} height=${height}></canvas>`;
     };
 
     const VolumeOverlay = ({ nv, volumeIndex, volumeRef }) => {
@@ -169,36 +200,6 @@
                 `}
             </div>
         `;
-    };
-
-    const NiiVue = ({ nv, setIntensity, width, height, setVol0, viewType, interpolation, scaling, setLocation, triggerRender }) => {
-        const canvasRef = useRef();
-        useEffect(() => nv.attachToCanvas(canvasRef.current), []);
-        useEffect(async () => {
-            if (!nv.body) { return; }
-            await loadVolume(nv, nv.body);
-            nv.body = null;
-            nv.onLocationChange = (data) => setIntensityAndLocation(data, setIntensity, setLocation);
-            nv.createOnLocationChange();
-            setVol0((vol0) => (nv.volumes.length > 0 && !vol0.hdr) ? nv.volumes[0] : vol0);
-            
-            // simulate click on canvas to adjust aspect ratio of nv instance
-            const canvas = canvasRef.current;
-            const rect = canvas.getBoundingClientRect();
-            const factor = viewType === 3 ? 4 : 2;
-            const x = rect.left + rect.width / factor;
-            const y = rect.top + rect.height / factor;
-            canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: x, clientY: y }));
-            canvas.dispatchEvent(new MouseEvent('mouseup', { clientX: x, clientY: y }));
-            // sleep to avoid black images
-            await new Promise(resolve => setTimeout(resolve, 100));
-            triggerRender((change) => change + 1);
-        }, [nv.body]);
-        useEffect(() => nv.setSliceType(viewType), [viewType]);
-        useEffect(() => nv.setInterpolation(!interpolation), [interpolation]);
-        useEffect(() => applyScale(nv, scaling), [scaling]);
-
-        return html`<canvas ref=${canvasRef} width=${width} height=${height}></canvas>`;
     };
 
     const Header = ({ vol0, heightRef }) => vol0.hdr && html`
