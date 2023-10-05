@@ -7,7 +7,7 @@
         const headerRef = useRef();
         const footerRef = useRef();
         const [nvArray, setNvArray] = useState([]);
-        const [vol0, setVol0] = useState({});
+        const [nv0, setNv0] = useState({ isLoaded: false });
         const [viewType, setViewType] = useState(3); // all views
         const [interpolation, setInterpolation] = useState(true);
         const [scaling, setScaling] = useState({ isManual: false, min: 0, max: 0 });
@@ -26,9 +26,9 @@
         }, []);
 
         return html`
-            <${Header} heightRef=${headerRef} vol0=${vol0} />
-            <${Container} nvArray=${nvArray} setVol0=${setVol0} viewType=${viewType} interpolation=${interpolation} scaling=${scaling} setLocation=${setLocation} headerRef=${headerRef} footerRef=${footerRef} />
-            <${Footer} heightRef=${footerRef} viewType=${viewType} setViewType=${setViewType} interpolation=${interpolation} setInterpolation=${setInterpolation} setScaling=${setScaling} vol0=${vol0} location=${location} />
+            <${Header} heightRef=${headerRef} nv=${nv0} />
+            <${Container} nvArray=${nvArray} setNv0=${setNv0} viewType=${viewType} interpolation=${interpolation} scaling=${scaling} setLocation=${setLocation} headerRef=${headerRef} footerRef=${footerRef} />
+            <${Footer} heightRef=${footerRef} viewType=${viewType} setViewType=${setViewType} interpolation=${interpolation} setInterpolation=${setInterpolation} setScaling=${setScaling} nv0=${nv0} location=${location} />
         `;
     };
 
@@ -70,16 +70,17 @@
         `;
     };
 
-    const NiiVue = ({ nv, setIntensity, width, height, setVol0, viewType, interpolation, scaling, setLocation, triggerRender }) => {
+    const NiiVue = ({ nv, setIntensity, width, height, setNv0, viewType, interpolation, scaling, setLocation, triggerRender }) => {
         const canvasRef = useRef();
         useEffect(() => nv.attachToCanvas(canvasRef.current), []);
         useEffect(async () => {
             if (!nv.body) { return; }
             await loadVolume(nv, nv.body);
+            nv.isLoaded = true;
             nv.body = null;
             nv.onLocationChange = (data) => setIntensityAndLocation(data, setIntensity, setLocation);
             nv.createOnLocationChange();
-            setVol0((vol0) => (nv.volumes.length > 0 && !vol0.hdr) ? nv.volumes[0] : vol0);
+            setNv0((nv0) => nv0.isLoaded ? nv0 : nv);
 
             // simulate click on canvas to adjust aspect ratio of nv instance
             const canvas = canvasRef.current;
@@ -202,10 +203,10 @@
         `;
     };
 
-    const Header = ({ vol0, heightRef }) => vol0.hdr && html`
+    const Header = ({ nv, heightRef }) => nv.isLoaded && nv.volumes.length > 0 && html`
         <div class="horizontal-layout" ref=${heightRef}>
-            <${ShowHeaderButton} info=${vol0.hdr.toFormattedString()} />
-            <${MetaData} meta=${vol0.getImageMetadata()} />
+            <${ShowHeaderButton} info=${nv.volumes[0].hdr.toFormattedString()} />
+            <${MetaData} meta=${nv.volumes[0].getImageMetadata()} />
         </div>
     `;
 
@@ -239,14 +240,16 @@
         `;
     };
 
-    const Footer = ({ heightRef, viewType, setViewType, interpolation, setInterpolation, setScaling, vol0, location }) => html`
+    const Footer = ({ heightRef, viewType, setViewType, interpolation, setInterpolation, setScaling, nv0, location }) => html`
         <div ref=${heightRef}>
             <div>${location}</div>
             <div class="horizontal-layout">
                 <${AddImagesButton} />
                 <${NearestInterpolation} interpolation=${interpolation} setInterpolation=${setInterpolation} />
-                <${Scaling} setScaling=${setScaling} init=${vol0} />
+                ${nv0.isLoaded && nv0.volumes.length > 0 && html`<${Scaling} setScaling=${setScaling} init=${nv0.volumes[0]} />`}
                 <${SelectView} viewType=${viewType} setViewType=${setViewType} />
+                <button onClick=${() => saveScene(nv0)}>Save Scene</button>
+                <button onClick=${() => loadScene(nv0)}>Load Scene</button>
             </div>
         </div>
     `;
@@ -352,6 +355,7 @@
         for (let i = 0; i < n; i++) {
             const nv = new Niivue({ isResizeCanvas: false });
             nv.isNew = true;
+            nv.isLoaded = false;
             nvArray.push(nv);
         }
     }
@@ -609,6 +613,68 @@
             input.click();
         }
     }
+
+    function saveScene(nv) {
+        const scene = nv.scene;
+        const json = JSON.stringify(scene);
+        const blob = new Blob([json], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "scene.json";
+        a.click();
+    }
+
+    function loadScene(nv) {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = ".json";
+        input.onchange = async (e) => {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const json = JSON.parse(e.target.result);
+                nv.scene = json;
+                nv.updateGLVolume();
+                syncAll(nv);
+            };
+            reader.readAsText(file);
+        };
+        input.click();
+    }
+
+    // This function is identical to nv.sync, but ignores the focus requirement
+    function syncAll(nv) {
+        if (!nv.otherNV || typeof nv.otherNV === "undefined") {
+            return;
+        }
+        let thisMM = nv.frac2mm(nv.scene.crosshairPos);
+        // if nv.otherNV is an object, then it is a single Niivue instance
+        if (nv.otherNV instanceof Niivue) {
+            if (nv.syncOpts["2d"]) {
+                nv.otherNV.scene.crosshairPos = nv.otherNV.mm2frac(thisMM);
+            }
+            if (nv.syncOpts["3d"]) {
+                nv.otherNV.scene.renderAzimuth = nv.scene.renderAzimuth;
+                nv.otherNV.scene.renderElevation = nv.scene.renderElevation;
+            }
+            nv.otherNV.drawScene();
+            nv.otherNV.createOnLocationChange();
+        } else if (Array.isArray(nv.otherNV)) {
+            for (let i = 0; i < nv.otherNV.length; i++) {
+                if (nv.otherNV[i] == nv) { continue; }
+                if (nv.syncOpts["2d"]) {
+                    nv.otherNV[i].scene.crosshairPos = nv.otherNV[i].mm2frac(thisMM);
+                }
+                if (nv.syncOpts["3d"]) {
+                    nv.otherNV[i].scene.renderAzimuth = nv.scene.renderAzimuth;
+                    nv.otherNV[i].scene.renderElevation = nv.scene.renderElevation;
+                }
+                nv.otherNV[i].drawScene();
+                nv.otherNV[i].createOnLocationChange();
+            }
+        }
+    };
 
     render(html`<${App} />`, document.getElementById("app"));
 }());
