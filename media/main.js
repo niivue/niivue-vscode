@@ -6,6 +6,7 @@
     const App = () => {
         const headerRef = useRef();
         const footerRef = useRef();
+        const [hideUI, setHideUI] = useState(false);
         const [nvArray, setNvArray] = useState([]);
         const [nv0, setNv0] = useState({ isLoaded: false });
         const [viewType, setViewType] = useState(3); // all views
@@ -27,8 +28,8 @@
 
         return html`
             <${Header} heightRef=${headerRef} nv=${nv0} />
-            <${Container} nvArray=${nvArray} setNv0=${setNv0} viewType=${viewType} interpolation=${interpolation} scaling=${scaling} setLocation=${setLocation} headerRef=${headerRef} footerRef=${footerRef} />
-            <${Footer} heightRef=${footerRef} viewType=${viewType} setViewType=${setViewType} interpolation=${interpolation} setInterpolation=${setInterpolation} setScaling=${setScaling} nv0=${nv0} location=${location} />
+            <${Container} nvArray=${nvArray} setNv0=${setNv0} viewType=${viewType} interpolation=${interpolation} scaling=${scaling} setLocation=${setLocation} headerRef=${headerRef} footerRef=${footerRef} hideUI=${hideUI} />
+            <${Footer} heightRef=${footerRef} viewType=${viewType} setViewType=${setViewType} interpolation=${interpolation} setInterpolation=${setInterpolation} setScaling=${setScaling} nv0=${nv0} location=${location} setHideUI=${setHideUI} />
         `;
     };
 
@@ -54,7 +55,7 @@
         `;
     };
 
-    const Volume = ({ name, volumeIndex, ...props }) => {
+    const Volume = ({ name, volumeIndex, hideUI, ...props }) => {
         const [intensity, setIntensity] = useState("");
         const volumeRef = useRef();
         const dispName = name.length > 20 ? "..." + name.slice(-20) : name;
@@ -63,7 +64,7 @@
                 <div class="volume-name">${dispName}</div>
                 <${NiiVue} ...${props} setIntensity=${setIntensity} />
                 <div class="horizontal-layout volume-footer">
-                    <${VolumeOverlay} nv=${props.nv} volumeIndex=${volumeIndex} volumeRef=${volumeRef} />
+                    ${hideUI || html`<${VolumeOverlay} nv=${props.nv} volumeIndex=${volumeIndex} volumeRef=${volumeRef} />`}
                     <span class="volume-intensity">${intensity}</span>
                 </div>
             </div>
@@ -240,7 +241,7 @@
         `;
     };
 
-    const Footer = ({ heightRef, viewType, setViewType, interpolation, setInterpolation, setScaling, nv0, location }) => html`
+    const Footer = ({ heightRef, viewType, setViewType, interpolation, setInterpolation, setScaling, nv0, location, setHideUI }) => html`
         <div ref=${heightRef}>
             <div>${location}</div>
             <div class="horizontal-layout">
@@ -250,6 +251,7 @@
                 <${SelectView} viewType=${viewType} setViewType=${setViewType} />
                 <button onClick=${() => saveScene(nv0)}>Save Scene</button>
                 <button onClick=${() => loadScene(nv0)}>Load Scene</button>
+                <button onClick=${() => setHideUI((hideUI) => !hideUI)}>👁</button>
             </div>
         </div>
     `;
