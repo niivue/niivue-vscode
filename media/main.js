@@ -370,8 +370,18 @@
         setLocation(parts.pop());
     }
 
+    function getMinimalHeaderMHA() {
+        const matrixSize =  prompt("Please enter the matrix size:", "64 64 39");
+        const dim = matrixSize.split(" ").length;
+        const header = `ObjectType = Image\nNDims = ${dim}\nDimSize = ${matrixSize}\nElementType = MET_FLOAT\nElementDataFile = image.raw`;
+        return new TextEncoder().encode(header).buffer;
+    }
+
     async function loadVolume(nv, item) {
-        if (isImageType(item)) {
+        if (item.uri.endsWith(".raw")) {
+            const volume = new NVImage(getMinimalHeaderMHA(), item.uri + ".mha", "gray", 1.0, item.data);
+            nv.addVolume(volume);
+        } else if (isImageType(item)) {
             if (item.data) {
                 const volume = new NVImage(item.data, item.uri);
                 nv.addVolume(volume);
