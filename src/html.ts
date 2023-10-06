@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
 
 function getNonce() {
 	let text = '';
@@ -9,18 +10,17 @@ function getNonce() {
 	return text;
 }
 
-export async function getHtmlForWebview(webview: vscode.Webview, extensionUri: vscode.Uri): Promise<string> {
-	const preact = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'media', 'node_modules', 'htm', 'preact', 'standalone.umd.js'));
-	const niiVue = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'media', 'node_modules', '@niivue', 'niivue', 'dist', 'niivue.umd.js'));
-	const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'media', 'main.js'));
-	const cssUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'media', 'styles.css'));
+export async function getHtmlForWebview(webview: vscode.Webview, extensionUri: vscode.Uri, extensionPath: any): Promise<string> {
+	const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'dist/niivue', 'main.js'));
+	const cssUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'dist/niivue', 'index.css'));
 	const nonce = getNonce(); // Whitelist which scripts can be run
-
-	const html = await vscode.workspace.fs.readFile(vscode.Uri.joinPath(extensionUri, 'media', 'webview.html')).then((buffer) => buffer.toString());
 	const noncePlaceholder = '${nonce}';
-	const preactPlaceholder = '"node_modules\\htm\\preact\\standalone.umd.js"';
-	const niiVuePlaceholder = '"node_modules\\@niivue\\niivue\\dist\\niivue.umd.js"';
+
+	const html = await vscode.workspace.fs.readFile(vscode.Uri.file(path.join(extensionPath, 'dist/niivue', 'index.html')));
 	const scriptUriPlaceholder = '"main.js"';
-	const cssUriPlaceholder = '"styles.css"';
-	return html.replace(noncePlaceholder, nonce).replace(niiVuePlaceholder, niiVue.toString()).replace(scriptUriPlaceholder, scriptUri.toString()).replace(cssUriPlaceholder, cssUri.toString()).replace(preactPlaceholder, preact.toString());
+	const cssUriPlaceholder = '"index.css"';
+	return Buffer.from(html).toString('utf8')
+		.replace(noncePlaceholder, nonce)
+		.replace(scriptUriPlaceholder, scriptUri.toString())
+		.replace(cssUriPlaceholder, cssUri.toString());
 }

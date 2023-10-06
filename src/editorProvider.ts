@@ -39,7 +39,7 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
                 retainContextWhenHidden: true,
             }
         );
-        panel.webview.html = await getHtmlForWebview(panel.webview, context.extensionUri);
+        panel.webview.html = await getHtmlForWebview(panel.webview, context.extensionUri, context.extensionPath);
         const editor = new NiiVueEditorProvider(context);
         editor.webviews.add(uri, panel);
         NiiVueEditorProvider.addCommonListeners(panel);
@@ -145,7 +145,7 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     async resolveCustomEditor(document: NiiVueDocument, webviewPanel: vscode.WebviewPanel): Promise<void> {
         this.webviews.add(document.uri, webviewPanel);
         webviewPanel.webview.options = { enableScripts: true };
-        webviewPanel.webview.html = await getHtmlForWebview(webviewPanel.webview, this._context.extensionUri);
+        webviewPanel.webview.html = await getHtmlForWebview(webviewPanel.webview, this._context.extensionUri, this._context.extensionPath);
         NiiVueEditorProvider.addCommonListeners(webviewPanel);
         webviewPanel.webview.onDidReceiveMessage(async (message) => {
             if (message.type === 'ready') {
