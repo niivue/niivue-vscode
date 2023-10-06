@@ -5,8 +5,8 @@ html {
 }
 
 *,
-*:before,
-*:after {
+*::before,
+*::after {
   box-sizing: inherit;
 }
 
@@ -48,9 +48,8 @@ body {
 
 .container {
   display: flex;
-  flex-wrap: wrap;
-  flex-direction: row;
-  gap: 0px 2px;
+  flex-flow: row wrap;
+    gap: 0 2px;
 }
 
 .volume-name {
@@ -72,7 +71,7 @@ body {
 }
 
 .volume-overlay {
-  background: linear-gradient(to right, rgba(255, 0, 0, 0.6), rgba(255, 166, 0, 0.6));
+  background: linear-gradient(to right, rgb(255 0 0 / 60%), rgb(255 166 0 / 60%));
   color: white;
   opacity: 0.8;
   padding: 0 0.2em;
@@ -86,7 +85,7 @@ input[type="number"] {
   position: absolute;
   background-color: #181818;
   border: 1px solid #292929;
-  box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+  box-shadow: 2px 2px 4px rgb(0 0 0 / 20%);
   z-index: 1;
 }
 
@@ -94,4 +93,3 @@ input[type="number"] {
   padding: 8px 12px;
   cursor: pointer;
 }
-

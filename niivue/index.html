@@ -1,23 +1,21 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
-<head>
+  <head>
     <meta charset="utf-8" />
     <title>NiiVue</title>
-    <link rel="stylesheet" type="text/css" href="index.css">
-</head>
+    <link rel="stylesheet" type="text/css" href="index.css" />
+  </head>
 
-<body>
+  <body>
     <div id="app"></div>
     <script nonce="${nonce}" src="main.js"></script>
     <script>
-        document.addEventListener("DOMContentLoaded", function (event) {
-            if (typeof acquireVsCodeApi === 'function') {
-                const vscode = acquireVsCodeApi();
-                vscode.postMessage({ type: 'ready' });
-            }
-        });
+      document.addEventListener('DOMContentLoaded', function (event) {
+        if (typeof acquireVsCodeApi === 'function') {
+          const vscode = acquireVsCodeApi()
+          vscode.postMessage({ type: 'ready' })
+        }
+      })
     </script>
-</body>
-
+  </body>
 </html>
