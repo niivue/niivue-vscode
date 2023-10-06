@@ -417,6 +417,8 @@
             return xSize / zSize;
         } else if (viewType === 2) {
             return ySize / zSize;
+        } else if (viewType === 3) {
+            return (xSize + ySize) / (zSize + ySize);
         }
         return 1;
     }
