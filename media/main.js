@@ -89,6 +89,7 @@
             const factor = viewType === 3 ? 4 : 2;
             const x = rect.left + rect.width / factor;
             const y = rect.top + rect.height / factor;
+            await new Promise(resolve => setTimeout(resolve, 100));
             canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: x, clientY: y }));
             canvas.dispatchEvent(new MouseEvent('mouseup', { clientX: x, clientY: y }));
             // sleep to avoid black images
