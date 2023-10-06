@@ -1,12 +1,9 @@
-// @ts-nocheck
 import { render } from 'preact';
 import { useRef, useState, useEffect } from 'preact/hooks';
 import { html } from 'htm/preact';
-import { Niivue, NVImage, NVMesh } from '@niivue/niivue';
+import { Niivue, NVImage, NVMesh, SLICE_TYPE } from '@niivue/niivue';
 
 (function () {
-
-
     const imageFileTypes = '.nii,.nii.gz,.dcm,.mha,.mhd,.nhdr,.nrrd,.mgh,.mgz,.v,.v16,.vmr';
 
     const App = () => {
@@ -16,16 +13,16 @@ import { Niivue, NVImage, NVMesh } from '@niivue/niivue';
         const [crosshair, setCrosshair] = useState(true);
         const [nvArray, setNvArray] = useState([]);
         const [nv0, setNv0] = useState({ isLoaded: false });
-        const [viewType, setViewType] = useState(3); // all views
+        const [sliceType, setSliceType] = useState(SLICE_TYPE.MULTIPLANAR); // all views
         const [interpolation, setInterpolation] = useState(true);
         const [scaling, setScaling] = useState({ isManual: false, min: 0, max: 0 });
         const [location, setLocation] = useState("");
-        useEffect(() => window.onmessage = createMessageListener(setNvArray, setViewType), []);
+        useEffect(() => window.onmessage = createMessageListener(setNvArray, setSliceType), []);
 
         return html`
             <${Header} heightRef=${headerRef} nv=${nv0} />
-            <${Container} nvArray=${nvArray} setNv0=${setNv0} viewType=${viewType} interpolation=${interpolation} scaling=${scaling} setLocation=${setLocation} headerRef=${headerRef} footerRef=${footerRef} hideUI=${hideUI} crosshair=${crosshair} />
-            <${Footer} heightRef=${footerRef} viewType=${viewType} setViewType=${setViewType} interpolation=${interpolation} setInterpolation=${setInterpolation} setScaling=${setScaling} nv0=${nv0} location=${location} setHideUI=${setHideUI} setCrosshair=${setCrosshair} />
+            <${Container} nvArray=${nvArray} setNv0=${setNv0} sliceType=${sliceType} interpolation=${interpolation} scaling=${scaling} setLocation=${setLocation} headerRef=${headerRef} footerRef=${footerRef} hideUI=${hideUI} crosshair=${crosshair} />
+            <${Footer} heightRef=${footerRef} sliceType=${sliceType} setSliceType=${setSliceType} interpolation=${interpolation} setInterpolation=${setInterpolation} setScaling=${setScaling} nv0=${nv0} location=${location} setHideUI=${setHideUI} setCrosshair=${setCrosshair} />
         `;
     };
 
@@ -42,7 +39,7 @@ import { Niivue, NVImage, NVMesh } from '@niivue/niivue';
         nvArray.forEach((nv) => nv.broadcastTo(nvArray.filter((nvi) => nvi !== nv && nvi.isLoaded)));
 
         const meta = nvArray.length > 0 && nvArray[0].volumes.length > 0 ? nvArray[0].volumes[0].getImageMetadata() : {};
-        const [width, height] = getCanvasSize(nvArray.length, meta, props.viewType, windowWidth, windowHeight);
+        const [width, height] = getCanvasSize(nvArray.length, meta, props.sliceType, windowWidth, windowHeight);
         const names = differenceInNames(getNames(nvArray));
         return html`
             <div class="container">
@@ -67,7 +64,7 @@ import { Niivue, NVImage, NVMesh } from '@niivue/niivue';
         `;
     };
 
-    const NiiVue = ({ nv, setIntensity, width, height, setNv0, viewType, interpolation, scaling, setLocation, triggerRender, crosshair }) => {
+    const NiiVue = ({ nv, setIntensity, width, height, setNv0, sliceType, interpolation, scaling, setLocation, triggerRender, crosshair }) => {
         const canvasRef = useRef();
         useEffect(() => nv.attachToCanvas(canvasRef.current), []);
         useEffect(async () => {
@@ -82,7 +79,7 @@ import { Niivue, NVImage, NVMesh } from '@niivue/niivue';
             // simulate click on canvas to adjust aspect ratio of nv instance
             const canvas = canvasRef.current;
             const rect = canvas.getBoundingClientRect();
-            const factor = viewType === 3 ? 4 : 2;
+            const factor = sliceType === SLICE_TYPE.MULTIPLANAR ? 4 : 2;
             const x = rect.left + rect.width / factor;
             const y = rect.top + rect.height / factor;
             await new Promise(resolve => setTimeout(resolve, 100));
@@ -92,7 +89,7 @@ import { Niivue, NVImage, NVMesh } from '@niivue/niivue';
             await new Promise(resolve => setTimeout(resolve, 100));
             triggerRender((change) => change + 1);
         }, [nv.body]);
-        useEffect(() => nv.setSliceType(viewType), [viewType]);
+        useEffect(() => nv.setSliceType(sliceType), [sliceType]);
         useEffect(() => nv.setInterpolation(!interpolation), [interpolation]);
         useEffect(() => applyScale(nv, scaling), [scaling]);
         useEffect(() => nv.isLoaded && nv.setCrosshairWidth(crosshair), [crosshair]);
@@ -239,14 +236,14 @@ import { Niivue, NVImage, NVMesh } from '@niivue/niivue';
         `;
     };
 
-    const Footer = ({ heightRef, viewType, setViewType, interpolation, setInterpolation, setScaling, nv0, location, setHideUI, setCrosshair }) => html`
+    const Footer = ({ heightRef, sliceType, setSliceType, interpolation, setInterpolation, setScaling, nv0, location, setHideUI, setCrosshair }) => html`
         <div ref=${heightRef}>
             <div>${location}</div>
             <div class="horizontal-layout">
                 <${AddImagesButton} />
                 <${NearestInterpolation} interpolation=${interpolation} setInterpolation=${setInterpolation} />
                 ${nv0.isLoaded && nv0.volumes.length > 0 && html`<${Scaling} setScaling=${setScaling} init=${nv0.volumes[0]} />`}
-                <${SelectView} viewType=${viewType} setViewType=${setViewType} />
+                <${SelectView} sliceType=${sliceType} setSliceType=${setSliceType} />
                 ${nv0.isLoaded && nv0.meshes.length > 0 && html`<${SceneControls} nv=${nv0} />`}
                 <button onClick=${() => setHideUI((hideUI) => (hideUI + 1) % 3)}>👁</button>
                 <button onClick=${() => setCrosshair((crosshair) => !crosshair)}>⌖</button>
@@ -292,17 +289,17 @@ import { Niivue, NVImage, NVMesh } from '@niivue/niivue';
         `;
     };
 
-    const SelectView = ({ viewType, setViewType }) => html`
-        <select onchange=${(e) => setViewType(parseInt(e.target.value))} value=${viewType}>
-            <option value="0">Axial</option>
-            <option value="1">Coronal</option>
-            <option value="2">Sagittal</option>
-            <option value="3">A+C+S+R</option>
-            <option value="4">Render</option>
+    const SelectView = ({ sliceType, setSliceType }) => html`
+        <select onchange=${(e) => setSliceType(parseInt(e.target.value))} value=${sliceType}>
+            <option value=${SLICE_TYPE.AXIAL}>Axial</option>
+            <option value=${SLICE_TYPE.CORONAL}>Coronal</option>
+            <option value=${SLICE_TYPE.SAGITTAL}>Sagittal</option>
+            <option value=${SLICE_TYPE.MULTIPLANAR}>Multiplanar</option>
+            <option value=${SLICE_TYPE.RENDER}>Render</option>
         </select>
     `;
 
-    function createMessageListener(setNvArray, setViewType) {
+    function createMessageListener(setNvArray: Array<any>, setSliceType: number) {
         async function messageListener(e) {
             setNvArray((nvArray) => {
                 const { type, body } = e.data;
@@ -337,7 +334,7 @@ import { Niivue, NVImage, NVMesh } from '@niivue/niivue';
                     case "initCanvas":
                         {
                             if (nvArray.length + body.n > 1) {
-                                setViewType(0); // Axial
+                                setSliceType(SLICE_TYPE.AXIAL);
                             }
                             growNvArrayBy(nvArray, body.n);
                         }
@@ -405,18 +402,18 @@ import { Niivue, NVImage, NVMesh } from '@niivue/niivue';
         }
     }
 
-    function getAspectRatio(meta, viewType) {
+    function getAspectRatio(meta, sliceType) {
         if (!meta.nx) { return 1; }
         const xSize = meta.nx * meta.dx;
         const ySize = meta.ny * meta.dy;
         const zSize = meta.nz * meta.dz;
-        if (viewType === 0) {
+        if (sliceType === SLICE_TYPE.AXIAL) {
             return xSize / ySize;
-        } else if (viewType === 1) {
+        } else if (sliceType === SLICE_TYPE.CORONAL) {
             return xSize / zSize;
-        } else if (viewType === 2) {
+        } else if (sliceType === SLICE_TYPE.SAGITTAL) {
             return ySize / zSize;
-        } else if (viewType === 3) {
+        } else if (sliceType === SLICE_TYPE.MULTIPLANAR) {
             return (xSize + ySize) / (zSize + ySize);
         }
         return 1;
@@ -430,9 +427,9 @@ import { Niivue, NVImage, NVMesh } from '@niivue/niivue';
         }
     }
 
-    function getCanvasSize(nCanvas, meta, viewType, windowWidthExt, windowHeightExt) {
+    function getCanvasSize(nCanvas, meta, sliceType, windowWidthExt, windowHeightExt) {
         const gap = 4;
-        const aspectRatio = getAspectRatio(meta, viewType);
+        const aspectRatio = getAspectRatio(meta, sliceType);
         if (nCanvas === 0) { nCanvas = 1; }
         const windowWidth = windowWidthExt;
         const windowHeight = windowHeightExt;
