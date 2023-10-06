@@ -371,9 +371,10 @@
     }
 
     function getMinimalHeaderMHA() {
-        const matrixSize =  prompt("Please enter the matrix size:", "64 64 39");
-        const dim = matrixSize.split(" ").length;
-        const header = `ObjectType = Image\nNDims = ${dim}\nDimSize = ${matrixSize}\nElementType = MET_FLOAT\nElementDataFile = image.raw`;
+        const matrixSize =  prompt("Please enter the matrix size:", "64 64 39 float");
+        const dim = matrixSize.split(" ").length - 1;
+        const type = matrixSize.split(" ").pop().toUpperCase();
+        const header = `ObjectType = Image\nNDims = ${dim}\nDimSize = ${matrixSize}\nElementType = MET_${type}\nElementDataFile = image.raw`;
         return new TextEncoder().encode(header).buffer;
     }
 
