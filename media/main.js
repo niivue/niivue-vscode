@@ -6,7 +6,7 @@
     const App = () => {
         const headerRef = useRef();
         const footerRef = useRef();
-        const [hideUI, setHideUI] = useState(false);
+        const [hideUI, setHideUI] = useState(1); // 0: hide overlay, 1: default, 2: show-all
         const [nvArray, setNvArray] = useState([]);
         const [nv0, setNv0] = useState({ isLoaded: false });
         const [viewType, setViewType] = useState(3); // all views
@@ -61,12 +61,12 @@
         const dispName = name.length > 20 ? "..." + name.slice(-20) : name;
         return html`
             <div class="volume" ref=${volumeRef}>
-                <div class="volume-name">${dispName}</div>
+                ${hideUI > 0 && html`<div class="volume-name">${dispName}</div>`}
                 <${NiiVue} ...${props} setIntensity=${setIntensity} />
-                <div class="horizontal-layout volume-footer">
-                    ${hideUI || html`<${VolumeOverlay} nv=${props.nv} volumeIndex=${volumeIndex} volumeRef=${volumeRef} />`}
+                ${hideUI > 0 && html`<div class="horizontal-layout volume-footer">
+                    ${hideUI > 1 && html`<${VolumeOverlay} nv=${props.nv} volumeIndex=${volumeIndex} volumeRef=${volumeRef} />`}
                     <span class="volume-intensity">${intensity}</span>
-                </div>
+                </div>`}
             </div>
         `;
     };
@@ -249,11 +249,15 @@
                 <${NearestInterpolation} interpolation=${interpolation} setInterpolation=${setInterpolation} />
                 ${nv0.isLoaded && nv0.volumes.length > 0 && html`<${Scaling} setScaling=${setScaling} init=${nv0.volumes[0]} />`}
                 <${SelectView} viewType=${viewType} setViewType=${setViewType} />
-                <button onClick=${() => saveScene(nv0)}>Save Scene</button>
-                <button onClick=${() => loadScene(nv0)}>Load Scene</button>
-                <button onClick=${() => setHideUI((hideUI) => !hideUI)}>👁</button>
+                ${nv0.isLoaded && nv0.meshes.length > 0 && html`<${SceneControls} nv=${nv0} />`}
+                <button onClick=${() => setHideUI((hideUI) => (hideUI + 1) % 3)}>👁</button>
             </div>
         </div>
+    `;
+
+    const SceneControls = ({ nv }) => html`
+        <button onClick=${() => saveScene(nv)}>Save Scene</button>
+        <button onClick=${() => loadScene(nv)}>Load Scene</button>
     `;
 
     const AddImagesButton = () => html`<button onClick=${addImagesEvent}>Add Images</button>`;
@@ -371,7 +375,7 @@
     }
 
     function getMinimalHeaderMHA() {
-        const matrixSize =  prompt("Please enter the matrix size:", "64 64 39 float");
+        const matrixSize = prompt("Please enter the matrix size:", "64 64 39 float");
         const dim = matrixSize.split(" ").length - 1;
         const type = matrixSize.split(" ").pop().toUpperCase();
         const header = `ObjectType = Image\nNDims = ${dim}\nDimSize = ${matrixSize}\nElementType = MET_${type}\nElementDataFile = image.raw`;
