@@ -43,7 +43,7 @@
         };
         useEffect(updateDimensions, [change]);
         useEffect(() => { window.onresize = updateDimensions; updateDimensions(); }, []);
-        nvArray.forEach((nv) => nv.broadcastTo(nvArray.filter((nvi) => nvi !== nv)));
+        nvArray.forEach((nv) => nv.broadcastTo(nvArray.filter((nvi) => nvi !== nv && nvi.isLoaded)));
 
         const meta = nvArray.length > 0 && nvArray[0].volumes.length > 0 ? nvArray[0].volumes[0].getImageMetadata() : {};
         const [width, height] = getCanvasSize(nvArray.length, meta, props.viewType, windowWidth, windowHeight);
