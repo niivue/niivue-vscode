@@ -10,8 +10,8 @@ const general = {
     path: dist,
     filename: '[name].js',
   },
-  evternals: {
-    vscode: 'commonjs vscode',
+  externals: {
+    vscode: 'commonjs vscode'
   },
   devtool: 'source-map',
   experiments: {
@@ -19,7 +19,7 @@ const general = {
     asyncWebAssembly: true,
   },
   resolve: {
-    extensions: ['.ts', '.js'],
+    extensions: ['.ts', '.js']
   },
   module: {
     rules: [
@@ -29,13 +29,21 @@ const general = {
       },
       {
         test: /\.css$/,
-        use: ['style-loader', 'css-loader'],
+        use: [
+          'style-loader',
+          'css-loader'
+        ]
       },
       {
         test: /\.ts$/,
         exclude: /node_modules/,
-      },
-    ],
+        use: [
+          {
+            loader: 'ts-loader'
+          }
+        ]
+      }
+    ]
   },
 };
 
@@ -48,7 +56,7 @@ const extension = {
   output: {
     ...general.output,
     libraryTarget: 'commonjs2',
-  },
+  }
 };
 
 const webextension = {
@@ -64,16 +72,16 @@ const webextension = {
   resolve: {
     ...general.resolve,
     mainFields: ['browser', 'module', 'main'],
-    extension: ['.ts', '.js'],
+    extensions: ['.ts', '.js'],
     fallback: {
       fs: false,
-      path: false,
+      path: false
     },
   },
   plugins: [
     new webpack.ProvidePlugin({
-      process: 'process/browser',
-    }),
+      process: 'process/browser'
+    })
   ],
 };
 
@@ -81,7 +89,7 @@ const webview = {
   ...general,
   target: 'web',
   entry: {
-    webview_nifti: './src/main.ts',
+    webview_nifti: './niivue/main.ts'
   },
   output: {
     ...general.output,
@@ -91,7 +99,8 @@ const webview = {
     new CopyPlugin({
       patterns: [
         { from: 'niivue/index.html', to: 'niivue/index.html' },
-      ],
+        { from: 'niivue/index.css', to: 'niivue/index.css' },
+      ]
     }),
   ],
 };
