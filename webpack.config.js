@@ -1,48 +1,99 @@
-//@ts-check
-
-'use strict';
-
 const path = require('path');
+const webpack = require('webpack');
+const CopyPlugin = require('copy-webpack-plugin');
 
-//@ts-check
-/** @typedef {import('webpack').Configuration} WebpackConfig **/
+const dist = path.resolve(__dirname, 'dist');
 
-/** @type WebpackConfig */
-const extensionConfig = {
-  target: 'node', // VS Code extensions run in a Node.js-context 📖 -> https://webpack.js.org/configuration/node/
-	mode: 'none', // this leaves the source code as close as possible to the original (when packaging we set this to 'production')
-
-  entry: './src/extension.ts', // the entry point of this extension, 📖 -> https://webpack.js.org/configuration/entry-context/
+const general = {
+  mode: 'development',
   output: {
-    // the bundle is stored in the 'dist' folder (check package.json), 📖 -> https://webpack.js.org/configuration/output/
-    path: path.resolve(__dirname, 'dist'),
-    filename: 'extension.js',
-    libraryTarget: 'commonjs2'
+    path: dist,
+    filename: '[name].js',
   },
-  externals: {
-    vscode: 'commonjs vscode' // the vscode-module is created on-the-fly and must be excluded. Add other modules that cannot be webpack'ed, 📖 -> https://webpack.js.org/configuration/externals/
-    // modules added here also need to be added in the .vscodeignore file
+  evternals: {
+    vscode: 'commonjs vscode',
+  },
+  devtool: 'source-map',
+  experiments: {
+    syncWebAssembly: true,
+    asyncWebAssembly: true,
   },
   resolve: {
-    // support reading TypeScript and JavaScript files, 📖 -> https://github.com/TypeStrong/ts-loader
-    extensions: ['.ts', '.js']
+    extensions: ['.ts', '.js'],
   },
   module: {
     rules: [
       {
+        test: /\.html$/i,
+        loader: 'html-loader',
+      },
+      {
+        test: /\.css$/,
+        use: ['style-loader', 'css-loader'],
+      },
+      {
         test: /\.ts$/,
         exclude: /node_modules/,
-        use: [
-          {
-            loader: 'ts-loader'
-          }
-        ]
-      }
-    ]
-  },
-  devtool: 'nosources-source-map',
-  infrastructureLogging: {
-    level: "log", // enables logging required for problem matchers
+      },
+    ],
   },
 };
-module.exports = [ extensionConfig ];
+
+const extension = {
+  ...general,
+  target: 'node',
+  entry: {
+    'extension-vscode': './src/extension.ts',
+  },
+  output: {
+    ...general.output,
+    libraryTarget: 'commonjs2',
+  },
+};
+
+const webextension = {
+  ...general,
+  target: 'webworker',
+  entry: {
+    'extension-web': './src/extension.ts',
+  },
+  output: {
+    ...general.output,
+    libraryTarget: 'commonjs2',
+  },
+  resolve: {
+    ...general.resolve,
+    mainFields: ['browser', 'module', 'main'],
+    extension: ['.ts', '.js'],
+    fallback: {
+      fs: false,
+      path: false,
+    },
+  },
+  plugins: [
+    new webpack.ProvidePlugin({
+      process: 'process/browser',
+    }),
+  ],
+};
+
+const webview = {
+  ...general,
+  target: 'web',
+  entry: {
+    webview_nifti: './src/main.ts',
+  },
+  output: {
+    ...general.output,
+    filename: 'niivue/main.js',
+  },
+  plugins: [
+    new CopyPlugin({
+      patterns: [
+        { from: 'niivue/index.html', to: 'niivue/index.html' },
+      ],
+    }),
+  ],
+};
+
+module.exports = [extension, webextension, webview];
