@@ -7,6 +7,7 @@
         const headerRef = useRef();
         const footerRef = useRef();
         const [hideUI, setHideUI] = useState(1); // 0: hide overlay, 1: default, 2: show-all
+        const [crosshair, setCrosshair] = useState(true);
         const [nvArray, setNvArray] = useState([]);
         const [nv0, setNv0] = useState({ isLoaded: false });
         const [viewType, setViewType] = useState(3); // all views
@@ -28,8 +29,8 @@
 
         return html`
             <${Header} heightRef=${headerRef} nv=${nv0} />
-            <${Container} nvArray=${nvArray} setNv0=${setNv0} viewType=${viewType} interpolation=${interpolation} scaling=${scaling} setLocation=${setLocation} headerRef=${headerRef} footerRef=${footerRef} hideUI=${hideUI} />
-            <${Footer} heightRef=${footerRef} viewType=${viewType} setViewType=${setViewType} interpolation=${interpolation} setInterpolation=${setInterpolation} setScaling=${setScaling} nv0=${nv0} location=${location} setHideUI=${setHideUI} />
+            <${Container} nvArray=${nvArray} setNv0=${setNv0} viewType=${viewType} interpolation=${interpolation} scaling=${scaling} setLocation=${setLocation} headerRef=${headerRef} footerRef=${footerRef} hideUI=${hideUI} crosshair=${crosshair} />
+            <${Footer} heightRef=${footerRef} viewType=${viewType} setViewType=${setViewType} interpolation=${interpolation} setInterpolation=${setInterpolation} setScaling=${setScaling} nv0=${nv0} location=${location} setHideUI=${setHideUI} setCrosshair=${setCrosshair} />
         `;
     };
 
@@ -71,7 +72,7 @@
         `;
     };
 
-    const NiiVue = ({ nv, setIntensity, width, height, setNv0, viewType, interpolation, scaling, setLocation, triggerRender }) => {
+    const NiiVue = ({ nv, setIntensity, width, height, setNv0, viewType, interpolation, scaling, setLocation, triggerRender, crosshair }) => {
         const canvasRef = useRef();
         useEffect(() => nv.attachToCanvas(canvasRef.current), []);
         useEffect(async () => {
@@ -99,6 +100,7 @@
         useEffect(() => nv.setSliceType(viewType), [viewType]);
         useEffect(() => nv.setInterpolation(!interpolation), [interpolation]);
         useEffect(() => applyScale(nv, scaling), [scaling]);
+        useEffect(() => nv.isLoaded && nv.setCrosshairWidth(crosshair), [crosshair]);
 
         return html`<canvas ref=${canvasRef} width=${width} height=${height}></canvas>`;
     };
@@ -242,7 +244,7 @@
         `;
     };
 
-    const Footer = ({ heightRef, viewType, setViewType, interpolation, setInterpolation, setScaling, nv0, location, setHideUI }) => html`
+    const Footer = ({ heightRef, viewType, setViewType, interpolation, setInterpolation, setScaling, nv0, location, setHideUI, setCrosshair }) => html`
         <div ref=${heightRef}>
             <div>${location}</div>
             <div class="horizontal-layout">
@@ -252,6 +254,7 @@
                 <${SelectView} viewType=${viewType} setViewType=${setViewType} />
                 ${nv0.isLoaded && nv0.meshes.length > 0 && html`<${SceneControls} nv=${nv0} />`}
                 <button onClick=${() => setHideUI((hideUI) => (hideUI + 1) % 3)}>👁</button>
+                <button onClick=${() => setCrosshair((crosshair) => !crosshair)}>⌖</button>
             </div>
         </div>
     `;
