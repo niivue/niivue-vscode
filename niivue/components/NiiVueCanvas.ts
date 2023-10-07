@@ -1,10 +1,9 @@
-import { SLICE_TYPE } from '@niivue/niivue'
+import { SLICE_TYPE, NVImage, NVMesh } from '@niivue/niivue'
 import { html } from 'htm/preact'
 import { useRef, useEffect } from 'preact/hooks'
-import { NVImage, NVMesh } from '@niivue/niivue'
 import { isImageType } from '../utility'
 
-export const NiiVue = ({
+export const NiiVueCanvas = ({
   nv,
   setIntensity,
   width,

@@ -1,6 +1,6 @@
 import { html } from 'htm/preact'
 import { useState, useRef } from 'preact/hooks'
-import { NiiVue } from './NiiVue'
+import { NiiVueCanvas } from './NiiVueCanvas'
 import { VolumeOverlay } from './VolumeOverlay'
 
 export const Volume = ({ name, volumeIndex, hideUI, ...props }) => {
@@ -10,7 +10,7 @@ export const Volume = ({ name, volumeIndex, hideUI, ...props }) => {
   return html`
     <div class="volume" ref=${volumeRef}>
       ${hideUI > 0 && html`<div class="volume-name">${dispName}</div>`}
-      <${NiiVue} ...${props} setIntensity=${setIntensity} />
+      <${NiiVueCanvas} ...${props} setIntensity=${setIntensity} />
       ${hideUI > 0 &&
       html`<div class="horizontal-layout volume-footer">
         ${hideUI > 1 &&

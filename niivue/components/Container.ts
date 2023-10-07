@@ -6,18 +6,15 @@ import { SLICE_TYPE } from '@niivue/niivue'
 
 export const Container = ({ nvArray, headerRef, footerRef, ...props }) => {
   const [[windowWidth, windowHeight], setDimensions] = useState([
-    window.innerWidth,
-    window.innerHeight,
+    window.innerWidth - 30,
+    window.innerHeight - 80,
   ])
 
-  const dimUpdate = () => updateDimensions(headerRef, footerRef, setDimensions)
-  useEffect(() => (window.onresize = dimUpdate), [])
+  const dimUpdate = () => updateDimensions(setDimensions, headerRef, footerRef)
+  useEffect(() => (window.onresize = dimUpdate))
   syncVolumes(nvArray)
 
-  const meta =
-    nvArray.length > 0 && nvArray[0].volumes.length > 0
-      ? nvArray[0].volumes[0].getImageMetadata()
-      : {}
+  const meta = nvArray?.[0]?.volumes?.[0]?.getImageMetadata() ?? {}
   const [width, height] = getCanvasSize(
     nvArray.length,
     meta,
@@ -104,7 +101,7 @@ function getCanvasSize(
   return [bestWidth, bestWidth / aspectRatio]
 }
 
-function updateDimensions(headerRef, footerRef, setDimensions) {
+function updateDimensions(setDimensions: Function, headerRef, footerRef) {
   const headerHeight = headerRef.current ? headerRef.current.offsetHeight : 20
   const footerHeight = footerRef.current ? footerRef.current.offsetHeight : 20
   setDimensions([
