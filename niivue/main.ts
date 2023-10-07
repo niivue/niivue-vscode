@@ -9,7 +9,7 @@ import { Niivue, NVImage, NVMesh, SLICE_TYPE } from '@niivue/niivue'
   const App = () => {
     const headerRef = useRef()
     const footerRef = useRef()
-    const [hideUI, setHideUI] = useState(1) // 0: hide overlay, 1: default, 2: show-all
+    const [hideUI, setHideUI] = useState(2) // 0: hide all, 1: hide overlay, 2: show-all
     const [crosshair, setCrosshair] = useState(true)
     const [nvArray, setNvArray] = useState([])
     const [nv0, setNv0] = useState({ isLoaded: false })
