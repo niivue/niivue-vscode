@@ -142,36 +142,39 @@ import { Niivue, NVImage, NVMesh, SLICE_TYPE } from '@niivue/niivue'
     triggerRender,
     crosshair,
   }) => {
-    const canvasRef = useRef()
+    const canvasRef = useRef<HTMLCanvasElement>()
     useEffect(() => nv.attachToCanvas(canvasRef.current), [])
-    useEffect(async () => {
+    useEffect(() => {
       if (!nv.body) {
         return
       }
-      await loadVolume(nv, nv.body)
-      nv.isLoaded = true
-      nv.body = null
-      nv.onLocationChange = (data) =>
-        setIntensityAndLocation(data, setIntensity, setLocation)
-      nv.createOnLocationChange()
-      setNv0((nv0) => (nv0.isLoaded ? nv0 : nv))
+      loadVolume(nv, nv.body).then(async () => {
+        nv.isLoaded = true
+        nv.body = null
+        nv.onLocationChange = (data) =>
+          setIntensityAndLocation(data, setIntensity, setLocation)
+        nv.createOnLocationChange()
+        setNv0((nv0) => (nv0.isLoaded ? nv0 : nv))
 
-      // simulate click on canvas to adjust aspect ratio of nv instance
-      const canvas = canvasRef.current
-      const rect = canvas.getBoundingClientRect()
-      const factor = sliceType === SLICE_TYPE.MULTIPLANAR ? 4 : 2
-      const x = rect.left + rect.width / factor
-      const y = rect.top + rect.height / factor
-      await new Promise((resolve) => setTimeout(resolve, 100))
-      canvas.dispatchEvent(
-        new MouseEvent('mousedown', { clientX: x, clientY: y }),
-      )
-      canvas.dispatchEvent(
-        new MouseEvent('mouseup', { clientX: x, clientY: y }),
-      )
-      // sleep to avoid black images
-      await new Promise((resolve) => setTimeout(resolve, 100))
-      triggerRender((change) => change + 1)
+        // simulate click on canvas to adjust aspect ratio of nv instance
+        const canvas = canvasRef.current
+        if (canvas) {
+          const rect = canvas.getBoundingClientRect()
+          const factor = sliceType === SLICE_TYPE.MULTIPLANAR ? 4 : 2
+          const x = rect.left + rect.width / factor
+          const y = rect.top + rect.height / factor
+          await new Promise((resolve) => setTimeout(resolve, 100))
+          canvas.dispatchEvent(
+            new MouseEvent('mousedown', { clientX: x, clientY: y }),
+          )
+          canvas.dispatchEvent(
+            new MouseEvent('mouseup', { clientX: x, clientY: y }),
+          )
+        }
+        // sleep to avoid black images
+        await new Promise((resolve) => setTimeout(resolve, 100))
+        triggerRender((change) => change + 1)
+      })
     }, [nv.body])
     useEffect(() => nv.setSliceType(sliceType), [sliceType])
     useEffect(() => nv.setInterpolation(!interpolation), [interpolation])
@@ -189,8 +192,8 @@ import { Niivue, NVImage, NVMesh, SLICE_TYPE } from '@niivue/niivue'
     const [isOpen, setIsOpen] = useState(false)
     const removeContextMenu = () => {
       setIsOpen(false)
-      volumeRef.current.onclick -= removeContextMenu
-      volumeRef.current.oncontextmenu -= removeContextMenu
+      volumeRef.current.onclick = null
+      volumeRef.current.oncontextmenu = null
     }
     const onContextmenu = (e) => {
       e.preventDefault()
@@ -396,12 +399,12 @@ import { Niivue, NVImage, NVMesh, SLICE_TYPE } from '@niivue/niivue'
   }
 
   const ShowHeaderButton = ({ info }) => {
-    const dialog = useRef()
+    const dialog = useRef<HTMLDialogElement>()
     const [text, setText] = useState('Header')
 
     const headerButtonClick = () => {
       setText(info)
-      dialog.current.showModal()
+      dialog.current && dialog.current.showModal()
     }
 
     return html`
@@ -472,10 +475,10 @@ import { Niivue, NVImage, NVMesh, SLICE_TYPE } from '@niivue/niivue'
   `
 
   const Scaling = ({ setScaling, init }) => {
-    const minRef = useRef()
-    const maxRef = useRef()
+    const minRef = useRef<HTMLInputElement>()
+    const maxRef = useRef<HTMLInputElement>()
     useEffect(() => {
-      if (!init.cal_min) {
+      if (!init.cal_min || !minRef.current || !maxRef.current) {
         return
       }
       minRef.current.value = init.cal_min.toPrecision(2)
@@ -487,8 +490,8 @@ import { Niivue, NVImage, NVMesh, SLICE_TYPE } from '@niivue/niivue'
     const update = () =>
       setScaling({
         isManual: true,
-        min: parseFloat(minRef.current.value),
-        max: parseFloat(maxRef.current.value),
+        min: parseFloat(minRef.current?.value ?? '0'),
+        max: parseFloat(maxRef.current?.value ?? '1'),
       })
     return html`
       <label>
@@ -590,8 +593,11 @@ import { Niivue, NVImage, NVMesh, SLICE_TYPE } from '@niivue/niivue'
 
   function getMinimalHeaderMHA() {
     const matrixSize = prompt('Please enter the matrix size:', '64 64 39 float')
+    if (!matrixSize) {
+      return null
+    }
     const dim = matrixSize.split(' ').length - 1
-    const type = matrixSize.split(' ').pop().toUpperCase()
+    const type = matrixSize.split(' ').pop()?.toUpperCase()
     const header = `ObjectType = Image\nNDims = ${dim}\nDimSize = ${matrixSize}\nElementType = MET_${type}\nElementDataFile = image.raw`
     return new TextEncoder().encode(header).buffer
   }
@@ -783,12 +789,21 @@ import { Niivue, NVImage, NVMesh, SLICE_TYPE } from '@niivue/niivue'
     })
   }
 
+  interface LayerOptions {
+    opacity?: number
+    colormap?: string
+    colormapNegative?: string
+    useNegativeCmap?: boolean
+    calMin?: number
+    calMax?: number
+  }
+
   function addMeshOverlay(nv, item, type) {
     if (nv.meshes.length === 0) {
       return
     }
 
-    const a = {}
+    const a: LayerOptions = {}
     switch (type) {
       case 'curvature':
         {
@@ -840,10 +855,10 @@ import { Niivue, NVImage, NVMesh, SLICE_TYPE } from '@niivue/niivue'
 
   async function addOverlay(nv, item) {
     if (isImageType(item)) {
-      const image = new niivue.NVImage(item.data, item.uri, 'redyell', 0.5)
+      const image = new NVImage(item.data, item.uri, 'redyell', 0.5)
       nv.addVolume(image)
     } else {
-      const mesh = await niivue.NVMesh.readMesh(item.data, item.uri, nv.gl, 0.5)
+      const mesh = await NVMesh.readMesh(item.data, item.uri, nv.gl, 0.5)
       nv.addMesh(mesh)
     }
   }
@@ -859,17 +874,19 @@ import { Niivue, NVImage, NVMesh, SLICE_TYPE } from '@niivue/niivue'
       input.type = 'file'
 
       input.onchange = async (e) => {
-        const file = e.target.files[0]
-        file.arrayBuffer().then((data) => {
-          window.postMessage({
-            type,
-            body: {
-              data,
-              uri: file.name,
-              index: imageIndex,
-            },
+        const file = (e.target as HTMLInputElement)?.files?.[0]
+        if (file) {
+          file.arrayBuffer().then((data) => {
+            window.postMessage({
+              type,
+              body: {
+                data,
+                uri: file.name,
+                index: imageIndex,
+              },
+            })
           })
-        })
+        }
       }
       input.click()
     }
@@ -885,21 +902,24 @@ import { Niivue, NVImage, NVMesh, SLICE_TYPE } from '@niivue/niivue'
       // input.accept = imageFileTypes;
 
       input.onchange = async (e) => {
-        window.postMessage({
-          type: 'initCanvas',
-          body: {
-            n: e.target.files.length,
-          },
-        })
-        for (const file of e.target.files) {
-          const data = await file.arrayBuffer()
+        const files = (e.target as HTMLInputElement)?.files
+        if (files && files.length > 0) {
           window.postMessage({
-            type: 'addImage',
+            type: 'initCanvas',
             body: {
-              data,
-              uri: file.name,
+              n: files.length,
             },
           })
+          for (const file of files) {
+            const data = await file.arrayBuffer()
+            window.postMessage({
+              type: 'addImage',
+              body: {
+                data,
+                uri: file.name,
+              },
+            })
+          }
         }
       }
       input.click()
@@ -922,13 +942,19 @@ import { Niivue, NVImage, NVMesh, SLICE_TYPE } from '@niivue/niivue'
     input.type = 'file'
     input.accept = '.json'
     input.onchange = async (e) => {
-      const file = e.target.files[0]
+      const file = (e.target as HTMLInputElement)?.files?.[0]
+      if (!file) {
+        return
+      }
       const reader = new FileReader()
       reader.onload = (e) => {
-        const json = JSON.parse(e.target.result)
-        nv.scene = json
-        nv.updateGLVolume()
-        syncAll(nv)
+        const result = e.target?.result
+        if (result) {
+          const json = JSON.parse(result.toString())
+          nv.scene = json
+          nv.updateGLVolume()
+          syncAll(nv)
+        }
       }
       reader.readAsText(file)
     }
