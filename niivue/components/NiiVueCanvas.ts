@@ -31,7 +31,7 @@ export const NiiVueCanvas = ({
   crosshair,
 }: NiiVueCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>()
-  useEffect(() => nv.attachToCanvas(canvasRef.current), [])
+  useEffect(() => nv.attachToCanvas(canvasRef.current))
   useEffect(() => {
     if (!nv.body) {
       return

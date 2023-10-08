@@ -58,7 +58,7 @@ interface LayerOptions {
   calMax?: number
 }
 
-export function addMeshOverlay(nv: Niivue, item: any, type: string) {
+function addMeshOverlay(nv: Niivue, item: any, type: string) {
   if (nv.meshes.length === 0) {
     return
   }
@@ -113,7 +113,7 @@ export function addMeshOverlay(nv: Niivue, item: any, type: string) {
   }
 }
 
-export async function addOverlay(nv: Niivue, item: any) {
+async function addOverlay(nv: Niivue, item: any) {
   if (isImageType(item.uri)) {
     const image = new NVImage(item.data, item.uri, 'redyell', 0.5)
     nv.addVolume(image)
@@ -186,7 +186,7 @@ export function addImagesEvent() {
   }
 }
 
-export function getUnitinializedNvInstance(nvArray: Niivue[]) {
+function getUnitinializedNvInstance(nvArray: Niivue[]) {
   const nv = nvArray.find((nv) => nv.isNew)
   if (nv) {
     return nv
@@ -195,7 +195,7 @@ export function getUnitinializedNvInstance(nvArray: Niivue[]) {
   return nvArray[nvArray.length - 1]
 }
 
-export function growNvArrayBy(nvArray: Niivue[], n: number) {
+function growNvArrayBy(nvArray: Niivue[], n: number) {
   for (let i = 0; i < n; i++) {
     const nv = new Niivue({ isResizeCanvas: false })
     nv.isNew = true
