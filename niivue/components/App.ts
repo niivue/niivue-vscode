@@ -9,7 +9,7 @@ import { Header, HeaderProps } from './Header'
 export const App = () => {
   const { headerProps, containerProps, footerProps, setNvArray, setSliceType } =
     initState()
-  useEffect(() => listenToMessages(setNvArray, setSliceType))
+  useEffect(() => listenToMessages(setNvArray, setSliceType), [])
   return html`
     <${Header} ...${headerProps} />
     <${Container} ...${containerProps} />
