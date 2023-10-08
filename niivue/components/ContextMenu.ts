@@ -17,11 +17,7 @@ export const ContextMenu = ({ nv, volumeIndex }: ContextMenuProps) => {
     nv.updateGLVolume()
   }
   return html`
-    <div
-      class="context-menu"
-      ref=${contextMenu}
-      style=${`left: 30px; bottom: 20px;`}
-    >
+    <div class="context-menu" ref=${contextMenu}>
       <div
         class="context-menu-item"
         onclick=${() => addOverlayEvent(volumeIndex, 'overlay')}

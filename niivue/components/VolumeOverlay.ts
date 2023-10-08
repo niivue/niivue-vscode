@@ -33,6 +33,7 @@ export const VolumeOverlay = ({
       class="volume-overlay"
       title="Right Click"
       oncontextmenu=${onContextmenu}
+      onclick=${onContextmenu}
       >Overlay</span
     >
     <${OverlayOptions} nv=${nv} />

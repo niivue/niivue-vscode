@@ -49,7 +49,7 @@ body {
 .container {
   display: flex;
   flex-flow: row wrap;
-    gap: 0 2px;
+  gap: 0 2px;
 }
 
 .volume-name {
@@ -71,13 +71,16 @@ body {
 }
 
 .volume-overlay {
-  background: linear-gradient(to right, rgb(255 0 0 / 60%), rgb(255 166 0 / 60%));
+  background: linear-gradient(to right,
+      rgb(255 0 0 / 60%),
+      rgb(255 166 0 / 60%));
   color: white;
   opacity: 0.8;
   padding: 0 0.2em;
+  cursor: pointer;
 }
 
-input[type="number"] {
+input[type='number'] {
   width: 5em;
 }
 
@@ -87,6 +90,8 @@ input[type="number"] {
   border: 1px solid #292929;
   box-shadow: 2px 2px 4px rgb(0 0 0 / 20%);
   z-index: 1;
+  left: 30px;
+  bottom: 20px;
 }
 
 .context-menu-item {
