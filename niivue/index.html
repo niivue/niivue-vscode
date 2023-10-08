@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>NiiVue</title>
+    <link rel="stylesheet" type="text/css" href="index.css" />
+  </head>
+
+  <body>
+    <div id="app"></div>
+    <script>
+      if (typeof acquireVsCodeApi === 'function') {
+        var vscode = acquireVsCodeApi()
+      }
+    </script>
+    <script nonce="${nonce}" src="main.js"></script>
+  </body>
+</html>
