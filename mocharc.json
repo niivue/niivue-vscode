@@ -1,8 +1,0 @@
-{
-    "ui": "tdd",
-    "recursive": true,
-    "exit": true,
-    "require": ["ts-node/register", "source-map-support/register"],
-    "extension": ["ts"],
-    "spec": "./src/test/**/*"
-}

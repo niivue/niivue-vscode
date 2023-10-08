@@ -99,7 +99,8 @@ const webview = {
     new CopyPlugin({
       patterns: [
         { from: 'niivue/index.html', to: 'niivue/index.html' },
-      ],
+        { from: 'niivue/index.css', to: 'niivue/index.css' },
+      ]
     }),
   ],
 };

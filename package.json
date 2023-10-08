@@ -1,9 +1,10 @@
 {
   "name": "niivue",
   "displayName": "NiiVue",
-  "description": "View NIfTI images (and a lot of other formats)",
-  "version": "0.1.2",
+  "description": "View NIfTI images (and a lot of other medical imaging formats)",
+  "version": "1.0.2",
   "publisher": "KorbinianEckstein",
+  "icon": "niivue_icon.png",
   "bugs": {
     "url": "https://github.com/niivue/niivue-vscode/issues",
     "email": "korbinian90+niivue@gmail.com"
@@ -20,28 +21,41 @@
   "categories": [
     "Visualization"
   ],
-  "preview": true,
   "keywords": [
     "MRI",
     "NIfTI",
     "DICOM",
-    "imaging"
+    "imaging",
+    "medical",
+    "neuroimaging",
+    "neuroscience",
+    "neuro",
+    "brain",
+    "fMRI",
+    "DTI",
+    "viewer"
+  ],
+  "extensionKind": [
+    "ui",
+    "workspace"
   ],
   "main": "./dist/extension-vscode.js",
   "browser": "./dist/extension-vscode.js",
   "contributes": {
     "commands": [
       {
-        "command": "niiVue.open",
-        "title": "NiiVue: Open Image"
+        "command": "niivue.openWebLink",
+        "title": "NiiVue: Open Web Link"
       },
       {
-        "command": "niiVue.openLink",
-        "title": "NiiVue: Open Link"
+        "command": "niiVue.compareFromExplorer",
+        "title": "NiiVue: Compare",
+        "enablement": "listMultiSelection"
       },
       {
-        "command": "niiVue.openLocal",
-        "title": "NiiVue: Open Local File"
+        "command": "niiVue.openFromExplorer",
+        "title": "NiiVue: Open",
+        "enablement": "!listMultiSelection"
       }
     ],
     "customEditors": [
@@ -50,19 +64,22 @@
         "displayName": "NiiVue",
         "selector": [
           {
+            "filenamePattern": "*.dcm"
+          },
+          {
             "filenamePattern": "*.nii"
           },
           {
             "filenamePattern": "*.nii.gz"
           },
           {
-            "filenamePattern": "*.dcm"
-          },
-          {
             "filenamePattern": "*.mih"
           },
           {
             "filenamePattern": "*.mif"
+          },
+          {
+            "filenamePattern": "*.mif.gz"
           },
           {
             "filenamePattern": "*.nhdr"
@@ -90,13 +107,22 @@
           },
           {
             "filenamePattern": "*.vmr"
-          },
-          {
-            "filenamePattern": "*.head"
           }
         ]
       }
-    ]
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "niiVue.compareFromExplorer",
+          "when": "listMultiSelection"
+        },
+        {
+          "command": "niiVue.openFromExplorer",
+          "when": "!listMultiSelection"
+        }
+      ]
+    }
   },
   "capabilities": {
     "untrustedWorkspaces": {
@@ -110,38 +136,33 @@
     "vscode:prepublish": "yarn run package",
     "compile": "webpack",
     "watch": "webpack --watch",
-    "prepackage": "copyfiles node_modules/@niivue/niivue/dist/niivue.umd.js media",
     "package": "webpack --mode production --devtool hidden-source-map",
-    "webpack:dev": "webpack --mode development --watch",
+    "webpack:dev": "webpack --mode development watch",
     "webpack:prod": "webpack --mode production",
     "compile-tests": "tsc -p . --outDir out",
     "watch-tests": "tsc -p . -w --outDir out",
     "pretest": "yarn run compile-tests && yarn run compile && yarn run lint",
-    "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js"
+    "lint": "eslint src --ext ts"
   },
   "devDependencies": {
-    "@niivue/niivue": "^0.36.0",
+    "@niivue/niivue": "^0.38.0",
     "@types/glob": "^8.1.0",
-    "@types/mocha": "^10.0.1",
     "@types/node": "20.2.5",
     "@types/vscode": "^1.70.0",
     "@typescript-eslint/eslint-plugin": "^5.59.8",
     "@typescript-eslint/parser": "^5.59.8",
     "@vscode/test-electron": "^2.3.2",
     "copy-webpack-plugin": "^11.0.0",
-    "copyfiles": "^2.4.1",
-    "eslint": "^8.41.0",
-    "glob": "^8.1.0",
-    "mocha": "^10.2.0",
-    "style-loader": "^3.3.3",
     "css-loader": "^6.8.1",
+    "eslint": "^8.50.0",
+    "glob": "^8.1.0",
+    "htm": "^3.1.1",
+    "preact": "^10.18.1",
+    "style-loader": "^3.3.3",
     "ts-loader": "^9.4.3",
     "typescript": "^5.1.3",
     "webpack": "^5.85.0",
     "webpack-cli": "^5.1.1"
   },
-  "dependencies": {
-    "yarn": "^1.22.19"
-  }
+  "dependencies": {}
 }

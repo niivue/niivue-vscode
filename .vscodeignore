@@ -9,6 +9,5 @@ webpack.config.js
 vsc-extension-quickstart.md
 **/tsconfig.json
 **/.eslintrc.json
-**/mocharc.json
 **/*.map
 **/*.ts

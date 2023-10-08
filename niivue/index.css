@@ -1,82 +1,101 @@
+/* css-reset */
 html {
-  background: var(--vscode-panel-background);
+  box-sizing: border-box;
+  font-size: 16px;
 }
 
-.range_container {
-  display: flex;
-  flex-direction: column;
-  width: 80%;
-  margin: 5%;
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
 }
 
-.sliders_control {
+body,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+ol,
+ul {
+  margin: 0;
+  padding: 0;
+  font-weight: normal;
+}
+
+ol,
+ul {
+  list-style: none;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Main CSS */
+body {
+  background-color: #181818;
+  color: white;
+}
+
+.volume {
   position: relative;
-  min-height: 50px;
+  background: gray;
 }
 
-.form_control {
-  position: relative;
+.container {
   display: flex;
-  justify-content: space-between;
-  font-size: 24px;
-  color: #635a5a;
+  flex-flow: row wrap;
+  gap: 0 2px;
 }
 
-input[type=range]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  pointer-events: all;
-  width: 24px;
-  height: 24px;
-  background-color: #fff;
-  border-radius: 50%;
-  box-shadow: 0 0 0 1px #C6C6C6;
-  cursor: pointer;
-}
-
-input[type=range]::-moz-range-thumb {
-  -webkit-appearance: none;
-  pointer-events: all;
-  width: 24px;
-  height: 24px;
-  background-color: #fff;
-  border-radius: 50%;
-  box-shadow: 0 0 0 1px #C6C6C6;
-  cursor: pointer;  
-}
-
-input[type=range]::-webkit-slider-thumb:hover {
-  background: #f7f7f7;
-}
-
-input[type=range]::-webkit-slider-thumb:active {
-  box-shadow: inset 0 0 3px #387bbe, 0 0 9px #387bbe;
-  -webkit-box-shadow: inset 0 0 3px #387bbe, 0 0 9px #387bbe;
-}
-
-input[type="number"] {
-  color: #8a8383;
-  width: 50px;
-  height: 30px;
-  font-size: 20px;
-  border: none;
-}
-
-input[type=number]::-webkit-inner-spin-button, 
-input[type=number]::-webkit-outer-spin-button {  
-   opacity: 1;
-}
-
-input[type="range"] {
-  -webkit-appearance: none; 
-  appearance: none;
-  height: 2px;
-  width: 100%;
+.volume-name {
+  font-size: 1.4em;
   position: absolute;
-  background-color: #C6C6C6;
   pointer-events: none;
 }
 
-#fromSlider {
-  height: 0;
+.volume-footer {
+  position: absolute;
+  bottom: 0.2em;
+  opacity: 0.8;
+}
+
+.horizontal-layout {
+  display: flex;
+  gap: 0.2em;
+  flex-wrap: wrap;
+  align-items: baseline;
+}
+
+.volume-overlay {
+  background: linear-gradient(to right,
+      rgb(255 0 0 / 60%),
+      rgb(255 166 0 / 60%));
+  color: white;
+  opacity: 0.8;
+  padding: 0 0.2em;
+  cursor: pointer;
+}
+
+input[type='number'] {
+  width: 5em;
+}
+
+.context-menu {
+  position: absolute;
+  background-color: #181818;
+  border: 1px solid #292929;
+  box-shadow: 2px 2px 4px rgb(0 0 0 / 20%);
   z-index: 1;
+  left: 30px;
+  bottom: 20px;
+}
+
+.context-menu-item {
+  padding: 8px 12px;
+  cursor: pointer;
 }
