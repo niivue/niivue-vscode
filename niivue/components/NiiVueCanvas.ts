@@ -3,6 +3,20 @@ import { html } from 'htm/preact'
 import { useRef, useEffect } from 'preact/hooks'
 import { isImageType } from '../utility'
 
+interface NiiVueCanvasProps {
+  nv: Niivue
+  setIntensity: Function
+  width: number
+  height: number
+  setNv0: Function
+  sliceType: number
+  interpolation: boolean
+  scaling: any
+  setLocation: Function
+  triggerRender: Function
+  crosshair: number
+}
+
 export const NiiVueCanvas = ({
   nv,
   setIntensity,
@@ -15,7 +29,7 @@ export const NiiVueCanvas = ({
   setLocation,
   triggerRender,
   crosshair,
-}) => {
+}: NiiVueCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>()
   useEffect(() => nv.attachToCanvas(canvasRef.current), [])
   useEffect(() => {
@@ -25,10 +39,10 @@ export const NiiVueCanvas = ({
     loadVolume(nv, nv.body).then(async () => {
       nv.isLoaded = true
       nv.body = null
-      nv.onLocationChange = (data) =>
+      nv.onLocationChange = (data: any) =>
         setIntensityAndLocation(data, setIntensity, setLocation)
       nv.createOnLocationChange()
-      setNv0((nv0) => (nv0.isLoaded ? nv0 : nv))
+      setNv0((nv0: Niivue) => (nv0.isLoaded ? nv0 : nv))
 
       // simulate click on canvas to adjust aspect ratio of nv instance
       const canvas = canvasRef.current
@@ -39,10 +53,10 @@ export const NiiVueCanvas = ({
         const y = rect.top + rect.height / factor
         await new Promise((resolve) => setTimeout(resolve, 100))
         canvas.dispatchEvent(
-          new MouseEvent('mousedown', { clientX: x, clientY: y }),
+          new MouseEvent('mousedown', { clientX: x, clientY: y })
         )
         canvas.dispatchEvent(
-          new MouseEvent('mouseup', { clientX: x, clientY: y }),
+          new MouseEvent('mouseup', { clientX: x, clientY: y })
         )
       }
       // sleep to avoid black images
@@ -72,14 +86,14 @@ function getMinimalHeaderMHA() {
   return new TextEncoder().encode(header).buffer
 }
 
-async function loadVolume(nv, item) {
+async function loadVolume(nv: Niivue, item: any) {
   if (item.uri.endsWith('.raw')) {
     const volume = new NVImage(
       getMinimalHeaderMHA(),
       `${item.uri}.mha`,
       'gray',
       1.0,
-      item.data,
+      item.data
     )
     nv.addVolume(volume)
   } else if (isImageType(item.uri)) {
@@ -91,7 +105,7 @@ async function loadVolume(nv, item) {
       await nv.loadVolumes(volumeList)
     }
   } else if (item.data) {
-    NVMesh.readMesh(item.data, item.uri, nv.gl).then((mesh) => {
+    NVMesh.readMesh(item.data, item.uri, nv.gl).then((mesh: any) => {
       nv.addMesh(mesh)
     })
   } else {
@@ -100,7 +114,7 @@ async function loadVolume(nv, item) {
   }
 }
 
-export function applyScale(nv, scaling) {
+export function applyScale(nv: Niivue, scaling: any) {
   if (scaling.isManual) {
     nv.volumes[0].cal_min = scaling.min
     nv.volumes[0].cal_max = scaling.max
@@ -108,7 +122,11 @@ export function applyScale(nv, scaling) {
   }
 }
 
-function setIntensityAndLocation(data, setIntensity, setLocation) {
+function setIntensityAndLocation(
+  data: any,
+  setIntensity: Function,
+  setLocation: Function
+) {
   const parts = data.string.split('=')
   if (parts.length === 2) {
     setIntensity(parts.pop())

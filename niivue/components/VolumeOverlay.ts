@@ -1,16 +1,26 @@
-import { useRef, useState, useEffect } from 'preact/hooks'
+import { useState, MutableRef } from 'preact/hooks'
 import { html } from 'htm/preact'
 import { ContextMenu } from './ContextMenu'
 import { OverlayOptions } from './OverlayOptions'
 
-export const VolumeOverlay = ({ nv, volumeIndex, volumeRef }) => {
+interface VolumeOverlayProps {
+  nv: Niivue
+  volumeIndex: number
+  volumeRef: MutableRef<HTMLDivElement>
+}
+
+export const VolumeOverlay = ({
+  nv,
+  volumeIndex,
+  volumeRef,
+}: VolumeOverlayProps) => {
   const [isOpen, setIsOpen] = useState(false)
   const removeContextMenu = () => {
     setIsOpen(false)
     volumeRef.current.onclick = null
     volumeRef.current.oncontextmenu = null
   }
-  const onContextmenu = (e) => {
+  const onContextmenu = (e: any) => {
     e.preventDefault()
     e.stopPropagation()
     setIsOpen(true)

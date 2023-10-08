@@ -1,7 +1,11 @@
 import { html } from 'htm/preact'
 import { useRef, useState } from 'preact/hooks'
 
-export const ShowHeaderButton = ({ info }) => {
+interface ShowHeaderButtonProps {
+  info: string
+}
+
+export const ShowHeaderButton = ({ info }: ShowHeaderButtonProps) => {
   const dialog = useRef<HTMLDialogElement>()
   const [text, setText] = useState('Header')
 

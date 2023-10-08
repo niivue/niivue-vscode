@@ -2,8 +2,13 @@ import { html } from 'htm/preact'
 import { useRef } from 'preact/hooks'
 import { addOverlayEvent } from '../events'
 
-export const ContextMenu = ({ nv, volumeIndex }) => {
-  const contextMenu = useRef()
+interface ContextMenuProps {
+  nv: Niivue
+  volumeIndex: number
+}
+
+export const ContextMenu = ({ nv, volumeIndex }: ContextMenuProps) => {
+  const contextMenu = useRef<HTMLDivElement>()
   const nVolumes = nv.volumes.length
   const nMeshes = nv.meshes.length
   const nMeshLayers = nMeshes > 0 ? nv.meshes[0].layers.length : 0

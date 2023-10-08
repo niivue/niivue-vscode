@@ -1,15 +1,20 @@
 import { html } from 'htm/preact'
 
+interface NearestInterpolationProps {
+  interpolation: boolean
+  setInterpolation: Function
+}
+
 export const NearestInterpolation = ({
   interpolation,
   setInterpolation,
-}) => html`
+}: NearestInterpolationProps) => html`
   <label>
     <span>Interpolation</span>
     <input
       type="checkbox"
       checked=${interpolation}
-      onchange=${(e) => setInterpolation(e.target.checked)}
+      onchange=${(e: any) => setInterpolation(e.target.checked)}
     />
   </label>
 `

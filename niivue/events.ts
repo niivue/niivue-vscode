@@ -3,8 +3,8 @@ import { isImageType } from './utility'
 import { SLICE_TYPE } from '@niivue/niivue'
 
 export function listenToMessages(setNvArray: Function, setSliceType: Function) {
-  async function messageListener(e) {
-    setNvArray((nvArray) => {
+  async function messageListener(e: any) {
+    setNvArray((nvArray: Niivue[]) => {
       const { type, body } = e.data
       switch (type) {
         case 'addMeshOverlay':
@@ -58,7 +58,7 @@ interface LayerOptions {
   calMax?: number
 }
 
-export function addMeshOverlay(nv, item, type) {
+export function addMeshOverlay(nv: Niivue, item: any, type: string) {
   if (nv.meshes.length === 0) {
     return
   }
@@ -97,7 +97,7 @@ export function addMeshOverlay(nv, item, type) {
     a.colormapNegative,
     a.useNegativeCmap,
     a.calMin,
-    a.calMax,
+    a.calMax
   )
   mesh.updateMesh(nv.gl)
   nv.opts.isColorbar = true
@@ -108,12 +108,12 @@ export function addMeshOverlay(nv, item, type) {
       nv.meshes[0].id,
       layerNumber,
       'colorbarVisible',
-      false,
+      false
     )
   }
 }
 
-export async function addOverlay(nv, item) {
+export async function addOverlay(nv: Niivue, item: any) {
   if (isImageType(item.uri)) {
     const image = new NVImage(item.data, item.uri, 'redyell', 0.5)
     nv.addVolume(image)
@@ -123,7 +123,7 @@ export async function addOverlay(nv, item) {
   }
 }
 
-export function addOverlayEvent(imageIndex, type) {
+export function addOverlayEvent(imageIndex: number, type: string) {
   if (typeof vscode === 'object') {
     vscode.postMessage({
       type: 'addOverlay',
@@ -162,8 +162,8 @@ export function addImagesEvent() {
     // input.accept = imageFileTypes;
 
     input.onchange = async (e) => {
-      const files = (e.target as HTMLInputElement)?.files
-      if (files && files.length > 0) {
+      const files = Array.from((e.target as HTMLInputElement)?.files ?? [])
+      if (files.length > 0) {
         window.postMessage({
           type: 'initCanvas',
           body: {
@@ -186,7 +186,7 @@ export function addImagesEvent() {
   }
 }
 
-export function getUnitinializedNvInstance(nvArray) {
+export function getUnitinializedNvInstance(nvArray: Niivue[]) {
   const nv = nvArray.find((nv) => nv.isNew)
   if (nv) {
     return nv
@@ -195,7 +195,7 @@ export function getUnitinializedNvInstance(nvArray) {
   return nvArray[nvArray.length - 1]
 }
 
-export function growNvArrayBy(nvArray, n) {
+export function growNvArrayBy(nvArray: Niivue[], n: number) {
   for (let i = 0; i < n; i++) {
     const nv = new Niivue({ isResizeCanvas: false })
     nv.isNew = true

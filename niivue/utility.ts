@@ -1,5 +1,5 @@
 // This function finds common patterns in the names and only returns the parts of the names that are different
-export function differenceInNames(names, rec = true) {
+export function differenceInNames(names: string[], rec = true) {
   if (names.length === 0) {
     return []
   }
@@ -62,13 +62,13 @@ export function differenceInNames(names, rec = true) {
   }
 
   const diffNames = names.map((name) =>
-    name.slice(startCommon, name.length - endCommon),
+    name.slice(startCommon, name.length - endCommon)
   )
 
   // If length is greater than display length, then split by folder and diff again for first folder and filename and join
   if (rec) {
     const folders = diffNames.map((name) =>
-      name.split('/').slice(0, -1).join('/'),
+      name.split('/').slice(0, -1).join('/')
     )
     const diffFolders = differenceInNames(folders, false)
     const filenames = diffNames.map((name) => name.split('/').slice(-1)[0])

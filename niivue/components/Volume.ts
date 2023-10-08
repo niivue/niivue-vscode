@@ -3,7 +3,19 @@ import { useState, useRef } from 'preact/hooks'
 import { NiiVueCanvas } from './NiiVueCanvas'
 import { VolumeOverlay } from './VolumeOverlay'
 
-export const Volume = ({ name, volumeIndex, hideUI, ...props }) => {
+interface VolumeProps {
+  name: string
+  volumeIndex: number
+  hideUI: number
+  nv: Niivue
+}
+
+export const Volume = ({
+  name,
+  volumeIndex,
+  hideUI,
+  ...props
+}: VolumeProps) => {
   const [intensity, setIntensity] = useState('')
   const volumeRef = useRef()
   const dispName = name.length > 20 ? `...${name.slice(-20)}` : name

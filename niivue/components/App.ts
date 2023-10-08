@@ -17,13 +17,13 @@ export const App = () => {
 }
 
 function initState() {
-  const headerRef = useRef()
-  const footerRef = useRef()
+  const headerRef = useRef<HTMLDivElement>()
+  const footerRef = useRef<HTMLDivElement>()
   const [hideUI, setHideUI] = useState(2) // 0: hide all, 1: hide overlay, 2: show-all
   const [crosshair, setCrosshair] = useState(true)
-  const [nvArray, setNvArray] = useState([])
+  const [nvArray, setNvArray] = useState<Niivue[]>([])
   const [nv0, setNv0] = useState({ isLoaded: false })
-  const [sliceType, setSliceType] = useState(SLICE_TYPE.MULTIPLANAR) // all views
+  const [sliceType, setSliceType] = useState<number>(SLICE_TYPE.MULTIPLANAR) // all views
   const [interpolation, setInterpolation] = useState(true)
   const [scaling, setScaling] = useState({ isManual: false, min: 0, max: 0 })
   const [location, setLocation] = useState('')

@@ -1,7 +1,11 @@
 import { html } from 'htm/preact'
 import { Scaling } from './Scaling'
 
-export const OverlayOptions = ({ nv }) => {
+interface OverlayOptionsProps {
+  nv: Niivue
+}
+
+export const OverlayOptions = ({ nv }: OverlayOptionsProps) => {
   const isVolumeOverlay = nv.volumes.length > 1
   const isMeshOverlay = nv.meshes.length > 0 && nv.meshes[0].layers.length > 0
 
@@ -17,11 +21,13 @@ export const OverlayOptions = ({ nv }) => {
     : ['ge_color', 'hsv', 'symmetric', 'warm']
   return html`
     <${Scaling}
-      setScaling=${(scaling) => setOverlayScaling(nv, isVolumeOverlay, scaling)}
+      setScaling=${(scaling: any) =>
+        setOverlayScaling(nv, isVolumeOverlay, scaling)}
       init=${overlay}
     />
     <select
-      onchange=${(e) => setOverlayColormap(nv, isVolumeOverlay, e.target.value)}
+      onchange=${(e: any) =>
+        setOverlayColormap(nv, isVolumeOverlay, e.target.value)}
       value=${overlay.colormap}
     >
       ${colormaps.map((c) => html`<option value=${c}>${c}</option>`)}
@@ -29,7 +35,7 @@ export const OverlayOptions = ({ nv }) => {
   `
 }
 
-function setOverlayScaling(nv, isVolumeOverlay, scaling) {
+function setOverlayScaling(nv: Niivue, isVolumeOverlay: boolean, scaling: any) {
   if (isVolumeOverlay) {
     const overlay = nv.volumes[nv.volumes.length - 1]
     overlay.cal_min = scaling.min
@@ -40,18 +46,22 @@ function setOverlayScaling(nv, isVolumeOverlay, scaling) {
       nv.meshes[0].id,
       layerNumber,
       'cal_min',
-      scaling.min,
+      scaling.min
     )
     nv.setMeshLayerProperty(
       nv.meshes[0].id,
       layerNumber,
       'cal_max',
-      scaling.max,
+      scaling.max
     )
   }
   nv.updateGLVolume()
 }
-function setOverlayColormap(nv, isVolumeOverlay, colormap) {
+function setOverlayColormap(
+  nv: Niivue,
+  isVolumeOverlay: boolean,
+  colormap: string
+) {
   if (isVolumeOverlay) {
     const overlay = nv.volumes[nv.volumes.length - 1]
     if (colormap === 'symmetric') {
@@ -70,33 +80,33 @@ function setOverlayColormap(nv, isVolumeOverlay, colormap) {
         nv.meshes[0].id,
         layerNumber,
         'useNegativeCmap',
-        true,
+        true
       )
       nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, 'colormap', 'warm')
       nv.setMeshLayerProperty(
         nv.meshes[0].id,
         layerNumber,
         'colormapNegative',
-        'winter',
+        'winter'
       )
     } else {
       nv.setMeshLayerProperty(
         nv.meshes[0].id,
         layerNumber,
         'useNegativeCmap',
-        false,
+        false
       )
       nv.setMeshLayerProperty(
         nv.meshes[0].id,
         layerNumber,
         'colormap',
-        colormap,
+        colormap
       )
       nv.setMeshLayerProperty(
         nv.meshes[0].id,
         layerNumber,
         'colormapNegative',
-        '',
+        ''
       )
     }
   }

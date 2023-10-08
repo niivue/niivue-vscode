@@ -5,6 +5,19 @@ import { Scaling } from './Scaling'
 import { SelectView } from './SelectView'
 import { Niivue } from '@niivue/niivue'
 
+interface FooterProps {
+  footerRef: any
+  sliceType: number
+  setSliceType: any
+  interpolation: boolean
+  setInterpolation: any
+  setScaling: any
+  nv0: Niivue
+  location: string
+  setHideUI: any
+  setCrosshair: any
+}
+
 export const Footer = ({
   footerRef,
   sliceType,
@@ -16,7 +29,7 @@ export const Footer = ({
   location,
   setHideUI,
   setCrosshair,
-}) => html`
+}: FooterProps) => html`
   <div ref=${footerRef}>
     <div>${location}</div>
     <div class="horizontal-layout">
@@ -35,16 +48,16 @@ export const Footer = ({
         <button onClick=${() => saveScene(nv0)}>Save Scene</button>
         <button onClick=${() => loadScene(nv0)}>Load Scene</button>
       `}
-      <button onClick=${() => setHideUI((hideUI) => (hideUI + 1) % 3)}>
+      <button onClick=${() => setHideUI((hideUI: number) => (hideUI + 1) % 3)}>
         👁
       </button>
-      <button onClick=${() => setCrosshair((crosshair) => !crosshair)}>
+      <button onClick=${() => setCrosshair((crosshair: boolean) => !crosshair)}>
         ⌖
       </button>
     </div>
   </div>
 `
-function saveScene(nv) {
+function saveScene(nv: Niivue) {
   const scene = nv.scene
   const json = JSON.stringify(scene)
   const blob = new Blob([json], { type: 'application/json' })
@@ -55,7 +68,7 @@ function saveScene(nv) {
   a.click()
 }
 
-function loadScene(nv) {
+function loadScene(nv: Niivue) {
   const input = document.createElement('input')
   input.type = 'file'
   input.accept = '.json'
@@ -80,7 +93,7 @@ function loadScene(nv) {
 }
 
 // This function is identical to nv.sync, but ignores the focus requirement
-export function syncAll(nv) {
+export function syncAll(nv: Niivue) {
   if (!nv.otherNV || typeof nv.otherNV === 'undefined') {
     return
   }
@@ -113,4 +126,3 @@ export function syncAll(nv) {
     }
   }
 }
-  

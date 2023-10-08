@@ -1,7 +1,12 @@
 import { html } from 'htm/preact'
 import { useRef, useEffect } from 'preact/hooks'
 
-export const Scaling = ({ setScaling, init }) => {
+interface ScalingProps {
+  setScaling: Function
+  init: any
+}
+
+export const Scaling = ({ setScaling, init }: ScalingProps) => {
   const minRef = useRef<HTMLInputElement>()
   const maxRef = useRef<HTMLInputElement>()
   useEffect(() => {
