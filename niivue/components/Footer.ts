@@ -5,7 +5,7 @@ import { Scaling } from './Scaling'
 import { SelectView } from './SelectView'
 import { Niivue } from '@niivue/niivue'
 
-interface FooterProps {
+export interface FooterProps {
   footerRef: any
   sliceType: number
   setSliceType: any

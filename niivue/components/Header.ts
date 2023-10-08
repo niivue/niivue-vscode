@@ -1,7 +1,7 @@
 import { html } from 'htm/preact'
 import { ShowHeaderButton } from './ShowHeaderButton'
 
-interface HeaderProps {
+export interface HeaderProps {
   nv: Niivue
   heightRef: any
 }

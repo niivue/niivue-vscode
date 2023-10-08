@@ -4,11 +4,17 @@ import { differenceInNames } from '../utility'
 import { Volume } from './Volume'
 import { SLICE_TYPE } from '@niivue/niivue'
 
-interface ContainerProps {
+export interface ContainerProps {
   nvArray: Niivue[]
-  headerRef: MutableRef<HTMLDivElement>
-  footerRef: MutableRef<HTMLDivElement>
+  headerRef: MutableRef<HTMLDivElement | undefined>
+  footerRef: MutableRef<HTMLDivElement | undefined>
   sliceType: number
+  hideUI: number
+  setNv0: Function
+  interpolation: boolean
+  scaling: any
+  setLocation: Function
+  crosshair: boolean
 }
 
 export const Container = ({
@@ -115,8 +121,8 @@ function getCanvasSize(
 
 function updateDimensions(
   setDimensions: Function,
-  headerRef: MutableRef<HTMLDivElement>,
-  footerRef: MutableRef<HTMLDivElement>
+  headerRef: MutableRef<HTMLDivElement | undefined>,
+  footerRef: MutableRef<HTMLDivElement | undefined>
 ) {
   const headerHeight = headerRef.current ? headerRef.current.offsetHeight : 20
   const footerHeight = footerRef.current ? footerRef.current.offsetHeight : 20

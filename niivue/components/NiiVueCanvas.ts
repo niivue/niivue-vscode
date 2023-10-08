@@ -14,7 +14,7 @@ interface NiiVueCanvasProps {
   scaling: any
   setLocation: Function
   triggerRender: Function
-  crosshair: number
+  crosshair: boolean
 }
 
 export const NiiVueCanvas = ({
