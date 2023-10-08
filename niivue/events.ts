@@ -3,7 +3,7 @@ import { isImageType } from './utility'
 import { SLICE_TYPE } from '@niivue/niivue'
 
 export function listenToMessages(setNvArray: Function, setSliceType: Function) {
-  async function messageListener(e: any) {
+  function messageListener(e: any) {
     setNvArray((nvArray: Niivue[]) => {
       const { type, body } = e.data
       switch (type) {
@@ -47,6 +47,9 @@ export function listenToMessages(setNvArray: Function, setSliceType: Function) {
     })
   }
   window.onmessage = messageListener
+  if (typeof vscode === 'object') {
+    vscode.postMessage({ type: 'ready' })
+  }
 }
 
 interface LayerOptions {
