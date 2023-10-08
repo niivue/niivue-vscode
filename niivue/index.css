@@ -55,6 +55,7 @@ body {
 .volume-name {
   font-size: 1.4em;
   position: absolute;
+  pointer-events: none;
 }
 
 .volume-footer {

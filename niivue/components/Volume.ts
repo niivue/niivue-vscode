@@ -31,7 +31,7 @@ export const Volume = ({
           volumeIndex=${volumeIndex}
           volumeRef=${volumeRef}
         />`}
-        <span class="volume-intensity">${intensity}</span>
+        <span>${intensity}</span>
       </div>`}
     </div>
   `
