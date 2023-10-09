@@ -29,7 +29,7 @@ export const Container = ({
   ])
 
   const dimUpdate = () => updateDimensions(setDimensions, headerRef, footerRef)
-  useEffect(() => (window.onresize = dimUpdate))
+  useEffect(() => (window.onresize = dimUpdate), [])
   syncVolumes(nvArray)
 
   const meta = nvArray?.[0]?.volumes?.[0]?.getImageMetadata() ?? {}
