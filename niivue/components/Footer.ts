@@ -30,34 +30,42 @@ export const Footer = ({
   location,
   setHideUI,
   setCrosshair,
-}: FooterProps) => html`
-  <div ref=${footerRef}>
-    <div>${location}</div>
-    <div class="horizontal-layout">
-      <button onClick=${addImagesEvent}>Add Images</button>
-      <${NearestInterpolation}
-        interpolation=${interpolation}
-        setInterpolation=${setInterpolation}
-      />
-      ${nv0.isLoaded &&
-      nv0.volumes.length > 0 &&
-      html`<${Scaling} setScaling=${setScaling} init=${nv0.volumes[0]} />`}
-      <${SelectView} sliceType=${sliceType} setSliceType=${setSliceType} />
-      ${nv0.isLoaded &&
-      nv0.meshes.length > 0 &&
-      html`
-        <button onClick=${() => saveScene(nv0)}>Save Scene</button>
-        <button onClick=${() => loadScene(nv0)}>Load Scene</button>
-      `}
-      <button onClick=${() => setHideUI((hideUI: number) => (hideUI + 1) % 3)}>
-        👁
-      </button>
-      <button onClick=${() => setCrosshair((crosshair: boolean) => !crosshair)}>
-        ⌖
-      </button>
+}: FooterProps) => {
+  const ready = nv0.isLoaded
+  const isVolume = ready && nv0.volumes.length > 0
+  const isMesh = ready && nv0.meshes.length > 0
+
+  const handleHideUI = () => {
+    setHideUI((hideUI: number) => (hideUI + 1) % 3)
+  }
+  const handleCrosshair = () => {
+    setCrosshair((crosshair: boolean) => !crosshair)
+  }
+
+  return html`
+    <div ref=${footerRef}>
+      <div>${location}</div>
+      <div class="horizontal-layout">
+        <button onClick=${addImagesEvent}>Add Images</button>
+        <${NearestInterpolation}
+          interpolation=${interpolation}
+          setInterpolation=${setInterpolation}
+        />
+        ${isVolume &&
+        html`<${Scaling} setScaling=${setScaling} init=${nv0.volumes[0]} />`}
+        <${SelectView} sliceType=${sliceType} setSliceType=${setSliceType} />
+        ${isMesh &&
+        html`
+          <button onClick=${() => saveScene(nv0)}>Save Scene</button>
+          <button onClick=${() => loadScene(nv0)}>Load Scene</button>
+        `}
+        <button onClick=${handleHideUI}>👁</button>
+        <button onClick=${handleCrosshair}>⌖</button>
+      </div>
     </div>
-  </div>
-`
+  `
+}
+      
 function saveScene(nv: Niivue) {
   const scene = nv.scene
   const json = JSON.stringify(scene)
