@@ -4,6 +4,7 @@ import { NearestInterpolation } from './NearestInterpolation'
 import { Scaling } from './Scaling'
 import { SelectView } from './SelectView'
 import { Niivue } from '@niivue/niivue'
+import { Signal } from '@preact/signals'
 
 export interface FooterProps {
   footerRef: any
@@ -13,7 +14,7 @@ export interface FooterProps {
   setInterpolation: any
   setScaling: any
   nv0: Niivue
-  location: string
+  location: Signal<string>
   setHideUI: any
   setCrosshair: any
 }

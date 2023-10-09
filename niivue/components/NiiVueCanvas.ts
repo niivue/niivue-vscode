@@ -2,31 +2,32 @@ import { SLICE_TYPE, NVImage, NVMesh } from '@niivue/niivue'
 import { html } from 'htm/preact'
 import { useRef, useEffect } from 'preact/hooks'
 import { isImageType } from '../utility'
+import { Signal } from '@preact/signals'
 
 interface NiiVueCanvasProps {
   nv: Niivue
-  setIntensity: Function
+  intensity: Signal<string>
   width: number
   height: number
   setNv0: Function
   sliceType: number
   interpolation: boolean
   scaling: any
-  setLocation: Function
+  location: Signal<string>
   triggerRender: Function
   crosshair: boolean
 }
 
 export const NiiVueCanvas = ({
   nv,
-  setIntensity,
+  intensity,
   width,
   height,
   setNv0,
   sliceType,
   interpolation,
   scaling,
-  setLocation,
+  location,
   triggerRender,
   crosshair,
 }: NiiVueCanvasProps) => {
@@ -40,7 +41,7 @@ export const NiiVueCanvas = ({
       nv.isLoaded = true
       nv.body = null
       nv.onLocationChange = (data: any) =>
-        setIntensityAndLocation(data, setIntensity, setLocation)
+        setIntensityAndLocation(data, intensity, location)
       nv.createOnLocationChange()
       setNv0((nv0: Niivue) => (nv0.isLoaded ? nv0 : nv))
 
@@ -124,12 +125,12 @@ export function applyScale(nv: Niivue, scaling: any) {
 
 function setIntensityAndLocation(
   data: any,
-  setIntensity: Function,
-  setLocation: Function
+  intensity: Signal<string>,
+  location: Signal<string>
 ) {
   const parts = data.string.split('=')
   if (parts.length === 2) {
-    setIntensity(parts.pop())
+    intensity.value = parts.pop()
   }
-  setLocation(parts.pop())
+  location.value = parts.pop()
 }

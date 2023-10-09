@@ -145,6 +145,7 @@
   },
   "devDependencies": {
     "@niivue/niivue": "^0.38.0",
+    "@preact/signals": "^1.2.1",
     "@types/glob": "^8.1.0",
     "@types/node": "20.2.5",
     "@types/vscode": "^1.70.0",
