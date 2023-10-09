@@ -6,37 +6,66 @@ interface OverlayOptionsProps {
 }
 
 export const OverlayOptions = ({ nv }: OverlayOptionsProps) => {
-  const isVolumeOverlay = nv.volumes.length > 1
-  const isMeshOverlay = nv.meshes.length > 0 && nv.meshes[0].layers.length > 0
-
-  if (!isVolumeOverlay && !isMeshOverlay) {
+  if (!isVolumeOverlay(nv) && !isMeshOverlay(nv)) {
     return html``
   }
 
-  const layers = isVolumeOverlay ? nv.volumes : nv.meshes[0].layers
-  const overlay = layers[layers.length - 1]
-
-  const colormaps = isVolumeOverlay
-    ? ['symmetric', ...nv.colormaps()]
-    : ['ge_color', 'hsv', 'symmetric', 'warm']
+  const overlay = getOverlay(nv)
+  const colormaps = getColormaps(nv)
 
   return html`
-    <${Scaling}
-      setScaling=${handleOverlayScaling(nv, isVolumeOverlay)}
-      init=${overlay}
-    />
-    <select
-      onchange=${handleOverlayColormap(nv, isVolumeOverlay)}
-      value=${overlay.colormap}
-    >
+    <${Scaling} setScaling=${handleOverlayScaling(nv)} init=${overlay} />
+    <select onchange=${handleOverlayColormap(nv)} value=${overlay.colormap}>
       ${colormaps.map((c) => html`<option value=${c}>${c}</option>`)}
     </select>
+    <input
+      type="number"
+      value=${overlay.opacity}
+      onchange=${handleOpacity(nv)}
+      min="0"
+      max="1"
+      step="0.1"
+    />
   `
 }
 
-function handleOverlayScaling(nv: Niivue, isVolumeOverlay: boolean) {
+function getColormaps(nv: Niivue) {
+  if (isVolumeOverlay(nv)) {
+    return ['symmetric', ...nv.colormaps()]
+  } else {
+    return ['ge_color', 'hsv', 'symmetric', 'warm']
+  }
+}
+
+function getOverlay(nv: Niivue) {
+  const layers = isVolumeOverlay(nv) ? nv.volumes : nv.meshes[0].layers
+  return layers[layers.length - 1]
+}
+
+function isVolumeOverlay(nv: Niivue) {
+  return nv.volumes.length > 1
+}
+function isMeshOverlay(nv: Niivue) {
+  return nv.meshes.length > 0 && nv.meshes[0].layers.length > 1
+}
+
+function handleOpacity(nv: Niivue) {
+  return (e: any) => {
+    const opacity = e.target.value
+    if (isVolumeOverlay(nv)) {
+      const idx = nv.volumes.length - 1
+      nv.setOpacity(idx, opacity)
+    } else {
+      const layerNumber = nv.meshes[0].layers.length - 1
+      nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, 'opacity', opacity)
+    }
+    nv.updateGLVolume()
+  }
+}
+
+function handleOverlayScaling(nv: Niivue) {
   return (scaling: any) => {
-    if (isVolumeOverlay) {
+    if (isVolumeOverlay(nv)) {
       const overlay = nv.volumes[nv.volumes.length - 1]
       overlay.cal_min = scaling.min
       overlay.cal_max = scaling.max
@@ -59,10 +88,10 @@ function handleOverlayScaling(nv: Niivue, isVolumeOverlay: boolean) {
   }
 }
 
-function handleOverlayColormap(nv: Niivue, isVolumeOverlay: boolean) {
+function handleOverlayColormap(nv: Niivue) {
   return (e: any) => {
     const colormap = e.target.value
-    if (isVolumeOverlay) {
+    if (isVolumeOverlay(nv)) {
       setVolumeColormap(nv, colormap)
     } else {
       setMeshColormap(nv, colormap)
