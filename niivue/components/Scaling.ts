@@ -10,7 +10,7 @@ export const Scaling = ({ setScaling, init }: ScalingProps) => {
   const minRef = useRef<HTMLInputElement>()
   const maxRef = useRef<HTMLInputElement>()
   useEffect(() => {
-    if (!init.cal_min || !minRef.current || !maxRef.current) {
+    if (!minRef.current || !maxRef.current) {
       return
     }
     minRef.current.value = init.cal_min.toPrecision(2)
