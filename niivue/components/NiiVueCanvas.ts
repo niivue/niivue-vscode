@@ -79,8 +79,9 @@ export const NiiVueCanvas = ({
     height=${height}
   ></canvas>`
 }
-function getMinimalHeaderMHA() {
-  const matrixSize = prompt('Please enter the matrix size:', '64 64 39 float')
+
+async function getMinimalHeaderMHA() {
+  const matrixSize = await getUserInput()
   if (!matrixSize) {
     return null
   }
@@ -90,10 +91,37 @@ function getMinimalHeaderMHA() {
   return new TextEncoder().encode(header).buffer
 }
 
+async function getUserInput() {
+  const defaultInput = '64 64 39 float'
+
+  // create a dialog with a close button
+  const input = document.createElement('input')
+  input.value = defaultInput
+  const dialog = document.createElement('dialog')
+  const button = document.createElement('button')
+  button.textContent = 'Submit file info'
+  button.onclick = () => dialog.close()
+  dialog.appendChild(input)
+  dialog.appendChild(button)
+  document.body.appendChild(dialog)
+  dialog.showModal()
+
+  // wait for click on the close button
+  await new Promise((resolve) => (button.onclick = resolve))
+  const matrixSize = input.value
+  dialog.close()
+  document.body.removeChild(dialog)
+  return matrixSize
+}
+
 async function loadVolume(nv: Niivue, item: any) {
   if (item.uri.endsWith('.raw')) {
+    const header = await getMinimalHeaderMHA()
+    if (!header) {
+      return
+    }
     const volume = new NVImage(
-      getMinimalHeaderMHA(),
+      header,
       `${item.uri}.mha`,
       'gray',
       1.0,
