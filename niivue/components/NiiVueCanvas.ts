@@ -53,7 +53,9 @@ export const NiiVueCanvas = ({
   useEffect(() => nv.setInterpolation(!interpolation), [interpolation])
   useEffect(() => applyScale(nv, scaling), [scaling])
   useEffect(() => nv.isLoaded && nv.setCrosshairWidth(crosshair), [crosshair])
-  effect(() => nv.setRadiologicalConvention(radiologicalConvention.value))
+  if (nv.isLoaded) {
+    effect(() => nv.setRadiologicalConvention(radiologicalConvention.value))
+  }
   useEffect(() => nv.updateGLVolume(), [height, width])
 
   return html`<canvas
