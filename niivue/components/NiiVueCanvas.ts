@@ -1,4 +1,4 @@
-import { SLICE_TYPE, NVImage, NVMesh } from '@niivue/niivue'
+import { NVImage, NVMesh } from '@niivue/niivue'
 import { html } from 'htm/preact'
 import { useRef, useEffect } from 'preact/hooks'
 import { isImageType } from '../utility'
@@ -46,25 +46,7 @@ export const NiiVueCanvas = ({
         setIntensityAndLocation(data, intensity, location)
       nv.createOnLocationChange()
       setNv0((nv0: Niivue) => (nv0.isLoaded ? nv0 : nv))
-
-      // simulate click on canvas to adjust aspect ratio of nv instance
-      const canvas = canvasRef.current
-      if (canvas) {
-        const rect = canvas.getBoundingClientRect()
-        const factor = sliceType === SLICE_TYPE.MULTIPLANAR ? 4 : 2
-        const x = rect.left + rect.width / factor
-        const y = rect.top + rect.height / factor
-        await new Promise((resolve) => setTimeout(resolve, 100))
-        canvas.dispatchEvent(
-          new MouseEvent('mousedown', { clientX: x, clientY: y })
-        )
-        canvas.dispatchEvent(
-          new MouseEvent('mouseup', { clientX: x, clientY: y })
-        )
-      }
-      // sleep to avoid black images
-      await new Promise((resolve) => setTimeout(resolve, 100))
-      triggerRender()
+      triggerRender() // required to update the names
     })
   }, [nv.body])
   useEffect(() => nv.setSliceType(sliceType), [sliceType])
@@ -72,6 +54,7 @@ export const NiiVueCanvas = ({
   useEffect(() => applyScale(nv, scaling), [scaling])
   useEffect(() => nv.isLoaded && nv.setCrosshairWidth(crosshair), [crosshair])
   effect(() => nv.setRadiologicalConvention(radiologicalConvention.value))
+  useEffect(() => nv.updateGLVolume(), [height, width])
 
   return html`<canvas
     ref=${canvasRef}
