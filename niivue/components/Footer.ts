@@ -17,6 +17,7 @@ export interface FooterProps {
   location: Signal<string>
   setHideUI: any
   setCrosshair: any
+  radiologicalConvention: Signal<boolean>
 }
 
 export const Footer = ({
@@ -30,6 +31,7 @@ export const Footer = ({
   location,
   setHideUI,
   setCrosshair,
+  radiologicalConvention,
 }: FooterProps) => {
   const ready = nv0.isLoaded
   const isVolume = ready && nv0.volumes.length > 0
@@ -40,6 +42,9 @@ export const Footer = ({
   }
   const handleCrosshair = () => {
     setCrosshair((crosshair: boolean) => !crosshair)
+  }
+  const handleRadiologicalConvention = () => {
+    radiologicalConvention.value = !radiologicalConvention.value
   }
 
   return html`
@@ -52,7 +57,10 @@ export const Footer = ({
           setInterpolation=${setInterpolation}
         />
         ${isVolume &&
-        html`<${Scaling} setScaling=${setScaling} init=${nv0.volumes[0]} />`}
+        html`
+          <button onClick=${handleRadiologicalConvention}>RL</button>
+          <${Scaling} setScaling=${setScaling} init=${nv0.volumes[0]} />
+        `}
         <${SelectView} sliceType=${sliceType} setSliceType=${setSliceType} />
         ${isMesh &&
         html`

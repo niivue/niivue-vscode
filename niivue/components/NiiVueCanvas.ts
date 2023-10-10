@@ -2,7 +2,7 @@ import { SLICE_TYPE, NVImage, NVMesh } from '@niivue/niivue'
 import { html } from 'htm/preact'
 import { useRef, useEffect } from 'preact/hooks'
 import { isImageType } from '../utility'
-import { Signal } from '@preact/signals'
+import { Signal, effect } from '@preact/signals'
 
 interface NiiVueCanvasProps {
   nv: Niivue
@@ -16,6 +16,7 @@ interface NiiVueCanvasProps {
   location: Signal<string>
   triggerRender: Function
   crosshair: boolean
+  radiologicalConvention: Signal<boolean>
 }
 
 export const NiiVueCanvas = ({
@@ -30,6 +31,7 @@ export const NiiVueCanvas = ({
   location,
   triggerRender,
   crosshair,
+  radiologicalConvention,
 }: NiiVueCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>()
   useEffect(() => nv.attachToCanvas(canvasRef.current), [])
@@ -69,6 +71,7 @@ export const NiiVueCanvas = ({
   useEffect(() => nv.setInterpolation(!interpolation), [interpolation])
   useEffect(() => applyScale(nv, scaling), [scaling])
   useEffect(() => nv.isLoaded && nv.setCrosshairWidth(crosshair), [crosshair])
+  effect(() => nv.setRadiologicalConvention(radiologicalConvention.value))
 
   return html`<canvas
     ref=${canvasRef}

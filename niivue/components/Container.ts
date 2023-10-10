@@ -16,6 +16,7 @@ export interface ContainerProps {
   scaling: any
   location: Signal<string>
   crosshair: boolean
+  radiologicalConvention: Signal<boolean>
 }
 
 export const Container = ({
