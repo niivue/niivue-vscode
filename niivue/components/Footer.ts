@@ -4,6 +4,7 @@ import { NearestInterpolation } from './NearestInterpolation'
 import { Scaling } from './Scaling'
 import { SelectView } from './SelectView'
 import { Niivue } from '@niivue/niivue'
+import { Signal } from '@preact/signals'
 
 export interface FooterProps {
   footerRef: any
@@ -13,9 +14,10 @@ export interface FooterProps {
   setInterpolation: any
   setScaling: any
   nv0: Niivue
-  location: string
+  location: Signal<string>
   setHideUI: any
   setCrosshair: any
+  radiologicalConvention: Signal<boolean>
 }
 
 export const Footer = ({
@@ -29,34 +31,49 @@ export const Footer = ({
   location,
   setHideUI,
   setCrosshair,
-}: FooterProps) => html`
-  <div ref=${footerRef}>
-    <div>${location}</div>
-    <div class="horizontal-layout">
-      <button onClick=${addImagesEvent}>Add Images</button>
-      <${NearestInterpolation}
-        interpolation=${interpolation}
-        setInterpolation=${setInterpolation}
-      />
-      ${nv0.isLoaded &&
-      nv0.volumes.length > 0 &&
-      html`<${Scaling} setScaling=${setScaling} init=${nv0.volumes[0]} />`}
-      <${SelectView} sliceType=${sliceType} setSliceType=${setSliceType} />
-      ${nv0.isLoaded &&
-      nv0.meshes.length > 0 &&
-      html`
-        <button onClick=${() => saveScene(nv0)}>Save Scene</button>
-        <button onClick=${() => loadScene(nv0)}>Load Scene</button>
-      `}
-      <button onClick=${() => setHideUI((hideUI: number) => (hideUI + 1) % 3)}>
-        👁
-      </button>
-      <button onClick=${() => setCrosshair((crosshair: boolean) => !crosshair)}>
-        ⌖
-      </button>
+  radiologicalConvention,
+}: FooterProps) => {
+  const ready = nv0.isLoaded
+  const isVolume = ready && nv0.volumes.length > 0
+  const isMesh = ready && nv0.meshes.length > 0
+
+  const handleHideUI = () => {
+    setHideUI((hideUI: number) => (hideUI + 1) % 3)
+  }
+  const handleCrosshair = () => {
+    setCrosshair((crosshair: boolean) => !crosshair)
+  }
+  const handleRadiologicalConvention = () => {
+    radiologicalConvention.value = !radiologicalConvention.value
+  }
+
+  return html`
+    <div ref=${footerRef}>
+      <div>${location}</div>
+      <div class="horizontal-layout">
+        <button onClick=${addImagesEvent}>Add Images</button>
+        <${NearestInterpolation}
+          interpolation=${interpolation}
+          setInterpolation=${setInterpolation}
+        />
+        ${isVolume &&
+        html`
+          <button onClick=${handleRadiologicalConvention}>RL</button>
+          <${Scaling} setScaling=${setScaling} init=${nv0.volumes[0]} />
+        `}
+        <${SelectView} sliceType=${sliceType} setSliceType=${setSliceType} />
+        ${isMesh &&
+        html`
+          <button onClick=${() => saveScene(nv0)}>Save Scene</button>
+          <button onClick=${() => loadScene(nv0)}>Load Scene</button>
+        `}
+        <button onClick=${handleHideUI}>👁</button>
+        <button onClick=${handleCrosshair}>⌖</button>
+      </div>
     </div>
-  </div>
-`
+  `
+}
+      
 function saveScene(nv: Niivue) {
   const scene = nv.scene
   const json = JSON.stringify(scene)

@@ -1,4 +1,5 @@
 import { SLICE_TYPE } from '@niivue/niivue'
+import { useSignal } from '@preact/signals'
 import { html } from 'htm/preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { listenToMessages } from '../events'
@@ -27,7 +28,8 @@ function initState() {
   const [sliceType, setSliceType] = useState<number>(SLICE_TYPE.MULTIPLANAR) // all views
   const [interpolation, setInterpolation] = useState(true)
   const [scaling, setScaling] = useState({ isManual: false, min: 0, max: 0 })
-  const [location, setLocation] = useState('')
+  const location = useSignal('')
+  const radiologicalConvention = useSignal(false)
 
   const headerProps: HeaderProps = {
     heightRef: headerRef,
@@ -43,8 +45,9 @@ function initState() {
     setNv0,
     interpolation,
     scaling,
-    setLocation,
+    location,
     crosshair,
+    radiologicalConvention,
   }
 
   const footerProps: FooterProps = {
@@ -58,6 +61,7 @@ function initState() {
     location,
     setHideUI,
     setCrosshair,
+    radiologicalConvention,
   }
 
   return { headerProps, containerProps, footerProps, setNvArray, setSliceType }

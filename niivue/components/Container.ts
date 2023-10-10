@@ -3,6 +3,7 @@ import { useState, useEffect, MutableRef } from 'preact/hooks'
 import { differenceInNames } from '../utility'
 import { Volume } from './Volume'
 import { SLICE_TYPE } from '@niivue/niivue'
+import { Signal } from '@preact/signals'
 
 export interface ContainerProps {
   nvArray: Niivue[]
@@ -13,8 +14,9 @@ export interface ContainerProps {
   setNv0: Function
   interpolation: boolean
   scaling: any
-  setLocation: Function
+  location: Signal<string>
   crosshair: boolean
+  radiologicalConvention: Signal<boolean>
 }
 
 export const Container = ({

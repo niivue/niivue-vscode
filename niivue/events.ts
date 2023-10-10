@@ -3,20 +3,12 @@ import { isImageType } from './utility'
 import { SLICE_TYPE } from '@niivue/niivue'
 
 export function listenToMessages(setNvArray: Function, setSliceType: Function) {
-  function messageListener(e: any) {
+  window.onmessage = (e: any) => {
     setNvArray((nvArray: Niivue[]) => {
       const { type, body } = e.data
       switch (type) {
         case 'addMeshOverlay':
-          {
-            addMeshOverlay(nvArray[body.index], body, 'overlay')
-          }
-          break
         case 'addMeshCurvature':
-          {
-            addMeshOverlay(nvArray[body.index], body, 'curvature')
-          }
-          break
         case 'replaceMeshOverlay':
           {
             addMeshOverlay(nvArray[body.index], body, 'replaceOverlay')
@@ -46,7 +38,6 @@ export function listenToMessages(setNvArray: Function, setSliceType: Function) {
       return [...nvArray] // triggers rerender after each received message
     })
   }
-  window.onmessage = messageListener
   if (typeof vscode === 'object') {
     vscode.postMessage({ type: 'ready' })
   }
@@ -66,27 +57,7 @@ function addMeshOverlay(nv: Niivue, item: any, type: string) {
     return
   }
 
-  const a: LayerOptions = {}
-  switch (type) {
-    case 'curvature':
-      {
-        a.opacity = 0.7
-        a.colormap = 'gray'
-        a.useNegativeCmap = false
-        a.calMin = 0.3
-        a.calMax = 0.5
-      }
-      break
-    case 'overlay':
-    case 'replaceOverlay':
-      {
-        a.opacity = 0.7
-        a.colormap = 'hsv'
-        a.colormapNegative = ''
-        a.useNegativeCmap = false
-      }
-      break
-  }
+  const a = getLayerDefaults(type)
   const mesh = nv.meshes[0]
   if (type === 'replaceOverlay') {
     mesh.layers.pop()
@@ -114,6 +85,31 @@ function addMeshOverlay(nv: Niivue, item: any, type: string) {
       false
     )
   }
+}
+
+function getLayerDefaults(type: string) {
+  const a: LayerOptions = {}
+  switch (type) {
+    case 'addMeshCurvature':
+      {
+        a.opacity = 0.7
+        a.colormap = 'gray'
+        a.useNegativeCmap = false
+        a.calMin = 0.3
+        a.calMax = 0.5
+      }
+      break
+    case 'addMeshOverlay':
+    case 'replaceMeshOverlay':
+      {
+        a.opacity = 0.7
+        a.colormap = 'hsv'
+        a.colormapNegative = ''
+        a.useNegativeCmap = false
+      }
+      break
+  }
+  return a
 }
 
 async function addOverlay(nv: Niivue, item: any) {

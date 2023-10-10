@@ -1,34 +1,37 @@
-import { SLICE_TYPE, NVImage, NVMesh } from '@niivue/niivue'
+import { NVImage, NVMesh } from '@niivue/niivue'
 import { html } from 'htm/preact'
 import { useRef, useEffect } from 'preact/hooks'
 import { isImageType } from '../utility'
+import { Signal, effect } from '@preact/signals'
 
 interface NiiVueCanvasProps {
   nv: Niivue
-  setIntensity: Function
+  intensity: Signal<string>
   width: number
   height: number
   setNv0: Function
   sliceType: number
   interpolation: boolean
   scaling: any
-  setLocation: Function
+  location: Signal<string>
   triggerRender: Function
   crosshair: boolean
+  radiologicalConvention: Signal<boolean>
 }
 
 export const NiiVueCanvas = ({
   nv,
-  setIntensity,
+  intensity,
   width,
   height,
   setNv0,
   sliceType,
   interpolation,
   scaling,
-  setLocation,
+  location,
   triggerRender,
   crosshair,
+  radiologicalConvention,
 }: NiiVueCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>()
   useEffect(() => nv.attachToCanvas(canvasRef.current), [])
@@ -40,34 +43,18 @@ export const NiiVueCanvas = ({
       nv.isLoaded = true
       nv.body = null
       nv.onLocationChange = (data: any) =>
-        setIntensityAndLocation(data, setIntensity, setLocation)
+        setIntensityAndLocation(data, intensity, location)
       nv.createOnLocationChange()
       setNv0((nv0: Niivue) => (nv0.isLoaded ? nv0 : nv))
-
-      // simulate click on canvas to adjust aspect ratio of nv instance
-      const canvas = canvasRef.current
-      if (canvas) {
-        const rect = canvas.getBoundingClientRect()
-        const factor = sliceType === SLICE_TYPE.MULTIPLANAR ? 4 : 2
-        const x = rect.left + rect.width / factor
-        const y = rect.top + rect.height / factor
-        await new Promise((resolve) => setTimeout(resolve, 100))
-        canvas.dispatchEvent(
-          new MouseEvent('mousedown', { clientX: x, clientY: y })
-        )
-        canvas.dispatchEvent(
-          new MouseEvent('mouseup', { clientX: x, clientY: y })
-        )
-      }
-      // sleep to avoid black images
-      await new Promise((resolve) => setTimeout(resolve, 100))
-      triggerRender()
+      triggerRender() // required to update the names
     })
   }, [nv.body])
   useEffect(() => nv.setSliceType(sliceType), [sliceType])
   useEffect(() => nv.setInterpolation(!interpolation), [interpolation])
   useEffect(() => applyScale(nv, scaling), [scaling])
   useEffect(() => nv.isLoaded && nv.setCrosshairWidth(crosshair), [crosshair])
+  effect(() => nv.setRadiologicalConvention(radiologicalConvention.value))
+  useEffect(() => nv.updateGLVolume(), [height, width])
 
   return html`<canvas
     ref=${canvasRef}
@@ -75,8 +62,9 @@ export const NiiVueCanvas = ({
     height=${height}
   ></canvas>`
 }
-function getMinimalHeaderMHA() {
-  const matrixSize = prompt('Please enter the matrix size:', '64 64 39 float')
+
+async function getMinimalHeaderMHA() {
+  const matrixSize = await getUserInput()
   if (!matrixSize) {
     return null
   }
@@ -86,10 +74,37 @@ function getMinimalHeaderMHA() {
   return new TextEncoder().encode(header).buffer
 }
 
+async function getUserInput() {
+  const defaultInput = '64 64 39 float'
+
+  // create a dialog with a close button
+  const input = document.createElement('input')
+  input.value = defaultInput
+  const dialog = document.createElement('dialog')
+  const button = document.createElement('button')
+  button.textContent = 'Submit file info'
+  button.onclick = () => dialog.close()
+  dialog.appendChild(input)
+  dialog.appendChild(button)
+  document.body.appendChild(dialog)
+  dialog.showModal()
+
+  // wait for click on the close button
+  await new Promise((resolve) => (button.onclick = resolve))
+  const matrixSize = input.value
+  dialog.close()
+  document.body.removeChild(dialog)
+  return matrixSize
+}
+
 async function loadVolume(nv: Niivue, item: any) {
   if (item.uri.endsWith('.raw')) {
+    const header = await getMinimalHeaderMHA()
+    if (!header) {
+      return
+    }
     const volume = new NVImage(
-      getMinimalHeaderMHA(),
+      header,
       `${item.uri}.mha`,
       'gray',
       1.0,
@@ -124,12 +139,12 @@ export function applyScale(nv: Niivue, scaling: any) {
 
 function setIntensityAndLocation(
   data: any,
-  setIntensity: Function,
-  setLocation: Function
+  intensity: Signal<string>,
+  location: Signal<string>
 ) {
   const parts = data.string.split('=')
   if (parts.length === 2) {
-    setIntensity(parts.pop())
+    intensity.value = parts.pop()
   }
-  setLocation(parts.pop())
+  location.value = parts.pop()
 }

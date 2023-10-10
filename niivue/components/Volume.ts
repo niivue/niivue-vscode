@@ -1,7 +1,8 @@
 import { html } from 'htm/preact'
-import { useState, useRef } from 'preact/hooks'
+import { useRef } from 'preact/hooks'
 import { NiiVueCanvas } from './NiiVueCanvas'
 import { VolumeOverlay } from './VolumeOverlay'
+import { useSignal } from '@preact/signals'
 
 interface VolumeProps {
   name: string
@@ -16,13 +17,13 @@ export const Volume = ({
   hideUI,
   ...props
 }: VolumeProps) => {
-  const [intensity, setIntensity] = useState('')
+  const intensity = useSignal('')
   const volumeRef = useRef()
   const dispName = name.length > 20 ? `...${name.slice(-20)}` : name
   return html`
     <div class="volume" ref=${volumeRef}>
       ${hideUI > 0 && html`<div class="volume-name">${dispName}</div>`}
-      <${NiiVueCanvas} ...${props} setIntensity=${setIntensity} />
+      <${NiiVueCanvas} ...${props} intensity=${intensity} />
       ${hideUI > 0 &&
       html`<div class="horizontal-layout volume-footer">
         ${hideUI > 1 &&
