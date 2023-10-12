@@ -1,5 +1,5 @@
 const cacheName = "NiiVueCache_1";
-const precachedResources = ["/", "/main.js", "/index.css", "/index.html", "/favicon.ico", "/register.js", "/serviceworker.js", "/manifest.json"];
+const precachedResources = ["main.js", "index.css", "index.html", "favicon.ico", "register.js", "serviceworker.js", "manifest.json"];
 
 async function precache() {
     const cache = await caches.open(cacheName);
