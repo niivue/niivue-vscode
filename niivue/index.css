@@ -99,3 +99,7 @@ input[type='number'] {
   padding: 8px 12px;
   cursor: pointer;
 }
+
+.drop-area {
+  padding: 50px;
+}
