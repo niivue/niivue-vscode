@@ -56,7 +56,7 @@ export const NiiVueCanvas = ({
   if (nv.isLoaded) {
     effect(() => nv.setRadiologicalConvention(radiologicalConvention.value))
   }
-  useEffect(() => nv.updateGLVolume(), [height, width])
+  useEffect(() => nv.drawScene(), [height, width])
 
   return html`<canvas
     ref=${canvasRef}
