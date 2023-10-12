@@ -6,6 +6,7 @@ import { listenToMessages } from '../events'
 import { Container, ContainerProps } from './Container'
 import { Footer, FooterProps } from './Footer'
 import { Header, HeaderProps } from './Header'
+import { ImageDrop } from './ImageDrop'
 
 export const App = () => {
   const { headerProps, containerProps, footerProps, setNvArray, setSliceType } =
@@ -13,6 +14,7 @@ export const App = () => {
   useEffect(() => listenToMessages(setNvArray, setSliceType), [])
   return html`
     <${Header} ...${headerProps} />
+    <${containerProps.nvArray.length == 0 && html`${ImageDrop}`} />
     <${Container} ...${containerProps} />
     <${Footer} ...${footerProps} />
   `
