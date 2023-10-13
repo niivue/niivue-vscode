@@ -13,8 +13,8 @@ export interface FooterProps {
   setScaling: any
   nv0: Niivue
   location: Signal<string>
-  setHideUI: any
-  setCrosshair: any
+  hideUI: Signal<number>
+  crosshair: Signal<boolean>
   radiologicalConvention: Signal<boolean>
 }
 
@@ -25,8 +25,8 @@ export const Footer = ({
   setScaling,
   nv0,
   location,
-  setHideUI,
-  setCrosshair,
+  hideUI,
+  crosshair,
   radiologicalConvention,
 }: FooterProps) => {
   const ready = nv0.isLoaded
@@ -34,10 +34,10 @@ export const Footer = ({
   const isMesh = ready && nv0.meshes.length > 0
 
   const handleHideUI = () => {
-    setHideUI((hideUI: number) => (hideUI + 1) % 3)
+    hideUI.value = (hideUI.value + 1) % 3
   }
   const handleCrosshair = () => {
-    setCrosshair((crosshair: boolean) => !crosshair)
+    crosshair.value = !crosshair.value
   }
   const handleRadiologicalConvention = () => {
     radiologicalConvention.value = !radiologicalConvention.value

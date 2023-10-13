@@ -10,12 +10,12 @@ export interface ContainerProps {
   headerRef: MutableRef<HTMLDivElement | undefined>
   footerRef: MutableRef<HTMLDivElement | undefined>
   sliceType: Signal<number>
-  hideUI: number
+  hideUI: Signal<number>
   setNv0: Function
   interpolation: Signal<boolean>
   scaling: any
   location: Signal<string>
-  crosshair: boolean
+  crosshair: Signal<boolean>
   radiologicalConvention: Signal<boolean>
 }
 

@@ -22,8 +22,8 @@ export const App = () => {
 function initState() {
   const headerRef = useRef<HTMLDivElement>()
   const footerRef = useRef<HTMLDivElement>()
-  const [hideUI, setHideUI] = useState(2) // 0: hide all, 1: hide overlay, 2: show-all
-  const [crosshair, setCrosshair] = useState(true)
+  const hideUI = useSignal(2) // 0: hide all, 1: hide overlay, 2: show-all
+  const crosshair = useSignal(true)
   const [nvArray, setNvArray] = useState<Niivue[]>([])
   const [nv0, setNv0] = useState({ isLoaded: false })
   const sliceType = useSignal<number>(SLICE_TYPE.MULTIPLANAR) // all views
@@ -58,8 +58,8 @@ function initState() {
     setScaling,
     nv0,
     location,
-    setHideUI,
-    setCrosshair,
+    hideUI,
+    crosshair,
     radiologicalConvention,
   }
 

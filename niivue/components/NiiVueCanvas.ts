@@ -15,7 +15,7 @@ interface NiiVueCanvasProps {
   scaling: any
   location: Signal<string>
   triggerRender: Function
-  crosshair: boolean
+  crosshair: Signal<boolean>
   radiologicalConvention: Signal<boolean>
 }
 
@@ -54,9 +54,9 @@ export const NiiVueCanvas = ({
     nv.setSliceType(sliceType.value)
     nv.setInterpolation(!interpolation.value)
     nv.setRadiologicalConvention(radiologicalConvention.value)
+    nv.setCrosshairWidth(crosshair.value)
   }
   useEffect(() => applyScale(nv, scaling), [scaling])
-  useEffect(() => nv.isLoaded && nv.setCrosshairWidth(crosshair), [crosshair])
   useEffect(() => nv.drawScene(), [height, width])
 
   return html`<canvas
