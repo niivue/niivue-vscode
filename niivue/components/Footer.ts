@@ -8,8 +8,7 @@ import { Signal } from '@preact/signals'
 
 export interface FooterProps {
   footerRef: any
-  sliceType: number
-  setSliceType: any
+  sliceType: Signal<number>
   interpolation: Signal<boolean>
   setScaling: any
   nv0: Niivue
@@ -22,7 +21,6 @@ export interface FooterProps {
 export const Footer = ({
   footerRef,
   sliceType,
-  setSliceType,
   interpolation,
   setScaling,
   nv0,
@@ -56,7 +54,7 @@ export const Footer = ({
           <button onClick=${handleRadiologicalConvention}>RL</button>
           <${Scaling} setScaling=${setScaling} init=${nv0.volumes[0]} />
         `}
-        <${SelectView} sliceType=${sliceType} setSliceType=${setSliceType} />
+        <${SelectView} sliceType=${sliceType} />
         ${isMesh &&
         html`
           <button onClick=${() => saveScene(nv0)}>Save Scene</button>

@@ -10,7 +10,7 @@ interface NiiVueCanvasProps {
   width: number
   height: number
   setNv0: Function
-  sliceType: number
+  sliceType: Signal<number>
   interpolation: Signal<boolean>
   scaling: any
   location: Signal<string>
@@ -49,13 +49,14 @@ export const NiiVueCanvas = ({
       triggerRender() // required to update the names
     })
   }, [nv.body])
-  useEffect(() => nv.setSliceType(sliceType), [sliceType])
-  effect(() => nv.setInterpolation(!interpolation.value))
+
+  if (nv.isLoaded) {
+    nv.setSliceType(sliceType.value)
+    nv.setInterpolation(!interpolation.value)
+    nv.setRadiologicalConvention(radiologicalConvention.value)
+  }
   useEffect(() => applyScale(nv, scaling), [scaling])
   useEffect(() => nv.isLoaded && nv.setCrosshairWidth(crosshair), [crosshair])
-  if (nv.isLoaded) {
-    effect(() => nv.setRadiologicalConvention(radiologicalConvention.value))
-  }
   useEffect(() => nv.drawScene(), [height, width])
 
   return html`<canvas

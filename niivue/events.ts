@@ -1,8 +1,12 @@
 import { Niivue, NVImage, NVMesh } from '@niivue/niivue'
 import { isImageType } from './utility'
 import { SLICE_TYPE } from '@niivue/niivue'
+import { Signal } from '@preact/signals'
 
-export function listenToMessages(setNvArray: Function, setSliceType: Function) {
+export function listenToMessages(
+  setNvArray: Function,
+  sliceType: Signal<number>
+) {
   window.onmessage = (e: any) => {
     setNvArray((nvArray: Niivue[]) => {
       const { type, body } = e.data
@@ -28,8 +32,8 @@ export function listenToMessages(setNvArray: Function, setSliceType: Function) {
           break
         case 'initCanvas':
           {
-            if (nvArray.length + body.n > 1) {
-              setSliceType(SLICE_TYPE.AXIAL)
+            if (nvArray.length === 0 && body.n > 1) {
+              sliceType.value = SLICE_TYPE.AXIAL
             }
             growNvArrayBy(nvArray, body.n)
           }

@@ -8,9 +8,9 @@ import { Footer, FooterProps } from './Footer'
 import { Header, HeaderProps } from './Header'
 
 export const App = () => {
-  const { headerProps, containerProps, footerProps, setNvArray, setSliceType } =
+  const { headerProps, containerProps, footerProps, setNvArray, sliceType } =
     initState()
-  useEffect(() => listenToMessages(setNvArray, setSliceType), [])
+  useEffect(() => listenToMessages(setNvArray, sliceType), [])
 
   return html`
     <${Header} ...${headerProps} />
@@ -26,7 +26,7 @@ function initState() {
   const [crosshair, setCrosshair] = useState(true)
   const [nvArray, setNvArray] = useState<Niivue[]>([])
   const [nv0, setNv0] = useState({ isLoaded: false })
-  const [sliceType, setSliceType] = useState<number>(SLICE_TYPE.MULTIPLANAR) // all views
+  const sliceType = useSignal<number>(SLICE_TYPE.MULTIPLANAR) // all views
   const interpolation = useSignal(true)
   const [scaling, setScaling] = useState({ isManual: false, min: 0, max: 0 })
   const location = useSignal('')
@@ -54,7 +54,6 @@ function initState() {
   const footerProps: FooterProps = {
     footerRef,
     sliceType,
-    setSliceType,
     interpolation,
     setScaling,
     nv0,
@@ -64,5 +63,5 @@ function initState() {
     radiologicalConvention,
   }
 
-  return { headerProps, containerProps, footerProps, setNvArray, setSliceType }
+  return { headerProps, containerProps, footerProps, setNvArray, sliceType }
 }

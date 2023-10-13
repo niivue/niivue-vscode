@@ -9,7 +9,7 @@ export interface ContainerProps {
   nvArray: Niivue[]
   headerRef: MutableRef<HTMLDivElement | undefined>
   footerRef: MutableRef<HTMLDivElement | undefined>
-  sliceType: number
+  sliceType: Signal<number>
   hideUI: number
   setNv0: Function
   interpolation: Signal<boolean>
@@ -38,7 +38,7 @@ export const Container = ({
   const [width, height] = getCanvasSize(
     nvArray.length,
     meta,
-    props.sliceType,
+    props.sliceType.value,
     windowWidth,
     windowHeight
   )

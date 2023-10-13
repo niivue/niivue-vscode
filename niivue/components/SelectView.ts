@@ -1,17 +1,15 @@
 import { html } from 'htm/preact'
 import { SLICE_TYPE } from '@niivue/niivue'
+import { Signal } from '@preact/signals'
 
 interface SelectViewProps {
-  sliceType: number
+  sliceType: Signal<number>
   setSliceType: Function
 }
 
-export const SelectView = ({
-  sliceType,
-  setSliceType,
-}: SelectViewProps) => html`
+export const SelectView = ({ sliceType }: SelectViewProps) => html`
   <select
-    onchange=${(e: any) => setSliceType(parseInt(e.target.value))}
+    onchange=${(e: any) => (sliceType.value = parseInt(e.target.value))}
     value=${sliceType}
   >
     <option value=${SLICE_TYPE.AXIAL}>Axial</option>
