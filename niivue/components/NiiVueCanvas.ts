@@ -2,21 +2,15 @@ import { NVImage, NVMesh } from '@niivue/niivue'
 import { html } from 'htm/preact'
 import { useRef, useEffect } from 'preact/hooks'
 import { isImageType } from '../utility'
-import { Signal, effect } from '@preact/signals'
+import { Signal } from '@preact/signals'
+import { AppProps } from './App'
 
 interface NiiVueCanvasProps {
   nv: Niivue
   intensity: Signal<string>
   width: number
   height: number
-  setNv0: Function
-  sliceType: Signal<number>
-  interpolation: Signal<boolean>
-  scaling: any
-  location: Signal<string>
   triggerRender: Function
-  crosshair: Signal<boolean>
-  radiologicalConvention: Signal<boolean>
 }
 
 export const NiiVueCanvas = ({
@@ -32,7 +26,7 @@ export const NiiVueCanvas = ({
   triggerRender,
   crosshair,
   radiologicalConvention,
-}: NiiVueCanvasProps) => {
+}: AppProps & NiiVueCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>()
   useEffect(() => nv.attachToCanvas(canvasRef.current), [])
   useEffect(() => {

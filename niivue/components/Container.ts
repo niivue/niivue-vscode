@@ -3,28 +3,14 @@ import { useState, useEffect, MutableRef } from 'preact/hooks'
 import { differenceInNames } from '../utility'
 import { Volume } from './Volume'
 import { SLICE_TYPE } from '@niivue/niivue'
-import { Signal } from '@preact/signals'
-
-export interface ContainerProps {
-  nvArray: Niivue[]
-  headerRef: MutableRef<HTMLDivElement | undefined>
-  footerRef: MutableRef<HTMLDivElement | undefined>
-  sliceType: Signal<number>
-  hideUI: Signal<number>
-  setNv0: Function
-  interpolation: Signal<boolean>
-  scaling: any
-  location: Signal<string>
-  crosshair: Signal<boolean>
-  radiologicalConvention: Signal<boolean>
-}
+import { AppProps } from './App'
 
 export const Container = ({
   nvArray,
   headerRef,
   footerRef,
   ...props
-}: ContainerProps) => {
+}: AppProps) => {
   const [[windowWidth, windowHeight], setDimensions] = useState([
     window.innerWidth - 30,
     window.innerHeight - 80,

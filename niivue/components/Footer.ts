@@ -4,19 +4,7 @@ import { NearestInterpolation } from './NearestInterpolation'
 import { Scaling } from './Scaling'
 import { SelectView } from './SelectView'
 import { Niivue } from '@niivue/niivue'
-import { Signal } from '@preact/signals'
-
-export interface FooterProps {
-  footerRef: any
-  sliceType: Signal<number>
-  interpolation: Signal<boolean>
-  setScaling: any
-  nv0: Niivue
-  location: Signal<string>
-  hideUI: Signal<number>
-  crosshair: Signal<boolean>
-  radiologicalConvention: Signal<boolean>
-}
+import { AppProps } from './App'
 
 export const Footer = ({
   footerRef,
@@ -28,7 +16,7 @@ export const Footer = ({
   hideUI,
   crosshair,
   radiologicalConvention,
-}: FooterProps) => {
+}: AppProps) => {
   const ready = nv0.isLoaded
   const isVolume = ready && nv0.volumes.length > 0
   const isMesh = ready && nv0.meshes.length > 0

@@ -1,11 +1,7 @@
 import { html } from 'htm/preact'
 import { Scaling } from './Scaling'
 
-interface OverlayOptionsProps {
-  nv: Niivue
-}
-
-export const OverlayOptions = ({ nv }: OverlayOptionsProps) => {
+export const OverlayOptions = ({ nv }: { nv: Niivue }) => {
   if (!isVolumeOverlay(nv) && !isMeshOverlay(nv)) {
     return html``
   }

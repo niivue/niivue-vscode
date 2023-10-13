@@ -2,12 +2,11 @@ import { html } from 'htm/preact'
 import { SLICE_TYPE } from '@niivue/niivue'
 import { Signal } from '@preact/signals'
 
-interface SelectViewProps {
+export const SelectView = ({
+  sliceType,
+}: {
   sliceType: Signal<number>
-  setSliceType: Function
-}
-
-export const SelectView = ({ sliceType }: SelectViewProps) => html`
+}) => html`
   <select
     onchange=${(e: any) => (sliceType.value = parseInt(e.target.value))}
     value=${sliceType}
