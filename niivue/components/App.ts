@@ -11,6 +11,7 @@ export const App = () => {
   const { headerProps, containerProps, footerProps, setNvArray, setSliceType } =
     initState()
   useEffect(() => listenToMessages(setNvArray, setSliceType), [])
+
   return html`
     <${Header} ...${headerProps} />
     <${Container} ...${containerProps} />
@@ -26,7 +27,7 @@ function initState() {
   const [nvArray, setNvArray] = useState<Niivue[]>([])
   const [nv0, setNv0] = useState({ isLoaded: false })
   const [sliceType, setSliceType] = useState<number>(SLICE_TYPE.MULTIPLANAR) // all views
-  const [interpolation, setInterpolation] = useState(true)
+  const interpolation = useSignal(true)
   const [scaling, setScaling] = useState({ isManual: false, min: 0, max: 0 })
   const location = useSignal('')
   const radiologicalConvention = useSignal(false)
@@ -55,7 +56,6 @@ function initState() {
     sliceType,
     setSliceType,
     interpolation,
-    setInterpolation,
     setScaling,
     nv0,
     location,

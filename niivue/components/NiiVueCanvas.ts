@@ -11,7 +11,7 @@ interface NiiVueCanvasProps {
   height: number
   setNv0: Function
   sliceType: number
-  interpolation: boolean
+  interpolation: Signal<boolean>
   scaling: any
   location: Signal<string>
   triggerRender: Function
@@ -50,7 +50,7 @@ export const NiiVueCanvas = ({
     })
   }, [nv.body])
   useEffect(() => nv.setSliceType(sliceType), [sliceType])
-  useEffect(() => nv.setInterpolation(!interpolation), [interpolation])
+  effect(() => nv.setInterpolation(!interpolation.value))
   useEffect(() => applyScale(nv, scaling), [scaling])
   useEffect(() => nv.isLoaded && nv.setCrosshairWidth(crosshair), [crosshair])
   if (nv.isLoaded) {

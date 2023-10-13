@@ -10,6 +10,7 @@ export const Header = ({ nv, heightRef }: HeaderProps) => {
   if (!nv.isLoaded || nv.volumes.length < 1) {
     return html``
   }
+
   return html`
     <div class="horizontal-layout" ref=${heightRef}>
       <${ShowHeaderButton} info=${nv.volumes[0].hdr.toFormattedString()} />

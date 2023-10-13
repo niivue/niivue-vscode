@@ -16,6 +16,7 @@ export const ContextMenu = ({ nv, volumeIndex }: ContextMenuProps) => {
     nv.removeVolumeByIndex(nVolumes - 1)
     nv.updateGLVolume()
   }
+
   return html`
     <div class="context-menu" ref=${contextMenu}>
       <div
@@ -25,9 +26,9 @@ export const ContextMenu = ({ nv, volumeIndex }: ContextMenuProps) => {
         Add
       </div>
       ${nVolumes > 1 &&
-      html`<div class="context-menu-item" onclick=${removeLastVolume}>
-        Remove
-      </div>`}
+      html`
+        <div class="context-menu-item" onclick=${removeLastVolume}>Remove</div>
+      `}
       ${nMeshes > 0 &&
       html`
         <div
@@ -43,7 +44,7 @@ export const ContextMenu = ({ nv, volumeIndex }: ContextMenuProps) => {
           Add Mesh Overlay
         </div>
         ${nMeshLayers > 0 &&
-        html`<div
+        html` <div
           class="context-menu-item"
           onclick=${() => addOverlayEvent(volumeIndex, 'replaceMeshOverlay')}
         >

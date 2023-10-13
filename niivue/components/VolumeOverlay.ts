@@ -31,7 +31,6 @@ export const VolumeOverlay = ({
   return html`
     <span
       class="volume-overlay"
-      title="Right Click"
       oncontextmenu=${onContextmenu}
       onclick=${onContextmenu}
       >Overlay</span

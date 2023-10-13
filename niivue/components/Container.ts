@@ -12,7 +12,7 @@ export interface ContainerProps {
   sliceType: number
   hideUI: number
   setNv0: Function
-  interpolation: boolean
+  interpolation: Signal<boolean>
   scaling: any
   location: Signal<string>
   crosshair: boolean
@@ -43,19 +43,19 @@ export const Container = ({
     windowHeight
   )
   const names = differenceInNames(getNames(nvArray))
+
   return html`
     <div class="container">
       ${nvArray.map(
-        (nv, i) =>
-          html`<${Volume}
-            nv=${nv}
-            width=${width}
-            height=${height}
-            volumeIndex=${i}
-            name=${names[i]}
-            triggerRender=${dimUpdate}
-            ...${props}
-          />`
+        (nv, i) => html`<${Volume}
+          nv=${nv}
+          width=${width}
+          height=${height}
+          volumeIndex=${i}
+          name=${names[i]}
+          triggerRender=${dimUpdate}
+          ...${props}
+        />`
       )}
     </div>
   `

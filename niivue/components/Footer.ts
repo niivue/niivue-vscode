@@ -10,8 +10,7 @@ export interface FooterProps {
   footerRef: any
   sliceType: number
   setSliceType: any
-  interpolation: boolean
-  setInterpolation: any
+  interpolation: Signal<boolean>
   setScaling: any
   nv0: Niivue
   location: Signal<string>
@@ -25,7 +24,6 @@ export const Footer = ({
   sliceType,
   setSliceType,
   interpolation,
-  setInterpolation,
   setScaling,
   nv0,
   location,
@@ -52,10 +50,7 @@ export const Footer = ({
       <div>${location}</div>
       <div class="horizontal-layout">
         <button onClick=${addImagesEvent}>Add Images</button>
-        <${NearestInterpolation}
-          interpolation=${interpolation}
-          setInterpolation=${setInterpolation}
-        />
+        <${NearestInterpolation} interpolation=${interpolation} />
         ${isVolume &&
         html`
           <button onClick=${handleRadiologicalConvention}>RL</button>
