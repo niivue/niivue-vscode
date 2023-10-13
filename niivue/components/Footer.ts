@@ -23,7 +23,7 @@ export const Footer = ({
   const isMesh = ready && nv.meshes.length > 0
 
   const handleHideUI = () => {
-    hideUI.value = (hideUI.value + 1) % 3
+    hideUI.value = (hideUI.value + 1) % 4
   }
   const handleCrosshair = () => {
     crosshair.value = !crosshair.value

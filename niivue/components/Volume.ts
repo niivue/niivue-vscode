@@ -24,9 +24,9 @@ export const Volume = ({
     <div class="volume" ref=${volumeRef}>
       ${hideUI.value > 0 && html`<div class="volume-name">${dispName}</div>`}
       <${NiiVueCanvas} ...${props} intensity=${intensity} />
-      ${hideUI.value > 0 &&
+      ${hideUI.value > 1 &&
       html`<div class="horizontal-layout volume-footer">
-        ${hideUI.value > 1 &&
+        ${hideUI.value > 2 &&
         html`<${VolumeOverlay}
           nv=${props.nv}
           volumeIndex=${volumeIndex}

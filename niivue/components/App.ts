@@ -44,7 +44,7 @@ function initState() {
   const [nvArray, setNvArray] = useState<Niivue[]>([])
   const nv0 = useSignal<Niivue>({ isLoaded: false })
   const scaling = useSignal<ScalingOpts>({ isManual: false, min: 0, max: 0 })
-  const hideUI = useSignal(2) // 0: hide all, 1: hide overlay, 2: show-all
+  const hideUI = useSignal(3) // 0: hide all, 1: show name, 2: hide overlay, 3: show-all
   const crosshair = useSignal(true)
   const sliceType = useSignal<number>(SLICE_TYPE.MULTIPLANAR) // all views
   const interpolation = useSignal(true)
