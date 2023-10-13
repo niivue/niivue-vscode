@@ -1,12 +1,8 @@
 import { html } from 'htm/preact'
 import { SLICE_TYPE } from '@niivue/niivue'
-import { Signal } from '@preact/signals'
+import { AppProps } from './App'
 
-export const SelectView = ({
-  sliceType,
-}: {
-  sliceType: Signal<number>
-}) => html`
+export const SelectView = ({ sliceType }: AppProps) => html`
   <select
     onchange=${(e: any) => (sliceType.value = parseInt(e.target.value))}
     value=${sliceType}

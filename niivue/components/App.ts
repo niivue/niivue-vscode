@@ -8,8 +8,8 @@ import { Footer } from './Footer'
 import { Header } from './Header'
 
 export const App = () => {
-  const { appProps, setNvArray, sliceType } = initState()
-  useEffect(() => listenToMessages(setNvArray, sliceType), [])
+  const { appProps, setNvArray } = initState()
+  useEffect(() => listenToMessages(setNvArray, appProps.sliceType), [])
 
   return html`
     <${Header} ...${appProps} />
@@ -63,5 +63,5 @@ function initState() {
     radiologicalConvention,
   }
 
-  return { appProps, setNvArray, sliceType }
+  return { appProps, setNvArray }
 }

@@ -1,11 +1,7 @@
-import { Signal } from '@preact/signals'
 import { html } from 'htm/preact'
+import { AppProps } from './App'
 
-export const NearestInterpolation = ({
-  interpolation,
-}: {
-  interpolation: Signal<boolean>
-}) => {
+export const NearestInterpolation = ({ interpolation }: AppProps) => {
   const handleCheckboxChange = (event: Event) => {
     const target = event.target as HTMLInputElement
     interpolation.value = target.checked

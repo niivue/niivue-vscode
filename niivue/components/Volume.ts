@@ -5,7 +5,7 @@ import { VolumeOverlay } from './VolumeOverlay'
 import { useSignal } from '@preact/signals'
 import { AppProps } from './App'
 
-interface VolumeProps {
+export interface VolumeProps {
   name: string
   volumeIndex: number
   nv: Niivue
