@@ -22,10 +22,8 @@ export interface AppProps {
   headerRef: any
   footerRef: any
   nvArray: Niivue[]
-  nv0: Niivue
-  setNv0: Function
-  scaling: any
-  setScaling: Function
+  nv0: Signal<Niivue>
+  scaling: Signal<any>
   hideUI: Signal<number>
   crosshair: Signal<boolean>
   sliceType: Signal<number>
@@ -34,12 +32,18 @@ export interface AppProps {
   radiologicalConvention: Signal<boolean>
 }
 
+export interface ScalingOpts {
+  isManual: boolean
+  min: number
+  max: number
+}
+
 function initState() {
   const headerRef = useRef<HTMLDivElement>()
   const footerRef = useRef<HTMLDivElement>()
   const [nvArray, setNvArray] = useState<Niivue[]>([])
-  const [nv0, setNv0] = useState({ isLoaded: false })
-  const [scaling, setScaling] = useState({ isManual: false, min: 0, max: 0 })
+  const nv0 = useSignal<Niivue>({ isLoaded: false })
+  const scaling = useSignal<ScalingOpts>({ isManual: false, min: 0, max: 0 })
   const hideUI = useSignal(2) // 0: hide all, 1: hide overlay, 2: show-all
   const crosshair = useSignal(true)
   const sliceType = useSignal<number>(SLICE_TYPE.MULTIPLANAR) // all views
@@ -52,9 +56,7 @@ function initState() {
     footerRef,
     nvArray,
     nv0,
-    setNv0,
     scaling,
-    setScaling,
     hideUI,
     crosshair,
     sliceType,

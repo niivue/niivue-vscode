@@ -1,5 +1,6 @@
 import { html } from 'htm/preact'
 import { useRef, useEffect } from 'preact/hooks'
+import { ScalingOpts } from './App'
 
 interface ScalingProps {
   setScaling: Function
@@ -24,7 +25,7 @@ export const Scaling = ({ setScaling, init }: ScalingProps) => {
       isManual: true,
       min: parseFloat(minRef.current?.value ?? '0'),
       max: parseFloat(maxRef.current?.value ?? '1'),
-    })
+    } as ScalingOpts)
   return html`
     <label>
       <span>Min </span>

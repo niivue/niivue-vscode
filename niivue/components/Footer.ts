@@ -4,22 +4,23 @@ import { NearestInterpolation } from './NearestInterpolation'
 import { Scaling } from './Scaling'
 import { SelectView } from './SelectView'
 import { Niivue } from '@niivue/niivue'
-import { AppProps } from './App'
+import { AppProps, ScalingOpts } from './App'
 
 export const Footer = ({
   footerRef,
   sliceType,
   interpolation,
-  setScaling,
+  scaling,
   nv0,
   location,
   hideUI,
   crosshair,
   radiologicalConvention,
 }: AppProps) => {
-  const ready = nv0.isLoaded
-  const isVolume = ready && nv0.volumes.length > 0
-  const isMesh = ready && nv0.meshes.length > 0
+  const nv = nv0.value
+  const ready = nv.isLoaded
+  const isVolume = ready && nv.volumes.length > 0
+  const isMesh = ready && nv.meshes.length > 0
 
   const handleHideUI = () => {
     hideUI.value = (hideUI.value + 1) % 3
@@ -30,6 +31,7 @@ export const Footer = ({
   const handleRadiologicalConvention = () => {
     radiologicalConvention.value = !radiologicalConvention.value
   }
+  const setScaling = (val: ScalingOpts) => (scaling.value = val)
 
   return html`
     <div ref=${footerRef}>
@@ -40,7 +42,7 @@ export const Footer = ({
         ${isVolume &&
         html`
           <button onClick=${handleRadiologicalConvention}>RL</button>
-          <${Scaling} setScaling=${setScaling} init=${nv0.volumes[0]} />
+          <${Scaling} setScaling=${setScaling} init=${nv.volumes[0]} />
         `}
         <${SelectView} sliceType=${sliceType} />
         ${isMesh &&

@@ -18,7 +18,7 @@ export const NiiVueCanvas = ({
   intensity,
   width,
   height,
-  setNv0,
+  nv0,
   sliceType,
   interpolation,
   scaling,
@@ -39,7 +39,9 @@ export const NiiVueCanvas = ({
       nv.onLocationChange = (data: any) =>
         setIntensityAndLocation(data, intensity, location)
       nv.createOnLocationChange()
-      setNv0((nv0: Niivue) => (nv0.isLoaded ? nv0 : nv))
+      if (!nv0.value.isLoaded) {
+        nv0.value = nv
+      }
       triggerRender() // required to update the names
     })
   }, [nv.body])
@@ -49,8 +51,9 @@ export const NiiVueCanvas = ({
     nv.setInterpolation(!interpolation.value)
     nv.setRadiologicalConvention(radiologicalConvention.value)
     nv.setCrosshairWidth(crosshair.value)
+    applyScale(nv, scaling.value)
   }
-  useEffect(() => applyScale(nv, scaling), [scaling])
+  // useEffect(() => applyScale(nv, scaling), [scaling])
   useEffect(() => nv.drawScene(), [height, width])
 
   return html`<canvas
