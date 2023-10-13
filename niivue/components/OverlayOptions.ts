@@ -46,7 +46,7 @@ function isVolumeOverlay(nv: Niivue) {
   return nv.volumes.length > 1
 }
 function isMeshOverlay(nv: Niivue) {
-  return nv.meshes.length > 0 && nv.meshes[0].layers.length > 1
+  return nv.meshes.length > 0 && nv.meshes[0].layers.length > 0
 }
 
 function handleOpacity(nv: Niivue) {
