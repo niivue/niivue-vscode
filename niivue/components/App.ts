@@ -7,6 +7,7 @@ import { Container, ContainerProps } from './Container'
 import { Footer, FooterProps } from './Footer'
 import { Header, HeaderProps } from './Header'
 import { ImageDrop } from './ImageDrop'
+import { OpenFromWeb } from './OpenFromWeb'
 
 export const App = () => {
   const { headerProps, containerProps, footerProps, setNvArray, setSliceType } =
@@ -16,7 +17,11 @@ export const App = () => {
     <${Header} ...${headerProps} />
     <${Container} ...${containerProps} />
     <${Footer} ...${footerProps} />
-    <${containerProps.nvArray.length == 0 && html`${ImageDrop}`} />
+    ${containerProps.nvArray.length == 0 &&
+    html`
+      <${ImageDrop} />
+      <${OpenFromWeb} />
+    `}
   `
 }
 
