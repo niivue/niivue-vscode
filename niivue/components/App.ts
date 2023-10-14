@@ -14,9 +14,9 @@ export const App = () => {
   useEffect(() => listenToMessages(setNvArray, setSliceType), [])
   return html`
     <${Header} ...${headerProps} />
-    <${containerProps.nvArray.length == 0 && html`${ImageDrop}`} />
     <${Container} ...${containerProps} />
     <${Footer} ...${footerProps} />
+    <${containerProps.nvArray.length == 0 && html`${ImageDrop}`} />
   `
 }
 

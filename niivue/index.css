@@ -101,5 +101,14 @@ input[type='number'] {
 }
 
 .drop-area {
-  padding: 50px;
+  background-color: #292929;
+  width: 200px;
+  height: 100px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.drop-area.dragover {
+  background-color: #424242;
 }

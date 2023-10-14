@@ -1,31 +1,49 @@
 import { html } from 'htm/preact'
+import { useRef } from 'preact/hooks'
 
-// create a element with the text "drop images here", where the user can drop files
 export const ImageDrop = () => {
+  const dropAreaRef = useRef<HTMLDivElement>()
   const handleDragOver = (e: DragEvent) => {
     e.stopPropagation()
     e.preventDefault()
-    e.dataTransfer!.dropEffect = 'copy'
+    e.dataTransfer!.dropEffect = 'link'
+    dropAreaRef.current!.classList.add('dragover')
+  }
+
+  const handleDragLeave = (e: DragEvent) => {
+    dropAreaRef.current!.classList.remove('dragover')
   }
 
   const handleDrop = (e: DragEvent) => {
-    if (e.dataTransfer) {
-      const file = e.dataTransfer.files[0]
-      const data = file.arrayBuffer()
-      window.postMessage({
-        type: 'addImage',
-        body: {
-          data,
-          uri: file.name,
-        },
-      })
-    }
+    e.stopPropagation()
+    e.preventDefault()
+    const files = e.dataTransfer!.files
+    const fileArray = Array.from(files)
+    window.postMessage({
+      type: 'initCanvas',
+      body: {
+        n: fileArray.length,
+      },
+    })
+    fileArray.forEach((file) => {
+      const reader = new FileReader()
+      reader.onload = () => {
+        const data = reader.result
+        window.postMessage({
+          type: 'addImage',
+          body: {
+            data,
+            uri: file.name,
+          },
+        })
+      }
+      reader.readAsArrayBuffer(file)
+    })
   }
 
-  // create a big area where the user can drop files
   return html`
-    <div class="drop-area" ondragover=${handleDragOver} ondrop=${handleDrop}>
-      <div class="drop-area-text">Drop images here</div>
+    <div class="drop-area" ondragover=${handleDragOver} ondrop=${handleDrop} ref=${dropAreaRef} ondragleave=${handleDragLeave}>
+      <p> Drop files here </div>
     </div>
   `
 }
