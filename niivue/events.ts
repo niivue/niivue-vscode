@@ -41,6 +41,21 @@ export function listenToMessages(setNvArray: Function, setSliceType: Function) {
   if (typeof vscode === 'object') {
     vscode.postMessage({ type: 'ready' })
   }
+  addImageFromURLParams()
+}
+
+function addImageFromURLParams() {
+  const urlParams = new URLSearchParams(window.location.search)
+  const myStringParam = urlParams.get('image')
+  if (myStringParam) {
+    window.postMessage({
+      type: 'addImage',
+      body: {
+        data: '',
+        uri: myStringParam,
+      },
+    })
+  }
 }
 
 interface LayerOptions {
