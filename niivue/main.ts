@@ -8,6 +8,7 @@ if (app) {
 }
 
 if ('launchQueue' in window) {
+  const launchQueue = (window as any).launchQueue
   launchQueue.setConsumer(async (launchParams: any) => {
     const { files } = launchParams
     if (files.length > 0) {
