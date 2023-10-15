@@ -7,6 +7,14 @@
             "sizes": "200x200"
         }
     ],
-    "start_url": "/index.html",
-    "display": "standalone"
+    "start_url": "/niivue-vscode/",
+    "display": "standalone",
+    "file_handlers": [
+        {
+            "action": "/niivue-vscode/",
+            "accept": {
+                "image/NIfTI": [".nii", ".nii.gz"]
+            }
+        }
+    ]
 }
