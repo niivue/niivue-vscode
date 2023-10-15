@@ -12,19 +12,24 @@ if ('launchQueue' in window) {
   launchQueue.setConsumer(async (launchParams: any) => {
     const { files } = launchParams
     if (files.length > 0) {
-      const fileHandle = files[0]
-      const file = await fileHandle.getFile()
-      const reader = new FileReader()
-      reader.onload = function (event) {
-        window.postMessage({
-          type: 'addImage',
-          body: {
-            data: event.target!.result,
-            uri: fileHandle.name,
-          },
-        })
+      window.postMessage({
+        type: 'init',
+        body: files.length,
+      })
+      for (const file of files) {
+        const blob = await file.getFile()
+        const reader = new FileReader()
+        reader.onload = () => {
+          window.postMessage({
+            type: 'addImage',
+            body: {
+              data: reader.result,
+              uri: file.name,
+            },
+          })
+        }
+        reader.readAsArrayBuffer(blob)
       }
-      reader.readAsArrayBuffer(file)
     }
   })
 }

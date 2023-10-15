@@ -13,7 +13,7 @@
         {
             "action": "/niivue-vscode/",
             "accept": {
-                "image/NIfTI": [".nii", ".nii.gz"]
+                "image/*": [".nii", ".nii.gz", ".dcm", ".mha", ".mhd", ".nhdr", ".nrrd", ".mgh", ".mgz", ".v", ".v16", ".vmr", ".gii", ".mz3"]
             }
         }
     ]
