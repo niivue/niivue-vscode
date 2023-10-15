@@ -46,16 +46,29 @@ export function listenToMessages(setNvArray: Function, setSliceType: Function) {
 
 function addImageFromURLParams() {
   const urlParams = new URLSearchParams(window.location.search)
-  const myStringParam = urlParams.get('image')
-  if (myStringParam) {
+  const imageURLs = urlParams.get('images')?.split(',') ?? []
+  if (imageURLs.length > 0) {
     window.postMessage({
-      type: 'addImage',
+      type: 'initCanvas',
       body: {
-        data: '',
-        uri: myStringParam,
+        n: imageURLs.length,
       },
     })
+    imageURLs.forEach((url) => {
+      fetch(url)
+        .then((response) => response.arrayBuffer())
+        .then((data) => {
+          window.postMessage({
+            type: 'addImage',
+            body: {
+              data,
+              uri: url,
+            },
+          })
+        })
+    })
   }
+  
 }
 
 interface LayerOptions {
