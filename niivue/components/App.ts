@@ -14,14 +14,12 @@ export const App = () => {
     initState()
   useEffect(() => listenToMessages(setNvArray, setSliceType), [])
   return html`
-    <${Header} ...${headerProps} />
-    <${Container} ...${containerProps} />
-    <${Footer} ...${footerProps} />
-    ${containerProps.nvArray.length == 0 &&
-    html`
-      <${ImageDrop} />
-      <${OpenFromWeb} />
-    `}
+    <${ImageDrop} box=${containerProps.nvArray.length == 0}>
+      <${Header} ...${headerProps} />
+      <${Container} ...${containerProps} />
+      <${Footer} ...${footerProps} />
+      ${containerProps.nvArray.length == 0 && html` <${OpenFromWeb} /> `}
+    <//>
   `
 }
 

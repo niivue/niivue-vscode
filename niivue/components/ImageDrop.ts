@@ -1,7 +1,14 @@
 import { html } from 'htm/preact'
 import { useRef } from 'preact/hooks'
+import { ComponentChildren } from 'preact'
 
-export const ImageDrop = () => {
+export const ImageDrop = ({
+  children,
+  box,
+}: {
+  children: ComponentChildren
+  box: boolean
+}) => {
   const dropAreaRef = useRef<HTMLDivElement>()
   const handleDragOver = (e: DragEvent) => {
     e.stopPropagation()
@@ -39,11 +46,22 @@ export const ImageDrop = () => {
       }
       reader.readAsArrayBuffer(file)
     })
+    dropAreaRef.current!.classList.remove('dragover')
   }
 
   return html`
-    <div class="drop-area" ondragover=${handleDragOver} ondrop=${handleDrop} ref=${dropAreaRef} ondragleave=${handleDragLeave}>
-      <p> Drop files here </div>
+    <div
+      class="drop-area"
+      ondragover=${handleDragOver}
+      ondrop=${handleDrop}
+      ref=${dropAreaRef}
+      ondragleave=${handleDragLeave}
+    >
+      ${children}
+      ${box &&
+      html`<div class="drop-area-box">
+        <p>Drop files here</p>
+      </div>`}
     </div>
   `
 }

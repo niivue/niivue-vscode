@@ -100,8 +100,7 @@ input[type='number'] {
   cursor: pointer;
 }
 
-.drop-area {
-  background-color: #292929;
+.drop-area-box {
   width: 200px;
   height: 100px;
   display: flex;
