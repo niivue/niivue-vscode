@@ -106,6 +106,12 @@
           },
           {
             "filenamePattern": "*.vmr"
+          },
+          {
+            "filenamePattern": "*.mz3"
+          },
+          {
+            "filenamePattern": "*.gii"
           }
         ]
       }
