@@ -29,7 +29,7 @@ async function cacheFirst(request) {
 
 self.addEventListener("fetch", (event) => {
     const url = new URL(event.request.url)
-    if (precachedResources.includes(url.pathname)) {
+    if (("/niivue-vscode/" + precachedResources).includes(url.pathname)) {
         event.respondWith(cacheFirst(event.request));
     }
 });
