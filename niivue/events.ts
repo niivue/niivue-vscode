@@ -15,7 +15,7 @@ export function listenToMessages(
         case 'addMeshCurvature':
         case 'replaceMeshOverlay':
           {
-            addMeshOverlay(nvArray[body.index], body, 'replaceOverlay')
+            addMeshOverlay(nvArray[body.index], body, type)
           }
           break
         case 'overlay':
@@ -91,7 +91,7 @@ function addMeshOverlay(nv: Niivue, item: any, type: string) {
 
   const a = getLayerDefaults(type)
   const mesh = nv.meshes[0]
-  if (type === 'replaceOverlay') {
+  if (type === 'replaceMeshOverlay') {
     mesh.layers.pop()
   }
   NVMesh.readLayer(
@@ -109,7 +109,7 @@ function addMeshOverlay(nv: Niivue, item: any, type: string) {
   nv.opts.isColorbar = true
   nv.updateGLVolume()
   const layerNumber = nv.meshes[0].layers.length - 1
-  if (type === 'curvature') {
+  if (type === 'addMeshCurvature') {
     nv.setMeshLayerProperty(
       nv.meshes[0].id,
       layerNumber,

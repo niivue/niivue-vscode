@@ -46,15 +46,15 @@ export const NiiVueCanvas = ({
     })
   }, [nv.body])
 
-  if (nv.isLoaded) {
+  if (nv.isLoaded && nv.volumes.length > 0) {
     nv.setSliceType(sliceType.value)
     nv.setInterpolation(!interpolation.value)
     nv.setRadiologicalConvention(radiologicalConvention.value)
     nv.setCrosshairWidth(crosshair.value)
     applyScale(nv, scaling.value)
   }
-  // useEffect(() => applyScale(nv, scaling), [scaling])
-  useEffect(() => nv.drawScene(), [height, width])
+
+  useEffect(() => nv.drawScene(), [height, width]) // avoids black images
 
   return html`<canvas
     ref=${canvasRef}
