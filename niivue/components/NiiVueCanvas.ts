@@ -2,21 +2,15 @@ import { NVImage, NVMesh } from '@niivue/niivue'
 import { html } from 'htm/preact'
 import { useRef, useEffect } from 'preact/hooks'
 import { isImageType } from '../utility'
-import { Signal, effect } from '@preact/signals'
+import { Signal } from '@preact/signals'
+import { AppProps } from './App'
 
 interface NiiVueCanvasProps {
   nv: Niivue
   intensity: Signal<string>
   width: number
   height: number
-  setNv0: Function
-  sliceType: number
-  interpolation: boolean
-  scaling: any
-  location: Signal<string>
   triggerRender: Function
-  crosshair: boolean
-  radiologicalConvention: Signal<boolean>
 }
 
 export const NiiVueCanvas = ({
@@ -24,7 +18,7 @@ export const NiiVueCanvas = ({
   intensity,
   width,
   height,
-  setNv0,
+  nv0,
   sliceType,
   interpolation,
   scaling,
@@ -32,7 +26,7 @@ export const NiiVueCanvas = ({
   triggerRender,
   crosshair,
   radiologicalConvention,
-}: NiiVueCanvasProps) => {
+}: AppProps & NiiVueCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>()
   useEffect(() => nv.attachToCanvas(canvasRef.current), [])
   useEffect(() => {
@@ -45,18 +39,22 @@ export const NiiVueCanvas = ({
       nv.onLocationChange = (data: any) =>
         setIntensityAndLocation(data, intensity, location)
       nv.createOnLocationChange()
-      setNv0((nv0: Niivue) => (nv0.isLoaded ? nv0 : nv))
+      if (!nv0.value.isLoaded) {
+        nv0.value = nv
+      }
       triggerRender() // required to update the names
     })
   }, [nv.body])
-  useEffect(() => nv.setSliceType(sliceType), [sliceType])
-  useEffect(() => nv.setInterpolation(!interpolation), [interpolation])
-  useEffect(() => applyScale(nv, scaling), [scaling])
-  useEffect(() => nv.isLoaded && nv.setCrosshairWidth(crosshair), [crosshair])
+
   if (nv.isLoaded) {
-    effect(() => nv.setRadiologicalConvention(radiologicalConvention.value))
+    nv.setSliceType(sliceType.value)
+    nv.setInterpolation(!interpolation.value)
+    nv.setRadiologicalConvention(radiologicalConvention.value)
+    nv.setCrosshairWidth(crosshair.value)
+    applyScale(nv, scaling.value)
   }
-  useEffect(() => nv.updateGLVolume(), [height, width])
+  // useEffect(() => applyScale(nv, scaling), [scaling])
+  useEffect(() => nv.drawScene(), [height, width])
 
   return html`<canvas
     ref=${canvasRef}

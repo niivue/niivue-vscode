@@ -3,28 +3,14 @@ import { useState, useEffect, MutableRef } from 'preact/hooks'
 import { differenceInNames } from '../utility'
 import { Volume } from './Volume'
 import { SLICE_TYPE } from '@niivue/niivue'
-import { Signal } from '@preact/signals'
-
-export interface ContainerProps {
-  nvArray: Niivue[]
-  headerRef: MutableRef<HTMLDivElement | undefined>
-  footerRef: MutableRef<HTMLDivElement | undefined>
-  sliceType: number
-  hideUI: number
-  setNv0: Function
-  interpolation: boolean
-  scaling: any
-  location: Signal<string>
-  crosshair: boolean
-  radiologicalConvention: Signal<boolean>
-}
+import { AppProps } from './App'
 
 export const Container = ({
   nvArray,
   headerRef,
   footerRef,
   ...props
-}: ContainerProps) => {
+}: AppProps) => {
   const [[windowWidth, windowHeight], setDimensions] = useState([
     window.innerWidth - 30,
     window.innerHeight - 80,
@@ -38,24 +24,24 @@ export const Container = ({
   const [width, height] = getCanvasSize(
     nvArray.length,
     meta,
-    props.sliceType,
+    props.sliceType.value,
     windowWidth,
     windowHeight
   )
   const names = differenceInNames(getNames(nvArray))
+
   return html`
     <div class="container">
       ${nvArray.map(
-        (nv, i) =>
-          html`<${Volume}
-            nv=${nv}
-            width=${width}
-            height=${height}
-            volumeIndex=${i}
-            name=${names[i]}
-            triggerRender=${dimUpdate}
-            ...${props}
-          />`
+        (nv, i) => html`<${Volume}
+          nv=${nv}
+          width=${width}
+          height=${height}
+          volumeIndex=${i}
+          name=${names[i]}
+          triggerRender=${dimUpdate}
+          ...${props}
+        />`
       )}
     </div>
   `

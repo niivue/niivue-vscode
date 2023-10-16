@@ -1,11 +1,7 @@
 import { html } from 'htm/preact'
 import { Scaling } from './Scaling'
 
-interface OverlayOptionsProps {
-  nv: Niivue
-}
-
-export const OverlayOptions = ({ nv }: OverlayOptionsProps) => {
+export const OverlayOptions = ({ nv }: { nv: Niivue }) => {
   if (!isVolumeOverlay(nv) && !isMeshOverlay(nv)) {
     return html``
   }
@@ -46,7 +42,7 @@ function isVolumeOverlay(nv: Niivue) {
   return nv.volumes.length > 1
 }
 function isMeshOverlay(nv: Niivue) {
-  return nv.meshes.length > 0 && nv.meshes[0].layers.length > 1
+  return nv.meshes.length > 0 && nv.meshes[0].layers.length > 0
 }
 
 function handleOpacity(nv: Niivue) {

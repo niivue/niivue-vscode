@@ -1,17 +1,10 @@
 import { html } from 'htm/preact'
 import { SLICE_TYPE } from '@niivue/niivue'
+import { AppProps } from './App'
 
-interface SelectViewProps {
-  sliceType: number
-  setSliceType: Function
-}
-
-export const SelectView = ({
-  sliceType,
-  setSliceType,
-}: SelectViewProps) => html`
+export const SelectView = ({ sliceType }: AppProps) => html`
   <select
-    onchange=${(e: any) => setSliceType(parseInt(e.target.value))}
+    onchange=${(e: any) => (sliceType.value = parseInt(e.target.value))}
     value=${sliceType}
   >
     <option value=${SLICE_TYPE.AXIAL}>Axial</option>

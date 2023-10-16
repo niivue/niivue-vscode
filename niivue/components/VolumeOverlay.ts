@@ -2,18 +2,13 @@ import { useState, MutableRef } from 'preact/hooks'
 import { html } from 'htm/preact'
 import { ContextMenu } from './ContextMenu'
 import { OverlayOptions } from './OverlayOptions'
-
-interface VolumeOverlayProps {
-  nv: Niivue
-  volumeIndex: number
-  volumeRef: MutableRef<HTMLDivElement>
-}
+import { VolumeProps } from './Volume'
 
 export const VolumeOverlay = ({
   nv,
   volumeIndex,
   volumeRef,
-}: VolumeOverlayProps) => {
+}: VolumeProps & { volumeRef: MutableRef<HTMLDivElement> }) => {
   const [isOpen, setIsOpen] = useState(false)
   const removeContextMenu = () => {
     setIsOpen(false)
@@ -31,7 +26,6 @@ export const VolumeOverlay = ({
   return html`
     <span
       class="volume-overlay"
-      title="Right Click"
       oncontextmenu=${onContextmenu}
       onclick=${onContextmenu}
       >Overlay</span

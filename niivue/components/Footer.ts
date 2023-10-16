@@ -4,64 +4,47 @@ import { NearestInterpolation } from './NearestInterpolation'
 import { Scaling } from './Scaling'
 import { SelectView } from './SelectView'
 import { Niivue } from '@niivue/niivue'
-import { Signal } from '@preact/signals'
-
-export interface FooterProps {
-  footerRef: any
-  sliceType: number
-  setSliceType: any
-  interpolation: boolean
-  setInterpolation: any
-  setScaling: any
-  nv0: Niivue
-  location: Signal<string>
-  setHideUI: any
-  setCrosshair: any
-  radiologicalConvention: Signal<boolean>
-}
+import { AppProps, ScalingOpts } from './App'
 
 export const Footer = ({
   footerRef,
   sliceType,
-  setSliceType,
   interpolation,
-  setInterpolation,
-  setScaling,
+  scaling,
   nv0,
   location,
-  setHideUI,
-  setCrosshair,
+  hideUI,
+  crosshair,
   radiologicalConvention,
-}: FooterProps) => {
-  const ready = nv0.isLoaded
-  const isVolume = ready && nv0.volumes.length > 0
-  const isMesh = ready && nv0.meshes.length > 0
+}: AppProps) => {
+  const nv = nv0.value
+  const ready = nv.isLoaded
+  const isVolume = ready && nv.volumes.length > 0
+  const isMesh = ready && nv.meshes.length > 0
 
   const handleHideUI = () => {
-    setHideUI((hideUI: number) => (hideUI + 1) % 3)
+    hideUI.value = (hideUI.value + 1) % 4
   }
   const handleCrosshair = () => {
-    setCrosshair((crosshair: boolean) => !crosshair)
+    crosshair.value = !crosshair.value
   }
   const handleRadiologicalConvention = () => {
     radiologicalConvention.value = !radiologicalConvention.value
   }
+  const setScaling = (val: ScalingOpts) => (scaling.value = val)
 
   return html`
     <div ref=${footerRef}>
       <div>${location}</div>
       <div class="horizontal-layout">
         <button onClick=${addImagesEvent}>Add Images</button>
-        <${NearestInterpolation}
-          interpolation=${interpolation}
-          setInterpolation=${setInterpolation}
-        />
+        <${NearestInterpolation} interpolation=${interpolation} />
         ${isVolume &&
         html`
           <button onClick=${handleRadiologicalConvention}>RL</button>
-          <${Scaling} setScaling=${setScaling} init=${nv0.volumes[0]} />
+          <${Scaling} setScaling=${setScaling} init=${nv.volumes[0]} />
         `}
-        <${SelectView} sliceType=${sliceType} setSliceType=${setSliceType} />
+        <${SelectView} sliceType=${sliceType} />
         ${isMesh &&
         html`
           <button onClick=${() => saveScene(nv0)}>Save Scene</button>

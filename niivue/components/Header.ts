@@ -1,17 +1,15 @@
 import { html } from 'htm/preact'
 import { ShowHeaderButton } from './ShowHeaderButton'
+import { AppProps } from './App'
 
-export interface HeaderProps {
-  nv: Niivue
-  heightRef: any
-}
-
-export const Header = ({ nv, heightRef }: HeaderProps) => {
+export const Header = ({ nv0, headerRef }: AppProps) => {
+  const nv = nv0.value
   if (!nv.isLoaded || nv.volumes.length < 1) {
     return html``
   }
+
   return html`
-    <div class="horizontal-layout" ref=${heightRef}>
+    <div class="horizontal-layout" ref=${headerRef}>
       <${ShowHeaderButton} info=${nv.volumes[0].hdr.toFormattedString()} />
       <p>${getMetadataString(nv)}</p>
     </div>
