@@ -34,7 +34,7 @@ export const App = () => {
           <b> Niivue-ify </b>
         </a>
         to your bookmars bar, when the bookmarklet is clicked, all NIfTI links
-        turn this color and are redirected to niivue
+        are redirected to niivue
       </span>
     <//>
   `
