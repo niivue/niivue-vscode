@@ -108,6 +108,10 @@ input[type='number'] {
   align-items: center;
 }
 
+.drop-area {
+  background-color: #202020;
+}
+
 .drop-area.dragover {
   background-color: #424242;
 }

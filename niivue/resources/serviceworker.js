@@ -1,5 +1,5 @@
 const cacheName = "NiiVueCache_1";
-const precachedResources = ["main.js", "index.css", "index.html", "favicon.ico", "register.js", "serviceworker.js"];
+const precachedResources = ["/niivue-vscode/main.js", "/niivue-vscode/index.css", "/niivue-vscode/index.html", "/niivue-vscode/favicon.ico", "/niivue-vscode/register.js", "/niivue-vscode/serviceworker.js"];
 
 async function precache() {
     const cache = await caches.open(cacheName);
@@ -11,8 +11,9 @@ self.addEventListener("install", (event) => {
 });
 
 function isCacheable(request) {
+    const endings = [".js", ".css", ".html", ".ico"];
     const url = new URL(request.url);
-    return !url.pathname.endsWith(".json");
+    return endings.some((ending) => url.pathname.endsWith(ending));
 }
 
 async function cacheFirstWithRefresh(request) {
