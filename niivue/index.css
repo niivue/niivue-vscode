@@ -111,3 +111,7 @@ input[type='number'] {
 .drop-area.dragover {
   background-color: #424242;
 }
+
+a:link {
+  color: #5599dd;
+}
