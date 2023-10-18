@@ -32,20 +32,19 @@ export const ImageDrop = ({
         n: fileArray.length,
       },
     })
-    fileArray.forEach((file) => {
-      const reader = new FileReader()
-      reader.onload = () => {
-        const data = reader.result
+    const readimages = async () => {
+      for (const file of fileArray) {
+        const buffer = await file.arrayBuffer()
         window.postMessage({
           type: 'addImage',
           body: {
-            data,
+            data: buffer,
             uri: file.name,
           },
         })
       }
-      reader.readAsArrayBuffer(file)
-    })
+    }
+    readimages()
     dropAreaRef.current!.classList.remove('dragover')
   }
 
