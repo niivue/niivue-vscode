@@ -7,7 +7,7 @@ import { Container } from './Container'
 import { Footer } from './Footer'
 import { Header } from './Header'
 import { ImageDrop } from './ImageDrop'
-import { OpenFromWeb } from './OpenFromWeb'
+import { HomeScreen } from './HomeScreen'
 
 export const App = () => {
   const { appProps, setNvArray } = initState()
@@ -18,24 +18,7 @@ export const App = () => {
       <${Header} ...${appProps} />
       <${Container} ...${appProps} />
       <${Footer} ...${appProps} />
-      ${appProps.nvArray.length == 0 && html` <${OpenFromWeb} /> `}
-      <span>
-        Drag
-        <a
-          href="javascript: (() => {
-          for (let link of document.links) {
-            if (link.href.endsWith('.nii.gz')) {
-              link.style.color = '#5599dd';
-              link.href = 'https://korbinian90.github.io/niivue-vscode/?images=' + link.href;
-            }
-          }
-        })();"
-        >
-          <b> Niivue-ify </b>
-        </a>
-        to your bookmars bar, when the bookmarklet is clicked, all NIfTI links
-        are redirected to niivue
-      </span>
+      ${appProps.nvArray.length == 0 && html`<${HomeScreen} />`}
     <//>
   `
 }
