@@ -1,18 +1,23 @@
 import { html } from 'htm/preact'
 import { ShowHeaderButton } from './ShowHeaderButton'
 import { AppProps } from './App'
+import { computed } from '@preact/signals'
 
 export const Header = ({ nv0, headerRef }: AppProps) => {
-  const nv = nv0.value
-  if (!nv.isLoaded || nv.volumes.length < 1) {
-    return html``
-  }
+  const isLoaded = computed(
+    () => nv0.value.isLoaded && nv0.value.volumes.length > 0
+  )
 
   return html`
     <div class="horizontal-layout" ref=${headerRef}>
       <button onClick=${() => location.reload()}>Home</button>
-      <${ShowHeaderButton} info=${nv.volumes[0].hdr.toFormattedString()} />
-      <p>${getMetadataString(nv)}</p>
+      ${isLoaded.value &&
+      html`
+        <${ShowHeaderButton}
+          info=${nv0.value.volumes[0].hdr.toFormattedString()}
+        />
+        <p>${getMetadataString(nv0.value)}</p>
+      `}
     </div>
   `
 }
