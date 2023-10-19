@@ -4,6 +4,7 @@ import { differenceInNames } from '../utility'
 import { Volume } from './Volume'
 import { SLICE_TYPE } from '@niivue/niivue'
 import { AppProps } from './App'
+import { Signal } from '@preact/signals'
 
 export const Container = ({
   nvArray,
@@ -18,30 +19,24 @@ export const Container = ({
 
   const dimUpdate = () => updateDimensions(setDimensions, headerRef, footerRef)
   useEffect(() => (window.onresize = dimUpdate), [])
-  syncVolumes(nvArray)
+  syncVolumes(nvArray.value)
 
-  const meta = nvArray?.[0]?.volumes?.[0]?.getImageMetadata() ?? {}
+  const meta = nvArray.value?.[0]?.volumes?.[0]?.getImageMetadata() ?? {}
   const [width, height] = getCanvasSize(
-    nvArray.length,
+    nvArray.value.length,
     meta,
     props.sliceType.value,
     windowWidth,
     windowHeight
   )
-  const names = differenceInNames(getNames(nvArray))
+  const names = differenceInNames(getNames(nvArray.value))
 
   return html`
     <div class="container">
-      ${nvArray.map(
-        (nv, i) => html`<${Volume}
-          nv=${nv}
-          width=${width}
-          height=${height}
-          volumeIndex=${i}
-          name=${names[i]}
-          triggerRender=${dimUpdate}
-          ...${props}
-        />`
+      ${nvArray.value.map(
+        (nv, i) => html`<${Volume} nv=${nv} width=${width} height=${height}
+        volumeIndex=${i} name=${names[i]} triggerRender=${dimUpdate}
+        "...${props}" />`
       )}
     </div>
   `

@@ -1,46 +1,43 @@
 import { Niivue, NVImage, NVMesh } from '@niivue/niivue'
 import { isImageType } from './utility'
 import { SLICE_TYPE } from '@niivue/niivue'
+import { AppProps } from './components/App'
 import { Signal } from '@preact/signals'
 
-export function listenToMessages(
-  setNvArray: Function,
-  sliceType: Signal<number>
-) {
+export function listenToMessages(appProps: AppProps) {
+  const { nvArray, sliceType } = appProps
   window.onmessage = (e: any) => {
-    setNvArray((nvArray: Niivue[]) => {
-      const { type, body } = e.data
-      switch (type) {
-        case 'addMeshOverlay':
-        case 'addMeshCurvature':
-        case 'replaceMeshOverlay':
-          {
-            addMeshOverlay(nvArray[body.index], body, type)
+    const { type, body } = e.data
+    switch (type) {
+      case 'addMeshOverlay':
+      case 'addMeshCurvature':
+      case 'replaceMeshOverlay':
+        {
+          addMeshOverlay(nvArray.value[body.index], body, type)
+        }
+        break
+      case 'overlay':
+        {
+          addOverlay(nvArray.value[body.index], body)
+        }
+        break
+      case 'addImage':
+        {
+          const nv = getUnitinializedNvInstance(nvArray)
+          nv.body = body
+          nv.isNew = false
+        }
+        break
+      case 'initCanvas':
+        {
+          if (nvArray.value.length === 0 && body.n > 1) {
+            sliceType.value = SLICE_TYPE.AXIAL
           }
-          break
-        case 'overlay':
-          {
-            addOverlay(nvArray[body.index], body)
-          }
-          break
-        case 'addImage':
-          {
-            const nv = getUnitinializedNvInstance(nvArray)
-            nv.body = body
-            nv.isNew = false
-          }
-          break
-        case 'initCanvas':
-          {
-            if (nvArray.length === 0 && body.n > 1) {
-              sliceType.value = SLICE_TYPE.AXIAL
-            }
-            growNvArrayBy(nvArray, body.n)
-          }
-          break
-      }
-      return [...nvArray] // triggers rerender after each received message
-    })
+          growNvArrayBy(nvArray, body.n)
+        }
+        break
+    }
+    nvArray.value = [...nvArray.value] // triggers rerender after each received message
   }
   if (typeof vscode === 'object') {
     vscode.postMessage({ type: 'ready' })
@@ -72,7 +69,6 @@ function addImageFromURLParams() {
         })
     })
   }
-  
 }
 
 interface LayerOptions {
@@ -217,20 +213,20 @@ export function addImagesEvent() {
   }
 }
 
-function getUnitinializedNvInstance(nvArray: Niivue[]) {
-  const nv = nvArray.find((nv) => nv.isNew)
+function getUnitinializedNvInstance(nvArray: Signal<Niivue[]>) {
+  const nv = nvArray.value.find((nv) => nv.isNew)
   if (nv) {
     return nv
   }
   growNvArrayBy(nvArray, 1)
-  return nvArray[nvArray.length - 1]
+  return nvArray.value[nvArray.value.length - 1]
 }
 
-function growNvArrayBy(nvArray: Niivue[], n: number) {
+function growNvArrayBy(nvArray: Signal<Niivue[]>, n: number) {
   for (let i = 0; i < n; i++) {
     const nv = new Niivue({ isResizeCanvas: false })
     nv.isNew = true
     nv.isLoaded = false
-    nvArray.push(nv)
+    nvArray.value = [...nvArray.value, nv]
   }
 }
