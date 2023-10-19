@@ -20,29 +20,18 @@ export const Volume = ({
 }: AppProps & VolumeProps) => {
   const intensity = useSignal('')
   const volumeRef = useRef<HTMLDivElement>()
-  const [isDragging, setIsDragging] = useState(false)
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
   const dispName = name.length > 20 ? `...${name.slice(-20)}` : name
 
-  const handleMouseDown = (event: MouseEvent) => {
-    volumeRef.current!.style.zIndex = '1'
-    setIsDragging(true)
-    setDragStart({ x: event.clientX, y: event.clientY })
-    setDragOffset({ x: 0, y: 0 })
+  const handleDragStart = (event: DragEvent) => {
+    // volumeRef.current!.style.zIndex = '1'
   }
 
-  const handleMouseMove = (event: MouseEvent) => {
-    if (isDragging) {
-      const dx = event.clientX - dragStart.x
-      const dy = event.clientY - dragStart.y
-      volumeRef.current!.style.left = `${dragOffset.x + dx}px`
-      volumeRef.current!.style.top = `${dragOffset.y + dy}px`
-    }
+  const handleDrag = (event: DragEvent) => {
+    // volumeRef.current!.style.left = `${event.clientX}px`
+    // volumeRef.current!.style.top = `${event.clientY}px`
   }
 
-  const handleMouseUp = () => {
-    setIsDragging(false)
+  const handleDragEnd = () => {
     volumeRef.current!.style.left = ''
     volumeRef.current!.style.top = ''
     volumeRef.current!.style.zIndex = ''
@@ -52,15 +41,17 @@ export const Volume = ({
     <div
       class="volume"
       ref=${volumeRef}
-      onMouseDown=${handleMouseDown}
-      onMouseMove=${handleMouseMove}
-      onMouseUp=${handleMouseUp}
+      draggable="true"
+      onDragStart=${handleDragStart}
+      onDrag=${handleDrag}
+      onDragEnd=${handleDragEnd}
     >
-      ${hideUI.value > 0 && html`<div class="volume-name">${dispName}</div>`}
       ${hideUI.value > 0 &&
-      html`<button class="volume-remove-button" onclick=${props.remove}>
-        X
-      </button>`}
+      html`
+        <div class="volume-name">${dispName}</div>
+        <button class="volume-remove-button" onclick=${props.remove}>X</button>
+        <button class="volume-drag-button"></button>
+      `}
       <${NiiVueCanvas} ...${props} intensity=${intensity} />
       ${hideUI.value > 1 &&
       html`<div class="horizontal-layout volume-footer">

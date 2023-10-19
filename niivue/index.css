@@ -58,6 +58,14 @@ body {
   opacity: 0.8;
 }
 
+.volume-drag-button {
+  position: absolute;
+  width: 50%;
+  height: 1em;
+  opacity: 0.5;
+  left: 25%;
+}
+
 .container {
   display: flex;
   flex-flow: row wrap;
