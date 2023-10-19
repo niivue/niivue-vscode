@@ -50,7 +50,11 @@ export const NiiVueCanvas = ({
     nv.setSliceType(sliceType.value)
     nv.setInterpolation(!interpolation.value)
     nv.setRadiologicalConvention(radiologicalConvention.value)
-    nv.setCrosshairWidth(crosshair.value)
+    try {
+      nv.setCrosshairWidth(crosshair.value)
+    } catch (e) {
+      console.log(e) // sometime fails
+    }
     applyScale(nv, scaling.value)
   }
 
