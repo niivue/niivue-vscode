@@ -10,6 +10,7 @@ export const Header = ({ nv0, headerRef }: AppProps) => {
 
   return html`
     <div class="horizontal-layout" ref=${headerRef}>
+      <button onClick=${() => location.reload()}>Home</button>
       <${ShowHeaderButton} info=${nv.volumes[0].hdr.toFormattedString()} />
       <p>${getMetadataString(nv)}</p>
     </div>
