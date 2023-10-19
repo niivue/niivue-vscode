@@ -9,6 +9,7 @@ export interface VolumeProps {
   name: string
   volumeIndex: number
   nv: Niivue
+  remove: Function
 }
 
 export const Volume = ({
@@ -23,6 +24,10 @@ export const Volume = ({
   return html`
     <div class="volume" ref=${volumeRef}>
       ${hideUI.value > 0 && html`<div class="volume-name">${dispName}</div>`}
+      ${hideUI.value > 0 &&
+      html`<button class="volume-remove-button" onclick=${props.remove}>
+        X
+      </button>`}
       <${NiiVueCanvas} ...${props} intensity=${intensity} />
       ${hideUI.value > 1 &&
       html`<div class="horizontal-layout volume-footer">

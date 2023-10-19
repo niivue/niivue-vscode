@@ -6,12 +6,8 @@ import { SLICE_TYPE } from '@niivue/niivue'
 import { AppProps } from './App'
 import { Signal } from '@preact/signals'
 
-export const Container = ({
-  nvArray,
-  headerRef,
-  footerRef,
-  ...props
-}: AppProps) => {
+export const Container = (props: AppProps) => {
+  const { nvArray, headerRef, footerRef } = props
   const [[windowWidth, windowHeight], setDimensions] = useState([
     window.innerWidth - 30,
     window.innerHeight - 80,
@@ -36,10 +32,22 @@ export const Container = ({
       ${nvArray.value.map(
         (nv, i) => html`<${Volume} nv=${nv} width=${width} height=${height}
         volumeIndex=${i} name=${names[i]} triggerRender=${dimUpdate}
-        "...${props}" />`
+        remove=${remove(props, i)} "...${props}" />`
       )}
     </div>
   `
+}
+
+function remove(props: AppProps, i: number) {
+  const { nvArray, nv0, location } = props
+  return () => {
+    nvArray.value.splice(i, 1)
+    nvArray.value = [...nvArray.value]
+    if (nvArray.value.length == 0) {
+      nv0.value = { isLoaded: false }
+      location.value = ''
+    }
+  }
 }
 
 function getNames(nvArray: Niivue[]) {
