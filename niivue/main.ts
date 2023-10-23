@@ -1,3 +1,4 @@
+import './index.css'
 import { render } from 'preact'
 import { html } from 'htm/preact'
 import { App } from './components/App'
