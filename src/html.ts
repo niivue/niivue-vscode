@@ -24,9 +24,7 @@ export async function getHtmlForWebview(
   const noncePlaceholder = '${nonce}'
 
   const html = await vscode.workspace.fs.readFile(
-    vscode.Uri.file(
-      vscode.Uri.joinPath(extensionUri, 'dist/niivue', 'index.html').path
-    )
+    extensionUri.with({ path: extensionUri.path + '/dist/niivue/index.html' })
   )
   const scriptUriPlaceholder = '"main.js"'
   const cssUriPlaceholder = '"index.css"'
