@@ -1,5 +1,4 @@
 import * as vscode from 'vscode'
-import * as path from 'path'
 
 function getNonce() {
   let text = ''
@@ -13,20 +12,21 @@ function getNonce() {
 
 export async function getHtmlForWebview(
   webview: vscode.Webview,
-  extensionUri: vscode.Uri,
-  extensionPath: any,
+  extensionUri: vscode.Uri
 ): Promise<string> {
   const scriptUri = webview.asWebviewUri(
-    vscode.Uri.joinPath(extensionUri, 'dist/niivue', 'main.js'),
+    vscode.Uri.joinPath(extensionUri, 'dist/niivue', 'main.js')
   )
   const cssUri = webview.asWebviewUri(
-    vscode.Uri.joinPath(extensionUri, 'dist/niivue', 'index.css'),
+    vscode.Uri.joinPath(extensionUri, 'dist/niivue', 'index.css')
   )
   const nonce = getNonce() // Whitelist which scripts can be run
   const noncePlaceholder = '${nonce}'
 
   const html = await vscode.workspace.fs.readFile(
-    vscode.Uri.file(path.join(extensionPath, 'dist/niivue', 'index.html')),
+    vscode.Uri.file(
+      vscode.Uri.joinPath(extensionUri, 'dist/niivue', 'index.html').path
+    )
   )
   const scriptUriPlaceholder = '"main.js"'
   const cssUriPlaceholder = '"index.css"'
