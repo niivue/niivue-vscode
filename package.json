@@ -39,7 +39,7 @@
     "workspace"
   ],
   "main": "./dist/extension-vscode.js",
-  "browser": "./dist/extension-vscode.js",
+  "browser": "./dist/extension-web.js",
   "contributes": {
     "commands": [
       {
