@@ -1,4 +1,5 @@
 import * as vscode from 'vscode'
+import { Buffer } from 'buffer'
 
 function getNonce() {
   let text = ''

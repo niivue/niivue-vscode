@@ -74,6 +74,7 @@ const webextension = {
     mainFields: ['browser', 'module', 'main'],
     extensions: ['.ts', '.js'],
     fallback: {
+      buffer: require.resolve('buffer/'),
       fs: false,
       path: false
     },
