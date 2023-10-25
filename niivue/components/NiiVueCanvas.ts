@@ -10,7 +10,7 @@ interface NiiVueCanvasProps {
   intensity: Signal<string>
   width: number
   height: number
-  triggerRender: Function
+  render: Signal<number>
 }
 
 export const NiiVueCanvas = ({
@@ -23,7 +23,7 @@ export const NiiVueCanvas = ({
   interpolation,
   scaling,
   location,
-  triggerRender,
+  render,
   crosshair,
   radiologicalConvention,
   colorbar,
@@ -43,7 +43,7 @@ export const NiiVueCanvas = ({
       if (!nv0.value.isLoaded) {
         nv0.value = nv
       }
-      triggerRender() // required to update the names
+      render.value++ // required to update the names
     })
   }, [nv.body])
 

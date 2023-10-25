@@ -227,6 +227,7 @@ function growNvArrayBy(nvArray: Signal<Niivue[]>, n: number) {
     const nv = new Niivue({ isResizeCanvas: false })
     nv.isNew = true
     nv.isLoaded = false
+    nv.key = Math.random()
     nvArray.value = [...nvArray.value, nv]
   }
 }
