@@ -38,6 +38,7 @@ export interface AppProps {
   interpolation: Signal<boolean>
   location: Signal<string>
   radiologicalConvention: Signal<boolean>
+  colorbar: Signal<boolean>
 }
 
 export interface ScalingOpts {
@@ -59,5 +60,6 @@ function initState(): AppProps {
     interpolation: useSignal(true),
     location: useSignal(''),
     radiologicalConvention: useSignal(false),
+    colorbar: useSignal(false),
   }
 }

@@ -16,6 +16,7 @@ export const Footer = ({
   hideUI,
   crosshair,
   radiologicalConvention,
+  colorbar,
 }: AppProps) => {
   const nv = nv0.value
   const ready = nv.isLoaded
@@ -25,13 +26,16 @@ export const Footer = ({
   const handleHideUI = () => {
     hideUI.value = (hideUI.value + 1) % 4
   }
-  const handleCrosshair = () => {
+  const toggleCrosshair = () => {
     crosshair.value = !crosshair.value
   }
-  const handleRadiologicalConvention = () => {
+  const toggleRadiologicalConvention = () => {
     radiologicalConvention.value = !radiologicalConvention.value
   }
   const setScaling = (val: ScalingOpts) => (scaling.value = val)
+  const toggleColorbar = () => {
+    colorbar.value = !colorbar.value
+  }
 
   return html`
     <div ref=${footerRef}>
@@ -41,7 +45,7 @@ export const Footer = ({
         <${NearestInterpolation} interpolation=${interpolation} />
         ${isVolume &&
         html`
-          <button onClick=${handleRadiologicalConvention}>RL</button>
+          <button onClick=${toggleRadiologicalConvention}>RL</button>
           <${Scaling} setScaling=${setScaling} init=${nv.volumes[0]} />
         `}
         <${SelectView} sliceType=${sliceType} />
@@ -51,7 +55,8 @@ export const Footer = ({
           <button onClick=${() => loadScene(nv0)}>Load Scene</button>
         `}
         <button onClick=${handleHideUI}>👁</button>
-        <button onClick=${handleCrosshair}>⌖</button>
+        <button onClick=${toggleCrosshair}>⌖</button>
+        <button onClick=${toggleColorbar}>📏</button>
       </div>
     </div>
   `

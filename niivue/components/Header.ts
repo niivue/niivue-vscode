@@ -3,7 +3,7 @@ import { ShowHeaderButton } from './ShowHeaderButton'
 import { AppProps } from './App'
 import { computed } from '@preact/signals'
 
-export const Header = (props: AppProps & { homeButton: Boolean }) => {
+export const Header = (props: AppProps & { homeButton: boolean }) => {
   const { headerRef, nv0, homeButton } = props
   const isLoaded = computed(
     () => nv0.value.isLoaded && nv0.value.volumes.length > 0
