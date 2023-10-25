@@ -3,14 +3,16 @@ import { ShowHeaderButton } from './ShowHeaderButton'
 import { AppProps } from './App'
 import { computed } from '@preact/signals'
 
-export const Header = ({ nv0, headerRef }: AppProps) => {
+export const Header = (props: AppProps & { homeButton: Boolean }) => {
+  const { headerRef, nv0, homeButton } = props
   const isLoaded = computed(
     () => nv0.value.isLoaded && nv0.value.volumes.length > 0
   )
 
   return html`
     <div class="horizontal-layout" ref=${headerRef}>
-      <button onClick=${() => location.reload()}>Home</button>
+      ${homeButton &&
+      html`<button onClick=${() => location.reload()}>Home</button>`}
       ${isLoaded.value &&
       html`
         <${ShowHeaderButton}

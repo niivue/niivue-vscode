@@ -10,17 +10,19 @@ import { ImageDrop } from './ImageDrop'
 import { HomeScreen } from './HomeScreen'
 
 export const App = () => {
+  const isVscode = typeof vscode === 'object'
   const appProps = initState()
   useEffect(() => listenToMessages(appProps), [])
 
   const nImages = computed(() => appProps.nvArray.value.length)
+  const showHomeScreen = computed(() => nImages.value == 0 && !isVscode)
 
   return html`
-    <${ImageDrop} box=${nImages.value == 0}>
-      <${Header} ...${appProps} />
+    <${ImageDrop} box=${showHomeScreen.value}>
+      <${Header} ...${appProps} homeButton=${showHomeScreen.value} />
       <${Container} ...${appProps} />
       <${Footer} ...${appProps} />
-      ${nImages.value == 0 && html`<${HomeScreen} />`}
+      ${showHomeScreen.value && html`<${HomeScreen} />`}
     <//>
   `
 }
