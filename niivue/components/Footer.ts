@@ -55,8 +55,8 @@ export const Footer = ({
           <button onClick=${() => loadScene(nv0)}>Load Scene</button>
         `}
         <button onClick=${handleHideUI}>👁</button>
-        <button onClick=${toggleCrosshair}>⌖</button>
         <button onClick=${toggleColorbar}>📏</button>
+        <button onClick=${toggleCrosshair}>⌖</button>
       </div>
     </div>
   `
