@@ -6,8 +6,7 @@
   "extends": [
     "eslint:all",
     "preact",
-    "prettier",
-    "prettier/@typescript-eslint"
+    "prettier"
   ],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
