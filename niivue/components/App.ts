@@ -11,7 +11,7 @@ import { HomeScreen } from './HomeScreen'
 
 export const App = () => {
   const isVscode = typeof vscode === 'object'
-  const appProps = initState()
+  const appProps = useAppState()
   useEffect(() => listenToMessages(appProps), [])
 
   const nImages = computed(() => appProps.nvArray.value.length)
@@ -47,7 +47,7 @@ export interface ScalingOpts {
   max: number
 }
 
-function initState(): AppProps {
+function useAppState(): AppProps {
   return {
     headerRef: useRef<HTMLDivElement>(),
     footerRef: useRef<HTMLDivElement>(),

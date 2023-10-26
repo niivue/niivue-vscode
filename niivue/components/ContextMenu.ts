@@ -35,13 +35,13 @@ export const ContextMenu = ({ nv, volumeIndex }: ContextMenuProps) => {
           class="context-menu-item"
           onclick=${() => addOverlayEvent(volumeIndex, 'addMeshCurvature')}
         >
-          Add Mesh Curvature
+          Add Mesh Curvature
         </div>
         <div
           class="context-menu-item"
           onclick=${() => addOverlayEvent(volumeIndex, 'addMeshOverlay')}
         >
-          Add Mesh Overlay
+          Add Mesh Overlay
         </div>
         ${nMeshLayers > 0 &&
         html` <div

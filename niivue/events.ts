@@ -1,6 +1,5 @@
-import { Niivue, NVImage, NVMesh } from '@niivue/niivue'
+import { Niivue, NVImage, NVMesh, SLICE_TYPE } from '@niivue/niivue'
 import { isImageType } from './utility'
-import { SLICE_TYPE } from '@niivue/niivue'
 import { AppProps } from './components/App'
 import { Signal } from '@preact/signals'
 
@@ -99,7 +98,7 @@ function addMeshOverlay(nv: Niivue, item: any, type: string) {
     a.colormapNegative,
     a.useNegativeCmap,
     a.calMin,
-    a.calMax
+    a.calMax,
   )
   mesh.updateMesh(nv.gl)
   nv.opts.isColorbar = true
@@ -110,7 +109,7 @@ function addMeshOverlay(nv: Niivue, item: any, type: string) {
       nv.meshes[0].id,
       layerNumber,
       'colorbarVisible',
-      false
+      false,
     )
   }
 }

@@ -28,9 +28,8 @@ export const OverlayOptions = ({ nv }: { nv: Niivue }) => {
 function getColormaps(nv: Niivue) {
   if (isVolumeOverlay(nv)) {
     return ['symmetric', ...nv.colormaps()]
-  } else {
-    return ['ge_color', 'hsv', 'symmetric', 'warm']
   }
+  return ['ge_color', 'hsv', 'symmetric', 'warm']
 }
 
 function getOverlay(nv: Niivue) {
@@ -71,13 +70,13 @@ function handleOverlayScaling(nv: Niivue) {
         nv.meshes[0].id,
         layerNumber,
         'cal_min',
-        scaling.min
+        scaling.min,
       )
       nv.setMeshLayerProperty(
         nv.meshes[0].id,
         layerNumber,
         'cal_max',
-        scaling.max
+        scaling.max,
       )
     }
     nv.updateGLVolume()

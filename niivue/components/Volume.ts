@@ -1,5 +1,5 @@
 import { html } from 'htm/preact'
-import { useRef, useState } from 'preact/hooks'
+import { useRef } from 'preact/hooks'
 import { NiiVueCanvas } from './NiiVueCanvas'
 import { VolumeOverlay } from './VolumeOverlay'
 import { useSignal } from '@preact/signals'
@@ -22,11 +22,11 @@ export const Volume = ({
   const volumeRef = useRef<HTMLDivElement>()
   const dispName = name.length > 20 ? `...${name.slice(-20)}` : name
 
-  const handleDragStart = (event: DragEvent) => {
+  const handleDragStart = () => {
     // volumeRef.current!.style.zIndex = '1'
   }
 
-  const handleDrag = (event: DragEvent) => {
+  const handleDrag = () => {
     // volumeRef.current!.style.left = `${event.clientX}px`
     // volumeRef.current!.style.top = `${event.clientY}px`
   }

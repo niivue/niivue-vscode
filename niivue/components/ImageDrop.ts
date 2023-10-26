@@ -17,7 +17,7 @@ export const ImageDrop = ({
     dropAreaRef.current!.classList.add('dragover')
   }
 
-  const handleDragLeave = (e: DragEvent) => {
+  const handleDragLeave = () => {
     dropAreaRef.current!.classList.remove('dragover')
   }
 
