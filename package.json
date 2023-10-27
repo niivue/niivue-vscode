@@ -151,8 +151,12 @@
     "test": "jest"
   },
   "devDependencies": {
+    "@babel/core": "^7.23.2",
+    "@babel/preset-env": "^7.23.2",
+    "@babel/preset-typescript": "^7.23.2",
     "@niivue/niivue": "^0.38.0",
     "@preact/signals": "^1.2.1",
+    "@testing-library/jest-dom": "^6.1.4",
     "@testing-library/preact": "^3.2.3",
     "@types/glob": "^8.1.0",
     "@types/jest": "^29.5.6",
@@ -162,6 +166,7 @@
     "@typescript-eslint/parser": "^5.59.8",
     "@vscode/test-electron": "^2.3.2",
     "@vscode/test-web": "^0.0.47",
+    "babel-jest": "^29.7.0",
     "buffer": "^6.0.3",
     "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^6.8.1",
@@ -171,6 +176,7 @@
     "glob": "^8.1.0",
     "htm": "^3.1.1",
     "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
     "preact": "^10.18.1",
     "style-loader": "^3.3.3",
     "ts-jest": "^29.1.1",
@@ -179,5 +185,7 @@
     "webpack": "^5.85.0",
     "webpack-cli": "^5.1.1"
   },
-  "dependencies": {}
+  "dependencies": {
+    "babel": "^6.23.0"
+  }
 }
