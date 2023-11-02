@@ -46,9 +46,9 @@ export const Volume = ({
       onDrag=${handleDrag}
       onDragEnd=${handleDragEnd}
     >
-      ${hideUI.value > 0 &&
+      ${hideUI.value > 0 && html` <div class="volume-name">${dispName}</div> `}
+      ${hideUI.value > 1 &&
       html`
-        <div class="volume-name">${dispName}</div>
         <button class="volume-remove-button" onclick=${props.remove}>X</button>
         <button class="volume-drag-button"></button>
       `}

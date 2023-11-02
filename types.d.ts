@@ -7,4 +7,7 @@ type VSCode = {
 
 declare const vscode: VSCode
 
-interface Niivue {}
+// add a fake type for Niivue
+declare class Niivue {
+  [x: string]: any
+}
