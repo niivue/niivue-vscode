@@ -129,6 +129,7 @@ input[type='number'] {
 
 .drop-area {
   background-color: #202020;
+  height: 100%;
 }
 
 .drop-area.dragover {
@@ -143,4 +144,8 @@ a:link {
   align-items: center;
   width: 30em;
   margin: 1em;
+}
+
+#app {
+  height: 100vh;
 }
