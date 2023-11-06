@@ -12,6 +12,7 @@ export const Footer = ({
   interpolation,
   scaling,
   nv0,
+  nvArray,
   location,
   hideUI,
   crosshair,
@@ -37,6 +38,21 @@ export const Footer = ({
     colorbar.value = !colorbar.value
   }
 
+  const setVoxelSize1AndOrigin0 = () => {
+    nvArray.value.forEach((nv) => {
+      nv.volumes.forEach((vol: any) => {
+        vol.hdr.pixDims[1] = 1
+        vol.hdr.pixDims[2] = 1
+        vol.hdr.pixDims[3] = 1
+        vol.hdr.qoffset_x = 0
+        vol.hdr.qoffset_y = 0
+        vol.hdr.qoffset_z = 0
+        vol.calculateRAS()
+      })
+    })
+    nv0.value = nvArray.value[nvArray.value.length - 1]
+  }
+
   return html`
     <div ref=${footerRef}>
       <div>${location}</div>
@@ -57,6 +73,8 @@ export const Footer = ({
         <button onClick=${handleHideUI}>👁</button>
         <button onClick=${toggleColorbar}>📏</button>
         <button onClick=${toggleCrosshair}>⌖</button>
+        ${isVolume &&
+        html`<button onClick=${setVoxelSize1AndOrigin0}>VoxelSize1</button>`}
       </div>
     </div>
   `
