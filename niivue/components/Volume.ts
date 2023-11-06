@@ -46,7 +46,8 @@ export const Volume = ({
       onDrag=${handleDrag}
       onDragEnd=${handleDragEnd}
     >
-      ${hideUI.value > 0 && html` <div class="volume-name">${dispName}</div> `}
+      ${hideUI.value > 0 &&
+      html` <div class="volume-name text-outline">${dispName}</div> `}
       ${hideUI.value > 1 &&
       html`
         <button class="volume-remove-button" onclick=${props.remove}>X</button>
@@ -54,7 +55,7 @@ export const Volume = ({
       `}
       <${NiiVueCanvas} ...${props} intensity=${intensity} />
       ${hideUI.value > 1 &&
-      html`<div class="horizontal-layout volume-footer">
+      html`<div class="horizontal-layout volume-footer text-outline">
         ${hideUI.value > 2 &&
         html`<${VolumeOverlay}
           nv=${props.nv}
