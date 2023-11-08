@@ -225,16 +225,15 @@ class ExtendedNiivue extends Niivue {
   constructor(opts: any) {
     super(opts)
   }
-  dragForSlicer3D(startXYendXY: number[]) {
-    this.canvas.focus()
-    super.dragForSlicer3D(startXYendXY)
-    this.otherNV.forEach((nv: Niivue) => {
-      nv.uiData.pan2Dxyzmm[0] = this.uiData.pan2Dxyzmm[0]
-      nv.uiData.pan2Dxyzmm[1] = this.uiData.pan2Dxyzmm[1]
-      nv.uiData.pan2Dxyzmm[2] = this.uiData.pan2Dxyzmm[2]
-      nv.uiData.pan2Dxyzmm[3] = this.uiData.pan2Dxyzmm[3]
-      nv.drawScene()
-    })
+  mouseMoveListener(e: MouseEvent) {
+    super.mouseMoveListener(e)
+    if (this.uiData.mouseButtonRightDown || this.uiData.mouseButtonCenterDown) {
+      this.canvas.focus()
+      this.otherNV.forEach((nv: Niivue) => {
+        nv.uiData.pan2Dxyzmm = this.uiData.pan2Dxyzmm.slice()
+        nv.drawScene()
+      })
+    }
   }
 }
 
