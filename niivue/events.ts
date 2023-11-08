@@ -222,6 +222,9 @@ function getUnitinializedNvInstance(nvArray: Signal<Niivue[]>) {
 }
 
 class ExtendedNiivue extends Niivue {
+  constructor(opts: any) {
+    super(opts)
+  }
   dragForSlicer3D(startXYendXY: number[]) {
     this.canvas.focus()
     super.dragForSlicer3D(startXYendXY)
