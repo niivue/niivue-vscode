@@ -53,6 +53,13 @@ export const Footer = ({
     nv0.value = nvArray.value[nvArray.value.length - 1]
   }
 
+  const resetZoom = () => {
+    nvArray.value.forEach((nv) => {
+      nv.uiData.pan2Dxyzmm = [0, 0, 0, 1]
+      nv.drawScene()
+    })
+  }
+
   return html`
     <div ref=${footerRef}>
       <div>${location}</div>
@@ -74,7 +81,10 @@ export const Footer = ({
         <button onClick=${toggleColorbar}>📏</button>
         <button onClick=${toggleCrosshair}>⌖</button>
         ${isVolume &&
-        html`<button onClick=${setVoxelSize1AndOrigin0}>VoxelSize1</button>`}
+        html`
+          <button onClick=${setVoxelSize1AndOrigin0}>VoxelSize1</button>
+          <button onClick=${resetZoom}>ResetZoom</button>
+        `}
       </div>
     </div>
   `
