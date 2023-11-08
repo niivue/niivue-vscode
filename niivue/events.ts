@@ -221,9 +221,26 @@ function getUnitinializedNvInstance(nvArray: Signal<Niivue[]>) {
   return nvArray.value[nvArray.value.length - 1]
 }
 
+class ExtendedNiivue extends Niivue {
+  dragForSlicer3D(startXYendXY: number[]) {
+    this.canvas.focus()
+    super.dragForSlicer3D(startXYendXY)
+    this.otherNV.forEach((nv: Niivue) => {
+      nv.uiData.pan2Dxyzmm[0] = this.uiData.pan2Dxyzmm[0]
+      nv.uiData.pan2Dxyzmm[1] = this.uiData.pan2Dxyzmm[1]
+      nv.uiData.pan2Dxyzmm[2] = this.uiData.pan2Dxyzmm[2]
+      nv.uiData.pan2Dxyzmm[3] = this.uiData.pan2Dxyzmm[3]
+      nv.drawScene()
+    })
+  }
+}
+
 function growNvArrayBy(nvArray: Signal<Niivue[]>, n: number) {
   for (let i = 0; i < n; i++) {
-    const nv = new Niivue({ isResizeCanvas: false })
+    const nv = new ExtendedNiivue({
+      isResizeCanvas: false,
+      dragMode: 4,
+    })
     nv.isNew = true
     nv.isLoaded = false
     nv.key = Math.random()
