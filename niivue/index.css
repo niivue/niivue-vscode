@@ -34,10 +34,6 @@ body {
   background: linear-gradient(to right,
       rgb(255 0 0 / 60%),
       rgb(255 166 0 / 60%));
-  color: white;
-  opacity: 0.8;
-  padding: 0 0.2em;
-  cursor: pointer;
 }
 
 input[type='number'] {

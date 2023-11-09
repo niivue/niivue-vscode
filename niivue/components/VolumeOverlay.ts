@@ -24,13 +24,15 @@ export const VolumeOverlay = ({
   }
 
   return html`
-    <span
-      class="volume-overlay"
-      oncontextmenu=${onContextmenu}
-      onclick=${onContextmenu}
-      >Overlay</span
-    >
-    <${OverlayOptions} nv=${nv} />
-    ${isOpen && html`<${ContextMenu} nv=${nv} volumeIndex=${volumeIndex} />`}
+    <div class="pointer-events-auto">
+      <span
+        class="opacity-80 px-1 cursor-pointer volume-overlay"
+        oncontextmenu=${onContextmenu}
+        onclick=${onContextmenu}
+        >Overlay</span
+      >
+      <${OverlayOptions} nv=${nv} />
+      ${isOpen && html`<${ContextMenu} nv=${nv} volumeIndex=${volumeIndex} />`}
+    </div>
   `
 }
