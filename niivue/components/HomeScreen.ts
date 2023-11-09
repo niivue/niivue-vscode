@@ -3,7 +3,7 @@ import { OpenFromWeb } from './OpenFromWeb'
 
 export const HomeScreen = () => html`
   <${OpenFromWeb} />
-  <div class="home-screen">
+  <div class="w-96 m-5 items-center">
     <h2>Bookmarklet</h2>
     <span>
       Drag this link ⇨

@@ -18,34 +18,39 @@ export const ContextMenu = ({ nv, volumeIndex }: ContextMenuProps) => {
   }
 
   return html`
-    <div class="context-menu" ref=${contextMenu}>
+    <div
+      class="absolute bg-gray-800 border border-gray-700 shadow-md z-10 left-6 bottom-4"
+      ref=${contextMenu}
+    >
       <div
-        class="context-menu-item"
+        class="py-2 px-4 cursor-pointer"
         onclick=${() => addOverlayEvent(volumeIndex, 'overlay')}
       >
         Add
       </div>
       ${nVolumes > 1 &&
       html`
-        <div class="context-menu-item" onclick=${removeLastVolume}>Remove</div>
+        <div class="py-2 px-4 cursor-pointer" onclick=${removeLastVolume}>
+          Remove
+        </div>
       `}
       ${nMeshes > 0 &&
       html`
         <div
-          class="context-menu-item"
+          class="py-2 px-4 cursor-pointer"
           onclick=${() => addOverlayEvent(volumeIndex, 'addMeshCurvature')}
         >
           Add Mesh Curvature
         </div>
         <div
-          class="context-menu-item"
+          class="py-2 px-4 cursor-pointer"
           onclick=${() => addOverlayEvent(volumeIndex, 'addMeshOverlay')}
         >
           Add Mesh Overlay
         </div>
         ${nMeshLayers > 0 &&
         html` <div
-          class="context-menu-item"
+          class="py-2 px-4 cursor-pointer"
           onclick=${() => addOverlayEvent(volumeIndex, 'replaceMeshOverlay')}
         >
           Replace Mesh Overlay

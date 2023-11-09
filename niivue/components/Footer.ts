@@ -63,7 +63,7 @@ export const Footer = ({
   return html`
     <div ref=${footerRef}>
       <div>${location}</div>
-      <div class="horizontal-layout">
+      <div class="flex flex-wrap items-baseline gap-1">
         <button onClick=${addImagesEvent}>Add Images</button>
         <${NearestInterpolation} interpolation=${interpolation} />
         ${isVolume &&

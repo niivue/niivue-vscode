@@ -10,7 +10,7 @@ export const Header = (props: AppProps & { homeButton: boolean }) => {
   )
 
   return html`
-    <div class="horizontal-layout" ref=${headerRef}>
+    <div class="flex flex-wrap items-baseline gap-1" ref=${headerRef}>
       ${homeButton &&
       html`<button onClick=${() => location.reload()}>Home</button>`}
       ${isLoaded.value &&

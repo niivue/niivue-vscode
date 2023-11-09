@@ -24,9 +24,9 @@ export const VolumeOverlay = ({
   }
 
   return html`
-    <div class="pointer-events-auto">
+    <div class="pointer-events-auto space-x-1">
       <span
-        class="opacity-80 px-1 cursor-pointer volume-overlay"
+        class="opacity-80 px-1 cursor-pointer orange-yellow-gradient"
         oncontextmenu=${onContextmenu}
         onclick=${onContextmenu}
         >Overlay</span

@@ -2,35 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  background-color: #181818;
-  color: white;
-  margin: 0;
-  padding: 0;
-}
-
 .text-outline {
-  color: white;
   text-shadow: -1px -1px 0 #000,  
   1px -1px 0 #000,
   -1px 1px 0 #000,
   1px 1px 0 #000;
 }
 
-.volume-footer {
-  position: absolute;
-  bottom: 0.2em;
-  opacity: 0.8;
-}
-
-.horizontal-layout {
-  display: flex;
-  gap: 0.2em;
-  flex-wrap: wrap;
-  align-items: baseline;
-}
-
-.volume-overlay {
+.orange-yellow-gradient {
   background: linear-gradient(to right,
       rgb(255 0 0 / 60%),
       rgb(255 166 0 / 60%));
@@ -40,31 +19,6 @@ input[type='number'] {
   width: 5em;
 }
 
-.context-menu {
-  position: absolute;
-  background-color: #181818;
-  border: 1px solid #292929;
-  box-shadow: 2px 2px 4px rgb(0 0 0 / 20%);
-  z-index: 1;
-  left: 30px;
-  bottom: 20px;
-}
-
-.context-menu-item {
-  padding: 8px 12px;
-  cursor: pointer;
-}
-
 a:link {
   color: #5599dd;
-}
-
-.home-screen {
-  align-items: center;
-  width: 30em;
-  margin: 1em;
-}
-
-#app {
-  height: 100vh;
 }

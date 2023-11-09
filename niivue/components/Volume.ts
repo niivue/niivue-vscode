@@ -44,7 +44,7 @@ export const Volume = ({
       <${NiiVueCanvas} ...${props} intensity=${intensity} />
       ${hideUI.value > 1 &&
       html`<div
-        class="pointer-events-none absolute flex gap-1 flex-wrap items-baseline bottom-1 opacity-80 text-outline"
+        class="pointer-events-none absolute flex gap-1 flex-wrap items-baseline bottom-1 opacity-80"
       >
         ${hideUI.value > 2 &&
         html`<${VolumeOverlay}
@@ -52,7 +52,7 @@ export const Volume = ({
           volumeIndex=${volumeIndex}
           volumeRef=${volumeRef}
         />`}
-        <span>${intensity}</span>
+        <span class="text-outline">${intensity}</span>
       </div>`}
     </div>
   `
