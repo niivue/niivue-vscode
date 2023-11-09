@@ -26,5 +26,10 @@ export const HomeScreen = () => html`
         <b> MNI </b>
       </a>
     </span>
+    <h2>Drag Files here</h2>
+    <span>
+      Drag and drop files to an empty space on this window. Many medical image
+      and mesh formats are supported.
+    </span>
   </div>
 `

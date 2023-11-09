@@ -5,6 +5,7 @@
 body {
   background-color: #181818;
   color: white;
+  margin: 0;
 }
 
 .volume {
@@ -91,23 +92,6 @@ input[type='number'] {
 .context-menu-item {
   padding: 8px 12px;
   cursor: pointer;
-}
-
-.drop-area-box {
-  width: 200px;
-  height: 100px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.drop-area {
-  background-color: #202020;
-  height: 100%;
-}
-
-.drop-area.dragover {
-  background-color: #424242;
 }
 
 a:link {
