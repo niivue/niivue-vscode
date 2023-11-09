@@ -1,6 +1,5 @@
-import { Niivue, NVImage, NVMesh } from '@niivue/niivue'
+import { Niivue, NVImage, NVMesh, SLICE_TYPE } from '@niivue/niivue'
 import { isImageType } from './utility'
-import { SLICE_TYPE } from '@niivue/niivue'
 import { AppProps } from './components/App'
 import { Signal } from '@preact/signals'
 
@@ -99,7 +98,7 @@ function addMeshOverlay(nv: Niivue, item: any, type: string) {
     a.colormapNegative,
     a.useNegativeCmap,
     a.calMin,
-    a.calMax
+    a.calMax,
   )
   mesh.updateMesh(nv.gl)
   nv.opts.isColorbar = true
@@ -110,7 +109,7 @@ function addMeshOverlay(nv: Niivue, item: any, type: string) {
       nv.meshes[0].id,
       layerNumber,
       'colorbarVisible',
-      false
+      false,
     )
   }
 }
@@ -222,11 +221,31 @@ function getUnitinializedNvInstance(nvArray: Signal<Niivue[]>) {
   return nvArray.value[nvArray.value.length - 1]
 }
 
+class ExtendedNiivue extends Niivue {
+  constructor(opts: any) {
+    super(opts)
+  }
+  mouseMoveListener(e: MouseEvent) {
+    super.mouseMoveListener(e)
+    if (this.uiData.mouseButtonRightDown || this.uiData.mouseButtonCenterDown) {
+      this.canvas.focus()
+      this.otherNV.forEach((nv: Niivue) => {
+        nv.uiData.pan2Dxyzmm = this.uiData.pan2Dxyzmm.slice()
+        nv.drawScene()
+      })
+    }
+  }
+}
+
 function growNvArrayBy(nvArray: Signal<Niivue[]>, n: number) {
   for (let i = 0; i < n; i++) {
-    const nv = new Niivue({ isResizeCanvas: false })
+    const nv = new ExtendedNiivue({
+      isResizeCanvas: false,
+      dragMode: 4,
+    })
     nv.isNew = true
     nv.isLoaded = false
+    nv.key = Math.random()
     nvArray.value = [...nvArray.value, nv]
   }
 }

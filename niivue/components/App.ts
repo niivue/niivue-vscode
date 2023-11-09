@@ -10,17 +10,20 @@ import { ImageDrop } from './ImageDrop'
 import { HomeScreen } from './HomeScreen'
 
 export const App = () => {
-  const appProps = initState()
+  const isVscode = typeof vscode === 'object'
+  const appProps = useAppState()
   useEffect(() => listenToMessages(appProps), [])
 
   const nImages = computed(() => appProps.nvArray.value.length)
+  const showHomeScreen = computed(() => nImages.value == 0 && !isVscode)
+  const showHomeButton = computed(() => nImages.value > 0 && !isVscode)
 
   return html`
-    <${ImageDrop} box=${nImages.value == 0}>
-      <${Header} ...${appProps} />
+    <${ImageDrop} box=${showHomeScreen.value}>
+      <${Header} ...${appProps} homeButton=${showHomeButton.value} />
       <${Container} ...${appProps} />
       <${Footer} ...${appProps} />
-      ${nImages.value == 0 && html`<${HomeScreen} />`}
+      ${showHomeScreen.value && html`<${HomeScreen} />`}
     <//>
   `
 }
@@ -36,6 +39,7 @@ export interface AppProps {
   interpolation: Signal<boolean>
   location: Signal<string>
   radiologicalConvention: Signal<boolean>
+  colorbar: Signal<boolean>
 }
 
 export interface ScalingOpts {
@@ -44,7 +48,7 @@ export interface ScalingOpts {
   max: number
 }
 
-function initState(): AppProps {
+function useAppState(): AppProps {
   return {
     headerRef: useRef<HTMLDivElement>(),
     footerRef: useRef<HTMLDivElement>(),
@@ -57,5 +61,6 @@ function initState(): AppProps {
     interpolation: useSignal(true),
     location: useSignal(''),
     radiologicalConvention: useSignal(false),
+    colorbar: useSignal(false),
   }
 }

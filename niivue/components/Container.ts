@@ -1,37 +1,57 @@
 import { html } from 'htm/preact'
-import { useState, useEffect, MutableRef } from 'preact/hooks'
+import { useEffect, MutableRef } from 'preact/hooks'
 import { differenceInNames } from '../utility'
 import { Volume } from './Volume'
 import { SLICE_TYPE } from '@niivue/niivue'
 import { AppProps } from './App'
-import { Signal } from '@preact/signals'
+import { computed, effect, useSignal } from '@preact/signals'
+
+type Size = {
+  height: number
+  width: number
+}
 
 export const Container = (props: AppProps) => {
-  const { nvArray, headerRef, footerRef } = props
-  const [[windowWidth, windowHeight], setDimensions] = useState([
-    window.innerWidth - 30,
-    window.innerHeight - 80,
-  ])
+  const { nvArray, headerRef, footerRef, nv0 } = props
+  const render = useSignal(0)
+  const windowInnerSize = useSignal({
+    width: window.innerWidth,
+    height: window.innerHeight,
+  })
+  useEffect(() => {
+    window.onresize = () => {
+      windowInnerSize.value = {
+        width: window.innerWidth,
+        height: window.innerHeight,
+      }
+    }
+  }, [])
 
-  const dimUpdate = () => updateDimensions(setDimensions, headerRef, footerRef)
-  useEffect(() => (window.onresize = dimUpdate), [])
-  syncVolumes(nvArray.value)
-
-  const meta = nvArray.value?.[0]?.volumes?.[0]?.getImageMetadata() ?? {}
-  const [width, height] = getCanvasSize(
-    nvArray.value.length,
-    meta,
-    props.sliceType.value,
-    windowWidth,
-    windowHeight
+  const availableSize = computed(() => {
+    render.value
+    nv0.value
+    return calculateDimensions(windowInnerSize.value, headerRef, footerRef)
+  })
+  const canvasSize = computed(() =>
+    getCanvasSize(
+      nvArray.value.length,
+      nvArray.value?.[0]?.volumes?.[0]?.getImageMetadata() ?? {},
+      props.sliceType.value,
+      availableSize.value
+    )
   )
-  const names = differenceInNames(getNames(nvArray.value))
+
+  effect(() => syncVolumes(nvArray.value))
+
+  const fullNames = computed(() => getNames(nvArray.value))
+  const names = computed(() => differenceInNames(fullNames.value))
 
   return html`
     <div class="container">
       ${nvArray.value.map(
-        (nv, i) => html`<${Volume} nv=${nv} width=${width} height=${height}
-        volumeIndex=${i} name=${names[i]} triggerRender=${dimUpdate}
+        (nv, i) => html`<${Volume} nv=${nv} width=${canvasSize.value.width}
+        height=${canvasSize.value.height} volumeIndex=${i}
+        name=${names.value[i]} key=${nv.key} render=${render}
         remove=${remove(props, i)} "...${props}" />`
       )}
     </div>
@@ -85,43 +105,41 @@ function getCanvasSize(
   nCanvas: number,
   meta: any,
   sliceType: number,
-  windowWidthExt: number,
-  windowHeightExt: number
+  windowSize: Size
 ) {
   const gap = 4
   const aspectRatio = getAspectRatio(meta, sliceType)
   if (nCanvas === 0) {
     nCanvas = 1
   }
-  const windowWidth = windowWidthExt
-  const windowHeight = windowHeightExt
 
   let bestWidth = 0
   for (let nrow = 1; nrow <= nCanvas; nrow++) {
     const ncol = Math.ceil(nCanvas / nrow)
-    const maxHeight = Math.floor(windowHeight / nrow - gap)
+    const maxHeight = Math.floor(windowSize.height / nrow - gap)
     const maxWidth = Math.floor(
-      Math.min(windowWidth / ncol - gap, maxHeight * aspectRatio)
+      Math.min(windowSize.width / ncol - gap, maxHeight * aspectRatio)
     )
     if (maxWidth > bestWidth) {
       bestWidth = maxWidth
     }
   }
-  return [bestWidth, bestWidth / aspectRatio]
+  return { width: bestWidth, height: bestWidth / aspectRatio }
 }
 
-function updateDimensions(
-  setDimensions: Function,
+function calculateDimensions(
+  windowSize: Size,
   headerRef: MutableRef<HTMLDivElement | undefined>,
   footerRef: MutableRef<HTMLDivElement | undefined>
 ) {
   const headerHeight = headerRef.current ? headerRef.current.offsetHeight : 20
   const footerHeight = footerRef.current ? footerRef.current.offsetHeight : 20
-  setDimensions([
-    window.innerWidth - 10,
-    window.innerHeight - headerHeight - footerHeight,
-  ])
+  return {
+    width: windowSize.width - 10,
+    height: windowSize.height - headerHeight - footerHeight,
+  }
 }
+
 
 function syncVolumes(nvArray: Niivue[]) {
   nvArray.forEach((nv) =>

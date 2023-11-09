@@ -12,10 +12,12 @@ export const Footer = ({
   interpolation,
   scaling,
   nv0,
+  nvArray,
   location,
   hideUI,
   crosshair,
   radiologicalConvention,
+  colorbar,
 }: AppProps) => {
   const nv = nv0.value
   const ready = nv.isLoaded
@@ -25,13 +27,38 @@ export const Footer = ({
   const handleHideUI = () => {
     hideUI.value = (hideUI.value + 1) % 4
   }
-  const handleCrosshair = () => {
+  const toggleCrosshair = () => {
     crosshair.value = !crosshair.value
   }
-  const handleRadiologicalConvention = () => {
+  const toggleRadiologicalConvention = () => {
     radiologicalConvention.value = !radiologicalConvention.value
   }
   const setScaling = (val: ScalingOpts) => (scaling.value = val)
+  const toggleColorbar = () => {
+    colorbar.value = !colorbar.value
+  }
+
+  const setVoxelSize1AndOrigin0 = () => {
+    nvArray.value.forEach((nv) => {
+      nv.volumes.forEach((vol: any) => {
+        vol.hdr.pixDims[1] = 1
+        vol.hdr.pixDims[2] = 1
+        vol.hdr.pixDims[3] = 1
+        vol.hdr.qoffset_x = 0
+        vol.hdr.qoffset_y = 0
+        vol.hdr.qoffset_z = 0
+        vol.calculateRAS()
+      })
+    })
+    nv0.value = nvArray.value[nvArray.value.length - 1]
+  }
+
+  const resetZoom = () => {
+    nvArray.value.forEach((nv) => {
+      nv.uiData.pan2Dxyzmm = [0, 0, 0, 1]
+      nv.drawScene()
+    })
+  }
 
   return html`
     <div ref=${footerRef}>
@@ -41,7 +68,7 @@ export const Footer = ({
         <${NearestInterpolation} interpolation=${interpolation} />
         ${isVolume &&
         html`
-          <button onClick=${handleRadiologicalConvention}>RL</button>
+          <button onClick=${toggleRadiologicalConvention}>RL</button>
           <${Scaling} setScaling=${setScaling} init=${nv.volumes[0]} />
         `}
         <${SelectView} sliceType=${sliceType} />
@@ -51,7 +78,13 @@ export const Footer = ({
           <button onClick=${() => loadScene(nv0)}>Load Scene</button>
         `}
         <button onClick=${handleHideUI}>👁</button>
-        <button onClick=${handleCrosshair}>⌖</button>
+        <button onClick=${toggleColorbar}>📏</button>
+        <button onClick=${toggleCrosshair}>⌖</button>
+        ${isVolume &&
+        html`
+          <button onClick=${setVoxelSize1AndOrigin0}>VoxelSize1</button>
+          <button onClick=${resetZoom}>ResetZoom</button>
+        `}
       </div>
     </div>
   `

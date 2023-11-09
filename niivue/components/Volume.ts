@@ -1,5 +1,5 @@
 import { html } from 'htm/preact'
-import { useRef, useState } from 'preact/hooks'
+import { useRef } from 'preact/hooks'
 import { NiiVueCanvas } from './NiiVueCanvas'
 import { VolumeOverlay } from './VolumeOverlay'
 import { useSignal } from '@preact/signals'
@@ -22,11 +22,11 @@ export const Volume = ({
   const volumeRef = useRef<HTMLDivElement>()
   const dispName = name.length > 20 ? `...${name.slice(-20)}` : name
 
-  const handleDragStart = (event: DragEvent) => {
+  const handleDragStart = () => {
     // volumeRef.current!.style.zIndex = '1'
   }
 
-  const handleDrag = (event: DragEvent) => {
+  const handleDrag = () => {
     // volumeRef.current!.style.left = `${event.clientX}px`
     // volumeRef.current!.style.top = `${event.clientY}px`
   }
@@ -47,14 +47,15 @@ export const Volume = ({
       onDragEnd=${handleDragEnd}
     >
       ${hideUI.value > 0 &&
+      html` <div class="volume-name text-outline">${dispName}</div> `}
+      ${hideUI.value > 1 &&
       html`
-        <div class="volume-name">${dispName}</div>
         <button class="volume-remove-button" onclick=${props.remove}>X</button>
         <button class="volume-drag-button"></button>
       `}
       <${NiiVueCanvas} ...${props} intensity=${intensity} />
       ${hideUI.value > 1 &&
-      html`<div class="horizontal-layout volume-footer">
+      html`<div class="horizontal-layout volume-footer text-outline">
         ${hideUI.value > 2 &&
         html`<${VolumeOverlay}
           nv=${props.nv}

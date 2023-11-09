@@ -1,13 +1,15 @@
 {
   "env": {
     "browser": true,
-    "es2021": true
+    "commonjs": true,
+    "es6": true,
+    "jest": true,
+    "node": true,
   },
   "extends": [
-    "eslint:all",
+    "eslint:recommended",
     "preact",
     "prettier",
-    "prettier/@typescript-eslint"
   ],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
@@ -16,5 +18,9 @@
   },
   "rules": {
     "linebreak-style": "off"
-  }
+  },
+  "globals": {
+    "vscode": "readonly",
+    "Niivue": "readonly",
+  },
 }

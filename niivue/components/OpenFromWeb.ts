@@ -8,7 +8,7 @@ export const OpenFromWeb = () => {
       type: 'addImage',
       body: {
         data: '',
-        uri: uri,
+        uri,
       },
     })
   }

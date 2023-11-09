@@ -2,7 +2,7 @@ import { NVImage, NVMesh } from '@niivue/niivue'
 import { html } from 'htm/preact'
 import { useRef, useEffect } from 'preact/hooks'
 import { isImageType } from '../utility'
-import { Signal } from '@preact/signals'
+import { Signal, effect } from '@preact/signals'
 import { AppProps } from './App'
 
 interface NiiVueCanvasProps {
@@ -10,7 +10,7 @@ interface NiiVueCanvasProps {
   intensity: Signal<string>
   width: number
   height: number
-  triggerRender: Function
+  render: Signal<number>
 }
 
 export const NiiVueCanvas = ({
@@ -23,9 +23,10 @@ export const NiiVueCanvas = ({
   interpolation,
   scaling,
   location,
-  triggerRender,
+  render,
   crosshair,
   radiologicalConvention,
+  colorbar,
 }: AppProps & NiiVueCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>()
   useEffect(() => nv.attachToCanvas(canvasRef.current), [])
@@ -42,7 +43,7 @@ export const NiiVueCanvas = ({
       if (!nv0.value.isLoaded) {
         nv0.value = nv
       }
-      triggerRender() // required to update the names
+      render.value++ // required to update the names
     })
   }, [nv.body])
 
@@ -56,6 +57,10 @@ export const NiiVueCanvas = ({
       console.log(e) // sometime fails
     }
     applyScale(nv, scaling.value)
+    effect(() => {
+      nv.opts.isColorbar = colorbar.value
+      nv.drawScene()
+    })
   }
 
   useEffect(() => nv.drawScene(), [height, width]) // avoids black images

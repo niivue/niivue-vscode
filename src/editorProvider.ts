@@ -44,8 +44,7 @@ export class NiiVueEditorProvider
     )
     panel.webview.html = await getHtmlForWebview(
       panel.webview,
-      context.extensionUri,
-      context.extensionPath,
+      context.extensionUri
     )
     const editor = new NiiVueEditorProvider(context)
     editor.webviews.add(uri, panel)
@@ -186,8 +185,7 @@ export class NiiVueEditorProvider
     webviewPanel.webview.options = { enableScripts: true }
     webviewPanel.webview.html = await getHtmlForWebview(
       webviewPanel.webview,
-      this._context.extensionUri,
-      this._context.extensionPath,
+      this._context.extensionUri
     )
     NiiVueEditorProvider.addCommonListeners(webviewPanel)
     webviewPanel.webview.onDidReceiveMessage(async (message) => {

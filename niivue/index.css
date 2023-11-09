@@ -31,6 +31,14 @@ body {
   left: 25%;
 }
 
+.text-outline {
+  color: white;
+  text-shadow: -1px -1px 0 #000,  
+  1px -1px 0 #000,
+  -1px 1px 0 #000,
+  1px 1px 0 #000;
+}
+
 .container {
   display: flex;
   flex-flow: row wrap;
@@ -95,6 +103,7 @@ input[type='number'] {
 
 .drop-area {
   background-color: #202020;
+  height: 100%;
 }
 
 .drop-area.dragover {
@@ -109,4 +118,8 @@ a:link {
   align-items: center;
   width: 30em;
   margin: 1em;
+}
+
+#app {
+  height: 100vh;
 }
