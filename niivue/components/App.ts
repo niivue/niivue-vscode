@@ -1,7 +1,7 @@
 import { SLICE_TYPE } from '@niivue/niivue'
 import { Signal, computed, useSignal } from '@preact/signals'
 import { html } from 'htm/preact'
-import { useEffect, useRef } from 'preact/hooks'
+import { useEffect } from 'preact/hooks'
 import { listenToMessages } from '../events'
 import { Container } from './Container'
 import { Footer } from './Footer'
@@ -28,8 +28,6 @@ export const App = () => {
   `
 }
 export interface AppProps {
-  headerRef: any
-  footerRef: any
   nvArray: Signal<Niivue[]>
   nv0: Signal<Niivue>
   scaling: Signal<any>
@@ -50,8 +48,6 @@ export interface ScalingOpts {
 
 function useAppState(): AppProps {
   return {
-    headerRef: useRef<HTMLDivElement>(),
-    footerRef: useRef<HTMLDivElement>(),
     nvArray: useSignal<Niivue[]>([]),
     nv0: useSignal<Niivue>({ isLoaded: false }),
     scaling: useSignal<ScalingOpts>({ isManual: false, min: 0, max: 0 }),

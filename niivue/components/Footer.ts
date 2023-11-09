@@ -7,7 +7,6 @@ import { Niivue } from '@niivue/niivue'
 import { AppProps, ScalingOpts } from './App'
 
 export const Footer = ({
-  footerRef,
   sliceType,
   interpolation,
   scaling,
@@ -61,7 +60,7 @@ export const Footer = ({
   }
 
   return html`
-    <div ref=${footerRef}>
+    <div>
       <div>${location}</div>
       <div class="flex flex-wrap items-baseline gap-1">
         <button onClick=${addImagesEvent}>Add Images</button>

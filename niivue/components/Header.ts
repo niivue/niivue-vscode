@@ -4,13 +4,13 @@ import { AppProps } from './App'
 import { computed } from '@preact/signals'
 
 export const Header = (props: AppProps & { homeButton: boolean }) => {
-  const { headerRef, nv0, homeButton } = props
+  const { nv0, homeButton } = props
   const isLoaded = computed(
-    () => nv0.value.isLoaded && nv0.value.volumes.length > 0
+    () => nv0.value.isLoaded && nv0.value.volumes.length > 0,
   )
 
   return html`
-    <div class="flex flex-wrap items-baseline gap-1" ref=${headerRef}>
+    <div class="flex flex-wrap items-baseline gap-1">
       ${homeButton &&
       html`<button onClick=${() => location.reload()}>Home</button>`}
       ${isLoaded.value &&
