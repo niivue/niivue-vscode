@@ -56,7 +56,12 @@ export const Volume = ({
       `}
       ${hideUI.value > 1 &&
       html`
-        <button class="volume-remove-button" onclick=${props.remove}>X</button>
+        <button
+          class="absolute bg-transparent text-xl cursor-pointer opacity-80 border-none text-outline top-0 right-0"
+          onclick=${props.remove}
+        >
+          X
+        </button>
         <button class="volume-drag-button"></button>
       `}
       <${NiiVueCanvas} ...${props} intensity=${intensity} />
