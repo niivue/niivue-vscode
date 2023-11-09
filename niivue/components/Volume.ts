@@ -24,30 +24,8 @@ export const Volume = ({
   const volumeRef = useRef<HTMLDivElement>()
   const dispName = name.length > 20 ? `...${name.slice(-20)}` : name
 
-  const handleDragStart = () => {
-    // volumeRef.current!.style.zIndex = '1'
-  }
-
-  const handleDrag = () => {
-    // volumeRef.current!.style.left = `${event.clientX}px`
-    // volumeRef.current!.style.top = `${event.clientY}px`
-  }
-
-  const handleDragEnd = () => {
-    volumeRef.current!.style.left = ''
-    volumeRef.current!.style.top = ''
-    volumeRef.current!.style.zIndex = ''
-  }
-
   return html`
-    <div
-      class="relative"
-      ref=${volumeRef}
-      draggable="true"
-      onDragStart=${handleDragStart}
-      onDrag=${handleDrag}
-      onDragEnd=${handleDragEnd}
-    >
+    <div class="relative" ref=${volumeRef}>
       ${hideUI.value > 0 &&
       html`
         <div class="absolute pointer-events-none text-xl text-outline">
@@ -62,7 +40,6 @@ export const Volume = ({
         >
           X
         </button>
-        <button class="volume-drag-button"></button>
       `}
       <${NiiVueCanvas} ...${props} intensity=${intensity} />
       ${hideUI.value > 1 &&

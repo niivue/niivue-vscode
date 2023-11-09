@@ -9,14 +9,6 @@ body {
   padding: 0;
 }
 
-.volume-drag-button {
-  position: absolute;
-  width: 50%;
-  height: 1em;
-  opacity: 0.5;
-  left: 25%;
-}
-
 .text-outline {
   color: white;
   text-shadow: -1px -1px 0 #000,  
