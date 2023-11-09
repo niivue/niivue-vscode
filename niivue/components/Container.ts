@@ -1,5 +1,5 @@
 import { html } from 'htm/preact'
-import { useEffect, MutableRef } from 'preact/hooks'
+import { useEffect, useRef } from 'preact/hooks'
 import { differenceInNames } from '../utility'
 import { Volume } from './Volume'
 import { SLICE_TYPE } from '@niivue/niivue'
@@ -12,33 +12,36 @@ type Size = {
 }
 
 export const Container = (props: AppProps) => {
-  const { nvArray, headerRef, footerRef, nv0 } = props
+  const { nvArray } = props
+  const sizeRef = useRef<HTMLDivElement>()
   const render = useSignal(0)
   const windowInnerSize = useSignal({
-    width: window.innerWidth,
-    height: window.innerHeight,
+    width: 100,
+    height: 100,
   })
-  useEffect(() => {
-    window.onresize = () => {
-      windowInnerSize.value = {
-        width: window.innerWidth,
-        height: window.innerHeight,
-      }
+
+  const setSize = () => {
+    windowInnerSize.value = {
+      width: sizeRef.current?.offsetWidth ?? 100,
+      height: sizeRef.current?.offsetHeight ?? 100,
     }
+  }
+
+  useEffect(() => {
+    window.onresize = setSize
   }, [])
 
-  const availableSize = computed(() => {
-    render.value
-    nv0.value
-    return calculateDimensions(windowInnerSize.value, headerRef, footerRef)
-  })
+  useEffect(() => {
+    setSize()
+  }, [nvArray.value.length, render.value])
+
   const canvasSize = computed(() =>
     getCanvasSize(
       nvArray.value.length,
       nvArray.value?.[0]?.volumes?.[0]?.getImageMetadata() ?? {},
       props.sliceType.value,
-      availableSize.value
-    )
+      windowInnerSize.value,
+    ),
   )
 
   effect(() => syncVolumes(nvArray.value))
@@ -47,13 +50,15 @@ export const Container = (props: AppProps) => {
   const names = computed(() => differenceInNames(fullNames.value))
 
   return html`
-    <div class="flex flex-wrap gap-x-1 w-full">
-      ${nvArray.value.map(
-        (nv, i) => html`<${Volume} nv=${nv} width=${canvasSize.value.width}
-        height=${canvasSize.value.height} volumeIndex=${i}
-        name=${names.value[i]} key=${nv.key} render=${render}
-        remove=${remove(props, i)} "...${props}" />`,
-      )}
+    <div class="flex-grow h-full overflow-clip" ref=${sizeRef}>
+      <div class="flex flex-wrap gap-x-1 w-full">
+        ${nvArray.value.map(
+          (nv, i) => html`<${Volume} nv=${nv} width=${canvasSize.value.width}
+          height=${canvasSize.value.height} volumeIndex=${i}
+          name=${names.value[i]} key=${nv.key} render=${render}
+          remove=${remove(props, i)} "...${props}" />`,
+        )}
+      </div>
     </div>
   `
 }
@@ -105,7 +110,7 @@ function getCanvasSize(
   nCanvas: number,
   meta: any,
   sliceType: number,
-  windowSize: Size
+  windowSize: Size,
 ) {
   const gap = 4
   const aspectRatio = getAspectRatio(meta, sliceType)
@@ -118,7 +123,7 @@ function getCanvasSize(
     const ncol = Math.ceil(nCanvas / nrow)
     const maxHeight = Math.floor(windowSize.height / nrow - gap)
     const maxWidth = Math.floor(
-      Math.min(windowSize.width / ncol - gap, maxHeight * aspectRatio)
+      Math.min(windowSize.width / ncol - gap, maxHeight * aspectRatio),
     )
     if (maxWidth > bestWidth) {
       bestWidth = maxWidth
@@ -126,20 +131,6 @@ function getCanvasSize(
   }
   return { width: bestWidth, height: bestWidth / aspectRatio }
 }
-
-function calculateDimensions(
-  windowSize: Size,
-  headerRef: MutableRef<HTMLDivElement | undefined>,
-  footerRef: MutableRef<HTMLDivElement | undefined>
-) {
-  const headerHeight = headerRef.current ? headerRef.current.offsetHeight : 20
-  const footerHeight = footerRef.current ? footerRef.current.offsetHeight : 20
-  return {
-    width: windowSize.width - 10,
-    height: windowSize.height - headerHeight - footerHeight,
-  }
-}
-
 
 function syncVolumes(nvArray: Niivue[]) {
   nvArray.forEach((nv) =>

@@ -43,7 +43,9 @@ export const ImageDrop = ({ children }: { children: ComponentChildren }) => {
 
   return html`
     <div
-      class="h-full ${isDrag.value ? 'bg-gray-700' : 'bg-gray-800'}"
+      class="flex flex-col h-full ${isDrag.value
+        ? 'bg-gray-700'
+        : 'bg-gray-800'}"
       ondragover=${handleDragOver}
       ondrop=${handleDrop}
       ondragleave=${handleDragLeave}
