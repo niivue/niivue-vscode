@@ -6,10 +6,7 @@ body {
   background-color: #181818;
   color: white;
   margin: 0;
-}
-
-.volume {
-  position: relative;
+  padding: 0;
 }
 
 .volume-remove-button {
@@ -38,18 +35,6 @@ body {
   1px -1px 0 #000,
   -1px 1px 0 #000,
   1px 1px 0 #000;
-}
-
-.container {
-  display: flex;
-  flex-flow: row wrap;
-  gap: 0 2px;
-}
-
-.volume-name {
-  font-size: 1.4em;
-  position: absolute;
-  pointer-events: none;
 }
 
 .volume-footer {

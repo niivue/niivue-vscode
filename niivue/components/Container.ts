@@ -47,12 +47,12 @@ export const Container = (props: AppProps) => {
   const names = computed(() => differenceInNames(fullNames.value))
 
   return html`
-    <div class="container">
+    <div class="flex flex-wrap gap-x-1 w-full">
       ${nvArray.value.map(
         (nv, i) => html`<${Volume} nv=${nv} width=${canvasSize.value.width}
         height=${canvasSize.value.height} volumeIndex=${i}
         name=${names.value[i]} key=${nv.key} render=${render}
-        remove=${remove(props, i)} "...${props}" />`
+        remove=${remove(props, i)} "...${props}" />`,
       )}
     </div>
   `

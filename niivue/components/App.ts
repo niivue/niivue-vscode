@@ -19,11 +19,11 @@ export const App = () => {
   const showHomeButton = computed(() => nImages.value > 0 && !isVscode)
 
   return html`
-    <${ImageDrop} box=${showHomeScreen.value}>
+    <${ImageDrop}>
+      ${showHomeScreen.value && html`<${HomeScreen} />`}
       <${Header} ...${appProps} homeButton=${showHomeButton.value} />
       <${Container} ...${appProps} />
       <${Footer} ...${appProps} />
-      ${showHomeScreen.value && html`<${HomeScreen} />`}
     <//>
   `
 }

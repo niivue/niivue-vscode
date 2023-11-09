@@ -10,6 +10,8 @@ export interface VolumeProps {
   volumeIndex: number
   nv: Niivue
   remove: Function
+  width: number
+  height: number
 }
 
 export const Volume = ({
@@ -39,7 +41,7 @@ export const Volume = ({
 
   return html`
     <div
-      class="volume"
+      class="relative"
       ref=${volumeRef}
       draggable="true"
       onDragStart=${handleDragStart}
@@ -47,7 +49,11 @@ export const Volume = ({
       onDragEnd=${handleDragEnd}
     >
       ${hideUI.value > 0 &&
-      html` <div class="volume-name text-outline">${dispName}</div> `}
+      html`
+        <div class="absolute pointer-events-none text-xl text-outline">
+          ${dispName}
+        </div>
+      `}
       ${hideUI.value > 1 &&
       html`
         <button class="volume-remove-button" onclick=${props.remove}>X</button>
