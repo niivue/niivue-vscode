@@ -61,19 +61,15 @@ export function differenceInNames(names: string[], rec = true) {
     endCommon -= 1
   }
 
-  const diffNames = names.map((name) =>
-    name.slice(startCommon, name.length - endCommon)
-  )
+  const diffNames = names.map((name) => name.slice(startCommon, name.length - endCommon))
 
   // If length is greater than display length, then split by folder and diff again for first folder and filename and join
   if (rec) {
-    const folders = diffNames.map((name) =>
-      name.split('/').slice(0, -1).join('/')
-    )
+    const folders = diffNames.map((name) => name.split('/').slice(0, -1).join('/'))
     const diffFolders = differenceInNames(folders, false)
     const filenames = diffNames.map((name) => name.split('/').slice(-1)[0])
     const diffFilenames = differenceInNames(filenames, false)
-    diffNames.forEach((name, i) => {
+    diffNames.forEach((_, i) => {
       let seperator = ' - '
       if (!diffFolders[i] || !diffFilenames[i]) {
         seperator = ''

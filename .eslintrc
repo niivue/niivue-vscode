@@ -23,4 +23,5 @@
     "vscode": "readonly",
     "Niivue": "readonly",
   },
+  "ignorePatterns": ["niivue/**"]
 }
