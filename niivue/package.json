@@ -32,6 +32,7 @@
     "tailwindcss": "^3.3.5",
     "typescript": "^5.0.2",
     "vite": "latest",
+    "vite-plugin-pwa": "^0.16.7",
     "vitest": "latest"
   }
 }

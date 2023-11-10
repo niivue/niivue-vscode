@@ -1,9 +1,30 @@
 import { defineConfig } from 'vite'
 import preact from '@preact/preset-vite'
+import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [preact()],
+  plugins: [
+    preact(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      includeAssets: ['favicon.ico'],
+      workbox: { maximumFileSizeToCacheInBytes: 3000000 },
+      manifest: {
+        name: 'niivue-vscode web app',
+        short_name: 'niivue',
+        description: 'Web App for viewing medical images (NIfTI)',
+        theme_color: '#ffffff',
+        icons: [
+          {
+            src: 'niivue_icon.png',
+            sizes: '200x200',
+            type: 'image/png',
+          },
+        ],
+      },
+    }),
+  ],
   build: {
     outDir: 'build',
     rollupOptions: {
