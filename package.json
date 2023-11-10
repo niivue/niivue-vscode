@@ -144,8 +144,7 @@
     "vscode:prepublish": "yarn run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "pretest": "yarn run compile && yarn run lint",
-    "lint": "eslint src --ext ts"
+    "pretest": "yarn run compile && yarn run lint"
   },
   "devDependencies": {
     "@types/glob": "^8.1.0",
