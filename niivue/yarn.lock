@@ -1143,10 +1143,10 @@
     "@jridgewell/resolve-uri" "^3.1.0"
     "@jridgewell/sourcemap-codec" "^1.4.14"
 
-"@niivue/niivue@^0.38.1":
-  version "0.38.1"
-  resolved "https://registry.yarnpkg.com/@niivue/niivue/-/niivue-0.38.1.tgz#73a1cb2bbb618a36e29cf397309e63447aed6d9d"
-  integrity sha512-DeWxwkVbuHIBoetOedtoWBfxnk64cKpezj2JeTOHKbcTm23MzGvW36I4/HyWLrGF//U3kZ3wGo0pFMID7vClmA==
+"@niivue/niivue@0.38.0":
+  version "0.38.0"
+  resolved "https://registry.yarnpkg.com/@niivue/niivue/-/niivue-0.38.0.tgz#29427ff0d1d133c7a99b26599cf13a46b595f673"
+  integrity sha512-V5Fj0VkmV5JLjte7XbQcwiipdzz2TiqeMmQHszfP4T90BFxbcmUta0i5ULiwri0UbzQ1J6w+usV5XOE8pmd6hw==
   dependencies:
     "@ungap/structured-clone" "^1.0.2"
     daikon "^1.2.43"
