@@ -35,6 +35,8 @@ export function listenToMessages(appProps: AppProps) {
           growNvArrayBy(nvArray, body.n)
         }
         break
+      default:
+        return
     }
     nvArray.value = [...nvArray.value] // triggers rerender after each received message
   }
