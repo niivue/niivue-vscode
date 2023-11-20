@@ -26,5 +26,12 @@ export const HomeScreen = () => html`
         <b> MNI </b>
       </a>
     </span>
+    <h2>Install as local App</h2>
+    <span>
+      <i>This is currently only supported in chromium-based browsers.</i>
+      To install niivue-vscode as a local app, click the install button in the
+      address bar.
+      <img src="pwa_install.png" style="width:150px;height:90px;" />
+    </span>
   </div>
 `
