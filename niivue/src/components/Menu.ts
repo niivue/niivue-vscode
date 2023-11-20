@@ -23,65 +23,21 @@ export const Menu = (props: AppProps) => {
     () => console.log('Not implemented yet - close'),
   ]
 
+  const homeEvent = () => {
+    const url = new URL(location.href);
+    location.href = url.origin + url.pathname;
+    location.reload()
+  }
+
   return html`
-    <div class="flex flex-wrap items-baseline gap-4">
-      <${MenuItem} label="Home" menuItems=${menuItems} menuFunctions=${menuFunctions} />
+    <div class="flex flex-wrap items-baseline gap-1">
+      <button class="hover:bg-gray-700 px-2 rounded-md h-6 align-middle" onClick=${homeEvent}>Home</button>
       <${MenuItem} label="File" menuItems=${menuItems} menuFunctions=${menuFunctions} />
       <${MenuItem} label="View" menuItems=${menuItems} menuFunctions=${menuFunctions} />
       <${MenuItem} label="Resize" menuItems=${menuItems} menuFunctions=${menuFunctions} />
       <${MenuItem} label="Show Header" menuItems=${menuItems} menuFunctions=${menuFunctions} />
     </div>
-    <div class="relative inline-block text-left">
-      <div>
-        <button
-          type="button"
-          class="inline-flex justify-center w-full rounded-md px-4 py-2 bg-gray-600 text-sm font-medium text-white hover:bg-gray-700 focus:outline-none"
-          id="options-menu"
-          aria-haspopup="true"
-          aria-expanded="true"
-        >
-          Options
-          <svg
-            class="-mr-1 ml-2 h-5 w-5"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-            aria-hidden="true"
-          >
-            <path
-              fill-rule="evenodd"
-              d="M5 10a5 5 0 1110 0 5 5 0 01-10 0zm5-7a7 7 0 100 14A7 7 0 0010 3z"
-              clip-rule="evenodd"
-            />
-          </svg>
-        </button>
-      </div>
-
-      <div
-        class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5"
-      >
-        <div class="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
-          <a
-            href="#"
-            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-            role="menuitem"
-            >Account settings</a
-          >
-          <a
-            href="#"
-            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-            role="menuitem"
-            >Support</a
-          >
-          <a
-            href="#"
-            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-            role="menuitem"
-            >Sign out</a
-          >
-        </div>
-      </div>
-    </div>
+    <span class="flex-grow"> text </span>
   `
 }
 
@@ -90,16 +46,26 @@ export const MenuItem = ({ label, menuItems, menuFunctions }) => {
   const selectedElement = useSignal(0)
 
   return html`
-    <div class="relative">
-      <button onClick=${menuFunctions[selectedElement.value]}>${label}</button>
-      <button onClick=${() => (isOpen.value = !isOpen.value)}>▼</button>
-      <div class="absolute cursor-pointer bg-gray-600 w-20">
+    <div class="relative group">
+      <button
+        class="group-hover:bg-gray-700 px-2 rounded-l-md h-6 align-middle"
+        onClick=${menuFunctions[selectedElement.value]}
+      >
+        ${label}
+      </button>
+      <button
+        class="hover:bg-gray-700 px-2 rounded-r-md h-6 align-middle"
+        onClick=${() => (isOpen.value = !isOpen.value)}
+      >
+        <${DownArrow} />
+      </button>
+      <div class="absolute cursor-pointer left-0">
         ${isOpen.value &&
         html`
           ${menuItems.map(
             (item, index) => html`
               <button
-                class="block w-full text-left"
+                class="w-full px-2 py-1 text-left bg-gray-900 hover:bg-gray-700"
                 onClick=${() => {
                   selectedElement.value = index
                   menuFunctions[index]()
@@ -115,6 +81,40 @@ export const MenuItem = ({ label, menuItems, menuFunctions }) => {
     </div>
   `
 }
+
+function DownArrow() {
+  return html`
+    <svg
+      class="w-2.5 h-2.5 ms-2.5"
+      aria-hidden="true"
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 10 6"
+    >
+      <path
+        stroke="currentColor"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="m1 1 4 4 4-4"
+      />
+    </svg>
+  `
+}
+
+// <svg
+//             class="-mr-1 ml-2 h-5 w-5"
+//             xmlns="http://www.w3.org/2000/svg"
+//             viewBox="0 0 20 20"
+//             fill="currentColor"
+//             aria-hidden="true"
+//           >
+//             <path
+//               fill-rule="evenodd"
+//               d="M5 10a5 5 0 1110 0 5 5 0 01-10 0zm5-7a7 7 0 100 14A7 7 0 0010 3z"
+//               clip-rule="evenodd"
+//             />
+//           </svg>
 
 export const Menu2 = (props: AppProps) => {
   return html`

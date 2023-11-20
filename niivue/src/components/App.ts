@@ -8,6 +8,7 @@ import { Footer } from './Footer'
 import { Header } from './Header'
 import { ImageDrop } from './ImageDrop'
 import { HomeScreen } from './HomeScreen'
+import { Menu } from './Menu'
 
 export const App = () => {
   const isVscode = typeof vscode === 'object'
@@ -19,6 +20,7 @@ export const App = () => {
   const showHomeButton = computed(() => nImages.value > 0 && !isVscode)
 
   return html`
+    <${Menu} />
     <${ImageDrop}>
       ${showHomeScreen.value && html`<${HomeScreen} />`}
       <${Header} ...${appProps} homeButton=${showHomeButton.value} />
