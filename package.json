@@ -155,6 +155,7 @@
     "@vscode/test-electron": "^2.3.2",
     "@vscode/test-web": "^0.0.47",
     "buffer": "^6.0.3",
+    "eslint": "^8.54.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-import": "^2.29.0",
     "glob": "^8.1.0",

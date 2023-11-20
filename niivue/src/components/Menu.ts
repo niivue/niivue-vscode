@@ -2,6 +2,11 @@ import { html } from 'htm/preact'
 import { AppProps } from './App'
 import { computed, effect, useSignal } from '@preact/signals'
 
+type SubMenuEntry = {
+  label: string
+  onClick: () => void
+}
+
 export const Menu = (props: AppProps) => {
   const ViewItems = [
     'Axial',
@@ -15,33 +20,79 @@ export const Menu = (props: AppProps) => {
   ]
   const ViewFunctions = []
 
-  const menuItems = ['Open', 'Save', 'Save As', 'Close']
-  const menuFunctions = [
-    () => console.log('Not implemented yet - open'),
-    () => console.log('Not implemented yet - save'),
-    () => console.log('Not implemented yet - save as'),
-    () => console.log('Not implemented yet - close'),
+  const menuEntries: SubMenuEntry[] = [
+    { label: 'Open', onClick: () => console.log('Not implemented yet - open') },
+    { label: 'Save', onClick: () => console.log('Not implemented yet - save') },
+    { label: 'Save As', onClick: () => console.log('Not implemented yet - save as') },
+    { label: 'Close', onClick: () => console.log('Not implemented yet - close') },
+  ]
+
+  const addImageEntries: SubMenuEntry[] = [
+    { label: 'File(s)', onClick: () => console.log('Not implemented yet - file') },
+    { label: 'URL', onClick: () => console.log('Not implemented yet - url') },
+    { label: 'DICOM Folder', onClick: () => console.log('Not implemented yet - dicom folder') },
+  ]
+
+  const viewEntries: SubMenuEntry[] = [
+    { label: 'Axial', onClick: () => console.log('Not implemented yet - axial') },
+    { label: 'Sagittal', onClick: () => console.log('Not implemented yet - sagittal') },
+    { label: 'Coronal', onClick: () => console.log('Not implemented yet - coronal') },
+    { label: 'Render', onClick: () => console.log('Not implemented yet - render') },
+    {
+      label: 'Multiplanar + Render',
+      onClick: () => console.log('Not implemented yet - multiplanar render'),
+    },
+    { label: '------------', onClick: () => console.log('Not implemented yet - divider') },
+    { label: 'Reset View', onClick: () => console.log('Not implemented yet - reset view') },
+  ]
+
+  const overlayEntries: SubMenuEntry[] = [
+    { label: 'Add', onClick: () => console.log('Not implemented yet - add') },
+    { label: 'Remove', onClick: () => console.log('Not implemented yet - remove') },
+    { label: 'Color', onClick: () => console.log('Not implemented yet - color') },
+    { label: 'Hide', onClick: () => console.log('Not implemented yet - hide') },
   ]
 
   const homeEvent = () => {
-    const url = new URL(location.href);
-    location.href = url.origin + url.pathname;
+    const url = new URL(location.href)
+    location.href = url.origin + url.pathname
     location.reload()
   }
 
+  const headerEntries: SubMenuEntry[] = [
+    { label: 'Show Header', onClick: () => console.log('Not implemented yet - show') },
+    { label: 'Set Header', onClick: () => console.log('Not implemented yet - set') },
+  ]
+
+  const resizeEntries: SubMenuEntry[] = [
+    { label: 'Resize', onClick: () => console.log('Not implemented yet - resize') },
+  ]
+
   return html`
     <div class="flex flex-wrap items-baseline gap-1">
-      <button class="hover:bg-gray-700 px-2 rounded-md h-6 align-middle" onClick=${homeEvent}>Home</button>
-      <${MenuItem} label="File" menuItems=${menuItems} menuFunctions=${menuFunctions} />
-      <${MenuItem} label="View" menuItems=${menuItems} menuFunctions=${menuFunctions} />
-      <${MenuItem} label="Resize" menuItems=${menuItems} menuFunctions=${menuFunctions} />
-      <${MenuItem} label="Show Header" menuItems=${menuItems} menuFunctions=${menuFunctions} />
+      <${MenuButton} label="Home" onClick=${homeEvent} />
+      <${MenuItemSelect} menuEntries=${headerEntries} />
+      <${MenuItem} label="Add Image" menuEntries=${addImageEntries} />
+      <${MenuItem} label="View" menuEntries=${viewEntries} />
+      <${MenuItem} label="Resize" menuEntries=${resizeEntries} />
+      <div class="border-r border-gray-700 h-4"></div>
+      <${MenuItem} label="Overlay" menuEntries=${overlayEntries} />
     </div>
     <span class="flex-grow"> text </span>
   `
 }
 
-export const MenuItem = ({ label, menuItems, menuFunctions }) => {
+export const MenuButton = ({ label, onClick }) => {
+  return html`
+    <div class="relative">
+      <button class="hover:bg-gray-700 px-2 rounded-md h-6 align-middle" onClick=${onClick}>
+        ${label}
+      </button>
+    </div>
+  `
+}
+
+export const MenuItem = ({ label, menuEntries }) => {
   const isOpen = useSignal(false)
   const selectedElement = useSignal(0)
 
@@ -49,7 +100,7 @@ export const MenuItem = ({ label, menuItems, menuFunctions }) => {
     <div class="relative group">
       <button
         class="group-hover:bg-gray-700 px-2 rounded-l-md h-6 align-middle"
-        onClick=${menuFunctions[selectedElement.value]}
+        onClick=${menuEntries[selectedElement.value].onClick}
       >
         ${label}
       </button>
@@ -62,17 +113,58 @@ export const MenuItem = ({ label, menuItems, menuFunctions }) => {
       <div class="absolute cursor-pointer left-0">
         ${isOpen.value &&
         html`
-          ${menuItems.map(
+          ${menuEntries.map(
             (item, index) => html`
               <button
                 class="w-full px-2 py-1 text-left bg-gray-900 hover:bg-gray-700"
                 onClick=${() => {
                   selectedElement.value = index
-                  menuFunctions[index]()
+                  item.onClick()
                   isOpen.value = false
                 }}
               >
-                ${item}
+                ${item.label}
+              </button>
+            `,
+          )}
+        `}
+      </div>
+    </div>
+  `
+}
+
+export const MenuItemSelect = ({ menuEntries }) => {
+  const isOpen = useSignal(false)
+  const selectedElement = useSignal(0)
+
+  return html`
+    <div class="relative group">
+      <button
+        class="group-hover:bg-gray-700 px-2 rounded-l-md h-6 align-middle"
+        onClick=${menuEntries[selectedElement.value].onClick}
+      >
+        ${menuEntries[selectedElement.value].label}
+      </button>
+      <button
+        class="hover:bg-gray-700 px-2 rounded-r-md h-6 align-middle"
+        onClick=${() => (isOpen.value = !isOpen.value)}
+      >
+        <${DownArrow} />
+      </button>
+      <div class="absolute cursor-pointer left-0">
+        ${isOpen.value &&
+        html`
+          ${menuEntries.map(
+            (item, index) => html`
+              <button
+                class="w-full px-2 py-1 text-left bg-gray-900 hover:bg-gray-700"
+                onClick=${() => {
+                  selectedElement.value = index
+                  item.onClick()
+                  isOpen.value = false
+                }}
+              >
+                ${item.label}
               </button>
             `,
           )}
@@ -86,7 +178,6 @@ function DownArrow() {
   return html`
     <svg
       class="w-2.5 h-2.5 ms-2.5"
-      aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
       viewBox="0 0 10 6"
@@ -101,20 +192,6 @@ function DownArrow() {
     </svg>
   `
 }
-
-// <svg
-//             class="-mr-1 ml-2 h-5 w-5"
-//             xmlns="http://www.w3.org/2000/svg"
-//             viewBox="0 0 20 20"
-//             fill="currentColor"
-//             aria-hidden="true"
-//           >
-//             <path
-//               fill-rule="evenodd"
-//               d="M5 10a5 5 0 1110 0 5 5 0 01-10 0zm5-7a7 7 0 100 14A7 7 0 0010 3z"
-//               clip-rule="evenodd"
-//             />
-//           </svg>
 
 export const Menu2 = (props: AppProps) => {
   return html`
