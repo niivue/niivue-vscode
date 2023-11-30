@@ -2,7 +2,7 @@ import { html } from 'htm/preact'
 import { useRef } from 'preact/hooks'
 import { NiiVueCanvas } from './NiiVueCanvas'
 import { VolumeOverlay } from './VolumeOverlay'
-import { useSignal } from '@preact/signals'
+import { computed, useSignal } from '@preact/signals'
 import { AppProps } from './App'
 
 export interface VolumeProps {
@@ -14,24 +14,32 @@ export interface VolumeProps {
   height: number
 }
 
-export const Volume = ({
-  name,
-  volumeIndex,
-  hideUI,
-  ...props
-}: AppProps & VolumeProps) => {
+export const Volume = (props: AppProps & VolumeProps) => {
+  const { name, volumeIndex, hideUI, selection, selectionActive } = props
   const intensity = useSignal('')
   const volumeRef = useRef<HTMLDivElement>()
   const dispName = name.length > 20 ? `...${name.slice(-20)}` : name
+  const selected = computed(() => selection.value.includes(volumeIndex))
+
+  // it would maybe need a invisible box over the volume to prevent the click event, stopPropagation and preventDefault don't work
+  const selectClick = selectionActive.value
+    ? () => {
+        if (selected.value) {
+          selection.value = selection.value.filter((i) => i != volumeIndex)
+        } else {
+          selection.value = [...selection.value, volumeIndex]
+        }
+      }
+    : () => {}
 
   return html`
-    <div class="relative" ref=${volumeRef}>
+    <div
+      class="relative ${selectionActive.value && selected.value ? 'outline outline-blue-500' : ''}"
+      ref=${volumeRef}
+      onclick=${selectClick}
+    >
       ${hideUI.value > 0 &&
-      html`
-        <div class="absolute pointer-events-none text-xl text-outline">
-          ${dispName}
-        </div>
-      `}
+      html` <div class="absolute pointer-events-none text-xl text-outline">${dispName}</div> `}
       ${hideUI.value > 1 &&
       html`
         <button
@@ -47,11 +55,7 @@ export const Volume = ({
         class="pointer-events-none absolute flex gap-1 flex-wrap items-baseline bottom-1 opacity-80"
       >
         ${hideUI.value > 2 &&
-        html`<${VolumeOverlay}
-          nv=${props.nv}
-          volumeIndex=${volumeIndex}
-          volumeRef=${volumeRef}
-        />`}
+        html`<${VolumeOverlay} nv=${props.nv} volumeIndex=${volumeIndex} volumeRef=${volumeRef} />`}
         <span class="text-outline">${intensity}</span>
       </div>`}
     </div>

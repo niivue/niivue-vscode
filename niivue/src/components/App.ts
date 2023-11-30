@@ -20,7 +20,7 @@ export const App = () => {
   const showHomeButton = computed(() => nImages.value > 0 && !isVscode)
 
   return html`
-    <${Menu} />
+    <${Menu} ...${appProps} />
     <${ImageDrop}>
       ${showHomeScreen.value && html`<${HomeScreen} />`}
       <${Header} ...${appProps} homeButton=${showHomeButton.value} />
@@ -31,6 +31,8 @@ export const App = () => {
 }
 export interface AppProps {
   nvArray: Signal<Niivue[]>
+  selection: Signal<Array<number>>
+  selectionActive: Signal<boolean>
   nv0: Signal<Niivue>
   scaling: Signal<any>
   hideUI: Signal<number>
@@ -51,6 +53,8 @@ export interface ScalingOpts {
 function useAppState(): AppProps {
   return {
     nvArray: useSignal<Niivue[]>([]),
+    selection: useSignal<Array<number>>([]),
+    selectionActive: useSignal(false),
     nv0: useSignal<Niivue>({ isLoaded: false }),
     scaling: useSignal<ScalingOpts>({ isManual: false, min: 0, max: 0 }),
     hideUI: useSignal(3), // 0: hide all, 1: show name, 2: hide overlay, 3: show-all

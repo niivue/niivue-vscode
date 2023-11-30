@@ -1,6 +1,6 @@
 import { html } from 'htm/preact'
 import { AppProps } from './App'
-import { computed, effect, useSignal } from '@preact/signals'
+import { Signal, computed, effect, useSignal } from '@preact/signals'
 
 type SubMenuEntry = {
   label: string
@@ -8,6 +8,21 @@ type SubMenuEntry = {
 }
 
 export const Menu = (props: AppProps) => {
+  const { selection, selectionActive, nvArray } = props
+  const nvArraySelected = computed(() =>
+    selectionActive.value && selection.value.length > 0
+      ? nvArray.value.filter((_, i) => selection.value.includes(i))
+      : nvArray.value,
+  )
+  const multiImage = computed(() => nvArray.value.length > 1)
+
+  effect(
+    () =>
+      selectionActive.value &&
+      selection.value.length == 0 &&
+      (selection.value = nvArray.value.map((_, i) => i)),
+  )
+
   const ViewItems = [
     'Axial',
     'Sagittal',
@@ -20,6 +35,7 @@ export const Menu = (props: AppProps) => {
   ]
   const ViewFunctions = []
 
+  // redo with direct components here
   const menuEntries: SubMenuEntry[] = [
     { label: 'Open', onClick: () => console.log('Not implemented yet - open') },
     { label: 'Save', onClick: () => console.log('Not implemented yet - save') },
@@ -43,6 +59,13 @@ export const Menu = (props: AppProps) => {
       onClick: () => console.log('Not implemented yet - multiplanar render'),
     },
     { label: '------------', onClick: () => console.log('Not implemented yet - divider') },
+    {
+      label: 'Timeseries',
+      onClick: () =>
+        console.log(
+          'Not implemented yet - timeseries (https://niivue.github.io/niivue/features/timeseries.html)',
+        ),
+    },
     { label: 'Reset View', onClick: () => console.log('Not implemented yet - reset view') },
   ]
 
@@ -77,6 +100,7 @@ export const Menu = (props: AppProps) => {
       <${MenuItem} label="Resize" menuEntries=${resizeEntries} />
       <div class="border-r border-gray-700 h-4"></div>
       <${MenuItem} label="Overlay" menuEntries=${overlayEntries} />
+      ${multiImage.value && html`<${ToggleButton} label="Select" state=${selectionActive} />`}
     </div>
     <span class="flex-grow"> text </span>
   `
@@ -86,6 +110,20 @@ export const MenuButton = ({ label, onClick }) => {
   return html`
     <div class="relative">
       <button class="hover:bg-gray-700 px-2 rounded-md h-6 align-middle" onClick=${onClick}>
+        ${label}
+      </button>
+    </div>
+  `
+}
+
+// maybe selection menu with arrow and option to keep selection?
+export const ToggleButton = ({ label, state }: { label: string; state: Signal<boolean> }) => {
+  return html`
+    <div class="relative">
+      <button
+        class="hover:bg-gray-700 px-2 rounded-md h-6 align-middle ${state.value && 'bg-gray-700'}"
+        onClick=${() => (state.value = !state.value)}
+      >
         ${label}
       </button>
     </div>
