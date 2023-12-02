@@ -141,6 +141,7 @@
     "install:all": "yarn install && cd niivue && yarn install",
     "start:webview": "cd niivue && yarn run start",
     "build:webview": "cd niivue && yarn run build",
+    "test:webview": "cd niivue && yarn run test",
     "vscode:prepublish": "yarn run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
