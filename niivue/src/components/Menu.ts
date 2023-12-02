@@ -2,7 +2,8 @@ import { html } from 'htm/preact'
 import { AppProps } from './App'
 import { Signal, computed, effect, useSignal } from '@preact/signals'
 import { useRef } from 'preact/hooks'
-import { addImagesEvent } from '../events'
+import { addImagesEvent, addOverlayEvent } from '../events'
+import { SLICE_TYPE } from '@niivue/niivue'
 
 type SubMenuEntry = {
   label: string
@@ -10,7 +11,7 @@ type SubMenuEntry = {
 }
 
 export const Menu = (props: AppProps) => {
-  const { selection, selectionActive, nvArray, nv0 } = props
+  const { selection, selectionActive, nvArray, nv0, sliceType } = props
   const nvArraySelected = computed(() =>
     selectionActive.value && selection.value.length > 0
       ? nvArray.value.filter((_, i) => selection.value.includes(i))
@@ -119,6 +120,52 @@ export const Menu = (props: AppProps) => {
     nv0.value = nvArraySelected.value[nvArraySelected.value.length - 1]
   }
 
+  const isOverlay = computed(() => nvArraySelected.value[0]?.volumes?.length > 1)
+
+  const overlayButtonOnClick = () => {
+    const nv = nvArraySelected.value[0]
+    if (!nv || nv.volumes.length == 0) {
+      return
+    }
+    // if no overlay, add one
+    // if overlay, show overlay menu
+    // overlay menu includes color, min, max, opacity, hide
+  }
+
+  const addOverlay = () => {
+    // if image
+    addOverlayEvent(selection.value[0], 'overlay')
+  }
+
+  const removeLastVolume = () => {
+    const nv = nvArraySelected.value[0]
+    nv.removeVolumeByIndex(nv.volumes.length - 1)
+    nv.updateGLVolume()
+  }
+
+  const setView = (view: number) => () => {
+    sliceType.value = view
+  }
+
+  const setTimeSeries = () => {
+    sliceType.value = SLICE_TYPE.MULTIPLANAR
+    nvArraySelected.value.forEach((nv) => {
+      nv.graph.autoSizeMultiplanar = true
+      nv.opts.multiplanarForceRender = true
+      nv.graph.normalizeValues = false
+      nv.graph.opacity = 1.0
+      nv.updateGLVolume()
+    })
+  }
+
+  const setMultiplanar = () => {
+    sliceType.value = SLICE_TYPE.MULTIPLANAR
+    nvArraySelected.value.forEach((nv) => {
+      nv.graph.autoSizeMultiplanar = false
+      nv.updateGLVolume()
+    })
+  }
+
   return html`
     <div class="flex flex-wrap items-baseline gap-1">
       <${MenuButton} label="Home" onClick=${homeEvent} />
@@ -134,10 +181,22 @@ export const Menu = (props: AppProps) => {
           onClick=${() => console.log('Not implemented yet - dicom folder')}
         />
       </${MenuItem}>
-      <!-- <${MenuItem} label="View" menuEntries=${viewEntries} /> -->
+      <${MenuItem} label="View" >
+        <${MenuEntry} label="Axial" onClick=${setView(SLICE_TYPE.AXIAL)} />
+        <${MenuEntry} label="Sagittal" onClick=${setView(SLICE_TYPE.SAGITTAL)} />
+        <${MenuEntry} label="Coronal" onClick=${setView(SLICE_TYPE.CORONAL)} />
+        <${MenuEntry} label="Render" onClick=${setView(SLICE_TYPE.RENDER)} />
+        <${MenuEntry} label="Multiplanar + Render" onClick=${setMultiplanar} />
+        <${MenuEntry} label="Multiplanar + Timeseries" onClick=${setTimeSeries} />
+      </${MenuItem}>
       <!-- <${MenuItem} label="Resize" menuEntries=${resizeEntries} /> -->
       <div class="border-r border-gray-700 h-4"></div>
-      <!-- <${MenuItem} label="Overlay" menuEntries=${overlayEntries} /> -->
+      <${MenuItem} label="Overlay" >
+        <${MenuEntry} label="Add" onClick=${addOverlay} />
+        <${MenuEntry} label="Remove" onClick=${removeLastVolume} />
+        <${MenuEntry} label="Color" onClick=${() => console.log('Not implemented yet - color')} />
+        <${MenuEntry} label="Hide" onClick=${() => console.log('Not implemented yet - hide')} />
+      </${MenuItem}>
       ${multiImage.value && html`<${ToggleButton} label="Select" state=${selectionActive} />`}
     </div>
     <dialog ref=${headerDialog}>
@@ -149,6 +208,11 @@ export const Menu = (props: AppProps) => {
   `
 }
 
+// overlay menu includes color, min, max, opacity, hide
+// overlay menu is a box with a dropdown for the color, number inputs for min, max, opacity and a toggle for hide
+const OverlayMenu = ({ nv }) => {
+  return
+}
 export const MenuButton = ({ label, onClick }) => {
   return html`
     <div class="relative">
