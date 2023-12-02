@@ -1,6 +1,8 @@
 import { html } from 'htm/preact'
 import { AppProps } from './App'
 import { Signal, computed, effect, useSignal } from '@preact/signals'
+import { useRef } from 'preact/hooks'
+import { addImagesEvent } from '../events'
 
 type SubMenuEntry = {
   label: string
@@ -8,7 +10,7 @@ type SubMenuEntry = {
 }
 
 export const Menu = (props: AppProps) => {
-  const { selection, selectionActive, nvArray } = props
+  const { selection, selectionActive, nvArray, nv0 } = props
   const nvArraySelected = computed(() =>
     selectionActive.value && selection.value.length > 0
       ? nvArray.value.filter((_, i) => selection.value.includes(i))
@@ -29,6 +31,7 @@ export const Menu = (props: AppProps) => {
     'Coronal',
     'Render',
     'MultiPlanarRender',
+    'MultiPlanarTimeseries',
     'Colorbar',
     'Radiological',
     'Crosshair',
@@ -91,18 +94,58 @@ export const Menu = (props: AppProps) => {
     { label: 'Resize', onClick: () => console.log('Not implemented yet - resize') },
   ]
 
+  const headerDialog = useRef<HTMLDialogElement>()
+  const headerInfo = useSignal('')
+
+  const showHeader = () => {
+    headerInfo.value = nvArraySelected.value?.[0]?.volumes?.[0]?.hdr?.toFormattedString() || ''
+    if (headerInfo.value && headerDialog.current) {
+      headerDialog.current.showModal()
+    }
+  }
+
+  const setVoxelSize1AndOrigin0 = () => {
+    nvArraySelected.value.forEach((nv) => {
+      nv.volumes.forEach((vol: any) => {
+        vol.hdr.pixDims[1] = 1
+        vol.hdr.pixDims[2] = 1
+        vol.hdr.pixDims[3] = 1
+        vol.hdr.qoffset_x = 0
+        vol.hdr.qoffset_y = 0
+        vol.hdr.qoffset_z = 0
+        vol.calculateRAS()
+      })
+    })
+    nv0.value = nvArraySelected.value[nvArraySelected.value.length - 1]
+  }
+
   return html`
     <div class="flex flex-wrap items-baseline gap-1">
       <${MenuButton} label="Home" onClick=${homeEvent} />
-      <${MenuItemSelect} menuEntries=${headerEntries} />
-      <${MenuItem} label="Add Image" menuEntries=${addImageEntries} />
-      <${MenuItem} label="View" menuEntries=${viewEntries} />
-      <${MenuItem} label="Resize" menuEntries=${resizeEntries} />
+      <${MenuItem} label="Header" onClick=${showHeader}>
+        <${MenuEntry} label="Set Header" onClick=${() => console.log('Not implemented yet')} />
+        <${MenuEntry} label="Set Headers to 1" onClick=${setVoxelSize1AndOrigin0} />
+      </${MenuItem}>
+      <${MenuItem} label="Add Image" onClick=${addImagesEvent}>
+        <${MenuEntry} label="File(s)" onClick=${addImagesEvent} />
+        <${MenuEntry} label="URL" onClick=${() => console.log('Not implemented yet - url')} />
+        <${MenuEntry}
+          label="DICOM Folder"
+          onClick=${() => console.log('Not implemented yet - dicom folder')}
+        />
+      </${MenuItem}>
+      <!-- <${MenuItem} label="View" menuEntries=${viewEntries} /> -->
+      <!-- <${MenuItem} label="Resize" menuEntries=${resizeEntries} /> -->
       <div class="border-r border-gray-700 h-4"></div>
-      <${MenuItem} label="Overlay" menuEntries=${overlayEntries} />
+      <!-- <${MenuItem} label="Overlay" menuEntries=${overlayEntries} /> -->
       ${multiImage.value && html`<${ToggleButton} label="Select" state=${selectionActive} />`}
     </div>
-    <span class="flex-grow"> text </span>
+    <dialog ref=${headerDialog}>
+      <form>
+        ${headerInfo.value.split('\n').map((line) => html` <p>${line}</p> `)}
+        <button formmethod="dialog" value="cancel">Close</button>
+      </form>
+    </dialog>
   `
 }
 
@@ -130,16 +173,16 @@ export const ToggleButton = ({ label, state }: { label: string; state: Signal<bo
   `
 }
 
-export const MenuItem = ({ label, menuEntries }) => {
+export const MenuItem = ({ label, onClick, children }) => {
   const isOpen = useSignal(false)
   const selectedElement = useSignal(0)
+  children.forEach((child, index) => {
+    child.props.isOpen = isOpen
+  })
 
   return html`
     <div class="relative group">
-      <button
-        class="group-hover:bg-gray-700 px-2 rounded-l-md h-6 align-middle"
-        onClick=${menuEntries[selectedElement.value].onClick}
-      >
+      <button class="group-hover:bg-gray-700 px-2 rounded-l-md h-6 align-middle" onClick=${onClick}>
         ${label}
       </button>
       <button
@@ -148,26 +191,22 @@ export const MenuItem = ({ label, menuEntries }) => {
       >
         <${DownArrow} />
       </button>
-      <div class="absolute cursor-pointer left-0">
-        ${isOpen.value &&
-        html`
-          ${menuEntries.map(
-            (item, index) => html`
-              <button
-                class="w-full px-2 py-1 text-left bg-gray-900 hover:bg-gray-700"
-                onClick=${() => {
-                  selectedElement.value = index
-                  item.onClick()
-                  isOpen.value = false
-                }}
-              >
-                ${item.label}
-              </button>
-            `,
-          )}
-        `}
-      </div>
+      <div class="absolute cursor-pointer left-0 z-50">${isOpen.value && children}</div>
     </div>
+  `
+}
+
+export const MenuEntry = ({ label, onClick, isOpen }) => {
+  return html`
+    <button
+      class="w-full px-2 py-1 text-left bg-gray-900 hover:bg-gray-700"
+      onClick=${() => {
+        onClick()
+        isOpen.value = false
+      }}
+    >
+      ${label}
+    </button>
   `
 }
 
