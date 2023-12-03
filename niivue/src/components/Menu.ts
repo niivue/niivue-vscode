@@ -11,7 +11,7 @@ type SubMenuEntry = {
 }
 
 export const Menu = (props: AppProps) => {
-  const { selection, selectionActive, nvArray, nv0, sliceType } = props
+  const { selection, selectionActive, nvArray, nv0, sliceType, crosshair } = props
   const nvArraySelected = computed(() =>
     selectionActive.value && selection.value.length > 0
       ? nvArray.value.filter((_, i) => selection.value.includes(i))
@@ -166,6 +166,35 @@ export const Menu = (props: AppProps) => {
     })
   }
 
+  const resetZoom = () => {
+    nvArray.value.forEach((nv) => {
+      nv.uiData.pan2Dxyzmm = [0, 0, 0, 1]
+      nv.drawScene()
+    })
+  }
+
+  const isMultiEcho = computed(() =>
+    nvArraySelected.value.some((nv) => nv.volumes?.[0]?.getImageMetadata().nt > 1),
+  )
+
+  const toggleCrosshair = () => {
+    crosshair.value = !crosshair.value
+  }
+
+  const toggleRadiologicalConvention = () => {
+    nvArraySelected.value.forEach((nv) => {
+      nv.opts.isRadiologicalConvention = !nv.opts.isRadiologicalConvention
+      nv.drawScene()
+    })
+  }
+
+  const toggleColorbar = () => {
+    nvArraySelected.value.forEach((nv) => {
+      nv.opts.isColorbar = !nv.opts.isColorbar
+      nv.drawScene()
+    })
+  }
+
   return html`
     <div class="flex flex-wrap items-baseline gap-1">
       <${MenuButton} label="Home" onClick=${homeEvent} />
@@ -187,7 +216,15 @@ export const Menu = (props: AppProps) => {
         <${MenuEntry} label="Coronal" onClick=${setView(SLICE_TYPE.CORONAL)} />
         <${MenuEntry} label="Render" onClick=${setView(SLICE_TYPE.RENDER)} />
         <${MenuEntry} label="Multiplanar + Render" onClick=${setMultiplanar} />
-        <${MenuEntry} label="Multiplanar + Timeseries" onClick=${setTimeSeries} />
+        ${
+          isMultiEcho.value &&
+          html`<${MenuEntry} label="Multiplanar + Timeseries" onClick=${setTimeSeries} />`
+        }
+        <hr />
+        <${MenuEntry} label="Reset View" onClick=${resetZoom} />
+        <${MenuEntry} label="Colorbar" onClick=${toggleColorbar} />
+        <${MenuEntry} label="Radiological" onClick=${toggleRadiologicalConvention} />
+        <${MenuEntry} label="Crosshair" onClick=${toggleCrosshair} />
       </${MenuItem}>
       <!-- <${MenuItem} label="Resize" menuEntries=${resizeEntries} /> -->
       <div class="border-r border-gray-700 h-4"></div>
@@ -241,7 +278,9 @@ export const MenuItem = ({ label, onClick, children }) => {
   const isOpen = useSignal(false)
   const selectedElement = useSignal(0)
   children.forEach((child, index) => {
-    child.props.isOpen = isOpen
+    if (child.type == MenuEntry) {
+      child.props.isOpen = isOpen
+    }
   })
 
   return html`

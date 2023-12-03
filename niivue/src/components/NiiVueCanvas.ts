@@ -27,6 +27,7 @@ export const NiiVueCanvas = ({
   crosshair,
   radiologicalConvention,
   colorbar,
+  nvArray,
 }: AppProps & NiiVueCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>()
   useEffect(() => nv.attachToCanvas(canvasRef.current), [])
@@ -37,13 +38,13 @@ export const NiiVueCanvas = ({
     loadVolume(nv, nv.body).then(async () => {
       nv.isLoaded = true
       nv.body = null
-      nv.onLocationChange = (data: any) =>
-        setIntensityAndLocation(data, intensity, location)
+      nv.onLocationChange = (data: any) => setIntensityAndLocation(data, intensity, location)
       nv.createOnLocationChange()
       if (!nv0.value.isLoaded) {
         nv0.value = nv
       }
       render.value++ // required to update the names
+      nvArray.value = [...nvArray.value] // trigger react signal for changes
     })
   }, [nv.body])
 
@@ -65,11 +66,7 @@ export const NiiVueCanvas = ({
 
   useEffect(() => nv.drawScene(), [height, width]) // avoids black images
 
-  return html`<canvas
-    ref=${canvasRef}
-    width=${width}
-    height=${height}
-  ></canvas>`
+  return html`<canvas ref=${canvasRef} width=${width} height=${height}></canvas>`
 }
 
 async function getMinimalHeaderMHA() {
