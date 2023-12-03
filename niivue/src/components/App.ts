@@ -27,7 +27,7 @@ export const App = () => {
 export interface AppProps {
   nvArray: Signal<Niivue[]>
   selection: Signal<Array<number>>
-  selectionActive: Signal<boolean>
+  selectionMode: Signal<number>
   nv0: Signal<Niivue>
   scaling: Signal<any>
   hideUI: Signal<number>
@@ -49,7 +49,7 @@ function useAppState(): AppProps {
   return {
     nvArray: useSignal<Niivue[]>([]),
     selection: useSignal<Array<number>>([]),
-    selectionActive: useSignal(false),
+    selectionMode: useSignal(0),
     nv0: useSignal<Niivue>({ isLoaded: false }),
     scaling: useSignal<ScalingOpts>({ isManual: false, min: 0, max: 0 }),
     hideUI: useSignal(3), // 0: hide all, 1: show name, 2: hide overlay, 3: show-all

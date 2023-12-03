@@ -1,7 +1,6 @@
 import { html } from 'htm/preact'
 import { useRef } from 'preact/hooks'
 import { NiiVueCanvas } from './NiiVueCanvas'
-import { VolumeOverlay } from './VolumeOverlay'
 import { computed, useSignal } from '@preact/signals'
 import { AppProps } from './App'
 
@@ -15,14 +14,14 @@ export interface VolumeProps {
 }
 
 export const Volume = (props: AppProps & VolumeProps) => {
-  const { name, volumeIndex, hideUI, selection, selectionActive } = props
+  const { name, volumeIndex, hideUI, selection, selectionMode, crosshair } = props
   const intensity = useSignal('')
   const volumeRef = useRef<HTMLDivElement>()
   const dispName = name.length > 20 ? `...${name.slice(-20)}` : name
   const selected = computed(() => selection.value.includes(volumeIndex))
 
   // it would maybe need a invisible box over the volume to prevent the click event, stopPropagation and preventDefault don't work
-  const selectClick = selectionActive.value
+  const selectClick = selectionMode.value
     ? () => {
         if (selected.value) {
           selection.value = selection.value.filter((i) => i != volumeIndex)
@@ -34,7 +33,7 @@ export const Volume = (props: AppProps & VolumeProps) => {
 
   return html`
     <div
-      class="relative ${selectionActive.value && selected.value ? 'outline outline-blue-500' : ''}"
+      class="relative ${selectionMode.value && selected.value ? 'outline outline-blue-500' : ''}"
       ref=${volumeRef}
       onclick=${selectClick}
     >
@@ -52,7 +51,8 @@ export const Volume = (props: AppProps & VolumeProps) => {
         </button>
       `}
       <${NiiVueCanvas} ...${props} intensity=${intensity} />
-      ${hideUI.value > 1 &&
+      ${crosshair.value &&
+      hideUI.value > 0 &&
       html`<div class="pointer-events-none absolute bottom-1 left-1">
         <span class="text-outline">${intensity}</span>
       </div>`}

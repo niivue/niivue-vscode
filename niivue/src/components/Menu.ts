@@ -14,7 +14,7 @@ type SubMenuEntry = {
 export const Menu = (props: AppProps) => {
   const {
     selection,
-    selectionActive,
+    selectionMode,
     nvArray,
     nv0,
     sliceType,
@@ -24,30 +24,21 @@ export const Menu = (props: AppProps) => {
     scaling,
   } = props
   const nvArraySelected = computed(() =>
-    selectionActive.value && selection.value.length > 0
+    selectionMode.value > 0 && selection.value.length > 0
       ? nvArray.value.filter((_, i) => selection.value.includes(i))
       : nvArray.value,
   )
   const multiImage = computed(() => nvArray.value.length > 1)
 
-  effect(
-    () =>
-      selectionActive.value &&
-      selection.value.length == 0 &&
-      (selection.value = nvArray.value.map((_, i) => i)),
-  )
-
-  const ViewItems = [
-    'Axial',
-    'Sagittal',
-    'Coronal',
-    'Render',
-    'MultiPlanarRender',
-    'MultiPlanarTimeseries',
-    'Colorbar',
-    'Radiological',
-    'Crosshair',
-  ]
+  effect(() => {
+    if (selection.value.length == 0) {
+      if (selectionMode.value == 1) {
+        selection.value = [0]
+      } else if (selectionMode.value == 2) {
+        selection.value = nvArray.value.map((_, i) => i)
+      }
+    }
+  })
 
   const homeEvent = () => {
     const url = new URL(location.href)
@@ -77,7 +68,7 @@ export const Menu = (props: AppProps) => {
         vol.calculateRAS()
       })
     })
-    nv0.value = nvArraySelected.value[nvArraySelected.value.length - 1]
+    nvArray.value = [...nvArray.value]
   }
 
   const isOverlay = computed(() => nvArraySelected.value[0]?.volumes?.length > 1)
@@ -162,6 +153,10 @@ export const Menu = (props: AppProps) => {
   const ready = nv.isLoaded
   const isVolume = ready && nv.volumes.length > 0
 
+  const selectAll = () => {
+    selection.value = nvArray.value.map((_, i) => i)
+  }
+
   return html`
     <div class="flex flex-wrap items-baseline gap-1">
       <${MenuButton} label="Home" onClick=${homeEvent} />
@@ -189,7 +184,7 @@ export const Menu = (props: AppProps) => {
         }
         <hr />
         <${MenuEntry} label="Show All" onClick=${() => (hideUI.value = 3)} />
-        <${MenuEntry} label="Hide UI" onClick=${() => (hideUI.value = 2)} />
+        <${MenuEntry} label="Hide X" onClick=${() => (hideUI.value = 2)} />
         <${MenuEntry} label="Hide All" onClick=${() => (hideUI.value = 0)} />
         <hr />
         <${MenuEntry} label="Interpolation" onClick=${() =>
@@ -208,9 +203,11 @@ export const Menu = (props: AppProps) => {
       </${MenuItem}>
       ${
         isVolume &&
-        html`<${Scaling} setScaling=${setScaling} init=${nvArraySelected.value[0].volumes[0]} />`
+        html`<${Scaling} setScaling=${setScaling} init=${nvArraySelected.value[0].volumes[0]} >
+          <${MenuEntry} label="Select All" onClick=${selectAll} />
+        </${Scaling}`
       }
-      ${multiImage.value && html`<${ToggleButton} label="Select" state=${selectionActive} />`}
+      ${multiImage.value && html`<${ImageSelect} label="Select" state=${selectionMode} />`}
     </div>
     ${isVolume && html` <p>${getMetadataString(nvArraySelected.value[0])}</p> `}
     <dialog ref=${headerDialog}>
@@ -245,15 +242,24 @@ export const MenuButton = ({ label, onClick }) => {
 
 // maybe selection menu with arrow and option to keep selection?
 // select single and multiple options
-export const ToggleButton = ({ label, state }: { label: string; state: Signal<boolean> }) => {
+export const ImageSelect = ({ label, state, children }) => {
+  const isOpen = useSignal(false)
   return html`
-    <div class="relative">
+    <div class="relative group">
       <button
-        class="hover:bg-gray-700 px-2 rounded-md h-6 align-middle ${state.value && 'bg-gray-700'}"
+        class="group-hover:bg-gray-700 px-2 rounded-l-md h-6 align-middle ${state.value &&
+        'bg-gray-700'}"
         onClick=${() => (state.value = !state.value)}
       >
         ${label}
       </button>
+      <button
+        class="hover:bg-gray-700 px-2 rounded-r-md h-6 align-middle"
+        onClick=${() => (isOpen.value = !isOpen.value)}
+      >
+        <${DownArrow} />
+      </button>
+      <div class="absolute cursor-pointer left-0 z-50">${isOpen.value && children}</div>
     </div>
   `
 }
