@@ -4,6 +4,7 @@ import { Signal, computed, effect, useSignal } from '@preact/signals'
 import { useRef } from 'preact/hooks'
 import { addImagesEvent, addOverlayEvent } from '../events'
 import { SLICE_TYPE } from '@niivue/niivue'
+import { Scaling } from './Scaling'
 
 type SubMenuEntry = {
   label: string
@@ -11,7 +12,17 @@ type SubMenuEntry = {
 }
 
 export const Menu = (props: AppProps) => {
-  const { selection, selectionActive, nvArray, nv0, sliceType, crosshair } = props
+  const {
+    selection,
+    selectionActive,
+    nvArray,
+    nv0,
+    sliceType,
+    crosshair,
+    hideUI,
+    interpolation,
+    scaling,
+  } = props
   const nvArraySelected = computed(() =>
     selectionActive.value && selection.value.length > 0
       ? nvArray.value.filter((_, i) => selection.value.includes(i))
@@ -37,63 +48,12 @@ export const Menu = (props: AppProps) => {
     'Radiological',
     'Crosshair',
   ]
-  const ViewFunctions = []
-
-  // redo with direct components here
-  const menuEntries: SubMenuEntry[] = [
-    { label: 'Open', onClick: () => console.log('Not implemented yet - open') },
-    { label: 'Save', onClick: () => console.log('Not implemented yet - save') },
-    { label: 'Save As', onClick: () => console.log('Not implemented yet - save as') },
-    { label: 'Close', onClick: () => console.log('Not implemented yet - close') },
-  ]
-
-  const addImageEntries: SubMenuEntry[] = [
-    { label: 'File(s)', onClick: () => console.log('Not implemented yet - file') },
-    { label: 'URL', onClick: () => console.log('Not implemented yet - url') },
-    { label: 'DICOM Folder', onClick: () => console.log('Not implemented yet - dicom folder') },
-  ]
-
-  const viewEntries: SubMenuEntry[] = [
-    { label: 'Axial', onClick: () => console.log('Not implemented yet - axial') },
-    { label: 'Sagittal', onClick: () => console.log('Not implemented yet - sagittal') },
-    { label: 'Coronal', onClick: () => console.log('Not implemented yet - coronal') },
-    { label: 'Render', onClick: () => console.log('Not implemented yet - render') },
-    {
-      label: 'Multiplanar + Render',
-      onClick: () => console.log('Not implemented yet - multiplanar render'),
-    },
-    { label: '------------', onClick: () => console.log('Not implemented yet - divider') },
-    {
-      label: 'Timeseries',
-      onClick: () =>
-        console.log(
-          'Not implemented yet - timeseries (https://niivue.github.io/niivue/features/timeseries.html)',
-        ),
-    },
-    { label: 'Reset View', onClick: () => console.log('Not implemented yet - reset view') },
-  ]
-
-  const overlayEntries: SubMenuEntry[] = [
-    { label: 'Add', onClick: () => console.log('Not implemented yet - add') },
-    { label: 'Remove', onClick: () => console.log('Not implemented yet - remove') },
-    { label: 'Color', onClick: () => console.log('Not implemented yet - color') },
-    { label: 'Hide', onClick: () => console.log('Not implemented yet - hide') },
-  ]
 
   const homeEvent = () => {
     const url = new URL(location.href)
     location.href = url.origin + url.pathname
     location.reload()
   }
-
-  const headerEntries: SubMenuEntry[] = [
-    { label: 'Show Header', onClick: () => console.log('Not implemented yet - show') },
-    { label: 'Set Header', onClick: () => console.log('Not implemented yet - set') },
-  ]
-
-  const resizeEntries: SubMenuEntry[] = [
-    { label: 'Resize', onClick: () => console.log('Not implemented yet - resize') },
-  ]
 
   const headerDialog = useRef<HTMLDialogElement>()
   const headerInfo = useSignal('')
@@ -148,6 +108,7 @@ export const Menu = (props: AppProps) => {
   }
 
   const setTimeSeries = () => {
+    crosshair.value = true
     sliceType.value = SLICE_TYPE.MULTIPLANAR
     nvArraySelected.value.forEach((nv) => {
       nv.graph.autoSizeMultiplanar = true
@@ -195,6 +156,12 @@ export const Menu = (props: AppProps) => {
     })
   }
 
+  const setScaling = (val: ScalingOpts) => (scaling.value = val)
+
+  const nv = nv0.value
+  const ready = nv.isLoaded
+  const isVolume = ready && nv.volumes.length > 0
+
   return html`
     <div class="flex flex-wrap items-baseline gap-1">
       <${MenuButton} label="Home" onClick=${homeEvent} />
@@ -221,12 +188,17 @@ export const Menu = (props: AppProps) => {
           html`<${MenuEntry} label="Multiplanar + Timeseries" onClick=${setTimeSeries} />`
         }
         <hr />
+        <${MenuEntry} label="Show All" onClick=${() => (hideUI.value = 3)} />
+        <${MenuEntry} label="Hide UI" onClick=${() => (hideUI.value = 2)} />
+        <${MenuEntry} label="Hide All" onClick=${() => (hideUI.value = 0)} />
+        <hr />
+        <${MenuEntry} label="Interpolation" onClick=${() =>
+    (interpolation.value = !interpolation.value)} />
         <${MenuEntry} label="Reset View" onClick=${resetZoom} />
         <${MenuEntry} label="Colorbar" onClick=${toggleColorbar} />
         <${MenuEntry} label="Radiological" onClick=${toggleRadiologicalConvention} />
         <${MenuEntry} label="Crosshair" onClick=${toggleCrosshair} />
       </${MenuItem}>
-      <!-- <${MenuItem} label="Resize" menuEntries=${resizeEntries} /> -->
       <div class="border-r border-gray-700 h-4"></div>
       <${MenuItem} label="Overlay" >
         <${MenuEntry} label="Add" onClick=${addOverlay} />
@@ -234,8 +206,13 @@ export const Menu = (props: AppProps) => {
         <${MenuEntry} label="Color" onClick=${() => console.log('Not implemented yet - color')} />
         <${MenuEntry} label="Hide" onClick=${() => console.log('Not implemented yet - hide')} />
       </${MenuItem}>
+      ${
+        isVolume &&
+        html`<${Scaling} setScaling=${setScaling} init=${nvArraySelected.value[0].volumes[0]} />`
+      }
       ${multiImage.value && html`<${ToggleButton} label="Select" state=${selectionActive} />`}
     </div>
+    ${isVolume && html` <p>${getMetadataString(nvArraySelected.value[0])}</p> `}
     <dialog ref=${headerDialog}>
       <form>
         ${headerInfo.value.split('\n').map((line) => html` <p>${line}</p> `)}
@@ -243,6 +220,12 @@ export const Menu = (props: AppProps) => {
       </form>
     </dialog>
   `
+}
+
+export interface ScalingOpts {
+  isManual: boolean
+  min: number
+  max: number
 }
 
 // overlay menu includes color, min, max, opacity, hide
@@ -261,6 +244,7 @@ export const MenuButton = ({ label, onClick }) => {
 }
 
 // maybe selection menu with arrow and option to keep selection?
+// select single and multiple options
 export const ToggleButton = ({ label, state }: { label: string; state: Signal<boolean> }) => {
   return html`
     <div class="relative">
@@ -373,76 +357,19 @@ function DownArrow() {
   `
 }
 
-export const Menu2 = (props: AppProps) => {
-  return html`
-    <header>
-      <div class="group float-left">
-        <button class="dropbtn">
-          File
-          <i class="fa fa-caret-down"></i>
-        </button>
-        <div class="hidden group-hover:block absolute">
-          <a class="block float-none" id="SaveBitmap">Screen Shot</a>
-          <a class="block float-none" id="ShowHeader">Show Header</a>
-          <a class="linker" href="https://github.com/niivue/niivue">About</a>
-        </div>
-      </div>
-      <div class="group float-left">
-        <button class="dropbtn" data-toggle="dropdown">
-          View
-          <i class="fa fa-caret-down"></i>
-        </button>
-        <div class="hidden group-hover:block absolute">
-          <a href="#" class="block float-none" id="|Axial">Axial</a>
-          <a class="block float-none" id="|Sagittal">Sagittal</a>
-          <a class="block float-none" id="|Coronal">Coronal</a>
-          <a class="block float-none" id="|Render">Render</a>
-          <a class="float-none dropdown-item-checked" id="|MultiPlanarRender">A+C+S+R</a>
-          <a class="float-none divider dropdown-item-checked" id="Colorbar">Colorbar</a>
-          <a class="block float-none" id="Radiological">Radiological</a>
-          <a class="float-none dropdown-item-checked" id="Crosshair">Render Crosshair</a>
-          <a class="block float-none" id="ClipPlane">Render Clip Plane</a>
-        </div>
-      </div>
-      <div class="group float-left">
-        <button class="dropbtn">
-          Color
-          <i class="fa fa-caret-down"></i>
-        </button>
-        <div class="hidden group-hover:block absolute">
-          <a class="float-none dropdown-item-checked" id="!Gray">Gray</a>
-          <a class="block float-none" id="!Plasma">Plasma</a>
-          <a class="block float-none" id="!Viridis">Viridis</a>
-          <a class="block float-none" id="!Inferno">Inferno</a>
-          <a class="float-none divider dropdown-item-checked" id="BackColor">Dark Background</a>
-        </div>
-      </div>
-      <div class="group float-left">
-        <button class="dropbtn">
-          Drag
-          <i class="fa fa-caret-down"></i>
-        </button>
-        <div class="hidden group-hover:block absolute">
-          <a class="float-none dropdown-item-checked" id="^contrast">Contrast</a>
-          <a class="block float-none" id="^measurement">Measurement</a>
-          <a class="block float-none" id="^pan">Pan</a>
-          <a class="block float-none" id="^none">None</a>
-        </div>
-      </div>
-      <div class="group float-left">
-        <button class="dropbtn">
-          Script
-          <i class="fa fa-caret-down"></i>
-        </button>
-        <div class="hidden group-hover:block absolute">
-          <a class="block float-none" id="_FLAIR">FLAIR</a>
-          <a class="float-none dropdown-item-checked" id="_mni152">mni152</a>
-          <a class="block float-none" id="_shear">CT</a>
-          <a class="block float-none" id="_ct_perfusion">CT CBF</a>
-          <a class="block float-none" id="_pcasl">pCASL</a>
-          <a class="block float-none" id="_mesh">mesh</a>
-        </div>
-      </div>
-    </header>
-  `
+export function getMetadataString(nv: Niivue) {
+  const meta = nv?.volumes?.[0]?.getImageMetadata()
+  if (!meta || !meta.nx) {
+    return ''
+  }
+  const matrixString = 'matrix size: ' + meta.nx + ' x ' + meta.ny + ' x ' + meta.nz
+  const voxelString =
+    'voxelsize: ' +
+    meta.dx.toPrecision(2) +
+    ' x ' +
+    meta.dy.toPrecision(2) +
+    ' x ' +
+    meta.dz.toPrecision(2)
+  const timeString = meta.nt > 1 ? ', timepoints: ' + meta.nt : ''
+  return matrixString + ', ' + voxelString + timeString
 }

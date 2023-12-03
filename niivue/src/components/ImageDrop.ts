@@ -16,6 +16,7 @@ export const ImageDrop = ({ children }: { children: ComponentChildren }) => {
   }
 
   const handleDrop = (e: DragEvent) => {
+    isDrag.value = false
     e.stopPropagation()
     e.preventDefault()
     const files = e.dataTransfer!.files

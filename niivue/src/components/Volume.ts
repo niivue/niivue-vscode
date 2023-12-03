@@ -39,11 +39,13 @@ export const Volume = (props: AppProps & VolumeProps) => {
       onclick=${selectClick}
     >
       ${hideUI.value > 0 &&
-      html` <div class="absolute pointer-events-none text-xl text-outline">${dispName}</div> `}
-      ${hideUI.value > 1 &&
+      html`
+        <div class="absolute pointer-events-none text-xl text-outline left-1">${dispName}</div>
+      `}
+      ${hideUI.value > 2 &&
       html`
         <button
-          class="absolute bg-transparent text-xl cursor-pointer opacity-80 border-none text-outline top-0 right-0"
+          class="absolute bg-transparent text-xl cursor-pointer opacity-80 border-none text-outline top-0 right-1"
           onclick=${props.remove}
         >
           X
@@ -51,11 +53,7 @@ export const Volume = (props: AppProps & VolumeProps) => {
       `}
       <${NiiVueCanvas} ...${props} intensity=${intensity} />
       ${hideUI.value > 1 &&
-      html`<div
-        class="pointer-events-none absolute flex gap-1 flex-wrap items-baseline bottom-1 opacity-80"
-      >
-        ${hideUI.value > 2 &&
-        html`<${VolumeOverlay} nv=${props.nv} volumeIndex=${volumeIndex} volumeRef=${volumeRef} />`}
+      html`<div class="pointer-events-none absolute bottom-1 left-1">
         <span class="text-outline">${intensity}</span>
       </div>`}
     </div>

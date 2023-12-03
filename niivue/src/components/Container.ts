@@ -51,7 +51,7 @@ export const Container = (props: AppProps) => {
 
   return html`
     <div class="flex-grow h-full overflow-clip" ref=${sizeRef}>
-      <div class="flex flex-wrap gap-x-1 w-full m-1">
+      <div class="flex flex-wrap gap-1 w-full m-1">
         ${nvArray.value.map(
           (nv, i) => html`<${Volume} nv=${nv} width=${canvasSize.value.width}
           height=${canvasSize.value.height} volumeIndex=${i} name=${names.value[i]} key=${nv.key}

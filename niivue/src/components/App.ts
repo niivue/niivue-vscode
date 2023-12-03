@@ -4,8 +4,6 @@ import { html } from 'htm/preact'
 import { useEffect } from 'preact/hooks'
 import { listenToMessages } from '../events'
 import { Container } from './Container'
-import { Footer } from './Footer'
-import { Header } from './Header'
 import { ImageDrop } from './ImageDrop'
 import { HomeScreen } from './HomeScreen'
 import { Menu } from './Menu'
@@ -17,15 +15,12 @@ export const App = () => {
 
   const nImages = computed(() => appProps.nvArray.value.length)
   const showHomeScreen = computed(() => nImages.value == 0 && !isVscode)
-  const showHomeButton = computed(() => nImages.value > 0 && !isVscode)
 
   return html`
-    <${Menu} ...${appProps} />
     <${ImageDrop}>
+      <${Menu} ...${appProps} />
       ${showHomeScreen.value && html`<${HomeScreen} />`}
-      <${Header} ...${appProps} homeButton=${showHomeButton.value} />
       <${Container} ...${appProps} />
-      <${Footer} ...${appProps} />
     <//>
   `
 }

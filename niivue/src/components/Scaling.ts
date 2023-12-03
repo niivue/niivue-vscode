@@ -27,13 +27,25 @@ export const Scaling = ({ setScaling, init }: ScalingProps) => {
       max: parseFloat(maxRef.current?.value ?? '1'),
     } as ScalingOpts)
   return html`
-    <label>
-      <span>Min </span>
-      <input type="number" ref=${minRef} onchange=${update} />
-    </label>
-    <label>
-      <span>Max </span>
-      <input type="number" ref=${maxRef} onchange=${update} />
-    </label>
+    <div clas="relative">
+      <label class="items-baseline h-6 px-2 align-middle">
+        <span>Min </span>
+        <input
+          class="border-2 border-gray-600 rounded-md bg-gray-700 h-6"
+          type="number"
+          ref=${minRef}
+          onchange=${update}
+        />
+      </label>
+      <label class="items-baseline h-6 px-2 align-middle">
+        <span>Max </span>
+        <input
+          class="border-2 border-gray-600 rounded-md bg-gray-700 h-6"
+          type="number"
+          ref=${maxRef}
+          onchange=${update}
+        />
+      </label>
+    </div>
   `
 }
