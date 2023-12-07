@@ -21,6 +21,7 @@ export const App = () => {
       <${Menu} ...${appProps} />
       ${showHomeScreen.value && html`<${HomeScreen} />`}
       <${Container} ...${appProps} />
+      <div>${appProps.location}</div>
     <//>
   `
 }
@@ -29,7 +30,6 @@ export interface AppProps {
   selection: Signal<Array<number>>
   selectionMode: Signal<number>
   nv0: Signal<Niivue>
-  scaling: Signal<any>
   hideUI: Signal<number>
   crosshair: Signal<boolean>
   sliceType: Signal<number>
@@ -51,7 +51,6 @@ function useAppState(): AppProps {
     selection: useSignal<Array<number>>([]),
     selectionMode: useSignal(0),
     nv0: useSignal<Niivue>({ isLoaded: false }),
-    scaling: useSignal<ScalingOpts>({ isManual: false, min: 0, max: 0 }),
     hideUI: useSignal(3), // 0: hide all, 1: show name, 2: hide overlay, 3: show-all
     crosshair: useSignal(true),
     sliceType: useSignal<number>(SLICE_TYPE.MULTIPLANAR), // all views

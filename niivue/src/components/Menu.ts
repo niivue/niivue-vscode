@@ -5,24 +5,11 @@ import { useRef } from 'preact/hooks'
 import { addImagesEvent, addOverlayEvent } from '../events'
 import { SLICE_TYPE } from '@niivue/niivue'
 import { Scaling } from './Scaling'
-
-type SubMenuEntry = {
-  label: string
-  onClick: () => void
-}
+import { OverlayOptions } from './OverlayOptions'
 
 export const Menu = (props: AppProps) => {
-  const {
-    selection,
-    selectionMode,
-    nvArray,
-    nv0,
-    sliceType,
-    crosshair,
-    hideUI,
-    interpolation,
-    scaling,
-  } = props
+  const { selection, selectionMode, nvArray, nv0, sliceType, crosshair, hideUI, interpolation } =
+    props
   const nvArraySelected = computed(() =>
     selectionMode.value > 0 && selection.value.length > 0
       ? nvArray.value.filter((_, i) => selection.value.includes(i))
@@ -31,10 +18,10 @@ export const Menu = (props: AppProps) => {
   const multiImage = computed(() => nvArray.value.length > 1)
 
   effect(() => {
-    if (selection.value.length == 0) {
+    if (selection.value.length == 0 && nvArray.value.length > 0) {
       if (selectionMode.value == 1) {
         selection.value = [0]
-      } else if (selectionMode.value == 2) {
+      } else {
         selection.value = nvArray.value.map((_, i) => i)
       }
     }
@@ -147,7 +134,13 @@ export const Menu = (props: AppProps) => {
     })
   }
 
-  const setScaling = (val: ScalingOpts) => (scaling.value = val)
+  const setScaling = (val: ScalingOpts) => {
+    nvArraySelected.value.forEach((nv) => {
+      nv.volumes[0].cal_min = val.min
+      nv.volumes[0].cal_max = val.max
+      nv.updateGLVolume()
+    })
+  }
 
   const nv = nv0.value
   const ready = nv.isLoaded
@@ -198,7 +191,9 @@ export const Menu = (props: AppProps) => {
       <${MenuItem} label="Overlay" >
         <${MenuEntry} label="Add" onClick=${addOverlay} />
         <${MenuEntry} label="Remove" onClick=${removeLastVolume} />
-        <${MenuEntry} label="Color" onClick=${() => console.log('Not implemented yet - color')} />
+        <${MenuEntry} label="Settings" onClick=${() =>
+    console.log('Not implemented yet - color')} />
+        
         <${MenuEntry} label="Hide" onClick=${() => console.log('Not implemented yet - hide')} />
       </${MenuItem}>
       ${
@@ -209,6 +204,7 @@ export const Menu = (props: AppProps) => {
       }
       ${multiImage.value && html`<${ImageSelect} label="Select" state=${selectionMode} />`}
     </div>
+    ${isOverlay.value && html` <${OverlaySettings} nv=${nvArraySelected.value[0]} /> `}
     ${isVolume && html` <p>${getMetadataString(nvArraySelected.value[0])}</p> `}
     <dialog ref=${headerDialog}>
       <form>
@@ -225,10 +221,10 @@ export interface ScalingOpts {
   max: number
 }
 
-// overlay menu includes color, min, max, opacity, hide
-// overlay menu is a box with a dropdown for the color, number inputs for min, max, opacity and a toggle for hide
-const OverlayMenu = ({ nv }) => {
-  return
+// overlay settings includes color, min, max, opacity, hide
+// overlay settings is a box with a dropdown for the color, number inputs for min, max, opacity and a toggle for hide
+const OverlaySettings = ({ nv }) => {
+  return html` <${OverlayOptions} nv=${nv} /> `
 }
 export const MenuButton = ({ label, onClick }) => {
   return html`

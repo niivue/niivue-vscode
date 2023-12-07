@@ -21,7 +21,6 @@ export const NiiVueCanvas = ({
   nv0,
   sliceType,
   interpolation,
-  scaling,
   location,
   render,
   crosshair,
@@ -57,7 +56,6 @@ export const NiiVueCanvas = ({
     } catch (e) {
       console.log(e) // sometime fails
     }
-    applyScale(nv, scaling.value)
     effect(() => {
       nv.opts.isColorbar = colorbar.value
       nv.drawScene()
@@ -132,14 +130,6 @@ async function loadVolume(nv: Niivue, item: any) {
   } else {
     const meshList = [{ url: item.uri }]
     nv.loadMeshes(meshList)
-  }
-}
-
-export function applyScale(nv: Niivue, scaling: any) {
-  if (scaling.isManual) {
-    nv.volumes[0].cal_min = scaling.min
-    nv.volumes[0].cal_max = scaling.max
-    nv.updateGLVolume()
   }
 }
 
