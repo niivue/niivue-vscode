@@ -5,7 +5,7 @@ import { useRef } from 'preact/hooks'
 import { addImagesEvent, addOverlayEvent } from '../events'
 import { SLICE_TYPE } from '@niivue/niivue'
 import { Scaling } from './Scaling'
-import { OverlayOptions, getColormaps } from './OverlayOptions'
+import { OverlayOptions, getColormaps, handleOverlayColormap } from './OverlayOptions'
 
 export const Menu = (props: AppProps) => {
   const { selection, selectionMode, nvArray, nv0, sliceType, crosshair, hideUI, interpolation } =
@@ -139,11 +139,13 @@ export const Menu = (props: AppProps) => {
     })
   }
 
-  const setScaling = (val: ScalingOpts) => {
-    nvArraySelected.value.forEach((nv) => {
-      nv.volumes[0].cal_min = val.min
-      nv.volumes[0].cal_max = val.max
-      nv.updateGLVolume()
+  const openImage = (uri: string) => {
+    window.postMessage({
+      type: 'addImage',
+      body: {
+        data: '',
+        uri,
+      },
     })
   }
 
@@ -154,15 +156,7 @@ export const Menu = (props: AppProps) => {
   }
 
   const nOverlays = computed(() => nvArraySelected.value[0]?.volumes?.length - 1 || 0)
-  const selectedOverlyVal = useSignal(0)
-  const selectedOverlay = computed(
-    () => nvArraySelected.value[0]?.volumes?.[selectedOverlyVal.value],
-  )
-  const colormaps = computed(() =>
-    isVolume.value
-      ? ['symmetric', ...nvArraySelected.value[0].colormaps()]
-      : ['ge_color', 'hsv', 'symmetric', 'warm'],
-  )
+  const selectedOverlayNumber = useSignal(0)
   const overlayMenu = useSignal(false)
 
   return html`
@@ -179,6 +173,8 @@ export const Menu = (props: AppProps) => {
           label="DICOM Folder"
           onClick=${() => console.log('Not implemented yet - dicom folder')}
         />
+        <${MenuEntry} label="Example Image" onClick=${() =>
+    openImage('https://niivue.github.io/niivue-demo-images/mni152.nii.gz')} />
       </${MenuItem}>
       <${MenuItem} label="View" >
         <${MenuEntry} label="Axial" onClick=${setView(SLICE_TYPE.AXIAL)} />
@@ -209,7 +205,7 @@ export const Menu = (props: AppProps) => {
       </${MenuItem}>      
       <${MenuItem} label="ColorScale" >
         <${MenuEntry} label="Volume" onClick=${() => {
-    selectedOverlyVal.value = 0
+    selectedOverlayNumber.value = 0
     overlayMenu.value = true
   }} />
 
@@ -219,7 +215,7 @@ export const Menu = (props: AppProps) => {
             <${MenuEntry}
               label="Overlay ${i + 1}"
               onClick=${() => {
-                selectedOverlyVal.value = i + 1
+                selectedOverlayNumber.value = i + 1
                 overlayMenu.value = true
               }}
             />
@@ -228,45 +224,14 @@ export const Menu = (props: AppProps) => {
       </${MenuItem}>        
       ${multiImage.value && html`<${ImageSelect} label="Select" state=${selectionMode} />`}
     </div>
-    ${isVolume.value && html`<p>${getMetadataString(nvArraySelected.value[0])}</p>`}
-    <!-- create a rectangle with scaling min/max input, color dropdown, opacity input, hide toggle -->        
+    ${isVolume.value && html`<p>${getMetadataString(nvArraySelected.value[0])}</p>`}    
     ${
-      isVolume.value &&
       overlayMenu.value &&
-      html`<div class="absolute left-8 top-8 bg-gray-500 rounded-md z-50 space-y-1 space-x-1 p-1">
-        <${Scaling} setScaling=${setScaling} init=${selectedOverlay.value} />
-        <select
-          class="bg-gray-600 w-28 border-2 border-gray-600 rounded-md"
-          onchange=${() => console.log('Not implemented yet')}
-          value=${selectedOverlay.value.colormap}
-        >
-          ${colormaps.value.map((c) => html`<option value=${c}>${c}</option>`)}
-        </select>
-        <input
-          class="bg-gray-600 w-20 border-2 border-gray-600 rounded-md"
-          type="number"
-          value=${selectedOverlay.value.opacity}
-          onchange=${() => console.log('Not implemented yet')}
-          min="0"
-          max="1"
-          step="0.1"
-        />
-        <button
-          class="bg-gray-600 border-2 border-gray-600 rounded-md w-16"
-          onclick=${() => console.log('Not implemented yet')}
-        >
-          Hide
-        </button>
-        <!-- close button in next line -->
-        <div>
-          <button
-            class="bg-gray-600 border-2 border-gray-600 rounded-md w-16"
-            onclick=${() => (overlayMenu.value = false)}
-          >
-            Close
-          </button>
-        </div>
-      </div> `
+      html`<${ScalingBox}
+        selectedOverlayNumber=${selectedOverlayNumber}
+        overlayMenu=${overlayMenu}
+        nvArraySelected=${nvArraySelected}
+      />`
     }
       
     <dialog ref=${headerDialog}>
@@ -278,17 +243,75 @@ export const Menu = (props: AppProps) => {
   `
 }
 
+const ScalingBox = (props) => {
+  const { nvArraySelected, selectedOverlayNumber, overlayMenu } = props
+
+  const setScaling = (val: ScalingOpts) => {
+    nvArraySelected.value.forEach((nv) => {
+      nv.volumes[0].cal_min = val.min
+      nv.volumes[0].cal_max = val.max
+      nv.updateGLVolume()
+    })
+  }
+  const isVolume = computed(() => nvArraySelected.value[0]?.volumes?.length > 0)
+  const colormaps = computed(() =>
+    isVolume.value
+      ? ['symmetric', ...nvArraySelected.value[0].colormaps()]
+      : ['ge_color', 'hsv', 'symmetric', 'warm'],
+  )
+  const handleColormap = (e) => {
+    const colormap = e.target.value
+    nvArraySelected.value.forEach((nv) => {
+      handleOverlayColormap(nv, selectedOverlayNumber.value, colormap)
+    })
+  }
+
+  const selectedOverlay = computed(
+    () => nvArraySelected.value[0]?.volumes?.[selectedOverlayNumber.value],
+  )
+
+  return html`
+    <div class="absolute left-8 top-8 bg-gray-500 rounded-md z-50 space-y-1 space-x-1 p-1">
+      <${Scaling} setScaling=${setScaling} init=${selectedOverlay.value} />
+      <select
+        class="bg-gray-600 w-24 border-2 border-gray-600 rounded-md"
+        onchange=${handleColormap}
+        value=${selectedOverlay.value.colormap}
+      >
+        ${colormaps.value.map((c) => html`<option value=${c}>${c}</option>`)}
+      </select>
+      <input
+        class="bg-gray-600 w-16 border-2 border-gray-600 rounded-md"
+        type="number"
+        value=${selectedOverlay.value.opacity}
+        onchange=${() => console.log('Not implemented yet')}
+        min="0"
+        max="1"
+        step="0.1"
+      />
+      <button
+        class="bg-gray-600 border-2 border-gray-600 rounded-md w-16"
+        onclick=${() => console.log('Not implemented yet')}
+      >
+        Hide
+      </button>
+      <br />
+      <button
+        class="bg-gray-600 border-2 border-gray-600 rounded-md w-16"
+        onclick=${() => (overlayMenu.value = false)}
+      >
+        Close
+      </button>
+    </div>
+  `
+}
+
 export interface ScalingOpts {
   isManual: boolean
   min: number
   max: number
 }
 
-// overlay settings includes color, min, max, opacity, hide
-// overlay settings is a box with a dropdown for the color, number inputs for min, max, opacity and a toggle for hide
-const OverlaySettings = ({ nv }) => {
-  return html` <${OverlayOptions} nv=${nv} /> `
-}
 export const MenuButton = ({ label, onClick }) => {
   return html`
     <div class="relative">
@@ -434,7 +457,4 @@ export function getMetadataString(nv: Niivue) {
     meta.dz.toPrecision(2)
   const timeString = meta.nt > 1 ? ', timepoints: ' + meta.nt : ''
   return matrixString + ', ' + voxelString + timeString
-}
-function handleOverlayColormap(nv: Niivue): any {
-  throw new Error('Function not implemented.')
 }

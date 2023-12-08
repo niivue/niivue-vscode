@@ -40,7 +40,7 @@ function getOverlay(nv: Niivue) {
 }
 
 function isVolumeOverlay(nv: Niivue) {
-  return nv.volumes.length > 1
+  return nv.volumes.length > 0
 }
 function isMeshOverlay(nv: Niivue) {
   return nv.meshes.length > 0 && nv.meshes[0].layers.length > 0
@@ -75,20 +75,17 @@ export function handleOverlayScaling(nv: Niivue) {
   }
 }
 
-function handleOverlayColormap(nv: Niivue) {
-  return (e: any) => {
-    const colormap = e.target.value
-    if (isVolumeOverlay(nv)) {
-      setVolumeColormap(nv, colormap)
-    } else {
-      setMeshColormap(nv, colormap)
-    }
-    nv.updateGLVolume()
+export function handleOverlayColormap(nv: Niivue, layerNumber: number, colormap: string) {
+  if (isVolumeOverlay(nv)) {
+    setVolumeColormap(nv, layerNumber, colormap)
+  } else {
+    setMeshColormap(nv, layerNumber, colormap)
   }
+  nv.updateGLVolume()
 }
 
-function setVolumeColormap(nv: Niivue, colormap: string) {
-  const overlay = nv.volumes[nv.volumes.length - 1]
+function setVolumeColormap(nv: Niivue, layerNumber: number, colormap: string) {
+  const overlay = nv.volumes[layerNumber]
   if (colormap === 'symmetric') {
     overlay.useNegativeCmap = true
     overlay.colormap = 'warm'
@@ -100,8 +97,7 @@ function setVolumeColormap(nv: Niivue, colormap: string) {
   }
 }
 
-function setMeshColormap(nv: Niivue, colormap: string) {
-  const layerNumber = nv.meshes[0].layers.length - 1
+function setMeshColormap(nv: Niivue, layerNumber: number, colormap: string) {
   const id = nv.meshes[0].id
   if (colormap === 'symmetric') {
     nv.setMeshLayerProperty(id, layerNumber, 'useNegativeCmap', true)
