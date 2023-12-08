@@ -10,22 +10,24 @@ export const OverlayOptions = ({ nv }: { nv: Niivue }) => {
   const colormaps = getColormaps(nv)
 
   return html`
-    <${Scaling} setScaling=${handleOverlayScaling(nv)} init=${overlay} />
-    <select onchange=${handleOverlayColormap(nv)} value=${overlay.colormap}>
-      ${colormaps.map((c) => html`<option value=${c}>${c}</option>`)}
-    </select>
-    <input
-      type="number"
-      value=${overlay.opacity}
-      onchange=${handleOpacity(nv)}
-      min="0"
-      max="1"
-      step="0.1"
-    />
+    <div class="relative group">
+      <${Scaling} setScaling=${handleOverlayScaling(nv)} init=${overlay} />
+      <select onchange=${handleOverlayColormap(nv)} value=${overlay.colormap}>
+        ${colormaps.map((c) => html`<option value=${c}>${c}</option>`)}
+      </select>
+      <input
+        type="number"
+        value=${overlay.opacity}
+        onchange=${handleOpacity(nv)}
+        min="0"
+        max="1"
+        step="0.1"
+      />
+    </div>
   `
 }
 
-function getColormaps(nv: Niivue) {
+export function getColormaps(nv: Niivue) {
   if (isVolumeOverlay(nv)) {
     return ['symmetric', ...nv.colormaps()]
   }
@@ -58,7 +60,7 @@ function handleOpacity(nv: Niivue) {
   }
 }
 
-function handleOverlayScaling(nv: Niivue) {
+export function handleOverlayScaling(nv: Niivue) {
   return (scaling: any) => {
     if (isVolumeOverlay(nv)) {
       const overlay = nv.volumes[nv.volumes.length - 1]
@@ -66,18 +68,8 @@ function handleOverlayScaling(nv: Niivue) {
       overlay.cal_max = scaling.max
     } else {
       const layerNumber = nv.meshes[0].layers.length - 1
-      nv.setMeshLayerProperty(
-        nv.meshes[0].id,
-        layerNumber,
-        'cal_min',
-        scaling.min,
-      )
-      nv.setMeshLayerProperty(
-        nv.meshes[0].id,
-        layerNumber,
-        'cal_max',
-        scaling.max,
-      )
+      nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, 'cal_min', scaling.min)
+      nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, 'cal_max', scaling.max)
     }
     nv.updateGLVolume()
   }

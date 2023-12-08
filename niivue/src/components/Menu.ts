@@ -5,7 +5,7 @@ import { useRef } from 'preact/hooks'
 import { addImagesEvent, addOverlayEvent } from '../events'
 import { SLICE_TYPE } from '@niivue/niivue'
 import { Scaling } from './Scaling'
-import { OverlayOptions } from './OverlayOptions'
+import { OverlayOptions, getColormaps } from './OverlayOptions'
 
 export const Menu = (props: AppProps) => {
   const { selection, selectionMode, nvArray, nv0, sliceType, crosshair, hideUI, interpolation } =
@@ -16,6 +16,7 @@ export const Menu = (props: AppProps) => {
       : nvArray.value,
   )
   const multiImage = computed(() => nvArray.value.length > 1)
+  const nvFirstSelected = computed(() => nvArraySelected.value[0])
 
   effect(() => {
     if (selection.value.length == 0 && nvArray.value.length > 0) {
@@ -73,6 +74,10 @@ export const Menu = (props: AppProps) => {
   const addOverlay = () => {
     // if image
     addOverlayEvent(selection.value[0], 'overlay')
+  }
+
+  const addCurvature = () => {
+    addOverlayEvent(selection.value[0], 'curvature')
   }
 
   const removeLastVolume = () => {
@@ -142,13 +147,22 @@ export const Menu = (props: AppProps) => {
     })
   }
 
-  const nv = nv0.value
-  const ready = nv.isLoaded
-  const isVolume = ready && nv.volumes.length > 0
+  const isVolume = computed(() => nvArraySelected.value[0]?.volumes?.length > 0)
 
   const selectAll = () => {
     selection.value = nvArray.value.map((_, i) => i)
   }
+
+  const nOverlays = computed(() => nvArraySelected.value[0]?.volumes?.length - 1 || 0)
+  const selectedOverlyVal = useSignal(0)
+  const selectedOverlay = computed(
+    () => nvArraySelected.value[0]?.volumes?.[selectedOverlyVal.value],
+  )
+  const colormaps = computed(() =>
+    isVolume.value
+      ? ['symmetric', ...nvArraySelected.value[0].colormaps()]
+      : ['ge_color', 'hsv', 'symmetric', 'warm'],
+  )
 
   return html`
     <div class="flex flex-wrap items-baseline gap-1">
@@ -190,21 +204,26 @@ export const Menu = (props: AppProps) => {
       <div class="border-r border-gray-700 h-4"></div>
       <${MenuItem} label="Overlay" >
         <${MenuEntry} label="Add" onClick=${addOverlay} />
+        <${MenuEntry} label="Curvature" onClick=${addCurvature} />
         <${MenuEntry} label="Remove" onClick=${removeLastVolume} />
-        <${MenuEntry} label="Settings" onClick=${() =>
-    console.log('Not implemented yet - color')} />
+      </${MenuItem}>      
+      <${MenuItem} label="ColorScale" >
         
-        <${MenuEntry} label="Hide" onClick=${() => console.log('Not implemented yet - hide')} />
-      </${MenuItem}>
-      ${
-        isVolume &&
-        html`<${Scaling} setScaling=${setScaling} init=${nvArraySelected.value[0].volumes[0]} >
-          <${MenuEntry} label="Select All" onClick=${selectAll} />
-        </${Scaling}`
-      }
+        <!-- create a rectangle with scaling min/max input, color dropdown, opacity input, hide toggle -->
+        ${Array.from(
+          { length: nOverlays.value },
+          (_, i) => html`
+            <${MenuEntry}
+              label="Overlay ${i + 1}"
+              onClick=${() => console.log('Not implemented yet')}
+            />
+          `,
+        )}
+        
+      </${MenuItem}> 
+       
       ${multiImage.value && html`<${ImageSelect} label="Select" state=${selectionMode} />`}
     </div>
-    ${isOverlay.value && html` <${OverlaySettings} nv=${nvArraySelected.value[0]} /> `}
     ${isVolume && html` <p>${getMetadataString(nvArraySelected.value[0])}</p> `}
     <dialog ref=${headerDialog}>
       <form>
@@ -263,11 +282,13 @@ export const ImageSelect = ({ label, state, children }) => {
 export const MenuItem = ({ label, onClick, children }) => {
   const isOpen = useSignal(false)
   const selectedElement = useSignal(0)
-  children.forEach((child, index) => {
-    if (child.type == MenuEntry) {
-      child.props.isOpen = isOpen
-    }
-  })
+  if (children) {
+    children.forEach((child, index) => {
+      if (child.type == MenuEntry) {
+        child.props.isOpen = isOpen
+      }
+    })
+  }
 
   return html`
     <div class="relative group">
@@ -374,4 +395,7 @@ export function getMetadataString(nv: Niivue) {
     meta.dz.toPrecision(2)
   const timeString = meta.nt > 1 ? ', timepoints: ' + meta.nt : ''
   return matrixString + ', ' + voxelString + timeString
+}
+function handleOverlayColormap(nv: Niivue): any {
+  throw new Error('Function not implemented.')
 }
