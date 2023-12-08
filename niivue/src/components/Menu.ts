@@ -1,7 +1,7 @@
 import { html } from 'htm/preact'
 import { AppProps } from './App'
 import { computed, effect, useSignal } from '@preact/signals'
-import { useRef } from 'preact/hooks'
+import { useEffect, useRef } from 'preact/hooks'
 import { addImagesEvent, addOverlayEvent } from '../events'
 import { SLICE_TYPE } from '@niivue/niivue'
 import { Scaling } from './Scaling'
@@ -77,13 +77,27 @@ export const Menu = (props: AppProps) => {
   }
 
   const addCurvature = () => {
-    addOverlayEvent(selection.value[0], 'curvature')
+    addOverlayEvent(selection.value[0], 'addMeshCurvature')
+  }
+
+  const addMeshOverlay = () => {
+    addOverlayEvent(selection.value[0], 'addMeshOverlay')
   }
 
   const removeLastVolume = () => {
     const nv = nvArraySelected.value[0]
     nv.removeVolumeByIndex(nv.volumes.length - 1)
     nv.updateGLVolume()
+  }
+
+  const replaceLastVolume = () => {
+    if (isVolume.value) {
+      const nv = nvArraySelected.value[0]
+      nv.removeVolumeByIndex(nv.volumes.length - 1)
+      addOverlayEvent(selection.value[0], 'overlay')
+    } else {
+      addOverlayEvent(selection.value[0], 'replaceMeshOverlay')
+    }
   }
 
   const setView = (view: number) => () => {
@@ -150,6 +164,7 @@ export const Menu = (props: AppProps) => {
   }
 
   const isVolume = computed(() => nvArraySelected.value[0]?.volumes?.length > 0)
+  const isMesh = computed(() => nvArraySelected.value[0]?.meshes?.length > 0)
 
   const selectAll = () => {
     selection.value = nvArray.value.map((_, i) => i)
@@ -213,9 +228,22 @@ export const Menu = (props: AppProps) => {
         )}        
       </${MenuItem}>
       <${MenuItem} label="Overlay" onClick=${addOverlay} >
-        <${MenuEntry} label="Add" onClick=${addOverlay} />
-        <${MenuEntry} label="Curvature" onClick=${addCurvature} />
-        <${MenuEntry} label="Remove" onClick=${removeLastVolume} />
+        ${isVolume.value && html` <${MenuEntry} label="Add" onClick=${addOverlay} /> `}
+        ${
+          isMesh.value &&
+          html`
+            <${MenuEntry} label="Add" onClick=${addMeshOverlay} />
+            <${MenuEntry} label="Curvature" onClick=${addCurvature} />
+            <${MenuEntry} label="ImageOverlay" onClick=${addOverlay} />
+          `
+        }
+        ${
+          isOverlay.value &&
+          html`
+            <${MenuEntry} label="Replace" onClick=${replaceLastVolume} />
+            <${MenuEntry} label="Remove" onClick=${removeLastVolume} />
+          `
+        }
       </${MenuItem}>
       <${MenuItem} label="Header" onClick=${showHeader}>
         <${MenuEntry} label="Set Header" onClick=${() => console.log('Not implemented yet')} />
@@ -355,7 +383,7 @@ export const MenuItem = ({ label, onClick, children }) => {
   const isOpen = useSignal(false)
   if (children) {
     children.forEach((child, _) => {
-      if (child.type == MenuEntry) {
+      if (child?.props) {
         child.props.isOpen = isOpen
       }
     })
