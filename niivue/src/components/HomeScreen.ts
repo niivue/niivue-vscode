@@ -2,8 +2,8 @@ import { html } from 'htm/preact'
 import { OpenFromWeb } from './OpenFromWeb'
 
 export const HomeScreen = () => html`
-  <h2 class="text-3xl font-bold dark:text-white">Bookmarklet</h2>
-  <p class="w-96 my-4 text-lg text-gray-500">
+  <h2 class="text-3xl font-bold text-gray-200 p-2">Bookmarklet</h2>
+  <p class="w-96 text-lg text-gray-300 pl-2">
     Drag this link ⇨
     <a
       href="javascript: (() => {
@@ -23,10 +23,9 @@ export const HomeScreen = () => html`
       <b> MNI </b>
     </a>
   </p>
-  <h2 class="text-3xl font-bold dark:text-white">Drop Files to load images</h2>
-  <p class="w-96 mb-4 text-lg font-normal text-gray-500 dark:text-gray-400">
+  <h2 class="text-3xl font-bold text-gray-200 p-2">Drop Files to load images</h2>
+  <p class="w-96 mb-4 text-lg font-normal text-gray-300 pl-2">
     Drag and drop files to an empty space on this window. Many medical image and mesh formats are
     supported.
   </p>
-  <${OpenFromWeb} />
 `
