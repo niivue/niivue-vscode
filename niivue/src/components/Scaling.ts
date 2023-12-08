@@ -28,7 +28,7 @@ export const Scaling = ({ setScaling, init }: ScalingProps) => {
     } as ScalingOpts)
   return html`
     <div clas="relative">
-      <label class="items-baseline h-6 px-2 align-middle">
+      <label class="items-baseline h-6 px-2">
         <span>Min </span>
         <input
           class="border-2 border-gray-600 rounded-md bg-gray-700 h-6"
@@ -37,7 +37,7 @@ export const Scaling = ({ setScaling, init }: ScalingProps) => {
           onchange=${update}
         />
       </label>
-      <label class="items-baseline h-6 px-2 align-middle">
+      <label class="items-baseline h-6 px-2">
         <span>Max </span>
         <input
           class="border-2 border-gray-600 rounded-md bg-gray-700 h-6"

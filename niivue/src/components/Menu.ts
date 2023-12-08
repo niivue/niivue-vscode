@@ -163,6 +163,7 @@ export const Menu = (props: AppProps) => {
       ? ['symmetric', ...nvArraySelected.value[0].colormaps()]
       : ['ge_color', 'hsv', 'symmetric', 'warm'],
   )
+  const overlayMenu = useSignal(false)
 
   return html`
     <div class="flex flex-wrap items-baseline gap-1">
@@ -208,23 +209,67 @@ export const Menu = (props: AppProps) => {
         <${MenuEntry} label="Remove" onClick=${removeLastVolume} />
       </${MenuItem}>      
       <${MenuItem} label="ColorScale" >
-        
-        <!-- create a rectangle with scaling min/max input, color dropdown, opacity input, hide toggle -->
+        <${MenuEntry} label="Volume" onClick=${() => {
+    selectedOverlyVal.value = 0
+    overlayMenu.value = true
+  }} />
+
         ${Array.from(
           { length: nOverlays.value },
           (_, i) => html`
             <${MenuEntry}
               label="Overlay ${i + 1}"
-              onClick=${() => console.log('Not implemented yet')}
+              onClick=${() => {
+                selectedOverlyVal.value = i + 1
+                overlayMenu.value = true
+              }}
             />
           `,
-        )}
-        
-      </${MenuItem}> 
-       
+        )}        
+      </${MenuItem}>        
       ${multiImage.value && html`<${ImageSelect} label="Select" state=${selectionMode} />`}
     </div>
-    ${isVolume && html` <p>${getMetadataString(nvArraySelected.value[0])}</p> `}
+    ${isVolume.value && html`<p>${getMetadataString(nvArraySelected.value[0])}</p>`}
+    <!-- create a rectangle with scaling min/max input, color dropdown, opacity input, hide toggle -->        
+    ${
+      isVolume.value &&
+      overlayMenu.value &&
+      html`<div class="absolute left-8 top-8 bg-gray-500 rounded-md z-50 space-y-1 space-x-1 p-1">
+        <${Scaling} setScaling=${setScaling} init=${selectedOverlay.value} />
+        <select
+          class="bg-gray-600 w-28 border-2 border-gray-600 rounded-md"
+          onchange=${() => console.log('Not implemented yet')}
+          value=${selectedOverlay.value.colormap}
+        >
+          ${colormaps.value.map((c) => html`<option value=${c}>${c}</option>`)}
+        </select>
+        <input
+          class="bg-gray-600 w-20 border-2 border-gray-600 rounded-md"
+          type="number"
+          value=${selectedOverlay.value.opacity}
+          onchange=${() => console.log('Not implemented yet')}
+          min="0"
+          max="1"
+          step="0.1"
+        />
+        <button
+          class="bg-gray-600 border-2 border-gray-600 rounded-md w-16"
+          onclick=${() => console.log('Not implemented yet')}
+        >
+          Hide
+        </button>
+        <!-- close button in next line -->
+        <div>
+          <button
+            class="bg-gray-600 border-2 border-gray-600 rounded-md w-16"
+            onclick=${() => (overlayMenu.value = false)}
+          >
+            Close
+          </button>
+        </div>
+      </div> `
+    }
+      
     <dialog ref=${headerDialog}>
       <form>
         ${headerInfo.value.split('\n').map((line) => html` <p>${line}</p> `)}
