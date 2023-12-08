@@ -166,7 +166,7 @@ export const Menu = (props: AppProps) => {
   const overlayMenu = useSignal(false)
 
   return html`
-    <div class="flex flex-wrap items-baseline gap-1">
+    <div class="flex flex-wrap items-baseline gap-2">
       <${MenuButton} label="Home" onClick=${homeEvent} />
       <${MenuItem} label="Header" onClick=${showHeader}>
         <${MenuEntry} label="Set Header" onClick=${() => console.log('Not implemented yet')} />
@@ -202,7 +202,6 @@ export const Menu = (props: AppProps) => {
         <${MenuEntry} label="Radiological" onClick=${toggleRadiologicalConvention} />
         <${MenuEntry} label="Crosshair" onClick=${toggleCrosshair} />
       </${MenuItem}>
-      <div class="border-r border-gray-700 h-4"></div>
       <${MenuItem} label="Overlay" >
         <${MenuEntry} label="Add" onClick=${addOverlay} />
         <${MenuEntry} label="Curvature" onClick=${addCurvature} />
@@ -314,7 +313,7 @@ export const ImageSelect = ({ label, state, children }) => {
         ${label}
       </button>
       <button
-        class="hover:bg-gray-700 px-2 rounded-r-md h-6 align-middle"
+        class="hover:bg-gray-700 pr-2 rounded-r-md h-6 align-middle"
         onClick=${() => (isOpen.value = !isOpen.value)}
       >
         <${DownArrow} />
@@ -341,7 +340,7 @@ export const MenuItem = ({ label, onClick, children }) => {
         ${label}
       </button>
       <button
-        class="hover:bg-gray-700 px-2 rounded-r-md h-6 align-middle"
+        class="hover:bg-gray-700 pr-2 rounded-r-md h-6 align-middle"
         onClick=${() => (isOpen.value = !isOpen.value)}
       >
         <${DownArrow} />
@@ -409,7 +408,7 @@ export const MenuItemSelect = ({ menuEntries }) => {
 function DownArrow() {
   return html`
     <svg
-      class="w-2.5 h-2.5 ms-2.5"
+      class="w-2.5 h-2.5 ms-1.0"
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
       viewBox="0 0 10 6"
