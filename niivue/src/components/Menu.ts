@@ -407,12 +407,7 @@ export const MenuItemSelect = ({ menuEntries }) => {
 
 function DownArrow() {
   return html`
-    <svg
-      class="w-2.5 h-2.5 ms-1.0"
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 10 6"
-    >
+    <svg class="w-2.5 h-2.5 ms-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
       <path
         stroke="currentColor"
         stroke-linecap="round"
