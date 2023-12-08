@@ -1,11 +1,11 @@
 import { html } from 'htm/preact'
 import { AppProps } from './App'
-import { Signal, computed, effect, useSignal } from '@preact/signals'
+import { computed, effect, useSignal } from '@preact/signals'
 import { useRef } from 'preact/hooks'
 import { addImagesEvent, addOverlayEvent } from '../events'
 import { SLICE_TYPE } from '@niivue/niivue'
 import { Scaling } from './Scaling'
-import { OverlayOptions, getColormaps, handleOverlayColormap } from './OverlayOptions'
+import { handleOpacity, handleOverlayColormap } from './OverlayOptions'
 
 export const Menu = (props: AppProps) => {
   const { selection, selectionMode, nvArray, nv0, sliceType, crosshair, hideUI, interpolation } =
@@ -161,11 +161,7 @@ export const Menu = (props: AppProps) => {
 
   return html`
     <div class="flex flex-wrap items-baseline gap-2">
-      <${MenuButton} label="Home" onClick=${homeEvent} />
-      <${MenuItem} label="Header" onClick=${showHeader}>
-        <${MenuEntry} label="Set Header" onClick=${() => console.log('Not implemented yet')} />
-        <${MenuEntry} label="Set Headers to 1" onClick=${setVoxelSize1AndOrigin0} />
-      </${MenuItem}>
+      <${MenuButton} label="Home" onClick=${homeEvent} />      
       <${MenuItem} label="Add Image" onClick=${addImagesEvent}>
         <${MenuEntry} label="File(s)" onClick=${addImagesEvent} />
         <${MenuEntry} label="URL" onClick=${() => console.log('Not implemented yet - url')} />
@@ -198,17 +194,11 @@ export const Menu = (props: AppProps) => {
         <${MenuEntry} label="Radiological" onClick=${toggleRadiologicalConvention} />
         <${MenuEntry} label="Crosshair" onClick=${toggleCrosshair} />
       </${MenuItem}>
-      <${MenuItem} label="Overlay" >
-        <${MenuEntry} label="Add" onClick=${addOverlay} />
-        <${MenuEntry} label="Curvature" onClick=${addCurvature} />
-        <${MenuEntry} label="Remove" onClick=${removeLastVolume} />
-      </${MenuItem}>      
       <${MenuItem} label="ColorScale" >
         <${MenuEntry} label="Volume" onClick=${() => {
     selectedOverlayNumber.value = 0
     overlayMenu.value = true
   }} />
-
         ${Array.from(
           { length: nOverlays.value },
           (_, i) => html`
@@ -221,7 +211,16 @@ export const Menu = (props: AppProps) => {
             />
           `,
         )}        
-      </${MenuItem}>        
+      </${MenuItem}>
+      <${MenuItem} label="Overlay" onClick=${addOverlay} >
+        <${MenuEntry} label="Add" onClick=${addOverlay} />
+        <${MenuEntry} label="Curvature" onClick=${addCurvature} />
+        <${MenuEntry} label="Remove" onClick=${removeLastVolume} />
+      </${MenuItem}>
+      <${MenuItem} label="Header" onClick=${showHeader}>
+        <${MenuEntry} label="Set Header" onClick=${() => console.log('Not implemented yet')} />
+        <${MenuEntry} label="Set Headers to 1" onClick=${setVoxelSize1AndOrigin0} />
+      </${MenuItem}>      
       ${multiImage.value && html`<${ImageSelect} label="Select" state=${selectionMode} />`}
     </div>
     ${isVolume.value && html`<p>${getMetadataString(nvArraySelected.value[0])}</p>`}    
@@ -232,8 +231,7 @@ export const Menu = (props: AppProps) => {
         overlayMenu=${overlayMenu}
         nvArraySelected=${nvArraySelected}
       />`
-    }
-      
+    }      
     <dialog ref=${headerDialog}>
       <form>
         ${headerInfo.value.split('\n').map((line) => html` <p>${line}</p> `)}
@@ -270,6 +268,13 @@ const ScalingBox = (props) => {
     () => nvArraySelected.value[0]?.volumes?.[selectedOverlayNumber.value],
   )
 
+  const changeOpacity = (e) => {
+    const opacity = e.target.value
+    nvArraySelected.value.forEach((nv) => {
+      handleOpacity(nv, selectedOverlayNumber.value, opacity)
+    })
+  }
+
   return html`
     <div class="absolute left-8 top-8 bg-gray-500 rounded-md z-50 space-y-1 space-x-1 p-1">
       <${Scaling} setScaling=${setScaling} init=${selectedOverlay.value} />
@@ -284,13 +289,13 @@ const ScalingBox = (props) => {
         class="bg-gray-600 w-16 border-2 border-gray-600 rounded-md"
         type="number"
         value=${selectedOverlay.value.opacity}
-        onchange=${() => console.log('Not implemented yet')}
+        onchange=${changeOpacity}
         min="0"
         max="1"
         step="0.1"
       />
       <button
-        class="bg-gray-600 border-2 border-gray-600 rounded-md w-16"
+        class="bg-gray-600 border-2 border-gray-600 rounded-md w-16 opacity-50 cursor-not-allowed"
         onclick=${() => console.log('Not implemented yet')}
       >
         Hide
@@ -348,9 +353,8 @@ export const ImageSelect = ({ label, state, children }) => {
 
 export const MenuItem = ({ label, onClick, children }) => {
   const isOpen = useSignal(false)
-  const selectedElement = useSignal(0)
   if (children) {
-    children.forEach((child, index) => {
+    children.forEach((child, _) => {
       if (child.type == MenuEntry) {
         child.props.isOpen = isOpen
       }

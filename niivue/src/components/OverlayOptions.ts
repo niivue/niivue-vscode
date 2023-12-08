@@ -46,33 +46,13 @@ function isMeshOverlay(nv: Niivue) {
   return nv.meshes.length > 0 && nv.meshes[0].layers.length > 0
 }
 
-function handleOpacity(nv: Niivue) {
-  return (e: any) => {
-    const opacity = e.target.value
-    if (isVolumeOverlay(nv)) {
-      const idx = nv.volumes.length - 1
-      nv.setOpacity(idx, opacity)
-    } else {
-      const layerNumber = nv.meshes[0].layers.length - 1
-      nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, 'opacity', opacity)
-    }
-    nv.updateGLVolume()
+export function handleOpacity(nv: Niivue, layerNumber: number, opacity: number) {
+  if (isVolumeOverlay(nv)) {
+    nv.setOpacity(layerNumber, opacity)
+  } else {
+    nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, 'opacity', opacity)
   }
-}
-
-export function handleOverlayScaling(nv: Niivue) {
-  return (scaling: any) => {
-    if (isVolumeOverlay(nv)) {
-      const overlay = nv.volumes[nv.volumes.length - 1]
-      overlay.cal_min = scaling.min
-      overlay.cal_max = scaling.max
-    } else {
-      const layerNumber = nv.meshes[0].layers.length - 1
-      nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, 'cal_min', scaling.min)
-      nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, 'cal_max', scaling.max)
-    }
-    nv.updateGLVolume()
-  }
+  nv.updateGLVolume()
 }
 
 export function handleOverlayColormap(nv: Niivue, layerNumber: number, colormap: string) {
@@ -85,7 +65,10 @@ export function handleOverlayColormap(nv: Niivue, layerNumber: number, colormap:
 }
 
 function setVolumeColormap(nv: Niivue, layerNumber: number, colormap: string) {
-  const overlay = nv.volumes[layerNumber]
+  const overlay = nv.volumes?.[layerNumber]
+  if (!overlay) {
+    return
+  }
   if (colormap === 'symmetric') {
     overlay.useNegativeCmap = true
     overlay.colormap = 'warm'
