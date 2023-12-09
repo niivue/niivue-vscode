@@ -9,6 +9,7 @@ import { handleOpacity, handleOverlayColormap } from './OverlayOptions'
 
 export const Menu = (props: AppProps) => {
   const { selection, selectionMode, nvArray, sliceType, crosshair, hideUI, interpolation } = props
+  const isVscode = typeof vscode === 'object'
   const nvArraySelected = computed(() =>
     selectionMode.value > 0 && selection.value.length > 0
       ? nvArray.value.filter((_, i) => selection.value.includes(i))
@@ -176,7 +177,7 @@ export const Menu = (props: AppProps) => {
 
   return html`
     <div class="flex flex-wrap items-baseline gap-2">
-      <${MenuButton} label="Home" onClick=${homeEvent} />      
+      ${!isVscode && html`<${MenuButton} label="Home" onClick=${homeEvent} />`}
       <${MenuItem} label="Add Image" onClick=${addImagesEvent}>
         <${MenuEntry} label="File(s)" onClick=${addImagesEvent} />
         <${MenuEntry} label="URL" onClick=${() => console.log('Not implemented yet - url')} />
