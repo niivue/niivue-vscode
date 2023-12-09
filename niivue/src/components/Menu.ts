@@ -175,6 +175,15 @@ export const Menu = (props: AppProps) => {
   const selectedOverlayNumber = useSignal(0)
   const overlayMenu = useSignal(false)
 
+  const openColorScale = (volume: number) => () => {
+    selectedOverlayNumber.value = volume
+    overlayMenu.value = true
+  }
+  const openColorScaleLastOverlay = () => {
+    selectedOverlayNumber.value = nvArraySelected.value[0]?.volumes?.length - 1 || 0
+    overlayMenu.value = true
+  }
+
   return html`
     <div class="flex flex-wrap items-baseline gap-2">
       ${!isVscode && html`<${MenuButton} label="Home" onClick=${homeEvent} />`}
@@ -207,21 +216,12 @@ export const Menu = (props: AppProps) => {
         <${MenuEntry} label="Radiological" onClick=${toggleRadiologicalConvention} />
         <${MenuEntry} label="Crosshair" onClick=${toggleCrosshair} />
       </${MenuItem}>
-      <${MenuItem} label="ColorScale" visible=${isVolumeOrMesh} >
-        <${MenuEntry} label="Volume" onClick=${() => {
-    selectedOverlayNumber.value = 0
-    overlayMenu.value = true
-  }} />
+      <${MenuItem} label="ColorScale" visible=${isVolumeOrMesh} onClick=${openColorScaleLastOverlay} >
+        <${MenuEntry} label="Volume" onClick=${openColorScale(0)} />
         ${Array.from(
           { length: nOverlays.value },
           (_, i) => html`
-            <${MenuEntry}
-              label="Overlay ${i + 1}"
-              onClick=${() => {
-                selectedOverlayNumber.value = i + 1
-                overlayMenu.value = true
-              }}
-            />
+            <${MenuEntry} label="Overlay ${i + 1}" onClick=${openColorScale(i + 1)} />
           `,
         )}        
       </${MenuItem}>      
