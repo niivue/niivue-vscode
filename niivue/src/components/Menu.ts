@@ -198,7 +198,7 @@ export const Menu = (props: AppProps) => {
         <${MenuEntry} label="Multiplanar + Timeseries" onClick=${setTimeSeries} visible=${isMultiEcho} />
         <hr />
         <${MenuEntry} label="Show All" onClick=${() => (hideUI.value = 3)} />
-        <${MenuEntry} label="Hide X" onClick=${() => (hideUI.value = 2)} />
+        <${MenuEntry} label="Hide UI" onClick=${() => (hideUI.value = 2)} />
         <${MenuEntry} label="Hide All" onClick=${() => (hideUI.value = 0)} />
         <hr />
         <${MenuEntry} label="Interpolation" onClick=${() =>
@@ -381,7 +381,13 @@ export const MenuItem = ({ label, onClick, children, visible }) => {
 
   return html`
     <div class="relative group">
-      <button class="group-hover:bg-gray-700 px-2 rounded-l-md h-6 align-middle" onClick=${onClick}>
+      <button
+        class="group-hover:bg-gray-700 px-2 rounded-l-md h-6 align-middle"
+        onClick=${() => {
+          onClick()
+          isOpen.value = false
+        }}
+      >
         ${label}
       </button>
       <button
