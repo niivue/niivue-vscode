@@ -65,7 +65,7 @@ If niivue-vscode fails to open any of these files, please create an issue.
 This requires a full compilation and is slow
 
 ```bash
-    yarn run watch
+    yarn run watch:webview
 ```
 
 - Press `F5` (a new VSCode window opens: Extension Development Host)
