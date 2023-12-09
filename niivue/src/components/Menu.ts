@@ -1,6 +1,6 @@
 import { html } from 'htm/preact'
 import { AppProps } from './App'
-import { computed, effect, useSignal } from '@preact/signals'
+import { Signal, computed, effect, useSignal } from '@preact/signals'
 import { useRef } from 'preact/hooks'
 import { addImagesEvent, addOverlayEvent } from '../events'
 import { SLICE_TYPE } from '@niivue/niivue'
@@ -8,15 +8,13 @@ import { Scaling } from './Scaling'
 import { handleOpacity, handleOverlayColormap } from './OverlayOptions'
 
 export const Menu = (props: AppProps) => {
-  const { selection, selectionMode, nvArray, nv0, sliceType, crosshair, hideUI, interpolation } =
-    props
+  const { selection, selectionMode, nvArray, sliceType, crosshair, hideUI, interpolation } = props
   const nvArraySelected = computed(() =>
     selectionMode.value > 0 && selection.value.length > 0
       ? nvArray.value.filter((_, i) => selection.value.includes(i))
       : nvArray.value,
   )
   const multiImage = computed(() => nvArray.value.length > 1)
-  const nvFirstSelected = computed(() => nvArraySelected.value[0])
 
   effect(() => {
     if (selection.value.length == 0 && nvArray.value.length > 0) {
@@ -61,15 +59,15 @@ export const Menu = (props: AppProps) => {
 
   const isOverlay = computed(() => nvArraySelected.value[0]?.volumes?.length > 1)
 
-  const overlayButtonOnClick = () => {
-    const nv = nvArraySelected.value[0]
-    if (!nv || nv.volumes.length == 0) {
-      return
-    }
-    // if no overlay, add one
-    // if overlay, show overlay menu
-    // overlay menu includes color, min, max, opacity, hide
-  }
+  // const overlayButtonOnClick = () => {
+  //   const nv = nvArraySelected.value[0]
+  //   if (!nv || nv.volumes.length == 0) {
+  //     return
+  //   }
+  //   // if no overlay, add one
+  //   // if overlay, show overlay menu
+  //   // overlay menu includes color, min, max, opacity, hide
+  // }
 
   const addOverlay = () => {
     // if image
@@ -238,7 +236,9 @@ export const Menu = (props: AppProps) => {
         <${MenuEntry} label="Set Header" onClick=${() => console.log('Not implemented yet')} />
         <${MenuEntry} label="Set Headers to 1" onClick=${setVoxelSize1AndOrigin0} />
       </${MenuItem}>
-      <${ImageSelect} label="Select" state=${selectionMode} visible=${multiImage} />
+      <${ImageSelect} label="Select" state=${selectionMode} visible=${multiImage}>
+        <${MenuEntry} label="Select All" onClick=${selectAll} />
+      </${ImageSelect}>
     </div>
     ${isVolume.value && html`<p class="pl-2">${getMetadataString(nvArraySelected.value[0])}</p>`}
     <${ScalingBox}
@@ -256,12 +256,12 @@ export const Menu = (props: AppProps) => {
   `
 }
 
-const ScalingBox = (props) => {
+const ScalingBox = (props: any) => {
   const { nvArraySelected, selectedOverlayNumber, overlayMenu, visible } = props
   if (visible && !visible.value) return html``
 
   const setScaling = (val: ScalingOpts) => {
-    nvArraySelected.value.forEach((nv) => {
+    nvArraySelected.value.forEach((nv: Niivue) => {
       nv.volumes[0].cal_min = val.min
       nv.volumes[0].cal_max = val.max
       nv.updateGLVolume()
@@ -273,9 +273,9 @@ const ScalingBox = (props) => {
       ? ['symmetric', ...nvArraySelected.value[0].colormaps()]
       : ['ge_color', 'hsv', 'symmetric', 'warm'],
   )
-  const handleColormap = (e) => {
+  const handleColormap = (e: any) => {
     const colormap = e.target.value
-    nvArraySelected.value.forEach((nv) => {
+    nvArraySelected.value.forEach((nv: Niivue) => {
       handleOverlayColormap(nv, selectedOverlayNumber.value, colormap)
     })
   }
@@ -284,9 +284,9 @@ const ScalingBox = (props) => {
     () => nvArraySelected.value[0]?.volumes?.[selectedOverlayNumber.value],
   )
 
-  const changeOpacity = (e) => {
+  const changeOpacity = (e: any) => {
     const opacity = e.target.value
-    nvArraySelected.value.forEach((nv) => {
+    nvArraySelected.value.forEach((nv: Niivue) => {
       handleOpacity(nv, selectedOverlayNumber.value, opacity)
     })
   }
@@ -333,7 +333,7 @@ export interface ScalingOpts {
   max: number
 }
 
-export const MenuButton = ({ label, onClick }) => {
+export const MenuButton = ({ label, onClick }: { label: string; onClick: Function }) => {
   return html`
     <div class="relative">
       <button class="hover:bg-gray-700 px-2 rounded-md h-6 align-middle" onClick=${onClick}>
@@ -343,11 +343,30 @@ export const MenuButton = ({ label, onClick }) => {
   `
 }
 
+// It seems that one child is given directly while multiple children are given as an array
+function setChildren(children: any, isOpen: Signal<boolean>) {
+  if (children) {
+    if (Array.isArray(children)) {
+      children.forEach((child, _) => {
+        if (child?.props) {
+          child.props.isOpen = isOpen
+        }
+      })
+    } else {
+      if (children?.props) {
+        children.props.isOpen = isOpen
+      }
+    }
+  }
+}
+
 // maybe selection menu with arrow and option to keep selection?
 // select single and multiple options
-export const ImageSelect = ({ label, state, children, visible }) => {
+export const ImageSelect = ({ label, state, children, visible }: any) => {
   if (visible && !visible.value) return html``
   const isOpen = useSignal(false)
+  setChildren(children, isOpen)
+
   return html`
     <div class="relative group">
       <button
@@ -368,16 +387,10 @@ export const ImageSelect = ({ label, state, children, visible }) => {
   `
 }
 
-export const MenuItem = ({ label, onClick, children, visible }) => {
+export const MenuItem = ({ label, onClick, children, visible }: any) => {
   if (visible && !visible.value) return html``
   const isOpen = useSignal(false)
-  if (children) {
-    children.forEach((child, _) => {
-      if (child?.props) {
-        child.props.isOpen = isOpen
-      }
-    })
-  }
+  setChildren(children, isOpen)
 
   return html`
     <div class="relative group">
@@ -401,7 +414,7 @@ export const MenuItem = ({ label, onClick, children, visible }) => {
   `
 }
 
-export const MenuEntry = ({ label, onClick, isOpen, visible }) => {
+export const MenuEntry = ({ label, onClick, isOpen, visible }: any) => {
   if (visible && !visible.value) return html``
   return html`
     <button
@@ -416,7 +429,7 @@ export const MenuEntry = ({ label, onClick, isOpen, visible }) => {
   `
 }
 
-export const MenuItemSelect = ({ menuEntries }) => {
+export const MenuItemSelect = ({ menuEntries }: any) => {
   const isOpen = useSignal(false)
   const selectedElement = useSignal(0)
 
@@ -438,7 +451,7 @@ export const MenuItemSelect = ({ menuEntries }) => {
         ${isOpen.value &&
         html`
           ${menuEntries.map(
-            (item, index) => html`
+            (item: any, index: number) => html`
               <button
                 class="w-full px-2 py-1 text-left bg-gray-900 hover:bg-gray-700"
                 onClick=${() => {

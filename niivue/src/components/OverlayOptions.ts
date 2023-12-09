@@ -1,32 +1,3 @@
-import { html } from 'htm/preact'
-import { Scaling } from './Scaling'
-
-export const OverlayOptions = ({ nv }: { nv: Niivue }) => {
-  if (!isVolumeOverlay(nv) && !isMeshOverlay(nv)) {
-    return html``
-  }
-
-  const overlay = getOverlay(nv)
-  const colormaps = getColormaps(nv)
-
-  return html`
-    <div class="relative group">
-      <${Scaling} setScaling=${handleOverlayScaling(nv)} init=${overlay} />
-      <select onchange=${handleOverlayColormap(nv)} value=${overlay.colormap}>
-        ${colormaps.map((c) => html`<option value=${c}>${c}</option>`)}
-      </select>
-      <input
-        type="number"
-        value=${overlay.opacity}
-        onchange=${handleOpacity(nv)}
-        min="0"
-        max="1"
-        step="0.1"
-      />
-    </div>
-  `
-}
-
 export function getColormaps(nv: Niivue) {
   if (isVolumeOverlay(nv)) {
     return ['symmetric', ...nv.colormaps()]
@@ -34,16 +5,8 @@ export function getColormaps(nv: Niivue) {
   return ['ge_color', 'hsv', 'symmetric', 'warm']
 }
 
-function getOverlay(nv: Niivue) {
-  const layers = isVolumeOverlay(nv) ? nv.volumes : nv.meshes[0].layers
-  return layers[layers.length - 1]
-}
-
 function isVolumeOverlay(nv: Niivue) {
   return nv.volumes.length > 0
-}
-function isMeshOverlay(nv: Niivue) {
-  return nv.meshes.length > 0 && nv.meshes[0].layers.length > 0
 }
 
 export function handleOpacity(nv: Niivue, layerNumber: number, opacity: number) {

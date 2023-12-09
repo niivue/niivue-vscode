@@ -31,7 +31,7 @@ export const Scaling = ({ setScaling, init }: ScalingProps) => {
       <label class="items-baseline h-6 px-2">
         <span>Min </span>
         <input
-          class="border-2 border-gray-600 rounded-md bg-gray-700 h-6"
+          class="border-2 border-gray-600 rounded-md bg-gray-700 h-6 w-20"
           type="number"
           ref=${minRef}
           onchange=${update}
@@ -40,7 +40,7 @@ export const Scaling = ({ setScaling, init }: ScalingProps) => {
       <label class="items-baseline h-6 px-2">
         <span>Max </span>
         <input
-          class="border-2 border-gray-600 rounded-md bg-gray-700 h-6"
+          class="border-2 border-gray-600 rounded-md bg-gray-700 h-6 w-20"
           type="number"
           ref=${maxRef}
           onchange=${update}

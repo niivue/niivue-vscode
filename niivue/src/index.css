@@ -9,16 +9,6 @@
   1px 1px 0 #000;
 }
 
-.orange-yellow-gradient {
-  background: linear-gradient(to right,
-      rgb(255 0 0 / 60%),
-      rgb(255 166 0 / 60%));
-}
-
-input[type='number'] {
-  width: 5em;
-}
-
 a:link {
   color: #5599dd;
 }

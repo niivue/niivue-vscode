@@ -1,5 +1,4 @@
 import { html } from 'htm/preact'
-import { OpenFromWeb } from './OpenFromWeb'
 
 export const HomeScreen = () => html`
   <h2 class="text-3xl font-bold text-gray-200 p-2">Bookmarklet</h2>
