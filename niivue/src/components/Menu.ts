@@ -1,7 +1,7 @@
 import { html } from 'htm/preact'
 import { AppProps } from './App'
 import { computed, effect, useSignal } from '@preact/signals'
-import { useEffect, useRef } from 'preact/hooks'
+import { useRef } from 'preact/hooks'
 import { addImagesEvent, addOverlayEvent } from '../events'
 import { SLICE_TYPE } from '@niivue/niivue'
 import { Scaling } from './Scaling'

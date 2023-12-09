@@ -12,7 +12,7 @@
     "test:ui": "vitest --ui"
   },
   "dependencies": {
-    "@niivue/niivue": "0.38.0",
+    "@niivue/niivue": "0.38.7",
     "@preact/signals": "^1.2.1",
     "htm": "^3.1.1",
     "preact": "^10.16.0",
@@ -21,6 +21,7 @@
     "react-router-dom": "^6.3.0"
   },
   "devDependencies": {
+    "@babel/core": "^7.23.5",
     "@preact/preset-vite": "^2.5.0",
     "@testing-library/jest-dom": "^6.1.4",
     "@testing-library/preact": "^3.2.3",
@@ -33,6 +34,8 @@
     "typescript": "^5.0.2",
     "vite": "latest",
     "vite-plugin-pwa": "^0.16.7",
-    "vitest": "latest"
+    "vitest": "latest",
+    "workbox-build": "^7.0.0",
+    "workbox-window": "^7.0.0"
   }
 }
