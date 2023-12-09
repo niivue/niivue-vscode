@@ -105,9 +105,8 @@ async function loadVolume(nv: Niivue, item: any) {
       await nv.loadVolumes(volumeList)
     }
   } else if (item.data) {
-    NVMesh.readMesh(item.data, item.uri, nv.gl).then((mesh: any) => {
-      nv.addMesh(mesh)
-    })
+    const mesh = await NVMesh.readMesh(item.data, item.uri, nv.gl)
+    nv.addMesh(mesh)
   } else {
     const meshList = [{ url: item.uri }]
     nv.loadMeshes(meshList)
