@@ -248,10 +248,11 @@ export const Menu = (props: AppProps) => {
         nvArraySelected=${nvArraySelected}
         visible=${overlayMenu}
       />
-    <dialog ref=${headerDialog}>
+    <dialog class="text-sm p-2 bg-gray-200 rounded-md" ref=${headerDialog}>
       <form>
         ${headerInfo.value.split('\n').map((line) => html` <p>${line}</p> `)}
-        <button formmethod="dialog" value="cancel">Close</button>
+        <button class="bg-gray-300 border-2 border-gray-500 rounded-md w-16 mx-auto block"
+          formmethod="dialog" value="cancel">Close</button>
       </form>
     </dialog>
   `
