@@ -48,11 +48,26 @@ If niivue-vscode fails to open any of these files, please create an issue.
 - Clone [this repository](https://github.com/korbinian90/vscode-niivue) and open in VSCode
 - Run inside the `vscode-niivue` folder
 
+### Installing
+
 ```bash
-    npm install
-    npm run watch
+    yarn install:all
 ```
 
-- Press `F5` (a new VSCode window opens)
-- Test the extension in the new window by opening an image file
-- Press `Ctrl+R` for reload after a code change
+### Hot Reload Development in browser
+
+```bash
+    yarn start:webview
+```
+
+### Debugging the extension in vscode
+
+This requires a full compilation and is slow
+
+```bash
+    yarn run watch
+```
+
+- Press `F5` (a new VSCode window opens: Extension Development Host)
+- Test the extension in the Extension Development Host by opening an image file
+- Press `Ctrl+R` in the Extension Development Host for reload after a code change
