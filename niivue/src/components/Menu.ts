@@ -88,6 +88,7 @@ export const Menu = (props: AppProps) => {
     const nv = nvArraySelected.value[0]
     nv.removeVolumeByIndex(nv.volumes.length - 1)
     nv.updateGLVolume()
+    nvArray.value = [...nvArray.value]
   }
 
   const replaceLastVolume = () => {
@@ -165,6 +166,7 @@ export const Menu = (props: AppProps) => {
 
   const isVolume = computed(() => nvArraySelected.value[0]?.volumes?.length > 0)
   const isMesh = computed(() => nvArraySelected.value[0]?.meshes?.length > 0)
+  const isVolumeOrMesh = computed(() => isVolume.value || isMesh.value)
 
   const selectAll = () => {
     selection.value = nvArray.value.map((_, i) => i)
@@ -193,10 +195,7 @@ export const Menu = (props: AppProps) => {
         <${MenuEntry} label="Coronal" onClick=${setView(SLICE_TYPE.CORONAL)} />
         <${MenuEntry} label="Render" onClick=${setView(SLICE_TYPE.RENDER)} />
         <${MenuEntry} label="Multiplanar + Render" onClick=${setMultiplanar} />
-        ${
-          isMultiEcho.value &&
-          html`<${MenuEntry} label="Multiplanar + Timeseries" onClick=${setTimeSeries} />`
-        }
+        <${MenuEntry} label="Multiplanar + Timeseries" onClick=${setTimeSeries} visible=${isMultiEcho} />
         <hr />
         <${MenuEntry} label="Show All" onClick=${() => (hideUI.value = 3)} />
         <${MenuEntry} label="Hide X" onClick=${() => (hideUI.value = 2)} />
@@ -209,7 +208,7 @@ export const Menu = (props: AppProps) => {
         <${MenuEntry} label="Radiological" onClick=${toggleRadiologicalConvention} />
         <${MenuEntry} label="Crosshair" onClick=${toggleCrosshair} />
       </${MenuItem}>
-      <${MenuItem} label="ColorScale" >
+      <${MenuItem} label="ColorScale" visible=${isVolumeOrMesh} >
         <${MenuEntry} label="Volume" onClick=${() => {
     selectedOverlayNumber.value = 0
     overlayMenu.value = true
@@ -226,40 +225,28 @@ export const Menu = (props: AppProps) => {
             />
           `,
         )}        
+      </${MenuItem}>      
+      <${MenuItem} label="Overlay" onClick=${addOverlay} visible=${isVolumeOrMesh}>
+        <${MenuEntry} label="Add" onClick=${addOverlay} visible=${isVolume} />
+        <${MenuEntry} label="Add" onClick=${addMeshOverlay} visible=${isMesh} />
+        <${MenuEntry} label="Curvature" onClick=${addCurvature} visible=${isMesh} />
+        <${MenuEntry} label="ImageOverlay" onClick=${addOverlay} visible=${isMesh} />
+        <${MenuEntry} label="Replace" onClick=${replaceLastVolume} visible=${isOverlay} />
+        <${MenuEntry} label="Remove" onClick=${removeLastVolume} visible=${isOverlay} />
       </${MenuItem}>
-      <${MenuItem} label="Overlay" onClick=${addOverlay} >
-        ${isVolume.value && html` <${MenuEntry} label="Add" onClick=${addOverlay} /> `}
-        ${
-          isMesh.value &&
-          html`
-            <${MenuEntry} label="Add" onClick=${addMeshOverlay} />
-            <${MenuEntry} label="Curvature" onClick=${addCurvature} />
-            <${MenuEntry} label="ImageOverlay" onClick=${addOverlay} />
-          `
-        }
-        ${
-          isOverlay.value &&
-          html`
-            <${MenuEntry} label="Replace" onClick=${replaceLastVolume} />
-            <${MenuEntry} label="Remove" onClick=${removeLastVolume} />
-          `
-        }
-      </${MenuItem}>
-      <${MenuItem} label="Header" onClick=${showHeader}>
+      <${MenuItem} label="Header" onClick=${showHeader} visible=${isVolume} >
         <${MenuEntry} label="Set Header" onClick=${() => console.log('Not implemented yet')} />
         <${MenuEntry} label="Set Headers to 1" onClick=${setVoxelSize1AndOrigin0} />
-      </${MenuItem}>      
-      ${multiImage.value && html`<${ImageSelect} label="Select" state=${selectionMode} />`}
+      </${MenuItem}>
+      <${ImageSelect} label="Select" state=${selectionMode} visible=${multiImage} />
     </div>
-    ${isVolume.value && html`<p>${getMetadataString(nvArraySelected.value[0])}</p>`}    
-    ${
-      overlayMenu.value &&
-      html`<${ScalingBox}
+    ${isVolume.value && html`<p class="pl-2">${getMetadataString(nvArraySelected.value[0])}</p>`}
+    <${ScalingBox}
         selectedOverlayNumber=${selectedOverlayNumber}
         overlayMenu=${overlayMenu}
         nvArraySelected=${nvArraySelected}
-      />`
-    }      
+        visible=${overlayMenu}
+      />
     <dialog ref=${headerDialog}>
       <form>
         ${headerInfo.value.split('\n').map((line) => html` <p>${line}</p> `)}
@@ -270,7 +257,8 @@ export const Menu = (props: AppProps) => {
 }
 
 const ScalingBox = (props) => {
-  const { nvArraySelected, selectedOverlayNumber, overlayMenu } = props
+  const { nvArraySelected, selectedOverlayNumber, overlayMenu, visible } = props
+  if (visible && !visible.value) return html``
 
   const setScaling = (val: ScalingOpts) => {
     nvArraySelected.value.forEach((nv) => {
@@ -357,7 +345,8 @@ export const MenuButton = ({ label, onClick }) => {
 
 // maybe selection menu with arrow and option to keep selection?
 // select single and multiple options
-export const ImageSelect = ({ label, state, children }) => {
+export const ImageSelect = ({ label, state, children, visible }) => {
+  if (visible && !visible.value) return html``
   const isOpen = useSignal(false)
   return html`
     <div class="relative group">
@@ -379,7 +368,8 @@ export const ImageSelect = ({ label, state, children }) => {
   `
 }
 
-export const MenuItem = ({ label, onClick, children }) => {
+export const MenuItem = ({ label, onClick, children, visible }) => {
+  if (visible && !visible.value) return html``
   const isOpen = useSignal(false)
   if (children) {
     children.forEach((child, _) => {
@@ -400,12 +390,13 @@ export const MenuItem = ({ label, onClick, children }) => {
       >
         <${DownArrow} />
       </button>
-      <div class="absolute cursor-pointer left-0 z-50">${isOpen.value && children}</div>
+      <div class="absolute cursor-pointer left-0 z-50 min-w-full">${isOpen.value && children}</div>
     </div>
   `
 }
 
-export const MenuEntry = ({ label, onClick, isOpen }) => {
+export const MenuEntry = ({ label, onClick, isOpen, visible }) => {
+  if (visible && !visible.value) return html``
   return html`
     <button
       class="w-full px-2 py-1 text-left bg-gray-900 hover:bg-gray-700"

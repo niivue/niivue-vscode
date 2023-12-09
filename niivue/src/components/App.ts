@@ -21,7 +21,7 @@ export const App = () => {
       <${Menu} ...${appProps} />
       ${showHomeScreen.value && html`<${HomeScreen} />`}
       <${Container} ...${appProps} />
-      <div>${appProps.location}</div>
+      <div class="pl-2">${appProps.location}</div>
     <//>
   `
 }
