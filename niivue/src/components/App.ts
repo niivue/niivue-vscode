@@ -29,14 +29,9 @@ export interface AppProps {
   nvArray: Signal<Niivue[]>
   selection: Signal<Array<number>>
   selectionMode: Signal<number>
-  nv0: Signal<Niivue>
   hideUI: Signal<number>
-  crosshair: Signal<boolean>
   sliceType: Signal<number>
-  interpolation: Signal<boolean>
   location: Signal<string>
-  radiologicalConvention: Signal<boolean>
-  colorbar: Signal<boolean>
 }
 
 export interface ScalingOpts {
@@ -50,13 +45,8 @@ function useAppState(): AppProps {
     nvArray: useSignal<Niivue[]>([]),
     selection: useSignal<Array<number>>([]),
     selectionMode: useSignal(0),
-    nv0: useSignal<Niivue>({ isLoaded: false }),
     hideUI: useSignal(3), // 0: hide all, 1: show name, 2: hide overlay, 3: show-all
-    crosshair: useSignal(true),
     sliceType: useSignal<number>(SLICE_TYPE.MULTIPLANAR), // all views
-    interpolation: useSignal(true),
     location: useSignal(''),
-    radiologicalConvention: useSignal(false),
-    colorbar: useSignal(false),
   }
 }

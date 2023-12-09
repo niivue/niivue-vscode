@@ -8,7 +8,7 @@ import { Scaling } from './Scaling'
 import { handleOpacity, handleOverlayColormap } from './OverlayOptions'
 
 export const Menu = (props: AppProps) => {
-  const { selection, selectionMode, nvArray, sliceType, crosshair, hideUI, interpolation } = props
+  const { selection, selectionMode, nvArray, sliceType, hideUI } = props
   const isVscode = typeof vscode === 'object'
   const nvArraySelected = computed(() =>
     selectionMode.value > 0 && selection.value.length > 0
@@ -126,7 +126,7 @@ export const Menu = (props: AppProps) => {
 
   const resetZoom = () => {
     nvArray.value.forEach((nv) => {
-      nv.uiData.pan2Dxyzmm = [0, 0, 0, 1]
+      nv.scene.pan2Dxyzmm = [0, 0, 0, 1]
       nv.drawScene()
     })
   }
@@ -184,16 +184,52 @@ export const Menu = (props: AppProps) => {
     overlayMenu.value = true
   }
 
+  const interpolation = useSignal(true)
+  effect(() => {
+    nvArray.value.forEach((nv) => {
+      nv.setInterpolation(!interpolation.value)
+      nv.drawScene()
+    })
+  })
+
+  const crosshair = useSignal(true)
+  effect(() => {
+    nvArray.value.forEach((nv) => {
+      try {
+        nv.setCrosshairWidth(crosshair.value)
+      } catch (e) {
+        console.log(e)
+      }
+      nv.drawScene()
+    })
+  })
+
+  const radiologicalConvention = useSignal(false)
+  effect(() => {
+    nvArray.value.forEach((nv) => {
+      nv.setRadiologicalConvention(radiologicalConvention.value)
+      nv.drawScene()
+    })
+  })
+
+  const colorbar = useSignal(false)
+  effect(() => {
+    nvArray.value.forEach((nv) => {
+      nv.opts.isColorbar = colorbar.value
+      nv.drawScene()
+    })
+  })
+
   return html`
     <div class="flex flex-wrap items-baseline gap-2">
       ${!isVscode && html`<${MenuButton} label="Home" onClick=${homeEvent} />`}
       <${MenuItem} label="Add Image" onClick=${addImagesEvent}>
         <${MenuEntry} label="File(s)" onClick=${addImagesEvent} />
-        <${MenuEntry} label="URL" onClick=${() => console.log('Not implemented yet - url')} />
+        <!-- <${MenuEntry} label="URL" onClick=${() => console.log('Not implemented yet - url')} />
         <${MenuEntry}
           label="DICOM Folder"
           onClick=${() => console.log('Not implemented yet - dicom folder')}
-        />
+        /> -->
         <${MenuEntry} label="Example Image" onClick=${() =>
     openImage('https://niivue.github.io/niivue-demo-images/mni152.nii.gz')} />
       </${MenuItem}>
@@ -234,7 +270,8 @@ export const Menu = (props: AppProps) => {
         <${MenuEntry} label="Remove" onClick=${removeLastVolume} visible=${isOverlay} />
       </${MenuItem}>
       <${MenuItem} label="Header" onClick=${showHeader} visible=${isVolume} >
-        <${MenuEntry} label="Set Header" onClick=${() => console.log('Not implemented yet')} />
+        <!-- <${MenuEntry} label="Set Header" onClick=${() =>
+    console.log('Not implemented yet')} /> -->
         <${MenuEntry} label="Set Headers to 1" onClick=${setVoxelSize1AndOrigin0} />
       </${MenuItem}>
       <${ImageSelect} label="Select" state=${selectionMode} visible=${multiImage}>

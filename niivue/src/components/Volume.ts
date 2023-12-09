@@ -49,7 +49,9 @@ export const Volume = (props: AppProps & VolumeProps) => {
       <${NiiVueCanvas} ...${props} intensity=${intensity} />
       ${hideUI.value > 0 &&
       html`
-        <div class="absolute pointer-events-none text-xl text-outline left-1">${dispName}</div>
+        <div class="absolute pointer-events-none text-xl text-outline left-1 top-0">
+          ${dispName}
+        </div>
         <div class="pointer-events-none absolute bottom-1 left-1">
           <span class="text-outline">${intensity}</span>
         </div>

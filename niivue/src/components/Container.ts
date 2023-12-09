@@ -63,12 +63,11 @@ export const Container = (props: AppProps) => {
 }
 
 function remove(props: AppProps, i: number) {
-  const { nvArray, nv0, location } = props
+  const { nvArray, location } = props
   return () => {
     nvArray.value.splice(i, 1)
     nvArray.value = [...nvArray.value]
     if (nvArray.value.length == 0) {
-      nv0.value = { isLoaded: false }
       location.value = ''
     }
   }

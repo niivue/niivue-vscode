@@ -2,7 +2,7 @@ import { NVImage, NVMesh } from '@niivue/niivue'
 import { html } from 'htm/preact'
 import { useRef, useEffect } from 'preact/hooks'
 import { isImageType } from '../utility'
-import { Signal, effect } from '@preact/signals'
+import { Signal } from '@preact/signals'
 import { AppProps } from './App'
 
 interface NiiVueCanvasProps {
@@ -18,14 +18,9 @@ export const NiiVueCanvas = ({
   intensity,
   width,
   height,
-  nv0,
   sliceType,
-  interpolation,
   location,
   render,
-  crosshair,
-  radiologicalConvention,
-  colorbar,
   nvArray,
 }: AppProps & NiiVueCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>()
@@ -39,9 +34,6 @@ export const NiiVueCanvas = ({
       nv.body = null
       nv.onLocationChange = (data: any) => setIntensityAndLocation(data, intensity, location)
       nv.createOnLocationChange()
-      if (!nv0.value.isLoaded) {
-        nv0.value = nv
-      }
       render.value++ // required to update the names
       nvArray.value = [...nvArray.value] // trigger react signal for changes
     })
@@ -49,17 +41,6 @@ export const NiiVueCanvas = ({
 
   if (nv.isLoaded && nv.volumes.length > 0) {
     nv.setSliceType(sliceType.value)
-    nv.setInterpolation(!interpolation.value)
-    nv.setRadiologicalConvention(radiologicalConvention.value)
-    try {
-      nv.setCrosshairWidth(crosshair.value)
-    } catch (e) {
-      console.log(e) // sometime fails
-    }
-    effect(() => {
-      nv.opts.isColorbar = colorbar.value
-      nv.drawScene()
-    })
   }
 
   useEffect(() => nv.drawScene(), [height, width]) // avoids black images
