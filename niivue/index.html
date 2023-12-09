@@ -5,18 +5,16 @@
     <title>NiiVue</title>
     <link rel="icon" href="favicon.ico" />
     <link rel="shortcut icon" href="favicon.ico" />
-    <link rel="manifest" href="manifest.json" />
-    <link rel="stylesheet" type="text/css" href="index.css" />
-    <script src="register.js"></script>
+    <link rel="stylesheet" type="text/css" href="/src/index.css" />
   </head>
   
-  <body>
-    <div id="app"></div>
+  <body class="bg-gray-900 text-white">
+    <div id="app" class="w-screen h-screen"></div>
     <script>
       if (typeof acquireVsCodeApi === 'function') {
         var vscode = acquireVsCodeApi()
       }
     </script>
-    <script nonce="${nonce}" src="main.js"></script>
+    <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

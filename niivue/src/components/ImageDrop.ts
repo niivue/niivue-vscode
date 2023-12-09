@@ -1,27 +1,22 @@
 import { html } from 'htm/preact'
-import { useRef } from 'preact/hooks'
+import { useSignal } from '@preact/signals'
 import { ComponentChildren } from 'preact'
 
-export const ImageDrop = ({
-  children,
-  box,
-}: {
-  children: ComponentChildren
-  box: boolean
-}) => {
-  const dropAreaRef = useRef<HTMLDivElement>()
+export const ImageDrop = ({ children }: { children: ComponentChildren }) => {
+  const isDrag = useSignal(false)
   const handleDragOver = (e: DragEvent) => {
     e.stopPropagation()
     e.preventDefault()
     e.dataTransfer!.dropEffect = 'link'
-    dropAreaRef.current!.classList.add('dragover')
+    isDrag.value = true
   }
 
   const handleDragLeave = () => {
-    dropAreaRef.current!.classList.remove('dragover')
+    isDrag.value = false
   }
 
   const handleDrop = (e: DragEvent) => {
+    isDrag.value = false
     e.stopPropagation()
     e.preventDefault()
     const files = e.dataTransfer!.files
@@ -45,22 +40,18 @@ export const ImageDrop = ({
       }
     }
     readimages()
-    dropAreaRef.current!.classList.remove('dragover')
   }
 
   return html`
     <div
-      class="drop-area"
+      class="flex flex-col h-full ${isDrag.value
+        ? 'bg-gray-700'
+        : 'bg-gray-800'}"
       ondragover=${handleDragOver}
       ondrop=${handleDrop}
-      ref=${dropAreaRef}
       ondragleave=${handleDragLeave}
     >
       ${children}
-      ${box &&
-      html`<div class="drop-area-box">
-        <p>Drop files here</p>
-      </div>`}
     </div>
   `
 }

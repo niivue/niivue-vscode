@@ -35,6 +35,8 @@ export function listenToMessages(appProps: AppProps) {
           growNvArrayBy(nvArray, body.n)
         }
         break
+      default:
+        return
     }
     nvArray.value = [...nvArray.value] // triggers rerender after each received message
   }
@@ -230,7 +232,7 @@ class ExtendedNiivue extends Niivue {
     if (this.uiData.mouseButtonRightDown || this.uiData.mouseButtonCenterDown) {
       this.canvas.focus()
       this.otherNV.forEach((nv: Niivue) => {
-        nv.uiData.pan2Dxyzmm = this.uiData.pan2Dxyzmm.slice()
+        nv.scene.pan2Dxyzmm = this.scene.pan2Dxyzmm.slice()
         nv.drawScene()
       })
     }

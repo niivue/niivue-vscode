@@ -7,8 +7,9 @@ This extension uses [NiiVue](https://github.com/niivue/niivue) to display images
 
 ## List of Hotkeys
 
-- `Right Mouse`: Draw a rectangle to window the intensity range
-- `Mouse Scroll`: Scroll currently hovered image
+- `Right Mouse`: Drag with the right mouse button to zoom
+- `Middle Mouse`: Drag with the right mouse button to pan
+- `Mouse Scroll`: Change slice in currently hovered image
 - `← →`: change volume in 4D image
 - `V`: Cycle through viewmodes
 - `C`: Cycle through clip plane orientations in 3D render

@@ -16,19 +16,19 @@ export async function getHtmlForWebview(
   extensionUri: vscode.Uri
 ): Promise<string> {
   const scriptUri = webview.asWebviewUri(
-    vscode.Uri.joinPath(extensionUri, 'dist/niivue', 'main.js')
+    vscode.Uri.joinPath(extensionUri, 'niivue', 'build', 'assets', 'index.js'),
   )
   const cssUri = webview.asWebviewUri(
-    vscode.Uri.joinPath(extensionUri, 'dist/niivue', 'index.css')
+    vscode.Uri.joinPath(extensionUri, 'niivue', 'build', 'assets', 'index.css'),
   )
   const nonce = getNonce() // Whitelist which scripts can be run
   const noncePlaceholder = '${nonce}'
 
   const html = await vscode.workspace.fs.readFile(
-    extensionUri.with({ path: extensionUri.path + '/dist/niivue/index.html' })
+    extensionUri.with({ path: extensionUri.path + '/niivue/build/index.html' }),
   )
-  const scriptUriPlaceholder = '"main.js"'
-  const cssUriPlaceholder = '"index.css"'
+  const scriptUriPlaceholder = '"/assets/index.js"'
+  const cssUriPlaceholder = '"/assets/index.css"'
   return Buffer.from(html)
     .toString('utf8')
     .replace(noncePlaceholder, nonce)

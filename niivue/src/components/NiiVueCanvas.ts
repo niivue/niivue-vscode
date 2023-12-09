@@ -21,12 +21,12 @@ export const NiiVueCanvas = ({
   nv0,
   sliceType,
   interpolation,
-  scaling,
   location,
   render,
   crosshair,
   radiologicalConvention,
   colorbar,
+  nvArray,
 }: AppProps & NiiVueCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>()
   useEffect(() => nv.attachToCanvas(canvasRef.current), [])
@@ -37,13 +37,13 @@ export const NiiVueCanvas = ({
     loadVolume(nv, nv.body).then(async () => {
       nv.isLoaded = true
       nv.body = null
-      nv.onLocationChange = (data: any) =>
-        setIntensityAndLocation(data, intensity, location)
+      nv.onLocationChange = (data: any) => setIntensityAndLocation(data, intensity, location)
       nv.createOnLocationChange()
       if (!nv0.value.isLoaded) {
         nv0.value = nv
       }
       render.value++ // required to update the names
+      nvArray.value = [...nvArray.value] // trigger react signal for changes
     })
   }, [nv.body])
 
@@ -56,7 +56,6 @@ export const NiiVueCanvas = ({
     } catch (e) {
       console.log(e) // sometime fails
     }
-    applyScale(nv, scaling.value)
     effect(() => {
       nv.opts.isColorbar = colorbar.value
       nv.drawScene()
@@ -65,11 +64,7 @@ export const NiiVueCanvas = ({
 
   useEffect(() => nv.drawScene(), [height, width]) // avoids black images
 
-  return html`<canvas
-    ref=${canvasRef}
-    width=${width}
-    height=${height}
-  ></canvas>`
+  return html`<canvas ref=${canvasRef} width=${width} height=${height}></canvas>`
 }
 
 async function getMinimalHeaderMHA() {
@@ -135,14 +130,6 @@ async function loadVolume(nv: Niivue, item: any) {
   } else {
     const meshList = [{ url: item.uri }]
     nv.loadMeshes(meshList)
-  }
-}
-
-export function applyScale(nv: Niivue, scaling: any) {
-  if (scaling.isManual) {
-    nv.volumes[0].cal_min = scaling.min
-    nv.volumes[0].cal_max = scaling.max
-    nv.updateGLVolume()
   }
 }
 
