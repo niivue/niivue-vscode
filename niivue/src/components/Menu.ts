@@ -2,7 +2,7 @@ import { html } from 'htm/preact'
 import { AppProps } from './App'
 import { Signal, computed, effect, useSignal } from '@preact/signals'
 import { useRef } from 'preact/hooks'
-import { addImagesEvent, addOverlayEvent } from '../events'
+import { addImagesEvent, addOverlayEvent, openImageFromURL } from '../events'
 import { SLICE_TYPE } from '@niivue/niivue'
 import { Scaling } from './Scaling'
 import { handleOpacity, handleOverlayColormap } from './OverlayOptions'
@@ -96,10 +96,6 @@ export const Menu = (props: AppProps) => {
     }
   }
 
-  const setView = (view: number) => () => {
-    sliceType.value = view
-  }
-
   const setTimeSeries = () => {
     crosshair.value = true
     sliceType.value = SLICE_TYPE.MULTIPLANAR
@@ -130,34 +126,6 @@ export const Menu = (props: AppProps) => {
   const isMultiEcho = computed(() =>
     nvArraySelected.value.some((nv) => nv.volumes?.[0]?.getImageMetadata().nt > 1),
   )
-
-  const toggleCrosshair = () => {
-    crosshair.value = !crosshair.value
-  }
-
-  const toggleRadiologicalConvention = () => {
-    nvArraySelected.value.forEach((nv) => {
-      nv.opts.isRadiologicalConvention = !nv.opts.isRadiologicalConvention
-      nv.drawScene()
-    })
-  }
-
-  const toggleColorbar = () => {
-    nvArraySelected.value.forEach((nv) => {
-      nv.opts.isColorbar = !nv.opts.isColorbar
-      nv.drawScene()
-    })
-  }
-
-  const openImage = (uri: string) => {
-    window.postMessage({
-      type: 'addImage',
-      body: {
-        data: '',
-        uri,
-      },
-    })
-  }
 
   const isVolume = computed(() => nvArraySelected.value[0]?.volumes?.length > 0)
   const isMesh = computed(() => nvArraySelected.value[0]?.meshes?.length > 0)
@@ -227,13 +195,13 @@ export const Menu = (props: AppProps) => {
           onClick=${() => console.log('Not implemented yet - dicom folder')}
         /> -->
         <${MenuEntry} label="Example Image" onClick=${() =>
-    openImage('https://niivue.github.io/niivue-demo-images/mni152.nii.gz')} />
+    openImageFromURL('https://niivue.github.io/niivue-demo-images/mni152.nii.gz')} />
       </${MenuItem}>
       <${MenuItem} label="View" >
-        <${MenuEntry} label="Axial" onClick=${setView(SLICE_TYPE.AXIAL)} />
-        <${MenuEntry} label="Sagittal" onClick=${setView(SLICE_TYPE.SAGITTAL)} />
-        <${MenuEntry} label="Coronal" onClick=${setView(SLICE_TYPE.CORONAL)} />
-        <${MenuEntry} label="Render" onClick=${setView(SLICE_TYPE.RENDER)} />
+        <${MenuEntry} label="Axial" onClick=${() => (sliceType.value = SLICE_TYPE.AXIAL)} />
+        <${MenuEntry} label="Sagittal" onClick=${() => (sliceType.value = SLICE_TYPE.SAGITTAL)} />
+        <${MenuEntry} label="Coronal" onClick=${() => (sliceType.value = SLICE_TYPE.CORONAL)} />
+        <${MenuEntry} label="Render" onClick=${() => (sliceType.value = SLICE_TYPE.RENDER)} />
         <${MenuEntry} label="Multiplanar + Render" onClick=${setMultiplanar} />
         <${MenuEntry} label="Multiplanar + Timeseries" onClick=${setTimeSeries} visible=${isMultiEcho} />
         <hr />
@@ -241,12 +209,12 @@ export const Menu = (props: AppProps) => {
         <${MenuEntry} label="Hide UI" onClick=${() => (hideUI.value = 2)} />
         <${MenuEntry} label="Hide All" onClick=${() => (hideUI.value = 0)} />
         <hr />
-        <${MenuEntry} label="Interpolation" onClick=${() =>
-    (interpolation.value = !interpolation.value)} />
         <${MenuEntry} label="Reset View" onClick=${resetZoom} />
-        <${MenuEntry} label="Colorbar" onClick=${toggleColorbar} />
-        <${MenuEntry} label="Radiological" onClick=${toggleRadiologicalConvention} />
-        <${MenuEntry} label="Crosshair" onClick=${toggleCrosshair} />
+        <hr />
+        <${ToggleEntry} label="Interpolation" state=${interpolation} />
+        <${ToggleEntry} label="Colorbar" state=${colorbar} />
+        <${ToggleEntry} label="Radiological" state=${radiologicalConvention} />
+        <${ToggleEntry} label="Crosshair" state=${crosshair} />
       </${MenuItem}>
       <${MenuItem} label="ColorScale" visible=${isVolumeOrMesh} onClick=${openColorScaleLastOverlay} >
         <${MenuEntry} label="Volume" onClick=${openColorScale(0)} />
@@ -288,6 +256,21 @@ export const Menu = (props: AppProps) => {
           formmethod="dialog" value="cancel">Close</button>
       </form>
     </dialog>
+  `
+}
+
+const ToggleEntry = ({ label, state }: any) => {
+  return html`
+    <div class="relative group">
+      <button
+        class="w-full px-2 py-1 text-left hover:bg-gray-700 ${state.value
+          ? 'bg-gray-600'
+          : 'bg-gray-900'}"
+        onClick=${() => (state.value = !state.value)}
+      >
+        ${label}
+      </button>
+    </div>
   `
 }
 

@@ -46,6 +46,16 @@ export function listenToMessages(appProps: AppProps) {
   addImageFromURLParams()
 }
 
+export function openImageFromURL(uri: string) {
+  window.postMessage({
+    type: 'addImage',
+    body: {
+      data: '',
+      uri,
+    },
+  })
+}
+
 function addImageFromURLParams() {
   const urlParams = new URLSearchParams(window.location.search)
   const imageURLs = urlParams.get('images')?.split(',') ?? []
