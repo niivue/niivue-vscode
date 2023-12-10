@@ -132,8 +132,10 @@ function isVolumeOverlay(nv: Niivue) {
 function handleOverlayScaling(nv: Niivue, layerNumber: number, scaling: ScalingOpts) {
   if (isVolumeOverlay(nv)) {
     const overlay = nv.volumes[layerNumber]
-    overlay.cal_min = scaling.min
-    overlay.cal_max = scaling.max
+    if (overlay) {
+      overlay.cal_min = scaling.min
+      overlay.cal_max = scaling.max
+    }
   } else {
     nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, 'cal_min', scaling.min)
     nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, 'cal_max', scaling.max)
@@ -143,7 +145,9 @@ function handleOverlayScaling(nv: Niivue, layerNumber: number, scaling: ScalingO
 
 function handleOpacity(nv: Niivue, layerNumber: number, opacity: number) {
   if (isVolumeOverlay(nv)) {
-    nv.setOpacity(layerNumber, opacity)
+    if (nv.volumes[layerNumber]) {
+      nv.setOpacity(layerNumber, opacity)
+    }
   } else {
     nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, 'opacity', opacity)
   }

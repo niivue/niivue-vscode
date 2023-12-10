@@ -47,7 +47,7 @@ export const Menu = (props: AppProps) => {
     if (isVolume.value) {
       return nv.volumes.length - 1
     } else if (isMesh.value) {
-      return nv.meshes.length
+      return nv.meshes[0].layers.length
     } else {
       return 0
     }
@@ -151,16 +151,16 @@ export const Menu = (props: AppProps) => {
 
   const openColorScale = (overlayNumber: number) => () => {
     if (isVolume.value) {
-      selectedOverlayNumber.value = overlayNumber + 1
-    } else if (isMesh.value) {
       selectedOverlayNumber.value = overlayNumber
+    } else if (isMesh.value) {
+      selectedOverlayNumber.value = overlayNumber - 1
     } else {
       selectedOverlayNumber.value = 0
     }
     overlayMenu.value = true
   }
   const openColorScaleLastOverlay = () => {
-    selectedOverlayNumber.value = nvArraySelected.value[0]?.volumes?.length - 1 || 0
+    selectedOverlayNumber.value = nOverlays.value - (isMesh.value ? 1 : 0)
     overlayMenu.value = true
   }
 
@@ -200,7 +200,8 @@ export const Menu = (props: AppProps) => {
         <${MenuEntry} label="Volume" onClick=${openColorScale(0)} visible=${isVolume} />
         ${Array.from(
           { length: nOverlays.value },
-          (_, i) => html` <${MenuEntry} label="Overlay ${i + 1}" onClick=${openColorScale(i)} /> `,
+          (_, i) =>
+            html` <${MenuEntry} label="Overlay ${i + 1}" onClick=${openColorScale(i + 1)} /> `,
         )}        
       </${MenuItem}>      
       <${MenuItem} label="Overlay" onClick=${overlayButtonOnClick} visible=${isVolumeOrMesh}>
