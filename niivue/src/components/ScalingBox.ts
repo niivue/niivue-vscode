@@ -11,9 +11,7 @@ export const ScalingBox = (props: any) => {
   const { nvArraySelected, selectedOverlayNumber, overlayMenu, visible } = props
   if (visible && !visible.value) return html``
 
-  const selectedOverlay = computed(
-    () => nvArraySelected.value[0]?.volumes?.[selectedOverlayNumber.value],
-  )
+  const selectedOverlay = computed(() => getOverlay(nvArraySelected.value[0]))
 
   const setScaling = (val: ScalingOpts) => {
     nvArraySelected.value.forEach((nv: Niivue) => {
@@ -178,4 +176,9 @@ function setMeshColormap(nv: Niivue, layerNumber: number, colormap: string) {
     nv.setMeshLayerProperty(id, layerNumber, 'colormap', colormap)
     nv.setMeshLayerProperty(id, layerNumber, 'colormapNegative', '')
   }
+}
+
+function getOverlay(nv: Niivue) {
+  const layers = isVolumeOverlay(nv) ? nv.volumes : nv.meshes[0].layers
+  return layers[layers.length - 1]
 }
