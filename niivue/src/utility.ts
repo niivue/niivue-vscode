@@ -96,3 +96,20 @@ export function isImageType(item: string) {
     '.vmr',
   ].find((fileType) => item.endsWith(fileType))
 }
+
+export function getMetadataString(nv: Niivue) {
+  const meta = nv?.volumes?.[0]?.getImageMetadata()
+  if (!meta || !meta.nx) {
+    return ''
+  }
+  const matrixString = 'matrix size: ' + meta.nx + ' x ' + meta.ny + ' x ' + meta.nz
+  const voxelString =
+    'voxelsize: ' +
+    meta.dx.toPrecision(2) +
+    ' x ' +
+    meta.dy.toPrecision(2) +
+    ' x ' +
+    meta.dz.toPrecision(2)
+  const timeString = meta.nt > 1 ? ', timepoints: ' + meta.nt : ''
+  return matrixString + ', ' + voxelString + timeString
+}

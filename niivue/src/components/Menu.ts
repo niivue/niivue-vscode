@@ -5,17 +5,38 @@ import { useRef } from 'preact/hooks'
 import { addImagesEvent, addOverlayEvent, openImageFromURL } from '../events'
 import { SLICE_TYPE } from '@niivue/niivue'
 import { ScalingBox } from './ScalingBox'
+import { getMetadataString } from '../utility'
 
 export const Menu = (props: AppProps) => {
   const { selection, selectionMode, nvArray, sliceType, hideUI } = props
   const isVscode = typeof vscode === 'object'
 
-  // Multi Selection
+  // State
+  const headerDialog = useSignal(false)
+  const selectedOverlayNumber = useSignal(0)
+  const overlayMenu = useSignal(false)
+  const interpolation = useSignal(true)
+  const crosshair = useSignal(true)
+  const radiologicalConvention = useSignal(false)
+  const colorbar = useSignal(false)
+
+  // Computed
+  const isOverlay = computed(() => nvArraySelected.value[0]?.volumes?.length > 1)
+  const multipleVolumes = computed(() => nvArray.value.length > 1)
   const nvArraySelected = computed(() =>
     selectionMode.value > 0 && selection.value.length > 0
       ? nvArray.value.filter((_, i) => selection.value.includes(i))
       : nvArray.value,
   )
+  const isMultiEcho = computed(() =>
+    nvArraySelected.value.some((nv) => nv.volumes?.[0]?.getImageMetadata().nt > 1),
+  )
+  const isVolume = computed(() => nvArraySelected.value[0]?.volumes?.length > 0)
+  const isMesh = computed(() => nvArraySelected.value[0]?.meshes?.length > 0)
+  const isVolumeOrMesh = computed(() => isVolume.value || isMesh.value)
+  const nOverlays = computed(() => nvArraySelected.value[0]?.volumes?.length - 1 || 0)
+
+  // Effects that occur when state or computed changes
   effect(() => {
     if (selection.value.length == 0 && nvArray.value.length > 0) {
       if (selectionMode.value == 1) {
@@ -26,14 +47,44 @@ export const Menu = (props: AppProps) => {
     }
   })
 
-  const multipleVolumes = computed(() => nvArray.value.length > 1)
+  effect(() => {
+    nvArray.value.forEach((nv) => {
+      nv.setInterpolation(!interpolation.value)
+      nv.drawScene()
+    })
+  })
+
+  effect(() => {
+    nvArray.value.forEach((nv) => {
+      try {
+        nv.setCrosshairWidth(crosshair.value)
+      } catch (e) {
+        console.log(e)
+      }
+      nv.drawScene()
+    })
+  })
+
+  effect(() => {
+    nvArray.value.forEach((nv) => {
+      nv.setRadiologicalConvention(radiologicalConvention.value)
+      nv.drawScene()
+    })
+  })
+
+  effect(() => {
+    nvArray.value.forEach((nv) => {
+      nv.opts.isColorbar = colorbar.value
+      nv.drawScene()
+    })
+  })
+
+  // Menu Click events
   const homeEvent = () => {
     const url = new URL(location.href)
     location.href = url.origin + url.pathname
     location.reload()
   }
-
-  const headerDialog = useSignal(false)
 
   const setVoxelSize1AndOrigin0 = () => {
     nvArraySelected.value.forEach((nv) => {
@@ -49,8 +100,6 @@ export const Menu = (props: AppProps) => {
     })
     nvArray.value = [...nvArray.value]
   }
-
-  const isOverlay = computed(() => nvArraySelected.value[0]?.volumes?.length > 1)
 
   const overlayButtonOnClick = () => {
     if (isVolume.value)
@@ -115,21 +164,9 @@ export const Menu = (props: AppProps) => {
     })
   }
 
-  const isMultiEcho = computed(() =>
-    nvArraySelected.value.some((nv) => nv.volumes?.[0]?.getImageMetadata().nt > 1),
-  )
-
-  const isVolume = computed(() => nvArraySelected.value[0]?.volumes?.length > 0)
-  const isMesh = computed(() => nvArraySelected.value[0]?.meshes?.length > 0)
-  const isVolumeOrMesh = computed(() => isVolume.value || isMesh.value)
-
   const selectAll = () => {
     selection.value = nvArray.value.map((_, i) => i)
   }
-
-  const nOverlays = computed(() => nvArraySelected.value[0]?.volumes?.length - 1 || 0)
-  const selectedOverlayNumber = useSignal(0)
-  const overlayMenu = useSignal(false)
 
   const openColorScale = (volume: number) => () => {
     selectedOverlayNumber.value = volume
@@ -139,42 +176,6 @@ export const Menu = (props: AppProps) => {
     selectedOverlayNumber.value = nvArraySelected.value[0]?.volumes?.length - 1 || 0
     overlayMenu.value = true
   }
-
-  const interpolation = useSignal(true)
-  effect(() => {
-    nvArray.value.forEach((nv) => {
-      nv.setInterpolation(!interpolation.value)
-      nv.drawScene()
-    })
-  })
-
-  const crosshair = useSignal(true)
-  effect(() => {
-    nvArray.value.forEach((nv) => {
-      try {
-        nv.setCrosshairWidth(crosshair.value)
-      } catch (e) {
-        console.log(e)
-      }
-      nv.drawScene()
-    })
-  })
-
-  const radiologicalConvention = useSignal(false)
-  effect(() => {
-    nvArray.value.forEach((nv) => {
-      nv.setRadiologicalConvention(radiologicalConvention.value)
-      nv.drawScene()
-    })
-  })
-
-  const colorbar = useSignal(false)
-  effect(() => {
-    nvArray.value.forEach((nv) => {
-      nv.opts.isColorbar = colorbar.value
-      nv.drawScene()
-    })
-  })
 
   return html`
     <div class="flex flex-wrap items-baseline gap-2">
@@ -443,21 +444,4 @@ function DownArrow() {
       />
     </svg>
   `
-}
-
-export function getMetadataString(nv: Niivue) {
-  const meta = nv?.volumes?.[0]?.getImageMetadata()
-  if (!meta || !meta.nx) {
-    return ''
-  }
-  const matrixString = 'matrix size: ' + meta.nx + ' x ' + meta.ny + ' x ' + meta.nz
-  const voxelString =
-    'voxelsize: ' +
-    meta.dx.toPrecision(2) +
-    ' x ' +
-    meta.dy.toPrecision(2) +
-    ' x ' +
-    meta.dz.toPrecision(2)
-  const timeString = meta.nt > 1 ? ', timepoints: ' + meta.nt : ''
-  return matrixString + ', ' + voxelString + timeString
 }
