@@ -60,18 +60,14 @@ export const Menu = (props: AppProps) => {
 
   const isOverlay = computed(() => nvArraySelected.value[0]?.volumes?.length > 1)
 
-  // const overlayButtonOnClick = () => {
-  //   const nv = nvArraySelected.value[0]
-  //   if (!nv || nv.volumes.length == 0) {
-  //     return
-  //   }
-  //   // if no overlay, add one
-  //   // if overlay, show overlay menu
-  //   // overlay menu includes color, min, max, opacity, hide
-  // }
+  const overlayButtonOnClick = () => {
+    if (isVolume.value)
+      if (!isOverlay.value) addOverlay()
+      else replaceLastVolume()
+    else addMeshOverlay()
+  }
 
   const addOverlay = () => {
-    // if image
     addOverlayEvent(selection.value[0], 'overlay')
   }
 
@@ -261,7 +257,7 @@ export const Menu = (props: AppProps) => {
           `,
         )}        
       </${MenuItem}>      
-      <${MenuItem} label="Overlay" onClick=${addOverlay} visible=${isVolumeOrMesh}>
+      <${MenuItem} label="Overlay" onClick=${overlayButtonOnClick} visible=${isVolumeOrMesh}>
         <${MenuEntry} label="Add" onClick=${addOverlay} visible=${isVolume} />
         <${MenuEntry} label="Add" onClick=${addMeshOverlay} visible=${isMesh} />
         <${MenuEntry} label="Curvature" onClick=${addCurvature} visible=${isMesh} />
