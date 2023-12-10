@@ -162,7 +162,7 @@ export const Menu = (props: AppProps) => {
         <${MenuEntry} label="Example Image" onClick=${() =>
     openImageFromURL('https://niivue.github.io/niivue-demo-images/mni152.nii.gz')} />
       </${MenuItem}>
-      <${MenuItem} label="View" >
+      <${MenuItem} label="View" onClick=${resetZoom} >
         <${MenuEntry} label="Axial" onClick=${() => (sliceType.value = SLICE_TYPE.AXIAL)} />
         <${MenuEntry} label="Sagittal" onClick=${() => (sliceType.value = SLICE_TYPE.SAGITTAL)} />
         <${MenuEntry} label="Coronal" onClick=${() => (sliceType.value = SLICE_TYPE.CORONAL)} />
