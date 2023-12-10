@@ -37,47 +37,11 @@ export const Menu = (props: AppProps) => {
   const nOverlays = computed(() => nvArraySelected.value[0]?.volumes?.length - 1 || 0)
 
   // Effects that occur when state or computed changes
-  effect(() => {
-    if (selection.value.length == 0 && nvArray.value.length > 0) {
-      if (selectionMode.value == 1) {
-        selection.value = [0]
-      } else {
-        selection.value = nvArray.value.map((_, i) => i)
-      }
-    }
-  })
-
-  effect(() => {
-    nvArray.value.forEach((nv) => {
-      nv.setInterpolation(!interpolation.value)
-      nv.drawScene()
-    })
-  })
-
-  effect(() => {
-    nvArray.value.forEach((nv) => {
-      try {
-        nv.setCrosshairWidth(crosshair.value)
-      } catch (e) {
-        console.log(e)
-      }
-      nv.drawScene()
-    })
-  })
-
-  effect(() => {
-    nvArray.value.forEach((nv) => {
-      nv.setRadiologicalConvention(radiologicalConvention.value)
-      nv.drawScene()
-    })
-  })
-
-  effect(() => {
-    nvArray.value.forEach((nv) => {
-      nv.opts.isColorbar = colorbar.value
-      nv.drawScene()
-    })
-  })
+  effect(() => ensureAlwaysSelectedAvailable(selection, nvArray, selectionMode))
+  effect(() => applyInterpolation(nvArray, interpolation))
+  effect(() => applyCrosshairWidth(nvArray, crosshair))
+  effect(() => applyRadiologicalConvention(nvArray, radiologicalConvention))
+  effect(() => applyColorbar(nvArray, colorbar))
 
   // Menu Click events
   const homeEvent = () => {
@@ -244,6 +208,55 @@ export const Menu = (props: AppProps) => {
       />
     <${HeaderDialog} nvArraySelected=${nvArraySelected} isOpen=${headerDialog} />
   `
+}
+
+function ensureAlwaysSelectedAvailable(
+  selection: Signal<number[]>,
+  nvArray: Signal<Niivue[]>,
+  selectionMode: Signal<number>,
+) {
+  if (selection.value.length == 0 && nvArray.value.length > 0) {
+    if (selectionMode.value == 1) {
+      selection.value = [0]
+    } else {
+      selection.value = nvArray.value.map((_, i) => i)
+    }
+  }
+}
+
+function applyInterpolation(nvArray: Signal<Niivue[]>, interpolation: Signal<boolean>) {
+  nvArray.value.forEach((nv: any) => {
+    nv.setInterpolation(!interpolation.value)
+    nv.drawScene()
+  })
+}
+
+function applyCrosshairWidth(nvArray: Signal<Niivue[]>, crosshair: Signal<boolean>) {
+  nvArray.value.forEach((nv: any) => {
+    try {
+      nv.setCrosshairWidth(crosshair.value)
+    } catch (e) {
+      console.log(e)
+    }
+    nv.drawScene()
+  })
+}
+
+function applyRadiologicalConvention(
+  nvArray: Signal<Niivue[]>,
+  radiologicalConvention: Signal<boolean>,
+) {
+  nvArray.value.forEach((nv: any) => {
+    nv.setRadiologicalConvention(radiologicalConvention.value)
+    nv.drawScene()
+  })
+}
+
+function applyColorbar(nvArray: Signal<Niivue[]>, colorbar: Signal<boolean>) {
+  nvArray.value.forEach((nv: any) => {
+    nv.opts.isColorbar = colorbar.value
+    nv.drawScene()
+  })
 }
 
 const HeaderDialog = ({ nvArraySelected, isOpen }: any) => {
