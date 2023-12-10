@@ -4,19 +4,18 @@ import { Signal, computed, effect, useSignal } from '@preact/signals'
 import { useRef } from 'preact/hooks'
 import { addImagesEvent, addOverlayEvent, openImageFromURL } from '../events'
 import { SLICE_TYPE } from '@niivue/niivue'
-import { Scaling } from './Scaling'
-import { handleOpacity, handleOverlayColormap } from './OverlayOptions'
+import { ScalingBox } from './ScalingBox'
 
 export const Menu = (props: AppProps) => {
   const { selection, selectionMode, nvArray, sliceType, hideUI } = props
   const isVscode = typeof vscode === 'object'
+
+  // Multi Selection
   const nvArraySelected = computed(() =>
     selectionMode.value > 0 && selection.value.length > 0
       ? nvArray.value.filter((_, i) => selection.value.includes(i))
       : nvArray.value,
   )
-  const multiImage = computed(() => nvArray.value.length > 1)
-
   effect(() => {
     if (selection.value.length == 0 && nvArray.value.length > 0) {
       if (selectionMode.value == 1) {
@@ -27,21 +26,14 @@ export const Menu = (props: AppProps) => {
     }
   })
 
+  const multipleVolumes = computed(() => nvArray.value.length > 1)
   const homeEvent = () => {
     const url = new URL(location.href)
     location.href = url.origin + url.pathname
     location.reload()
   }
 
-  const headerDialog = useRef<HTMLDialogElement>()
-  const headerInfo = useSignal('')
-
-  const showHeader = () => {
-    headerInfo.value = nvArraySelected.value?.[0]?.volumes?.[0]?.hdr?.toFormattedString() || ''
-    if (headerInfo.value && headerDialog.current) {
-      headerDialog.current.showModal()
-    }
-  }
+  const headerDialog = useSignal(false)
 
   const setVoxelSize1AndOrigin0 = () => {
     nvArraySelected.value.forEach((nv) => {
@@ -233,12 +225,12 @@ export const Menu = (props: AppProps) => {
         <${MenuEntry} label="Replace" onClick=${replaceLastVolume} visible=${isOverlay} />
         <${MenuEntry} label="Remove" onClick=${removeLastVolume} visible=${isOverlay} />
       </${MenuItem}>
-      <${MenuItem} label="Header" onClick=${showHeader} visible=${isVolume} >
+      <${MenuItem} label="Header" onClick=${toggle(headerDialog)} visible=${isVolume} >
         <!-- <${MenuEntry} label="Set Header" onClick=${() =>
     console.log('Not implemented yet')} /> -->
         <${MenuEntry} label="Set Headers to 1" onClick=${setVoxelSize1AndOrigin0} />
       </${MenuItem}>
-      <${ImageSelect} label="Select" state=${selectionMode} visible=${multiImage}>
+      <${ImageSelect} label="Select" state=${selectionMode} visible=${multipleVolumes}>
         <${MenuEntry} label="Select All" onClick=${selectAll} />
       </${ImageSelect}>
     </div>
@@ -249,16 +241,44 @@ export const Menu = (props: AppProps) => {
         nvArraySelected=${nvArraySelected}
         visible=${overlayMenu}
       />
+    <${HeaderDialog} nvArraySelected=${nvArraySelected} isOpen=${headerDialog} />
+  `
+}
+
+const HeaderDialog = ({ nvArraySelected, isOpen }: any) => {
+  const headerDialog = useRef<HTMLDialogElement>()
+  const headerInfo = useSignal('')
+  const showHeader = () => {
+    headerInfo.value = nvArraySelected.value?.[0]?.volumes?.[0]?.hdr?.toFormattedString() || ''
+    if (headerInfo.value && headerDialog.current) {
+      headerDialog.current.showModal()
+    }
+  }
+  effect(() => {
+    if (isOpen.value) {
+      showHeader()
+      toggle(isOpen)()
+    }
+  })
+  return html`
     <dialog class="text-sm p-2 bg-gray-200 rounded-md" ref=${headerDialog}>
       <form>
         ${headerInfo.value.split('\n').map((line) => html` <p>${line}</p> `)}
-        <button class="bg-gray-300 border-2 border-gray-500 rounded-md w-16 mx-auto block"
-          formmethod="dialog" value="cancel">Close</button>
+        <button
+          class="bg-gray-300 border-2 border-gray-500 rounded-md w-16 mx-auto block"
+          formmethod="dialog"
+          value="cancel"
+        >
+          Close
+        </button>
       </form>
     </dialog>
   `
 }
 
+function toggle(state: Signal<boolean>) {
+  return () => (state.value = !state.value)
+}
 const ToggleEntry = ({ label, state }: any) => {
   return html`
     <div class="relative group">
@@ -266,89 +286,12 @@ const ToggleEntry = ({ label, state }: any) => {
         class="w-full px-2 py-1 text-left hover:bg-gray-700 ${state.value
           ? 'bg-gray-600'
           : 'bg-gray-900'}"
-        onClick=${() => (state.value = !state.value)}
+        onClick=${toggle(state)}
       >
         ${label}
       </button>
     </div>
   `
-}
-
-const ScalingBox = (props: any) => {
-  const { nvArraySelected, selectedOverlayNumber, overlayMenu, visible } = props
-  if (visible && !visible.value) return html``
-
-  const setScaling = (val: ScalingOpts) => {
-    nvArraySelected.value.forEach((nv: Niivue) => {
-      nv.volumes[0].cal_min = val.min
-      nv.volumes[0].cal_max = val.max
-      nv.updateGLVolume()
-    })
-  }
-  const isVolume = computed(() => nvArraySelected.value[0]?.volumes?.length > 0)
-  const colormaps = computed(() =>
-    isVolume.value
-      ? ['symmetric', ...nvArraySelected.value[0].colormaps()]
-      : ['ge_color', 'hsv', 'symmetric', 'warm'],
-  )
-  const handleColormap = (e: any) => {
-    const colormap = e.target.value
-    nvArraySelected.value.forEach((nv: Niivue) => {
-      handleOverlayColormap(nv, selectedOverlayNumber.value, colormap)
-    })
-  }
-
-  const selectedOverlay = computed(
-    () => nvArraySelected.value[0]?.volumes?.[selectedOverlayNumber.value],
-  )
-
-  const changeOpacity = (e: any) => {
-    const opacity = e.target.value
-    nvArraySelected.value.forEach((nv: Niivue) => {
-      handleOpacity(nv, selectedOverlayNumber.value, opacity)
-    })
-  }
-
-  return html`
-    <div class="absolute left-8 top-8 bg-gray-500 rounded-md z-50 space-y-1 space-x-1 p-1">
-      <${Scaling} setScaling=${setScaling} init=${selectedOverlay.value} />
-      <select
-        class="bg-gray-600 w-24 border-2 border-gray-600 rounded-md"
-        onchange=${handleColormap}
-        value=${selectedOverlay.value.colormap}
-      >
-        ${colormaps.value.map((c) => html`<option value=${c}>${c}</option>`)}
-      </select>
-      <input
-        class="bg-gray-600 w-16 border-2 border-gray-600 rounded-md"
-        type="number"
-        value=${selectedOverlay.value.opacity}
-        onchange=${changeOpacity}
-        min="0"
-        max="1"
-        step="0.1"
-      />
-      <button
-        class="bg-gray-600 border-2 border-gray-600 rounded-md w-16 opacity-50 cursor-not-allowed"
-        onclick=${() => console.log('Not implemented yet')}
-      >
-        Hide
-      </button>
-      <br />
-      <button
-        class="bg-gray-600 border-2 border-gray-600 rounded-md w-16"
-        onclick=${() => (overlayMenu.value = false)}
-      >
-        Close
-      </button>
-    </div>
-  `
-}
-
-export interface ScalingOpts {
-  isManual: boolean
-  min: number
-  max: number
 }
 
 export const MenuButton = ({ label, onClick }: { label: string; onClick: Function }) => {
