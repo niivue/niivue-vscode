@@ -131,7 +131,7 @@ export const Menu = (props: AppProps) => {
 
   const resetZoom = () => {
     nvArray.value.forEach((nv) => {
-      nv.scene.pan2Dxyzmm = [0, 0, 0, 1]
+      nv.uiData.pan2Dxyzmm = [0, 0, 0, 1]
       nv.drawScene()
     })
   }

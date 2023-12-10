@@ -242,7 +242,7 @@ class ExtendedNiivue extends Niivue {
     if (this.uiData.mouseButtonRightDown || this.uiData.mouseButtonCenterDown) {
       this.canvas.focus()
       this.otherNV.forEach((nv: Niivue) => {
-        nv.scene.pan2Dxyzmm = this.scene.pan2Dxyzmm.slice()
+        nv.uiData.pan2Dxyzmm = this.uiData.pan2Dxyzmm.slice()
         nv.drawScene()
       })
     }

@@ -1235,33 +1235,18 @@
     "@jridgewell/resolve-uri" "^3.1.0"
     "@jridgewell/sourcemap-codec" "^1.4.14"
 
-"@lukeed/csprng@^1.1.0":
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/@lukeed/csprng/-/csprng-1.1.0.tgz#1e3e4bd05c1cc7a0b2ddbd8a03f39f6e4b5e6cfe"
-  integrity sha512-Z7C/xXCiGWsg0KuKsHTKJxbWhpI3Vs5GwLfOean7MGyVFGqdRgBbAjOCh6u4bbjPc/8MJ2pZmK/0DLdCbivLDA==
-
-"@lukeed/uuid@^2.0.1":
-  version "2.0.1"
-  resolved "https://registry.yarnpkg.com/@lukeed/uuid/-/uuid-2.0.1.tgz#4f6c34259ee0982a455e1797d56ac27bb040fd74"
-  integrity sha512-qC72D4+CDdjGqJvkFMMEAtancHUQ7/d/tAiHf64z8MopFDmcrtbcJuerDtFceuAfQJ2pDSfCKCtbqoGBNnwg0w==
+"@niivue/niivue@0.38.0":
+  version "0.38.0"
+  resolved "https://registry.yarnpkg.com/@niivue/niivue/-/niivue-0.38.0.tgz#29427ff0d1d133c7a99b26599cf13a46b595f673"
+  integrity sha512-V5Fj0VkmV5JLjte7XbQcwiipdzz2TiqeMmQHszfP4T90BFxbcmUta0i5ULiwri0UbzQ1J6w+usV5XOE8pmd6hw==
   dependencies:
-    "@lukeed/csprng" "^1.1.0"
-
-"@niivue/niivue@0.38.7":
-  version "0.38.7"
-  resolved "https://registry.yarnpkg.com/@niivue/niivue/-/niivue-0.38.7.tgz#7cfc131f2767c387a5cdbabbf665d7e68c0cdf76"
-  integrity sha512-ZgPGUhBbqjpy3rStAnpXGP5LaDReXSuFbq1mNf1TwFxUGteiGcnYIcc/mDL/OCagLE1feDHdmwDRVYZZCuODFQ==
-  dependencies:
-    "@lukeed/uuid" "^2.0.1"
     "@ungap/structured-clone" "^1.0.2"
-    array-equal "^1.0.2"
     daikon "^1.2.43"
     fflate "^0.7.4"
     gl-matrix "^3.4.3"
-    nifti-reader-js "^0.6.8"
+    nifti-reader-js "^0.6.6"
     rxjs "^7.8.0"
-  optionalDependencies:
-    "@rollup/rollup-linux-x64-gnu" "^4.6.1"
+    uuid "^9.0.0"
 
 "@nodelib/fs.scandir@2.1.5":
   version "2.1.5"
@@ -1390,11 +1375,6 @@
   dependencies:
     estree-walker "^2.0.1"
     picomatch "^2.2.2"
-
-"@rollup/rollup-linux-x64-gnu@^4.6.1":
-  version "4.7.0"
-  resolved "https://registry.yarnpkg.com/@rollup/rollup-linux-x64-gnu/-/rollup-linux-x64-gnu-4.7.0.tgz#bccd53f20de2c1b1e7024898dc5b69375a5abe4e"
-  integrity sha512-cCkoGlGWfBobdDtiiypxf79q6k3/iRVGu1HVLbD92gWV5WZbmuWJCgRM4x2N6i7ljGn1cGytPn9ZAfS8UwF6vg==
 
 "@sinclair/typebox@^0.27.8":
   version "0.27.8"
@@ -1653,11 +1633,6 @@ array-buffer-byte-length@^1.0.0:
   dependencies:
     call-bind "^1.0.2"
     is-array-buffer "^3.0.1"
-
-array-equal@^1.0.2:
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/array-equal/-/array-equal-1.0.2.tgz#a8572e64e822358271250b9156d20d96ef5dec04"
-  integrity sha512-gUHx76KtnhEgB3HOuFYiCm3FIdEs6ocM2asHvNTkfu/Y09qQVrrVVaOKENmS2KkSaGoxgXNqC+ZVtR/n0MOkSA==
 
 arraybuffer.prototype.slice@^1.0.2:
   version "1.0.2"
@@ -3083,7 +3058,7 @@ needle@^3.1.0:
     iconv-lite "^0.6.3"
     sax "^1.2.4"
 
-nifti-reader-js@^0.6.8:
+nifti-reader-js@^0.6.6:
   version "0.6.8"
   resolved "https://registry.yarnpkg.com/nifti-reader-js/-/nifti-reader-js-0.6.8.tgz#658ae7b426880f147149b0ec6fffc39e3eb03e0a"
   integrity sha512-yIKNVzYFiUcSHazoR+sd6Ka7sUmZTabaVqJRFxbdlAKR1hnPBuNP71g3AyApo37nJ3k41c632QPij5q7gF1YPQ==
@@ -4055,6 +4030,11 @@ util-deprecate@^1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/util-deprecate/-/util-deprecate-1.0.2.tgz#450d4dc9fa70de732762fbd2d4a28981419a0ccf"
   integrity sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==
+
+uuid@^9.0.0:
+  version "9.0.1"
+  resolved "https://registry.yarnpkg.com/uuid/-/uuid-9.0.1.tgz#e188d4c8853cc722220392c424cd637f32293f30"
+  integrity sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==
 
 vite-node@0.34.6:
   version "0.34.6"
