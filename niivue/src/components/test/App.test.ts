@@ -1,6 +1,5 @@
 import { describe, expect, it, test } from 'vitest'
-import { render, screen } from '@testing-library/preact'
-import { BrowserRouter } from 'react-router-dom'
+import { fireEvent, render, screen } from '@testing-library/preact'
 import { html } from 'htm/preact'
 
 import { App } from '../App'
@@ -19,17 +18,38 @@ describe('app', () => {
     expect(1 + 2).toBe(expected)
   })
 
-  test('should display home screen', () => {
-    // const n = new Niivue()
-    render(html`<${BrowserRouter}><${App} /></${BrowserRouter}>`)
-    // App
-    // test that the component with text "Niivue-ify" is present
-    // expect(screen.getByText("Niivue-ify")).toBe;
-    expect(3 + 2).toBe(5)
+  it('should display home screen', () => {
+    render(html`<${App} />`)
+
+    expect(screen.getByText(/Home/i)).toBeInTheDocument()
+    expect(screen.getByText(/Add Image/i)).toBeInTheDocument()
+    expect(screen.getByText(/View/i)).toBeInTheDocument()
+    expect(screen.getByText(/Bookmarklet/i)).toBeInTheDocument()
+    expect(screen.getByText(/Drop Files to load images/i)).toBeInTheDocument()
   })
 
-  it('basic', () => {
+  it('should load a test image', () => {
     render(html`<${App} />`)
-    expect(screen.getByText(/Niivue-ify/i)).toBeInTheDocument()
+    const testLink = 'https://niivue.github.io/niivue-demo-images/mni152.nii.gz'
+    // send a message to load the test image
+    // window.postMessage(
+    //   {
+    //     type: 'addImage',
+    //     body: {
+    //       data: '',
+    //       uri: testLink,
+    //     },
+    //   },
+    //   '*',
+    // )
+
+    const addImageDropdown = screen.getByTestId('menu-item-dropdown-Add Image')
+    fireEvent.click(addImageDropdown)
+    const openExampleImage = screen.getByText(/Example Image/i)
+    expect(openExampleImage).toBeInTheDocument()
+
+    // fireEvent.click(openExampleImage)
+
+    // expect(screen.getByText(/Loading/i)).toBeInTheDocument()
   })
 })

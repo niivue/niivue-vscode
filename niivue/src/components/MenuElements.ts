@@ -36,6 +36,7 @@ export const MenuItem = ({ label, onClick, children, visible }: any) => {
       <button
         class="hover:bg-gray-700 pr-2 rounded-r-md h-6 align-middle"
         onClick=${toggle(isOpen)}
+        data-testid="menu-item-dropdown-${label}"
       >
         <${DownArrow} />
       </button>
