@@ -15,9 +15,7 @@ export const ScalingBox = (props: any) => {
 
   const setScaling = (val: ScalingOpts) => {
     nvArraySelected.value.forEach((nv: Niivue) => {
-      nv.volumes[0].cal_min = val.min
-      nv.volumes[0].cal_max = val.max
-      nv.updateGLVolume()
+      handleOverlayScaling(nv, selectedOverlayNumber.value, val)
     })
   }
 
@@ -129,6 +127,18 @@ export const Scaling = ({ setScaling, init }: ScalingProps) => {
 
 function isVolumeOverlay(nv: Niivue) {
   return nv.volumes.length > 0
+}
+
+function handleOverlayScaling(nv: Niivue, layerNumber: number, scaling: ScalingOpts) {
+  if (isVolumeOverlay(nv)) {
+    const overlay = nv.volumes[layerNumber]
+    overlay.cal_min = scaling.min
+    overlay.cal_max = scaling.max
+  } else {
+    nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, 'cal_min', scaling.min)
+    nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, 'cal_max', scaling.max)
+  }
+  nv.updateGLVolume()
 }
 
 function handleOpacity(nv: Niivue, layerNumber: number, opacity: number) {

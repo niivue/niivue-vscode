@@ -42,7 +42,16 @@ export const Menu = (props: AppProps) => {
   const isVolume = computed(() => nvArraySelected.value[0]?.volumes?.length > 0)
   const isMesh = computed(() => nvArraySelected.value[0]?.meshes?.length > 0)
   const isVolumeOrMesh = computed(() => isVolume.value || isMesh.value)
-  const nOverlays = computed(() => nvArraySelected.value[0]?.volumes?.length - 1 || 0)
+  const nOverlays = computed(() => {
+    const nv = nvArraySelected.value[0]
+    if (isVolume.value) {
+      return nv.volumes.length - 1
+    } else if (isMesh.value) {
+      return nv.meshes.length
+    } else {
+      return 0
+    }
+  })
 
   // Effects that occur when state or computed changes
   effect(() => ensureAlwaysSelectedAvailable(selection, nvArray, selectionMode))
@@ -140,8 +149,14 @@ export const Menu = (props: AppProps) => {
     selection.value = nvArray.value.map((_, i) => i)
   }
 
-  const openColorScale = (volume: number) => () => {
-    selectedOverlayNumber.value = volume
+  const openColorScale = (overlayNumber: number) => () => {
+    if (isVolume.value) {
+      selectedOverlayNumber.value = overlayNumber + 1
+    } else if (isMesh.value) {
+      selectedOverlayNumber.value = overlayNumber
+    } else {
+      selectedOverlayNumber.value = 0
+    }
     overlayMenu.value = true
   }
   const openColorScaleLastOverlay = () => {
@@ -182,12 +197,10 @@ export const Menu = (props: AppProps) => {
         <${ToggleEntry} label="Crosshair" state=${crosshair} />
       </${MenuItem}>
       <${MenuItem} label="ColorScale" visible=${isVolumeOrMesh} onClick=${openColorScaleLastOverlay} >
-        <${MenuEntry} label="Volume" onClick=${openColorScale(0)} />
+        <${MenuEntry} label="Volume" onClick=${openColorScale(0)} visible=${isVolume} />
         ${Array.from(
           { length: nOverlays.value },
-          (_, i) => html`
-            <${MenuEntry} label="Overlay ${i + 1}" onClick=${openColorScale(i + 1)} />
-          `,
+          (_, i) => html` <${MenuEntry} label="Overlay ${i + 1}" onClick=${openColorScale(i)} /> `,
         )}        
       </${MenuItem}>      
       <${MenuItem} label="Overlay" onClick=${overlayButtonOnClick} visible=${isVolumeOrMesh}>
