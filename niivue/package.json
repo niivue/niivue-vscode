@@ -23,9 +23,11 @@
   },
   "devDependencies": {
     "@babel/core": "^7.23.5",
+    "@playwright/test": "^1.40.1",
     "@preact/preset-vite": "^2.5.0",
     "@testing-library/jest-dom": "^6.1.4",
     "@testing-library/preact": "^3.2.3",
+    "@types/node": "^20.10.4",
     "@vitest/ui": "latest",
     "autoprefixer": "^10.4.16",
     "jsdom": "^22.1.0",

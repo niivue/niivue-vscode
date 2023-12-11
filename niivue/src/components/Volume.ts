@@ -53,7 +53,7 @@ export const Volume = (props: AppProps & VolumeProps) => {
           ${dispName}
         </div>
         <div class="pointer-events-none absolute bottom-1 left-1">
-          <span class="text-outline">${intensity}</span>
+          <span class="text-outline" data-testid="intensity-${volumeIndex}">${intensity}</span>
         </div>
       `}
       ${hideUI.value > 2 &&
