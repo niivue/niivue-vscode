@@ -74,7 +74,12 @@ This requires a full compilation and is slow
 
 ### Playwright Tests
 
-The playwright tests are for the niivue webview only.
-Open a new vscode window for the folder niivue and install the vscode extension `Playwright Test for VSCode`.
+The playwright tests are for the niivue webview.
+Install the vscode extension `Playwright Test for VSCode`.
+Open the command line and execute
+
+```bash
+    yarn start:webview
+```
 
 Open the vscode test interface and run the tests. New tests can be added under `niivue/tests`
