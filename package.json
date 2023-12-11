@@ -143,7 +143,7 @@
     "build:webview": "cd niivue && yarn run build",
     "test:webview": "cd niivue && yarn run test",
     "watch:webview": "cd niivue && yarn run watch",
-    "vscode:prepublish": "yarn run compile",
+    "vscode:prepublish": "yarn run build:webview && yarn run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "yarn run compile && yarn run lint"
