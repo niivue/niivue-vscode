@@ -11,3 +11,8 @@ declare const vscode: VSCode
 declare class Niivue {
   [x: string]: any
 }
+
+declare module '*.png' {
+  const value: any
+  export = value
+}
