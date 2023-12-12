@@ -51,7 +51,7 @@ If niivue-vscode fails to open any of these files, please create an issue.
 ### Installing
 
 ```bash
-    yarn install:all
+    yarn install
 ```
 
 ### Hot Reload Development in browser
