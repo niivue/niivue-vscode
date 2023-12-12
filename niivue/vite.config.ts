@@ -41,7 +41,7 @@ export default defineConfig({
     // if it's not mapped, it uses the "main" field which is CommonJS that redirects to CJS preact
     mainFields: ['module'],
   },
-  base: '/niivue/',
+  base: '/niivue-vscode/', // this is the path for the github pages
   test: {
     globals: true,
     environment: 'jsdom',
