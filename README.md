@@ -45,14 +45,24 @@ If niivue-vscode fails to open any of these files, please create an issue.
 
 ## Developing this extension in VSCode
 
+- Fork this repository;
 - Clone [this repository](https://github.com/korbinian90/niivue-vscode) and open in VSCode
 - Run inside the `niivue-vscode` folder
 
 ### Installing
 
 ```bash
-    yarn install
+    npm install --global yarn
+    yarn install:all
 ```
+
+It might be required to update *node* first before running 'yarn install'. This can be done with the following:
+
+```bash
+    npm install --global n
+    n latest
+```
+
 
 ### Hot Reload Development in browser
 

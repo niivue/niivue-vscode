@@ -5,6 +5,7 @@ import { addImagesEvent, addOverlayEvent, openImageFromURL } from '../events'
 import { SLICE_TYPE } from '@niivue/niivue'
 import { ScalingBox } from './ScalingBox'
 import { getMetadataString } from '../utility'
+import { getNumberOfPoints } from '../utility'
 import {
   HeaderDialog,
   ImageSelect,
@@ -163,7 +164,7 @@ export const Menu = (props: AppProps) => {
     selectedOverlayNumber.value = nOverlays.value - (isMesh.value ? 1 : 0)
     overlayMenu.value = true
   }
-
+  
   return html`
     <div class="flex flex-wrap items-baseline gap-2">
       ${!isVscode && html`<${MenuButton} label="Home" onClick=${homeEvent} />`}
@@ -221,6 +222,7 @@ export const Menu = (props: AppProps) => {
         <${MenuEntry} label="Select All" onClick=${selectAll} />
       </${ImageSelect}>
     </div>
+    <p class="pl-2">${isMesh.value? getNumberOfPoints(nvArraySelected.value[0]): 'No mesh'}</p>
     ${isVolume.value && html`<p class="pl-2">${getMetadataString(nvArraySelected.value[0])}</p>`}
     <${ScalingBox}
         selectedOverlayNumber=${selectedOverlayNumber}

@@ -113,3 +113,9 @@ export function getMetadataString(nv: Niivue) {
   const timeString = meta.nt > 1 ? ', timepoints: ' + meta.nt : ''
   return matrixString + ', ' + voxelString + timeString
 }
+
+export function getNumberOfPoints(nv: Niivue) {
+  const mesh = nv?.meshes?.[0]
+  const matrixString = 'Number of Points: ' + mesh.pts.length / 3
+  return matrixString
+}
