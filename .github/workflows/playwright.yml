@@ -16,11 +16,14 @@ jobs:
     - name: Install dependencies
       run: npm install && npm ci
       working-directory: ./niivue
+    - name: Start Webview
+      run: yarn start:webview &
+      working-directory: ./niivue
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
       working-directory: ./niivue
     - name: Run Playwright tests
-      run: yarn start:webview && npx playwright test
+      run: npx playwright test
       working-directory: ./niivue
     - uses: actions/upload-artifact@v3
       if: always()
