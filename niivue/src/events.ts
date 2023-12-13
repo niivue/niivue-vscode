@@ -52,6 +52,8 @@ export function listenToMessages(appProps: AppProps) {
 }
 
 function handleDebugMessage(body: any, appProps: AppProps) {
+  // sending arrays is fine, dataBuffer does not work
+  // sending objects only works with one element inside
   const { nvArray } = appProps
   switch (body) {
     case 'getNCanvas':
@@ -64,8 +66,6 @@ function handleDebugMessage(body: any, appProps: AppProps) {
       break
     case 'getMinMaxOfFirstImage':
       {
-        console.log('nv.volumes:')
-        console.log(nvArray.value[0].volumes[0])
         window.postMessage({
           type: 'debugAnswer',
           body: [nvArray.value[0].volumes[0].cal_min, nvArray.value[0].volumes[0].cal_max],
@@ -131,30 +131,29 @@ function addMeshOverlay(nv: Niivue, item: any, type: string) {
     mesh.layers.pop()
   }
   if (!item.data) {
-    console.log('Running loadFromURL');
     NVMesh.loadLayer(
-      {url: item.uri, 
-      opacity:a.opacity,
-      colormap:a.colormap,
-      colormapNegative:a.colormapNegative,
-      useNegativeCmap:a.useNegativeCmap,
-      cal_min:a.calMin,
-      cal_max:a.calMax,
+      {
+        url: item.uri,
+        opacity: a.opacity,
+        colormap: a.colormap,
+        colormapNegative: a.colormapNegative,
+        useNegativeCmap: a.useNegativeCmap,
+        cal_min: a.calMin,
+        cal_max: a.calMax,
       },
       mesh,
-      )
+    )
   } else {
-    console.log('Running readLayer');
     NVMesh.readLayer(
-    item.uri,
-    item.data,
-    mesh,
-    a.opacity,
-    a.colormap,
-    a.colormapNegative,
-    a.useNegativeCmap,
-    a.calMin,
-    a.calMax,
+      item.uri,
+      item.data,
+      mesh,
+      a.opacity,
+      a.colormap,
+      a.colormapNegative,
+      a.useNegativeCmap,
+      a.calMin,
+      a.calMax,
     )
   }
   mesh.updateMesh(nv.gl)
@@ -162,12 +161,7 @@ function addMeshOverlay(nv: Niivue, item: any, type: string) {
   nv.updateGLVolume()
   const layerNumber = nv.meshes[0].layers.length - 1
   if (type === 'addMeshCurvature') {
-    nv.setMeshLayerProperty(
-      nv.meshes[0].id,
-      layerNumber,
-      'colorbarVisible',
-      false,
-    )
+    nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, 'colorbarVisible', false)
   }
 }
 

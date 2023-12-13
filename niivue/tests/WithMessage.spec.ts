@@ -1,7 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { waitForDebugger } from 'inspector'
-
-const BASE_URL = 'http://localhost:4000/'
+import { BASE_URL, loadTestImage } from './utils'
 
 test.describe('app', () => {
   test('that there are 0 canvases when no image is loaded', async ({ page }) => {
@@ -66,25 +64,10 @@ test.describe('app', () => {
   })
 })
 
-async function loadTestImage(page) {
-  const testLink = 'https://niivue.github.io/niivue-demo-images/mni152.nii.gz'
-  // send a message to the app to load the test image
-  const message = {
-    type: 'addImage',
-    body: {
-      data: '',
-      uri: testLink,
-    },
-  }
-  await page.evaluate((m) => window.postMessage(m, '*'), message)
-}
-
 function listenForMessage(page) {
   const message = page.evaluate(() => {
     return new Promise((resolve) => {
       window.addEventListener('message', (event) => {
-        console.log(event)
-        console.log(event.data)
         if (event.data?.type == 'debugAnswer') resolve(event.data.body)
       })
     })

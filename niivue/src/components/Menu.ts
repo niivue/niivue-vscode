@@ -4,8 +4,7 @@ import { Signal, computed, effect, useSignal } from '@preact/signals'
 import { addImagesEvent, addOverlayEvent, openImageFromURL } from '../events'
 import { SLICE_TYPE } from '@niivue/niivue'
 import { ScalingBox } from './ScalingBox'
-import { getMetadataString } from '../utility'
-import { getNumberOfPoints } from '../utility'
+import { getMetadataString, getNumberOfPoints } from '../utility'
 import {
   HeaderDialog,
   ImageSelect,
