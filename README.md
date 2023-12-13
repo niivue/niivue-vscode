@@ -45,8 +45,8 @@ If niivue-vscode fails to open any of these files, please create an issue.
 
 ## Developing this extension in VSCode
 
-- Clone [this repository](https://github.com/korbinian90/vscode-niivue) and open in VSCode
-- Run inside the `vscode-niivue` folder
+- Clone [this repository](https://github.com/korbinian90/niivue-vscode) and open in VSCode
+- Run inside the `niivue-vscode` folder
 
 ### Installing
 
