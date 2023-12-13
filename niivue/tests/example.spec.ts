@@ -80,6 +80,7 @@ test.describe('app', () => {
 
     expect(await page.waitForSelector('canvas')).toBeTruthy();
     expect(await page.$$('canvas')).toHaveLength(1);
+    expect(await page.textContent('text=/matrix size: 207 x 256 x 215, voxelsize: 0.74 x 0.74 x 0.74/i')).toBeTruthy();
 
     await loadTestImage(page);
     expect(await page.$$('canvas')).toHaveLength(2);
@@ -92,6 +93,7 @@ test.describe('app', () => {
 
     expect(await page.waitForSelector('canvas')).toBeTruthy();
     expect(await page.$$('canvas')).toHaveLength(1);
+    expect(await page.textContent('text=/matrix size: 207 x 256 x 215, voxelsize: 0.74 x 0.74 x 0.74/i')).toBeTruthy();
 
     const menuBar = ['Home', 'Add Image', 'View', 'ColorScale', 'Overlay', 'Header']
     for (const item of menuBar) {
@@ -107,6 +109,7 @@ test.describe('app', () => {
 
     expect(await page.waitForSelector('canvas')).toBeTruthy();
     expect(await page.$$('canvas')).toHaveLength(1);
+    expect(await page.textContent('text=/matrix size: 207 x 256 x 215, voxelsize: 0.74 x 0.74 x 0.74/i')).toBeTruthy();
   });
 
 
