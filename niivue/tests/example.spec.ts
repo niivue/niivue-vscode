@@ -39,13 +39,47 @@ test.describe('app', () => {
     expect(await page.textContent('text=/Drop Files to load images/i')).toBeTruthy()
   })
 
+  test('menubar updates with loading images', async ({ page }) => {
+    await page.goto(BASE_URL);
+
+    // initially only these menu items are visible
+    expect(await page.textContent('text=/Home/i')).toBeTruthy();
+    expect(await page.textContent('text=/Add Image/i')).toBeTruthy();
+    expect(await page.textContent('text=/View/i')).toBeTruthy();
+
+    // initially these menu items do not exist
+    expect(await page.$('text=/ColorScale/i')).toBeNull();
+    expect(await page.$('text=/Overlay/i')).toBeNull();
+    expect(await page.$('text=/Header/i')).toBeNull();
+    expect(await page.$('text=/Select/i')).toBeNull();
+
+    // load an image
+    await loadTestImage(page);
+    expect(await page.waitForSelector('canvas')).toBeTruthy();
+    expect(await page.textContent('text=/matrix size: 207 x 256 x 215, voxelsize: 0.74 x 0.74 x 0.74/i')).toBeTruthy();
+
+    // after loading an image these are visible
+    expect(await page.textContent('text=/Home/i')).toBeTruthy();
+    expect(await page.textContent('text=/Add Image/i')).toBeTruthy();
+    expect(await page.textContent('text=/View/i')).toBeTruthy();
+    expect(await page.textContent('text=/ColorScale/i')).toBeTruthy();
+    expect(await page.textContent('text=/Overlay/i')).toBeTruthy();
+    expect(await page.textContent('text=/Header/i')).toBeTruthy();
+
+    // the select menu item is only visible after loading 2 images
+    expect(await page.$('text=/Select/i')).toBeNull();
+    await loadTestImage(page);
+    expect(await page.textContent('text=/Select/i')).toBeTruthy();
+  });
+
   test('loads a test image', async ({ page }) => {
     await page.goto(BASE_URL)
 
     await loadTestImage(page)
 
-    expect(await page.waitForSelector('canvas')).toBeTruthy()
-    expect(await page.$$('canvas')).toHaveLength(1)
+    expect(await page.waitForSelector('canvas')).toBeTruthy();
+    expect(await page.$$('canvas')).toHaveLength(1);
+    expect(await page.textContent('text=/matrix size: 207 x 256 x 215, voxelsize: 0.74 x 0.74 x 0.74/i')).toBeTruthy();
 
     await loadTestImage(page)
     expect(await page.$$('canvas')).toHaveLength(2)
@@ -56,8 +90,9 @@ test.describe('app', () => {
 
     await loadTestImage(page)
 
-    expect(await page.waitForSelector('canvas')).toBeTruthy()
-    expect(await page.$$('canvas')).toHaveLength(1)
+    expect(await page.waitForSelector('canvas')).toBeTruthy();
+    expect(await page.$$('canvas')).toHaveLength(1);
+    expect(await page.textContent('text=/matrix size: 207 x 256 x 215, voxelsize: 0.74 x 0.74 x 0.74/i')).toBeTruthy();
 
     const menuBar = ['Home', 'Add Image', 'View', 'ColorScale', 'Overlay', 'Header']
     for (const item of menuBar) {
@@ -66,157 +101,19 @@ test.describe('app', () => {
   })
 
   test('opens the example image via the menu bar', async ({ page }) => {
-    await page.goto(BASE_URL)
 
-    await page.click('data-testid=menu-item-dropdown-Add Image')
-    await page.click('text=/Example Image/i')
+    await page.goto(BASE_URL);
 
-    expect(await page.waitForSelector('canvas')).toBeTruthy()
-    expect(await page.$$('canvas')).toHaveLength(1)
-  })
+    await page.click('data-testid=menu-item-dropdown-Add Image');
+    await page.click('text=/Example Image/i');
 
-  test('if we can receive a message', async ({ page }) => {
-    await page.goto(BASE_URL)
+    expect(await page.waitForSelector('canvas')).toBeTruthy();
+    expect(await page.$$('canvas')).toHaveLength(1);
+    expect(await page.textContent('text=/matrix size: 207 x 256 x 215, voxelsize: 0.74 x 0.74 x 0.74/i')).toBeTruthy();
+  });
 
-    // attach message listener
-    const message = page.evaluate(() => {
-      return new Promise((resolve) => {
-        window.addEventListener('message', (event) => {
-          console.log(event)
-          console.log(event.data)
-          if (event.data.type == 'debugAnswer') resolve(event.data.body)
-        })
-      })
-    })
 
-    await page.evaluate(() => {
-      const message = { type: 'debugRequest', body: 'getNCanvas' }
-      window.postMessage(message, '*')
-    })
-
-    expect(await message).toBe(0)
-
-    // const message2 = page.evaluate(() => {
-    //   return new Promise((resolve) => {
-    //     window.addEventListener('message', (event) => {
-    //       console.log(event)
-    //       console.log(event.data)
-    //       if (event.data.type == 'debugAnswer') resolve(event.data.body)
-    //     })
-    //   })
-    // })
-
-    // await loadTestImage(page)
-    // expect(await page.$$('canvas')).toHaveLength(1)
-
-    // // sleep for 1 second
-    // await page.waitForTimeout(1000)
-
-    // await page.evaluate(() => {
-    //   const message = { type: 'debugRequest', body: 'getNVCanvas' }
-    //   window.postMessage(message, '*')
-    // })
-
-    // expect(await message2).toBe(1)
-
-    // await page.evaluate(() => {
-    //   window.postMessage('getNCanvas', '*')
-    // })
-
-    // expect(await message).toBe('1')
-  })
-
-  test('if we can receive a message for 1 image loaded', async ({ page }) => {
-    await page.goto(BASE_URL)
-
-    // attach message listener
-    const message = page.evaluate(() => {
-      return new Promise((resolve) => {
-        window.addEventListener('message', (event) => {
-          console.log(event)
-          console.log(event.data)
-          if (event.data.type == 'debugAnswer') resolve(event.data.body)
-        })
-      })
-    })
-
-    await loadTestImage(page)
-
-    await page.evaluate(() => {
-      const message = { type: 'debugRequest', body: 'getNCanvas' }
-      window.postMessage(message, '*')
-    })
-
-    expect(await message).toBe(1)
-  })
-
-  test('if we can receive a message with nv', async ({ page }) => {
-    await page.goto(BASE_URL)
-
-    // attach message listener
-    const message = page.evaluate(() => {
-      return new Promise((resolve) => {
-        window.addEventListener('message', (event) => {
-          console.log(event)
-          console.log(event.data)
-          if (event.data.type == 'debugAnswer') resolve(event.data.body)
-        })
-      })
-    })
-
-    await loadTestImage(page)
-
-    await page.evaluate(() => {
-      const message = { type: 'debugRequest', body: 'getNV' }
-      window.postMessage(message, '*')
-    })
-
-    expect(await message).toBe(1)
-  })
-
-  test('if we can receive a message 2', async ({ page }) => {
-    page.evaluate(() => {
-      window.addEventListener('message', (event) => {
-        console.log(event)
-        console.log(event.data)
-        if (event.data.type == 'debugAnswer') {
-          const message = event.data
-          switch (event.data.number) {
-            case 0:
-              // expect(event.data.body.nvArray).toHaveLength(0)
-              expect(message.body).toBe(1)
-              break
-            case 1:
-              expect(event.data.body.nvArray).toHaveLength(1)
-              break
-            case 2:
-              expect(event.data.body.nvArray).toHaveLength(2)
-              break
-          }
-        }
-      })
-    })
-
-    await page.evaluate(() => {
-      const message = { type: 'debugRequest', body: { type: 'getNCanvas', number: 0 } }
-      window.postMessage(message, '*')
-    })
-
-    // await loadTestImage(page)
-    // expect(await page.$$('canvas')).toHaveLength(1)
-
-    // // sleep for 1 second
-
-    await page.waitForTimeout(1000)
-
-    // await page.evaluate(() => {
-    //   const message = { type: 'debugRequest', body: 'getNVCanvas' }
-    //   window.postMessage(message, '*')
-    // })
-
-    // expect(await message2).toBe(1)
-  })
-})
+});
 
 async function loadTestImage(page) {
   const testLink = 'https://niivue.github.io/niivue-demo-images/mni152.nii.gz'
