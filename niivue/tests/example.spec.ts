@@ -40,6 +40,39 @@ test.describe('app', () => {
     expect(await page.textContent('text=/Drop Files to load images/i')).toBeTruthy();
   });
 
+  test('menubar updates with loading images', async ({ page }) => {
+    await page.goto(BASE_URL);
+
+    // initially only these menu items are visible
+    expect(await page.textContent('text=/Home/i')).toBeTruthy();
+    expect(await page.textContent('text=/Add Image/i')).toBeTruthy();
+    expect(await page.textContent('text=/View/i')).toBeTruthy();
+
+    // initially these menu items do not exist
+    expect(await page.$('text=/ColorScale/i')).toBeNull();
+    expect(await page.$('text=/Overlay/i')).toBeNull();
+    expect(await page.$('text=/Header/i')).toBeNull();
+    expect(await page.$('text=/Select/i')).toBeNull();
+
+    // load an image
+    await loadTestImage(page);
+    expect(await page.waitForSelector('canvas')).toBeTruthy();
+    expect(await page.textContent('text=/matrix size: 207 x 256 x 215, voxelsize: 0.74 x 0.74 x 0.74/i')).toBeTruthy();
+
+    // after loading an image these are visible
+    expect(await page.textContent('text=/Home/i')).toBeTruthy();
+    expect(await page.textContent('text=/Add Image/i')).toBeTruthy();
+    expect(await page.textContent('text=/View/i')).toBeTruthy();
+    expect(await page.textContent('text=/ColorScale/i')).toBeTruthy();
+    expect(await page.textContent('text=/Overlay/i')).toBeTruthy();
+    expect(await page.textContent('text=/Header/i')).toBeTruthy();
+
+    // the select menu item is only visible after loading 2 images
+    expect(await page.$('text=/Select/i')).toBeNull();
+    await loadTestImage(page);
+    expect(await page.textContent('text=/Select/i')).toBeTruthy();
+  });
+
   test('loads a test image', async ({ page }) => {
     await page.goto(BASE_URL);
 
