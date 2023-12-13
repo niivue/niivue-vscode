@@ -51,7 +51,7 @@ export function listenToMessages(appProps: AppProps) {
   addImageFromURLParams()
 }
 
-function handleDebugMessage(body, appProps: AppProps) {
+function handleDebugMessage(body: any, appProps: AppProps) {
   const { nvArray } = appProps
   switch (body) {
     case 'getNCanvas':
@@ -59,6 +59,16 @@ function handleDebugMessage(body, appProps: AppProps) {
         window.postMessage({
           type: 'debugAnswer',
           body: nvArray.value.length,
+        })
+      }
+      break
+    case 'getMinMaxOfFirstImage':
+      {
+        console.log('nv.volumes:')
+        console.log(nvArray.value[0].volumes[0])
+        window.postMessage({
+          type: 'debugAnswer',
+          body: [nvArray.value[0].volumes[0].cal_min, nvArray.value[0].volumes[0].cal_max],
         })
       }
       break
