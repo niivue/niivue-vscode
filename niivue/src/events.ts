@@ -35,6 +35,11 @@ export function listenToMessages(appProps: AppProps) {
           growNvArrayBy(nvArray, body.n)
         }
         break
+      case 'debugRequest':
+        {
+          handleDebugMessage(body, appProps)
+        }
+        break
       default:
         return
     }
@@ -44,6 +49,30 @@ export function listenToMessages(appProps: AppProps) {
     vscode.postMessage({ type: 'ready' })
   }
   addImageFromURLParams()
+}
+
+function handleDebugMessage(body: any, appProps: AppProps) {
+  const { nvArray } = appProps
+  switch (body) {
+    case 'getNCanvas':
+      {
+        window.postMessage({
+          type: 'debugAnswer',
+          body: nvArray.value.length,
+        })
+      }
+      break
+    case 'getMinMaxOfFirstImage':
+      {
+        console.log('nv.volumes:')
+        console.log(nvArray.value[0].volumes[0])
+        window.postMessage({
+          type: 'debugAnswer',
+          body: [nvArray.value[0].volumes[0].cal_min, nvArray.value[0].volumes[0].cal_max],
+        })
+      }
+      break
+  }
 }
 
 export function openImageFromURL(uri: string) {
