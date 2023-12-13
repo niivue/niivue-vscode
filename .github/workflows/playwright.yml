@@ -20,7 +20,7 @@ jobs:
       run: npx playwright install --with-deps
       working-directory: ./niivue
     - name: Run Playwright tests
-      run: npx playwright test
+      run: yarn start:webview && npx playwright test
       working-directory: ./niivue
     - uses: actions/upload-artifact@v3
       if: always()
