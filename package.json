@@ -138,7 +138,7 @@
     "*"
   ],
   "scripts": {
-    "install": "yarn install && cd niivue && yarn install",
+    "install:all": "yarn install && cd niivue && yarn install",
     "start:webview": "cd niivue && yarn run start",
     "build:webview": "cd niivue && yarn run build",
     "test:webview": "cd niivue && yarn run test",

@@ -101,7 +101,22 @@ function addMeshOverlay(nv: Niivue, item: any, type: string) {
   if (type === 'replaceMeshOverlay') {
     mesh.layers.pop()
   }
-  NVMesh.readLayer(
+  if (!item.data) {
+    console.log('Running loadFromURL');
+    NVMesh.loadLayer(
+      {url: item.uri, 
+      opacity:a.opacity,
+      colormap:a.colormap,
+      colormapNegative:a.colormapNegative,
+      useNegativeCmap:a.useNegativeCmap,
+      cal_min:a.calMin,
+      cal_max:a.calMax,
+      },
+      mesh,
+      )
+  } else {
+    console.log('Running readLayer');
+    NVMesh.readLayer(
     item.uri,
     item.data,
     mesh,
@@ -111,7 +126,8 @@ function addMeshOverlay(nv: Niivue, item: any, type: string) {
     a.useNegativeCmap,
     a.calMin,
     a.calMax,
-  )
+    )
+  }
   mesh.updateMesh(nv.gl)
   nv.opts.isColorbar = true
   nv.updateGLVolume()
