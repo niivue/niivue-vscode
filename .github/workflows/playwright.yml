@@ -18,7 +18,6 @@ jobs:
       working-directory: ./niivue
     - name: Start Webview
       run: yarn start:webview &
-      working-directory: ./niivue
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
       working-directory: ./niivue
