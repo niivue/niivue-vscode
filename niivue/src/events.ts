@@ -35,6 +35,11 @@ export function listenToMessages(appProps: AppProps) {
           growNvArrayBy(nvArray, body.n)
         }
         break
+      case 'debugRequest':
+        {
+          handleDebugMessage(body, appProps)
+        }
+        break
       default:
         return
     }
@@ -44,6 +49,20 @@ export function listenToMessages(appProps: AppProps) {
     vscode.postMessage({ type: 'ready' })
   }
   addImageFromURLParams()
+}
+
+function handleDebugMessage(body, appProps: AppProps) {
+  const { nvArray } = appProps
+  switch (body) {
+    case 'getNCanvas':
+      {
+        window.postMessage({
+          type: 'debugAnswer',
+          body: nvArray.value.length,
+        })
+      }
+      break
+  }
 }
 
 export function openImageFromURL(uri: string) {
