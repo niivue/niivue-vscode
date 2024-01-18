@@ -1,4 +1,4 @@
-import { Niivue, NVImage, NVMesh, SLICE_TYPE } from '@niivue/niivue'
+import { Niivue, NVImage, NVMesh, NVMeshLoaders, SLICE_TYPE } from '@niivue/niivue'
 import { isImageType } from './utility'
 import { AppProps } from './components/App'
 import { Signal } from '@preact/signals'
@@ -120,7 +120,7 @@ interface LayerOptions {
   calMax?: number
 }
 
-function addMeshOverlay(nv: Niivue, item: any, type: string) {
+async function addMeshOverlay(nv: Niivue, item: any, type: string) {
   if (nv.meshes.length === 0) {
     return
   }
@@ -131,31 +131,24 @@ function addMeshOverlay(nv: Niivue, item: any, type: string) {
     mesh.layers.pop()
   }
   if (!item.data) {
-    NVMesh.loadLayer(
-      {
-        url: item.uri,
-        opacity: a.opacity,
-        colormap: a.colormap,
-        colormapNegative: a.colormapNegative,
-        useNegativeCmap: a.useNegativeCmap,
-        cal_min: a.calMin,
-        cal_max: a.calMax,
-      },
-      mesh,
-    )
-  } else {
-    NVMesh.readLayer(
-      item.uri,
-      item.data,
-      mesh,
-      a.opacity,
-      a.colormap,
-      a.colormapNegative,
-      a.useNegativeCmap,
-      a.calMin,
-      a.calMax,
-    )
+    const response = await fetch(item.uri)
+    if (!response.ok) {
+      throw new Error(`Load mesh overlay error! status: ${response.status}`)
+    }
+    item.data = await response.arrayBuffer()
   }
+  NVMeshLoaders.readLayer(
+    item.uri,
+    item.data,
+    mesh,
+    a.opacity,
+    a.colormap,
+    a.colormapNegative,
+    a.useNegativeCmap,
+    a.calMin,
+    a.calMax,
+  )
+
   mesh.updateMesh(nv.gl)
   nv.opts.isColorbar = true
   nv.updateGLVolume()
@@ -190,12 +183,12 @@ function getLayerDefaults(type: string) {
   return a
 }
 
-async function addOverlay(nv: Niivue, item: any) {
+function addOverlay(nv: Niivue, item: any) {
   if (isImageType(item.uri)) {
     const image = new NVImage(item.data, item.uri, 'redyell', 0.5)
     nv.addVolume(image)
   } else {
-    const mesh = await NVMesh.readMesh(item.data, item.uri, nv.gl, 0.5)
+    const mesh = NVMesh.readMesh(item.data, item.uri, nv.gl, 0.5)
     nv.addMesh(mesh)
   }
 }
@@ -263,7 +256,7 @@ export function addImagesEvent() {
   }
 }
 
-function getUnitinializedNvInstance(nvArray: Signal<Niivue[]>) {
+function getUnitinializedNvInstance(nvArray: Signal<ExtendedNiivue[]>) {
   const nv = nvArray.value.find((nv) => nv.isNew)
   if (nv) {
     return nv
@@ -276,14 +269,29 @@ class ExtendedNiivue extends Niivue {
   constructor(opts: any) {
     super(opts)
   }
+  isNew = true
+  isLoaded = false
+  key = NaN
+  body = null
   mouseMoveListener(e: MouseEvent) {
     super.mouseMoveListener(e)
     if (this.uiData.mouseButtonRightDown || this.uiData.mouseButtonCenterDown) {
-      this.canvas.focus()
-      this.otherNV.forEach((nv: Niivue) => {
-        nv.uiData.pan2Dxyzmm = this.uiData.pan2Dxyzmm.slice()
-        nv.drawScene()
-      })
+      this.canvas?.focus()
+      // handle the case where this.otherNV is of type Niivue
+      console.log('trying to move ')
+      console.log(this.uiData.mouseButtonCenterDown)
+      console.log(this.uiData.isDragging)
+      if (this.otherNV != null) {
+        if (this.otherNV instanceof Niivue) {
+          this.otherNV.scene.pan2Dxyzmm = this.scene.pan2Dxyzmm
+          this.otherNV.drawScene()
+        } else {
+          this.otherNV.forEach((nv: Niivue) => {
+            nv.scene.pan2Dxyzmm = this.scene.pan2Dxyzmm
+            nv.drawScene()
+          })
+        }
+      }
     }
   }
 }
@@ -294,8 +302,6 @@ function growNvArrayBy(nvArray: Signal<Niivue[]>, n: number) {
       isResizeCanvas: false,
       dragMode: 4,
     })
-    nv.isNew = true
-    nv.isLoaded = false
     nv.key = Math.random()
     nvArray.value = [...nvArray.value, nv]
   }
