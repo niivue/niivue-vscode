@@ -1,3 +1,5 @@
+import { Niivue } from '@niivue/niivue'
+
 // This function finds common patterns in the names and only returns the parts of the names that are different
 export function differenceInNames(names: string[], rec = true) {
   if (names.length === 0) {

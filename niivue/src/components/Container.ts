@@ -2,9 +2,10 @@ import { html } from 'htm/preact'
 import { useEffect, useRef } from 'preact/hooks'
 import { differenceInNames } from '../utility'
 import { Volume } from './Volume'
-import { SLICE_TYPE } from '@niivue/niivue'
+import { SLICE_TYPE, Niivue } from '@niivue/niivue'
 import { AppProps } from './App'
 import { computed, effect, useSignal } from '@preact/signals'
+import { ExtendedNiivue } from '../events'
 
 type Size = {
   height: number
@@ -130,8 +131,6 @@ function getCanvasSize(
   return { width: bestWidth, height: bestWidth / aspectRatio }
 }
 
-function syncVolumes(nvArray: Niivue[]) {
-  nvArray.forEach((nv) =>
-    nv.broadcastTo(nvArray.filter((nvi) => nvi !== nv && nvi.isLoaded))
-  )
+function syncVolumes(nvArray: ExtendedNiivue[]) {
+  nvArray.forEach((nv) => nv.broadcastTo(nvArray.filter((nvi) => nvi !== nv && nvi.isLoaded)))
 }

@@ -14,6 +14,7 @@ import {
   ToggleEntry,
   toggle,
 } from './MenuElements'
+import { ExtendedNiivue } from '../events'
 
 export const Menu = (props: AppProps) => {
   const { selection, selectionMode, nvArray, sliceType, hideUI } = props
@@ -140,7 +141,7 @@ export const Menu = (props: AppProps) => {
 
   const resetZoom = () => {
     nvArray.value.forEach((nv) => {
-      nv.uiData.pan2Dxyzmm = [0, 0, 0, 1]
+      nv.scene.pan2Dxyzmm = [0, 0, 0, 1]
       nv.drawScene()
     })
   }
@@ -237,7 +238,7 @@ export const Menu = (props: AppProps) => {
 
 function ensureAlwaysSelectedAvailable(
   selection: Signal<number[]>,
-  nvArray: Signal<Niivue[]>,
+  nvArray: Signal<ExtendedNiivue[]>,
   selectionMode: Signal<number>,
 ) {
   if (selection.value.length == 0 && nvArray.value.length > 0) {
@@ -249,17 +250,17 @@ function ensureAlwaysSelectedAvailable(
   }
 }
 
-function applyInterpolation(nvArray: Signal<Niivue[]>, interpolation: Signal<boolean>) {
-  nvArray.value.forEach((nv: Niivue) => {
+function applyInterpolation(nvArray: Signal<ExtendedNiivue[]>, interpolation: Signal<boolean>) {
+  nvArray.value.forEach((nv: ExtendedNiivue) => {
     nv.setInterpolation(!interpolation.value)
     nv.drawScene()
   })
 }
 
-function applyCrosshairWidth(nvArray: Signal<Niivue[]>, crosshair: Signal<boolean>) {
-  nvArray.value.forEach((nv: Niivue) => {
+function applyCrosshairWidth(nvArray: Signal<ExtendedNiivue[]>, crosshair: Signal<boolean>) {
+  nvArray.value.forEach((nv: ExtendedNiivue) => {
     try {
-      nv.setCrosshairWidth(crosshair.value)
+      nv.setCrosshairWidth(Number(crosshair.value))
     } catch (e) {
       console.log(e)
     }
@@ -268,17 +269,17 @@ function applyCrosshairWidth(nvArray: Signal<Niivue[]>, crosshair: Signal<boolea
 }
 
 function applyRadiologicalConvention(
-  nvArray: Signal<Niivue[]>,
+  nvArray: Signal<ExtendedNiivue[]>,
   radiologicalConvention: Signal<boolean>,
 ) {
-  nvArray.value.forEach((nv: Niivue) => {
+  nvArray.value.forEach((nv: ExtendedNiivue) => {
     nv.setRadiologicalConvention(radiologicalConvention.value)
     nv.drawScene()
   })
 }
 
-function applyColorbar(nvArray: Signal<Niivue[]>, colorbar: Signal<boolean>) {
-  nvArray.value.forEach((nv: Niivue) => {
+function applyColorbar(nvArray: Signal<ExtendedNiivue[]>, colorbar: Signal<boolean>) {
+  nvArray.value.forEach((nv: ExtendedNiivue) => {
     nv.opts.isColorbar = colorbar.value
     nv.drawScene()
   })

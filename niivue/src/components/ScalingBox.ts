@@ -1,6 +1,7 @@
 import { computed } from '@preact/signals'
 import { html } from 'htm/preact/index.js'
 import { useRef, useEffect } from 'preact/hooks'
+import { ExtendedNiivue } from '../events'
 
 export interface ScalingOpts {
   isManual: boolean
@@ -14,7 +15,7 @@ export const ScalingBox = (props: any) => {
   const selectedOverlay = computed(() => getOverlay(nvArraySelected.value[0]))
 
   const setScaling = (val: ScalingOpts) => {
-    nvArraySelected.value.forEach((nv: Niivue) => {
+    nvArraySelected.value.forEach((nv: ExtendedNiivue) => {
       handleOverlayScaling(nv, selectedOverlayNumber.value, val)
     })
   }
@@ -30,14 +31,14 @@ export const ScalingBox = (props: any) => {
 
   const changeColormap = (e: any) => {
     const colormap = e.target.value
-    nvArraySelected.value.forEach((nv: Niivue) => {
+    nvArraySelected.value.forEach((nv: ExtendedNiivue) => {
       handleOverlayColormap(nv, selectedOverlayNumber.value, colormap)
     })
   }
 
   const changeOpacity = (e: any) => {
     const opacity = e.target.value
-    nvArraySelected.value.forEach((nv: Niivue) => {
+    nvArraySelected.value.forEach((nv: ExtendedNiivue) => {
       handleOpacity(nv, selectedOverlayNumber.value, opacity)
     })
   }
@@ -125,11 +126,11 @@ export const Scaling = ({ setScaling, init }: ScalingProps) => {
   `
 }
 
-function isVolumeOverlay(nv: Niivue) {
+function isVolumeOverlay(nv: ExtendedNiivue) {
   return nv.volumes.length > 0
 }
 
-function handleOverlayScaling(nv: Niivue, layerNumber: number, scaling: ScalingOpts) {
+function handleOverlayScaling(nv: ExtendedNiivue, layerNumber: number, scaling: ScalingOpts) {
   if (isVolumeOverlay(nv)) {
     const overlay = nv.volumes[layerNumber]
     if (overlay) {
@@ -143,7 +144,7 @@ function handleOverlayScaling(nv: Niivue, layerNumber: number, scaling: ScalingO
   nv.updateGLVolume()
 }
 
-function handleOpacity(nv: Niivue, layerNumber: number, opacity: number) {
+function handleOpacity(nv: ExtendedNiivue, layerNumber: number, opacity: number) {
   if (isVolumeOverlay(nv)) {
     if (nv.volumes[layerNumber]) {
       nv.setOpacity(layerNumber, opacity)
@@ -154,7 +155,7 @@ function handleOpacity(nv: Niivue, layerNumber: number, opacity: number) {
   nv.updateGLVolume()
 }
 
-function handleOverlayColormap(nv: Niivue, layerNumber: number, colormap: string) {
+function handleOverlayColormap(nv: ExtendedNiivue, layerNumber: number, colormap: string) {
   if (isVolumeOverlay(nv)) {
     setVolumeColormap(nv, layerNumber, colormap)
   } else {
@@ -163,23 +164,21 @@ function handleOverlayColormap(nv: Niivue, layerNumber: number, colormap: string
   nv.updateGLVolume()
 }
 
-function setVolumeColormap(nv: Niivue, layerNumber: number, colormap: string) {
+function setVolumeColormap(nv: ExtendedNiivue, layerNumber: number, colormap: string) {
   const overlay = nv.volumes?.[layerNumber]
   if (!overlay) {
     return
   }
   if (colormap === 'symmetric') {
-    overlay.useNegativeCmap = true
     overlay.colormap = 'warm'
     overlay.colormapNegative = 'winter'
   } else {
-    overlay.useNegativeCmap = false
     overlay.colormap = colormap
     overlay.colormapNegative = ''
   }
 }
 
-function setMeshColormap(nv: Niivue, layerNumber: number, colormap: string) {
+function setMeshColormap(nv: ExtendedNiivue, layerNumber: number, colormap: string) {
   const id = nv.meshes[0].id
   if (colormap === 'symmetric') {
     nv.setMeshLayerProperty(id, layerNumber, 'useNegativeCmap', true)
@@ -192,7 +191,7 @@ function setMeshColormap(nv: Niivue, layerNumber: number, colormap: string) {
   }
 }
 
-function getOverlay(nv: Niivue) {
+function getOverlay(nv: ExtendedNiivue) {
   const layers = isVolumeOverlay(nv) ? nv.volumes : nv.meshes[0].layers
   return layers[layers.length - 1]
 }

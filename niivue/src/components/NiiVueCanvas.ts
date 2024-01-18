@@ -4,9 +4,10 @@ import { useRef, useEffect } from 'preact/hooks'
 import { isImageType } from '../utility'
 import { Signal } from '@preact/signals'
 import { AppProps } from './App'
+import { ExtendedNiivue } from '../events'
 
 interface NiiVueCanvasProps {
-  nv: Niivue
+  nv: ExtendedNiivue
   intensity: Signal<string>
   width: number
   height: number
@@ -24,7 +25,9 @@ export const NiiVueCanvas = ({
   nvArray,
 }: AppProps & NiiVueCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>()
-  useEffect(() => nv.attachToCanvas(canvasRef.current), [])
+  useEffect(() => {
+    canvasRef.current && nv.attachToCanvas(canvasRef.current)
+  }, [canvasRef.current])
   useEffect(() => {
     if (!nv.body) {
       return
@@ -43,7 +46,9 @@ export const NiiVueCanvas = ({
     nv.setSliceType(sliceType.value)
   }
 
-  useEffect(() => nv.drawScene(), [height, width]) // avoids black images
+  useEffect(() => {
+    nv.drawScene()
+  }, [height, width]) // avoids black images
 
   return html`<canvas ref=${canvasRef} width=${width} height=${height}></canvas>`
 }
@@ -82,19 +87,13 @@ async function getUserInput() {
   return matrixSize
 }
 
-async function loadVolume(nv: Niivue, item: any) {
+async function loadVolume(nv: ExtendedNiivue, item: any) {
   if (item.uri.endsWith('.raw')) {
     const header = await getMinimalHeaderMHA()
     if (!header) {
       return
     }
-    const volume = new NVImage(
-      header,
-      `${item.uri}.mha`,
-      'gray',
-      1.0,
-      item.data
-    )
+    const volume = new NVImage(header, `${item.uri}.mha`, 'gray', 1.0, item.data)
     nv.addVolume(volume)
   } else if (isImageType(item.uri)) {
     if (item.data) {
@@ -113,11 +112,7 @@ async function loadVolume(nv: Niivue, item: any) {
   }
 }
 
-function setIntensityAndLocation(
-  data: any,
-  intensity: Signal<string>,
-  location: Signal<string>
-) {
+function setIntensityAndLocation(data: any, intensity: Signal<string>, location: Signal<string>) {
   const parts = data.string.split('=')
   if (parts.length === 2) {
     intensity.value = parts.pop()

@@ -2,7 +2,7 @@ import { SLICE_TYPE } from '@niivue/niivue'
 import { Signal, computed, useSignal } from '@preact/signals'
 import { html } from 'htm/preact'
 import { useEffect } from 'preact/hooks'
-import { listenToMessages } from '../events'
+import { listenToMessages, ExtendedNiivue } from '../events'
 import { Container } from './Container'
 import { ImageDrop } from './ImageDrop'
 import { HomeScreen } from './HomeScreen'
@@ -26,7 +26,7 @@ export const App = () => {
   `
 }
 export interface AppProps {
-  nvArray: Signal<Niivue[]>
+  nvArray: Signal<ExtendedNiivue[]>
   selection: Signal<Array<number>>
   selectionMode: Signal<number>
   hideUI: Signal<number>
@@ -42,7 +42,7 @@ export interface ScalingOpts {
 
 function useAppState(): AppProps {
   return {
-    nvArray: useSignal<Niivue[]>([]),
+    nvArray: useSignal<ExtendedNiivue[]>([]),
     selection: useSignal<Array<number>>([]),
     selectionMode: useSignal(0),
     hideUI: useSignal(3), // 0: hide all, 1: show name, 2: hide overlay, 3: show-all

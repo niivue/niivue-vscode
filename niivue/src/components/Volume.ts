@@ -2,11 +2,12 @@ import { html } from 'htm/preact'
 import { NiiVueCanvas } from './NiiVueCanvas'
 import { computed, useSignal } from '@preact/signals'
 import { AppProps } from './App'
+import { ExtendedNiivue } from '../events'
 
 export interface VolumeProps {
   name: string
   volumeIndex: number
-  nv: Niivue
+  nv: ExtendedNiivue
   remove: Function
   width: number
   height: number
@@ -39,7 +40,7 @@ export const Volume = (props: AppProps & VolumeProps) => {
     nv.setFrame4D(nv.volumes[0].id, currentVol - 1)
   }
 
-  const is4D = computed(() => nv.volumes[0]?.nFrame4D > 1)
+  const is4D = computed(() => nv.volumes[0]?.nFrame4D && nv.volumes[0]?.nFrame4D > 1)
 
   return html`
     <div

@@ -265,7 +265,7 @@ function getUnitinializedNvInstance(nvArray: Signal<ExtendedNiivue[]>) {
   return nvArray.value[nvArray.value.length - 1]
 }
 
-class ExtendedNiivue extends Niivue {
+export class ExtendedNiivue extends Niivue {
   constructor(opts: any) {
     super(opts)
   }
