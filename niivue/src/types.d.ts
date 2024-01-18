@@ -1,4 +1,3 @@
-declare module '@niivue/niivue'
 type VSCode = {
   postMessage(message: any): void
   getState(): any
@@ -6,11 +5,6 @@ type VSCode = {
 }
 
 declare const vscode: VSCode
-
-// add a fake type for Niivue
-declare class Niivue {
-  [x: string]: any
-}
 
 declare module '*.png' {
   const value: any
