@@ -29,5 +29,7 @@ test.describe('Loading meshes', () => {
 
     await page.waitForTimeout(1000) // duplicated code to work around a bug
     await loadTestSurfOverlay(page, 'curv') // duplicated code to work around a bug
+
+    expect(await page.textContent('text=/Number of Points: 40962/i')).toBeTruthy()
   })
 })

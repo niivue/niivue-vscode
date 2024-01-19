@@ -63,7 +63,6 @@ It might be required to update *node* first before running 'yarn install'. This 
     n latest
 ```
 
-
 ### Hot Reload Development in browser
 
 ```bash
