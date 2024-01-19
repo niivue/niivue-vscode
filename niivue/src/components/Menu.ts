@@ -203,8 +203,8 @@ export const Menu = (props: AppProps) => {
           { length: nOverlays.value },
           (_, i) =>
             html` <${MenuEntry} label="Overlay ${i + 1}" onClick=${openColorScale(i + 1)} /> `,
-        )}        
-      </${MenuItem}>      
+        )}
+      </${MenuItem}>
       <${MenuItem} label="Overlay" onClick=${overlayButtonOnClick} visible=${isVolumeOrMesh}>
         <${MenuEntry} label="Add" onClick=${addOverlay} visible=${isVolume} />
         <${MenuEntry} label="Add" onClick=${addMeshOverlay} visible=${isMesh} />
@@ -223,9 +223,7 @@ export const Menu = (props: AppProps) => {
       </${ImageSelect}>
     </div>
     ${isMesh.value && html`<p class="pl-2">${getNumberOfPoints(nvArraySelected.value[0])}</p>`}
-    ${
-      isVolume.value && html`<p class="pl-2">${getMetadataString(nvArraySelected.value[0])}</p>`
-    }    
+    ${isVolume.value && html`<p class="pl-2">${getMetadataString(nvArraySelected.value[0])}</p>`}
     <${ScalingBox}
         selectedOverlayNumber=${selectedOverlayNumber}
         overlayMenu=${overlayMenu}
@@ -252,19 +250,23 @@ function ensureAlwaysSelectedAvailable(
 
 function applyInterpolation(nvArray: Signal<ExtendedNiivue[]>, interpolation: Signal<boolean>) {
   nvArray.value.forEach((nv: ExtendedNiivue) => {
-    nv.setInterpolation(!interpolation.value)
-    nv.drawScene()
+    if (nv.opts.isNearestInterpolation != !interpolation.value) {
+      nv.setInterpolation(!interpolation.value)
+      nv.drawScene()
+    }
   })
 }
 
 function applyCrosshairWidth(nvArray: Signal<ExtendedNiivue[]>, crosshair: Signal<boolean>) {
   nvArray.value.forEach((nv: ExtendedNiivue) => {
-    try {
-      nv.setCrosshairWidth(Number(crosshair.value))
-    } catch (e) {
-      console.log(e)
+    if (nv.opts.crosshairWidth != Number(crosshair.value)) {
+      try {
+        nv.setCrosshairWidth(Number(crosshair.value))
+      } catch (e) {
+        console.log(e)
+      }
+      nv.drawScene()
     }
-    nv.drawScene()
   })
 }
 
@@ -273,14 +275,18 @@ function applyRadiologicalConvention(
   radiologicalConvention: Signal<boolean>,
 ) {
   nvArray.value.forEach((nv: ExtendedNiivue) => {
-    nv.setRadiologicalConvention(radiologicalConvention.value)
-    nv.drawScene()
+    if (nv.getRadiologicalConvention() != radiologicalConvention.value) {
+      nv.setRadiologicalConvention(radiologicalConvention.value)
+      nv.drawScene()
+    }
   })
 }
 
 function applyColorbar(nvArray: Signal<ExtendedNiivue[]>, colorbar: Signal<boolean>) {
   nvArray.value.forEach((nv: ExtendedNiivue) => {
-    nv.opts.isColorbar = colorbar.value
-    nv.drawScene()
+    if (nv.opts.isColorbar != colorbar.value) {
+      nv.opts.isColorbar = colorbar.value
+      nv.drawScene()
+    }
   })
 }
