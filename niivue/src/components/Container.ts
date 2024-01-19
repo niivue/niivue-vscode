@@ -51,7 +51,7 @@ export const Container = (props: AppProps) => {
   const names = computed(() => differenceInNames(fullNames.value))
 
   return html`
-    <div class="flex-grow h-full overflow-clip" ref=${sizeRef}>
+    <div class="flex-grow h-full overflow-hidden" ref=${sizeRef}>
       <div class="flex flex-wrap gap-1 w-full m-1">
         ${nvArray.value.map(
           (nv, i) => html`<${Volume} nv=${nv} width=${canvasSize.value.width}
