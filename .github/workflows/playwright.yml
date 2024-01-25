@@ -14,8 +14,10 @@ jobs:
       with:
         node-version: 18
     - name: Install dependencies
-      run: npm ci
+      run: npm install && npm ci
       working-directory: ./niivue
+    - name: Start Webview
+      run: yarn start:webview &
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
       working-directory: ./niivue
