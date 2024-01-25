@@ -27,6 +27,12 @@ export function listenToMessages(appProps: AppProps) {
           nv.isNew = false
         }
         break
+      case 'addDcmFiles':
+        {
+          const nv = getUnitinializedNvInstance(nvArray)
+          readDcmFiles(nv, body.files)
+        }
+        break
       case 'initCanvas':
         {
           if (nvArray.value.length === 0 && body.n > 1) {
@@ -49,6 +55,30 @@ export function listenToMessages(appProps: AppProps) {
     vscode.postMessage({ type: 'ready' })
   }
   addImageFromURLParams()
+}
+
+function readDcmFiles(nv: ExtendedNiivue, files: File[]): void {
+  if (files.length > 0) {
+    const getFileObjects = async (fileList: File[]): Promise<File[]> => {
+      return fileList // fileList is already an array of File objects
+    }
+    getFileObjects(files)
+      .then((allFileObjects) => {
+        NVImage.loadFromFile({
+          file: allFileObjects, // an array of file objects
+          name: allFileObjects[0].name, // Use the first filename
+          urlImgData: null, // nothing
+          imageType: 16, // DCM_FOLDER
+        })
+          .then((volume) => nv.addVolume(volume))
+          .catch((e) => {
+            throw e
+          })
+      })
+      .catch((e) => {
+        throw e
+      })
+  }
 }
 
 function handleDebugMessage(body: any, appProps: AppProps) {
@@ -252,6 +282,29 @@ export function addImagesEvent() {
         }
       }
     }
+    input.click()
+  }
+}
+
+export function addDcmFolderEvent() {
+  if (typeof vscode === 'object') {
+    vscode.postMessage({ type: 'addImages' })
+  } else {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.multiple = false
+    input.webkitdirectory = true
+
+    input.onchange = async (e) => {
+      const files = Array.from((e.target as HTMLInputElement).files ?? [])
+      window.postMessage({
+        type: 'addDcmFiles',
+        body: {
+          files: files,
+        },
+      })
+    }
+
     input.click()
   }
 }

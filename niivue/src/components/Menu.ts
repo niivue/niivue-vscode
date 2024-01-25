@@ -1,7 +1,7 @@
 import { html } from 'htm/preact'
 import { AppProps } from './App'
 import { Signal, computed, effect, useSignal } from '@preact/signals'
-import { addImagesEvent, addOverlayEvent, openImageFromURL } from '../events'
+import { addDcmFolderEvent, addImagesEvent, addOverlayEvent, openImageFromURL } from '../events'
 import { SLICE_TYPE } from '@niivue/niivue'
 import { ScalingBox } from './ScalingBox'
 import { getMetadataString, getNumberOfPoints } from '../utility'
@@ -170,11 +170,12 @@ export const Menu = (props: AppProps) => {
       ${!isVscode && html`<${MenuButton} label="Home" onClick=${homeEvent} />`}
       <${MenuItem} label="Add Image" onClick=${addImagesEvent}>
         <${MenuEntry} label="File(s)" onClick=${addImagesEvent} />
-        <!-- <${MenuEntry} label="URL" onClick=${() => console.log('Not implemented yet - url')} />
+        <!-- <${MenuEntry} label="URL" onClick=${() =>
+    console.log('Not implemented yet - url')} /> -->
         <${MenuEntry}
           label="DICOM Folder"
-          onClick=${() => console.log('Not implemented yet - dicom folder')}
-        /> -->
+          onClick=${addDcmFolderEvent}
+        />
         <${MenuEntry} label="Example Image" onClick=${() =>
     openImageFromURL('https://niivue.github.io/niivue-demo-images/mni152.nii.gz')} />
       </${MenuItem}>
