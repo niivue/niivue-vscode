@@ -57,6 +57,18 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     })
   }
 
+  public static async createOrShowDcmFolder(context: vscode.ExtensionContext, uri: vscode.Uri) {
+    const name = vscode.Uri.parse(uri.toString()).path.split('/').pop()
+    const tabName = name ? name : 'NiiVue DICOM'
+    this.createPanel(context, 'niivue.webview', tabName, uri).then((panel) => {
+      panel.webview.onDidReceiveMessage(async (e) => {
+        if (e.type === 'ready') {
+          NiiVueEditorProvider.openDcmFolder(uri, panel)
+        }
+      })
+    })
+  }
+
   public static async createCompareView(context: vscode.ExtensionContext, items: any) {
     const uris = items.map((item: any) => vscode.Uri.parse(item))
     this.createPanel(context, 'niivue.compare', 'NiiVue Compare Panel', uris[0]).then((panel) => {
@@ -162,24 +174,26 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
             })
             .then(async (folderUri) => {
               if (folderUri) {
-                const files = await vscode.workspace.fs.readDirectory(folderUri[0])
-                const fileUris = files.map((file) => vscode.Uri.joinPath(folderUri[0], file[0]))
-                const data = await Promise.all(
-                  fileUris.map((uri) =>
-                    vscode.workspace.fs.readFile(uri).then((data) => data.buffer),
-                  ),
-                )
-                panel.webview.postMessage({
-                  type: 'addImage',
-                  body: {
-                    data: data,
-                    uri: fileUris[0].toString(),
-                  },
-                })
+                NiiVueEditorProvider.openDcmFolder(folderUri[0], panel)
               }
             })
           return
       }
+    })
+  }
+
+  public static async openDcmFolder(folderUri: vscode.Uri, panel: vscode.WebviewPanel) {
+    const files = await vscode.workspace.fs.readDirectory(folderUri)
+    const fileUris = files.map((file) => vscode.Uri.joinPath(folderUri, file[0]))
+    const data = await Promise.all(
+      fileUris.map((uri) => vscode.workspace.fs.readFile(uri).then((data) => data.buffer)),
+    )
+    panel.webview.postMessage({
+      type: 'addImage',
+      body: {
+        data: data,
+        uri: fileUris[0].toString(),
+      },
     })
   }
 
