@@ -258,7 +258,7 @@ export function addImagesEvent() {
 
 export function addDcmFolderEvent() {
   if (typeof vscode === 'object') {
-    vscode.postMessage({ type: 'addImages' })
+    vscode.postMessage({ type: 'addDcmFolder' })
   } else {
     const input = document.createElement('input')
     input.type = 'file'
@@ -267,10 +267,11 @@ export function addDcmFolderEvent() {
 
     input.onchange = async (e) => {
       const files = Array.from((e.target as HTMLInputElement).files ?? [])
+      const data = await Promise.all(files.map((file) => file.arrayBuffer()))
       window.postMessage({
         type: 'addImage',
         body: {
-          data: await Promise.all(files.map((file) => file.arrayBuffer())),
+          data: data,
           uri: files[0].name,
         },
       })

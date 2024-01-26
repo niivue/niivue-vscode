@@ -2,9 +2,7 @@ import * as vscode from 'vscode'
 import { NiiVueDocument } from './document'
 import { getHtmlForWebview } from './html'
 
-export class NiiVueEditorProvider
-  implements vscode.CustomReadonlyEditorProvider<NiiVueDocument>
-{
+export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider<NiiVueDocument> {
   public static register(context: vscode.ExtensionContext): vscode.Disposable {
     return vscode.window.registerCustomEditorProvider(
       NiiVueEditorProvider.viewType,
@@ -33,29 +31,18 @@ export class NiiVueEditorProvider
     tabName: string,
     uri: vscode.Uri,
   ) {
-    const panel = vscode.window.createWebviewPanel(
-      viewType,
-      tabName,
-      vscode.ViewColumn.One,
-      {
-        enableScripts: true,
-        retainContextWhenHidden: true,
-      },
-    )
-    panel.webview.html = await getHtmlForWebview(
-      panel.webview,
-      context.extensionUri
-    )
+    const panel = vscode.window.createWebviewPanel(viewType, tabName, vscode.ViewColumn.One, {
+      enableScripts: true,
+      retainContextWhenHidden: true,
+    })
+    panel.webview.html = await getHtmlForWebview(panel.webview, context.extensionUri)
     const editor = new NiiVueEditorProvider(context)
     editor.webviews.add(uri, panel)
     NiiVueEditorProvider.addCommonListeners(panel)
     return panel
   }
 
-  public static async createOrShow(
-    context: vscode.ExtensionContext,
-    uri: vscode.Uri,
-  ) {
+  public static async createOrShow(context: vscode.ExtensionContext, uri: vscode.Uri) {
     const name = vscode.Uri.parse(uri.toString()).path.split('/').pop()
     const tabName = name ? `web: ${name}` : 'NiiVue Web Panel'
     this.createPanel(context, 'niivue.webview', tabName, uri).then((panel) => {
@@ -70,17 +57,9 @@ export class NiiVueEditorProvider
     })
   }
 
-  public static async createCompareView(
-    context: vscode.ExtensionContext,
-    items: any,
-  ) {
+  public static async createCompareView(context: vscode.ExtensionContext, items: any) {
     const uris = items.map((item: any) => vscode.Uri.parse(item))
-    this.createPanel(
-      context,
-      'niivue.compare',
-      'NiiVue Compare Panel',
-      uris[0],
-    ).then((panel) => {
+    this.createPanel(context, 'niivue.compare', 'NiiVue Compare Panel', uris[0]).then((panel) => {
       panel.webview.onDidReceiveMessage(async (e) => {
         if (e.type === 'ready') {
           panel.webview.postMessage({
@@ -173,6 +152,33 @@ export class NiiVueEditorProvider
               }
             })
           return
+        case 'addDcmFolder':
+          vscode.window
+            .showOpenDialog({
+              canSelectFiles: false,
+              canSelectFolders: true,
+              canSelectMany: false,
+              openLabel: 'Open DICOM Folder',
+            })
+            .then(async (folderUri) => {
+              if (folderUri) {
+                const files = await vscode.workspace.fs.readDirectory(folderUri[0])
+                const fileUris = files.map((file) => vscode.Uri.joinPath(folderUri[0], file[0]))
+                const data = await Promise.all(
+                  fileUris.map((uri) =>
+                    vscode.workspace.fs.readFile(uri).then((data) => data.buffer),
+                  ),
+                )
+                panel.webview.postMessage({
+                  type: 'addImage',
+                  body: {
+                    data: data,
+                    uri: fileUris[0].toString(),
+                  },
+                })
+              }
+            })
+          return
       }
     })
   }
@@ -185,7 +191,7 @@ export class NiiVueEditorProvider
     webviewPanel.webview.options = { enableScripts: true }
     webviewPanel.webview.html = await getHtmlForWebview(
       webviewPanel.webview,
-      this._context.extensionUri
+      this._context.extensionUri,
     )
     NiiVueEditorProvider.addCommonListeners(webviewPanel)
     webviewPanel.webview.onDidReceiveMessage(async (message) => {
