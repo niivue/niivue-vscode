@@ -184,7 +184,7 @@ async function addMeshOverlay(nv: Niivue, item: any, type: string) {
   nv.updateGLVolume()
   const layerNumber = nv.meshes[0].layers.length - 1
   if (type === 'addMeshCurvature') {
-    nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, 'colorbarVisible', false)
+    nv.setMeshLayerProperty(nv.meshes[0].id as any, layerNumber, 'colorbarVisible', false as any)
   }
 }
 

@@ -138,8 +138,8 @@ function handleOverlayScaling(nv: ExtendedNiivue, layerNumber: number, scaling: 
       overlay.cal_max = scaling.max
     }
   } else {
-    nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, 'cal_min', scaling.min)
-    nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, 'cal_max', scaling.max)
+    nv.setMeshLayerProperty(nv.meshes[0].id as any, layerNumber, 'cal_min', scaling.min)
+    nv.setMeshLayerProperty(nv.meshes[0].id as any, layerNumber, 'cal_max', scaling.max)
   }
   nv.updateGLVolume()
 }
@@ -150,7 +150,7 @@ function handleOpacity(nv: ExtendedNiivue, layerNumber: number, opacity: number)
       nv.setOpacity(layerNumber, opacity)
     }
   } else {
-    nv.setMeshLayerProperty(nv.meshes[0].id, layerNumber, 'opacity', opacity)
+    nv.setMeshLayerProperty(nv.meshes[0].id as any, layerNumber, 'opacity', opacity)
   }
   nv.updateGLVolume()
 }
@@ -181,13 +181,13 @@ function setVolumeColormap(nv: ExtendedNiivue, layerNumber: number, colormap: st
 function setMeshColormap(nv: ExtendedNiivue, layerNumber: number, colormap: string) {
   const id = nv.meshes[0].id
   if (colormap === 'symmetric') {
-    nv.setMeshLayerProperty(id, layerNumber, 'useNegativeCmap', true)
-    nv.setMeshLayerProperty(id, layerNumber, 'colormap', 'warm')
-    nv.setMeshLayerProperty(id, layerNumber, 'colormapNegative', 'winter')
+    nv.setMeshLayerProperty(id as any, layerNumber, 'useNegativeCmap', true as any)
+    nv.setMeshLayerProperty(id as any, layerNumber, 'colormap', 'warm' as any)
+    nv.setMeshLayerProperty(id as any, layerNumber, 'colormapNegative', 'winter' as any)
   } else {
-    nv.setMeshLayerProperty(id, layerNumber, 'useNegativeCmap', false)
-    nv.setMeshLayerProperty(id, layerNumber, 'colormap', colormap)
-    nv.setMeshLayerProperty(id, layerNumber, 'colormapNegative', '')
+    nv.setMeshLayerProperty(id as any, layerNumber, 'useNegativeCmap', false as any)
+    nv.setMeshLayerProperty(id as any, layerNumber, 'colormap', colormap as any)
+    nv.setMeshLayerProperty(id as any, layerNumber, 'colormapNegative', '' as any)
   }
 }
 
