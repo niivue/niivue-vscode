@@ -1,7 +1,7 @@
 import { html } from 'htm/preact'
 import { NiiVueCanvas } from './NiiVueCanvas'
 import { computed, useSignal } from '@preact/signals'
-import { AppProps } from './App'
+import { AppProps, SelectionMode } from './App'
 import { ExtendedNiivue } from '../events'
 
 export interface VolumeProps {
@@ -20,15 +20,17 @@ export const Volume = (props: AppProps & VolumeProps) => {
   const selected = computed(() => selection.value.includes(volumeIndex))
 
   // it would maybe need a invisible box over the volume to prevent the click event, stopPropagation and preventDefault don't work
-  const selectClick = selectionMode.value
-    ? () => {
-        if (selected.value) {
-          selection.value = selection.value.filter((i) => i != volumeIndex)
-        } else {
-          selection.value = [...selection.value, volumeIndex]
-        }
+  const selectClick = () => {
+    if (selectionMode.value == SelectionMode.SINGLE) {
+      selection.value = [volumeIndex]
+    } else if (selectionMode.value == SelectionMode.MULTIPLE) {
+      if (selected.value) {
+        selection.value = selection.value.filter((i) => i != volumeIndex)
+      } else {
+        selection.value = [...selection.value, volumeIndex]
       }
-    : () => {}
+    }
+  }
 
   const nextVolume = () => {
     const currentVol = nv.volumes[0].frame4D

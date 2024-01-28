@@ -117,7 +117,10 @@ export const ImageSelect = ({ label, state, children, visible }: any) => {
       </button>
       <button
         class="hover:bg-gray-700 pr-2 rounded-r-md h-6 align-middle"
-        onClick=${toggle(isOpen)}
+        onClick=${() => {
+          toggle(isOpen)()
+          state.value = true
+        }}
       >
         <${DownArrow} />
       </button>

@@ -25,10 +25,17 @@ export const App = () => {
     <//>
   `
 }
+
+export const enum SelectionMode {
+  NONE,
+  SINGLE,
+  MULTIPLE,
+}
+
 export interface AppProps {
   nvArray: Signal<ExtendedNiivue[]>
   selection: Signal<Array<number>>
-  selectionMode: Signal<number>
+  selectionMode: Signal<SelectionMode>
   hideUI: Signal<number>
   sliceType: Signal<number>
   location: Signal<string>
@@ -44,7 +51,7 @@ function useAppState(): AppProps {
   return {
     nvArray: useSignal<ExtendedNiivue[]>([]),
     selection: useSignal<Array<number>>([]),
-    selectionMode: useSignal(0),
+    selectionMode: useSignal(SelectionMode.NONE),
     hideUI: useSignal(3), // 0: hide all, 1: show name, 2: hide overlay, 3: show-all
     sliceType: useSignal<number>(SLICE_TYPE.MULTIPLANAR), // all views
     location: useSignal(''),

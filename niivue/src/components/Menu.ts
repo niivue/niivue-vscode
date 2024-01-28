@@ -1,10 +1,16 @@
 import { html } from 'htm/preact'
-import { AppProps } from './App'
 import { Signal, computed, effect, useSignal } from '@preact/signals'
-import { addDcmFolderEvent, addImagesEvent, addOverlayEvent, openImageFromURL } from '../events'
 import { SLICE_TYPE } from '@niivue/niivue'
+import { AppProps, SelectionMode } from './App'
 import { ScalingBox } from './ScalingBox'
 import { getMetadataString, getNumberOfPoints } from '../utility'
+import {
+  addDcmFolderEvent,
+  addImagesEvent,
+  addOverlayEvent,
+  openImageFromURL,
+  ExtendedNiivue,
+} from '../events'
 import {
   HeaderDialog,
   ImageSelect,
@@ -14,7 +20,6 @@ import {
   ToggleEntry,
   toggle,
 } from './MenuElements'
-import { ExtendedNiivue } from '../events'
 
 export const Menu = (props: AppProps) => {
   const { selection, selectionMode, nvArray, sliceType, hideUI } = props
@@ -28,12 +33,14 @@ export const Menu = (props: AppProps) => {
   const crosshair = useSignal(true)
   const radiologicalConvention = useSignal(false)
   const colorbar = useSignal(false)
+  const selectionActive = useSignal(false)
+  const selectMultiple = useSignal(false)
 
   // Computed
   const isOverlay = computed(() => nvArraySelected.value[0]?.volumes?.length > 1)
   const multipleVolumes = computed(() => nvArray.value.length > 1)
   const nvArraySelected = computed(() =>
-    selectionMode.value > 0 && selection.value.length > 0
+    selectionMode.value != SelectionMode.NONE && selection.value.length > 0
       ? nvArray.value.filter((_, i) => selection.value.includes(i))
       : nvArray.value,
   )
@@ -55,7 +62,8 @@ export const Menu = (props: AppProps) => {
   })
 
   // Effects that occur when state or computed changes
-  effect(() => ensureAlwaysSelectedAvailable(selection, nvArray, selectionMode))
+  effect(() => applySelectionModeChange(selectionMode, selectionActive, selectMultiple))
+  effect(() => ensureValidSelection(selection, nvArray, selectionMode))
   effect(() => applyInterpolation(nvArray, interpolation))
   effect(() => applyCrosshairWidth(nvArray, crosshair))
   effect(() => applyRadiologicalConvention(nvArray, radiologicalConvention))
@@ -147,6 +155,7 @@ export const Menu = (props: AppProps) => {
   }
 
   const selectAll = () => {
+    selectMultiple.value = true
     selection.value = nvArray.value.map((_, i) => i)
   }
 
@@ -219,7 +228,8 @@ export const Menu = (props: AppProps) => {
     console.log('Not implemented yet')} /> -->
         <${MenuEntry} label="Set Headers to 1" onClick=${setVoxelSize1AndOrigin0} />
       </${MenuItem}>
-      <${ImageSelect} label="Select" state=${selectionMode} visible=${multipleVolumes}>
+      <${ImageSelect} label="Select" state=${selectionActive} visible=${multipleVolumes}>
+        <${ToggleEntry} label="Multiple" state=${selectMultiple} />
         <${MenuEntry} label="Select All" onClick=${selectAll} />
       </${ImageSelect}>
     </div>
@@ -235,17 +245,26 @@ export const Menu = (props: AppProps) => {
   `
 }
 
-function ensureAlwaysSelectedAvailable(
+function applySelectionModeChange(
+  selectionMode: Signal<SelectionMode>,
+  selectionActive: Signal<boolean>,
+  selectMultiple: Signal<boolean>,
+) {
+  if (!selectionActive.value) selectionMode.value = SelectionMode.NONE
+  else if (selectMultiple.value) selectionMode.value = SelectionMode.MULTIPLE
+  else selectionMode.value = SelectionMode.SINGLE
+}
+
+function ensureValidSelection(
   selection: Signal<number[]>,
   nvArray: Signal<ExtendedNiivue[]>,
-  selectionMode: Signal<number>,
+  selectionMode: Signal<SelectionMode>,
 ) {
-  if (selection.value.length == 0 && nvArray.value.length > 0) {
-    if (selectionMode.value == 1) {
-      selection.value = [0]
-    } else {
-      selection.value = nvArray.value.map((_, i) => i)
-    }
+  if (nvArray.value.length == 0) return
+  else if (selectionMode.value == SelectionMode.SINGLE && selection.value.length != 1)
+    selection.value = [0]
+  else if (selectionMode.value == SelectionMode.MULTIPLE && selection.value.length == 0) {
+    selection.value = nvArray.value.map((_, i) => i)
   }
 }
 
