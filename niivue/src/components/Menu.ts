@@ -20,6 +20,7 @@ import {
   ToggleEntry,
   toggle,
 } from './MenuElements'
+import { HeaderBox } from './HeaderBox'
 
 export const Menu = (props: AppProps) => {
   const { selection, selectionMode, nvArray, sliceType, hideUI } = props
@@ -29,6 +30,7 @@ export const Menu = (props: AppProps) => {
   const headerDialog = useSignal(false)
   const selectedOverlayNumber = useSignal(0)
   const overlayMenu = useSignal(false)
+  const setHeaderMenu = useSignal(false)
   const interpolation = useSignal(true)
   const crosshair = useSignal(true)
   const radiologicalConvention = useSignal(false)
@@ -227,6 +229,7 @@ export const Menu = (props: AppProps) => {
         <!-- <${MenuEntry} label="Set Header" onClick=${() =>
     console.log('Not implemented yet')} /> -->
         <${MenuEntry} label="Set Headers to 1" onClick=${setVoxelSize1AndOrigin0} />
+        <${MenuEntry} label="Set Header" onClick=${toggle(setHeaderMenu)} />
       </${MenuItem}>
       <${ImageSelect} label="Select" state=${selectionActive} visible=${multipleVolumes}>
         <${ToggleEntry} label="Multiple" state=${selectMultiple} />
@@ -240,6 +243,11 @@ export const Menu = (props: AppProps) => {
         overlayMenu=${overlayMenu}
         nvArraySelected=${nvArraySelected}
         visible=${overlayMenu}
+      />
+    <${HeaderBox}
+      nvArraySelected=${nvArraySelected}
+      nvArray=${nvArray}
+      visible=${setHeaderMenu}
       />
     <${HeaderDialog} nvArraySelected=${nvArraySelected} isOpen=${headerDialog} />
   `
