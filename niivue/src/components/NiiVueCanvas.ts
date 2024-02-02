@@ -123,5 +123,13 @@ function setIntensityAndLocation(data: any, intensity: Signal<string>, location:
   if (parts.length === 2) {
     intensity.value = parts.pop()
   }
-  location.value = parts.pop()
+  location.value = `${arrayToString(data.mm)} mm | Grid: ${arrayToString(data.vox, 0)}`
+}
+
+function arrayToString(array: number[], precision = 2) {
+  let str = ''
+  for (const val of array) {
+    str += val.toFixed(precision) + ' x '
+  }
+  return str.slice(0, -3)
 }
