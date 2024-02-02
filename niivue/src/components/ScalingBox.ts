@@ -1,5 +1,5 @@
 import { computed } from '@preact/signals'
-import { html } from 'htm/preact/index.js'
+import { html } from 'htm/preact'
 import { useRef, useEffect } from 'preact/hooks'
 import { ExtendedNiivue } from '../events'
 
