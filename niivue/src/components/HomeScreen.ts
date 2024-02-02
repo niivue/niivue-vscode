@@ -21,7 +21,7 @@ export const HomeScreen = () => html`
             for (let link of document.links) {
               if (link.href.endsWith('.nii.gz') || link.href.endsWith('.nii')) {
                 link.style.color = '#5599dd';
-                link.href = 'https://korbinian90.github.io/niivue-vscode/?images=' + link.href;
+                link.href = 'https://niivue.github.io/niivue-vscode/?images=' + link.href;
               }
             }
           })();"
