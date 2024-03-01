@@ -271,7 +271,10 @@ function ensureValidSelection(
   if (nvArray.value.length == 0) return
   else if (selectionMode.value == SelectionMode.SINGLE && selection.value.length != 1)
     selection.value = [0]
-  else if (selectionMode.value == SelectionMode.MULTIPLE && selection.value.length == 0) {
+  else if (
+    (selectionMode.value == SelectionMode.MULTIPLE || selectionMode.value == SelectionMode.NONE) &&
+    selection.value.length == 0
+  ) {
     selection.value = nvArray.value.map((_, i) => i)
   }
 }
