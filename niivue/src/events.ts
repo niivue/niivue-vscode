@@ -72,6 +72,14 @@ function handleDebugMessage(body: any, appProps: AppProps) {
         })
       }
       break
+    case 'getNVolumes':
+      {
+        window.postMessage({
+          type: 'debugAnswer',
+          body: nvArray.value[0].volumes.length,
+        })
+      }
+      break
   }
 }
 

@@ -1,11 +1,11 @@
 import { test, expect } from '@playwright/test'
-import { BASE_URL, loadTestImage } from './utils'
+import { BASE_URL, loadTestImage, listenForDebugMessage } from './utils'
 
 test.describe('app', () => {
   test('that there are 0 canvases when no image is loaded', async ({ page }) => {
     await page.goto(BASE_URL)
 
-    const message = listenForMessage(page)
+    const message = listenForDebugMessage(page)
 
     await page.evaluate(() => {
       const message = { type: 'debugRequest', body: 'getNCanvas' }
@@ -18,7 +18,7 @@ test.describe('app', () => {
   test('that there is 1 canvas when 1 image is loaded', async ({ page }) => {
     await page.goto(BASE_URL)
 
-    const message = listenForMessage(page)
+    const message = listenForDebugMessage(page)
 
     await loadTestImage(page)
 
@@ -33,7 +33,7 @@ test.describe('app', () => {
   test('that there are 2 canvases when 2 image is loaded', async ({ page }) => {
     await page.goto(BASE_URL)
 
-    const message = listenForMessage(page)
+    const message = listenForDebugMessage(page)
 
     await loadTestImage(page)
     await loadTestImage(page)
@@ -49,7 +49,7 @@ test.describe('app', () => {
   test('that cal_min and cal_max are correct', async ({ page }) => {
     await page.goto(BASE_URL)
 
-    const message = listenForMessage(page)
+    const message = listenForDebugMessage(page)
 
     await loadTestImage(page)
 
@@ -63,14 +63,3 @@ test.describe('app', () => {
     expect(await message).toStrictEqual([40, 80])
   })
 })
-
-function listenForMessage(page) {
-  const message = page.evaluate(() => {
-    return new Promise((resolve) => {
-      window.addEventListener('message', (event) => {
-        if (event.data?.type == 'debugAnswer') resolve(event.data.body)
-      })
-    })
-  })
-  return message
-}
