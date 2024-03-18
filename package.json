@@ -139,15 +139,15 @@
   ],
   "scripts": {
     "install:all": "yarn install && cd niivue && yarn install",
-    "start:webview": "cd niivue && yarn run start",
-    "build:webview": "cd niivue && yarn run build",
-    "test:webview": "cd niivue && yarn run test",
-    "watch:webview": "cd niivue && yarn run watch",
-    "vscode:prepublish": "yarn run build:webview && yarn run compile",
-    "package": "yarn run build:webview && yarn run compile",
+    "start:webview": "cd niivue && yarn start",
+    "build:webview": "cd niivue && yarn build",
+    "test:webview": "cd niivue && yarn test",
+    "watch:webview": "cd niivue && yarn watch",
+    "vscode:prepublish": "yarn build:webview && yarn compile",
+    "package": "yarn build:webview && yarn compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "pretest": "yarn run compile && yarn run lint"
+    "pretest": "yarn compile && yarn lint"
   },
   "devDependencies": {
     "@types/node": "^20.11.5",

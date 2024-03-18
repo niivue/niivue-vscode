@@ -74,7 +74,7 @@ It might be required to update *node* first before running 'yarn install'. This 
 This requires a full compilation and is slow
 
 ```bash
-    yarn run watch:webview
+    yarn watch:webview
 ```
 
 - Press `F5` (a new VSCode window opens: Extension Development Host)
