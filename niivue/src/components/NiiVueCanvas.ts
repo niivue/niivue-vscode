@@ -88,6 +88,9 @@ async function getUserInput() {
 }
 
 async function loadVolume(nv: ExtendedNiivue, item: any) {
+  if (item.uri.endsWith('.ima') || item.uri.endsWith('.IMA')) {
+    item.uri = item.uri.replace('.ima', '.dcm').replace('.IMA', '.dcm')
+  }
   if (item.uri.endsWith('.raw')) {
     const header = await getMinimalHeaderMHA()
     if (!header) {
@@ -96,9 +99,6 @@ async function loadVolume(nv: ExtendedNiivue, item: any) {
     const volume = new NVImage(header, `${item.uri}.mha`, 'gray', 1.0, item.data)
     nv.addVolume(volume)
   } else if (item?.data?.length > 0) {
-    if (item.uri.endsWith('.ima') || item.uri.endsWith('.IMA')) {
-      item.uri = item.uri.replace('.ima', '.dcm').replace('.IMA', '.dcm')
-    }
     const volume = new NVImage(item.data, item.uri)
     nv.addVolume(volume)
   } else if (isImageType(item.uri)) {
