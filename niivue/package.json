@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "watch": "vite build --watch"
+    "watch": "vite build --watch"    
   },
   "dependencies": {
     "@niivue/niivue": "0.40.0",

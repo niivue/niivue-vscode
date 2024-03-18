@@ -143,11 +143,15 @@
     "build:webview": "cd niivue && yarn build",
     "test:webview": "cd niivue && yarn test",
     "watch:webview": "cd niivue && yarn watch",
-    "vscode:prepublish": "yarn build:webview && yarn compile",
+    "vscode:prepublish": "yarn build:webview && yarn compile && yarn esbuild-base --minify",
     "package": "yarn build:webview && yarn compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "pretest": "yarn compile && yarn lint"
+    "pretest": "yarn compile && yarn lint",
+    "open-in-browser": "vscode-test-web --extensionDevelopmentPath=. D:/tmp/deep_test/VC_volunteer/julia",
+    "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
+    "esbuild": "yarn esbuild-base --sourcemap",
+    "esbuild-watch": "yarn esbuild-base --sourcemap --watch"
   },
   "devDependencies": {
     "@types/node": "^20.11.5",
@@ -157,6 +161,7 @@
     "@vscode/test-electron": "^2.3.8",
     "@vscode/test-web": "^0.0.50",
     "buffer": "^6.0.3",
+    "esbuild": "^0.20.2",
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-import": "^2.29.1",
