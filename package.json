@@ -38,8 +38,8 @@
   "extensionKind": [
     "workspace"
   ],
-  "main": "./out/extension.js",
-  "browser": "./out/extension.js",
+  "main": "./dist/extension.js",
+  "browser": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
@@ -143,12 +143,12 @@
     "build:webview": "cd niivue && yarn build",
     "test:webview": "cd niivue && yarn test",
     "watch:webview": "cd niivue && yarn watch",
-    "vscode:prepublish": "yarn build:webview && yarn compile && yarn esbuild-base --minify",
+    "vscode:prepublish": "yarn build:webview && yarn compile",
     "package": "yarn build:webview && yarn compile",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
+    "compile": "yarn esbuild-base --minify",
+    "watch": "yarn esbuild-watch",
     "pretest": "yarn compile && yarn lint",
-    "open-in-browser": "vscode-test-web --extensionDevelopmentPath=. D:/tmp/deep_test/VC_volunteer/julia",
+    "open-in-browser": "vscode-test-web --extensionDevelopmentPath=. /home/korbi/data/MRSI",
     "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
     "esbuild": "yarn esbuild-base --sourcemap",
     "esbuild-watch": "yarn esbuild-base --sourcemap --watch"

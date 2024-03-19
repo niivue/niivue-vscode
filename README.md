@@ -92,3 +92,10 @@ Open the command line and execute
 ```
 
 Open the vscode test interface and run the tests. New tests can be added under `niivue/tests`
+
+### Test in the web version of vscode
+
+```bash
+    yarn esbuild
+    yarn open-in-browser
+```
