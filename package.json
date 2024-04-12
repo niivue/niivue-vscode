@@ -148,7 +148,7 @@
     "compile": "yarn esbuild-base --minify",
     "watch": "yarn esbuild-watch",
     "pretest": "yarn compile && yarn lint",
-    "open-in-browser": "vscode-test-web --extensionDevelopmentPath=. /home/korbi/data/MRSI",
+    "open-in-browser": "vscode-test-web --extensionDevelopmentPath=. .",
     "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
     "esbuild": "yarn esbuild-base --sourcemap",
     "esbuild-watch": "yarn esbuild-base --sourcemap --watch"
