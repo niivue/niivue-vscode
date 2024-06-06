@@ -99,3 +99,17 @@ Open the vscode test interface and run the tests. New tests can be added under `
     yarn esbuild
     yarn open-in-browser
 ```
+
+### Publishing
+
+First publish to vscode marketplace, this automatically increments the version number and creates a git commit
+
+```bash
+    vsce publish patch|minor|major [--pre-release]    
+```
+
+Then publish to openVSX marketplace
+
+```bash
+    npx ovsx publish --pat <openVSX access key>
+```
