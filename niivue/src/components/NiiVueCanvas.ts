@@ -8,7 +8,6 @@ import { ExtendedNiivue } from '../events'
 
 interface NiiVueCanvasProps {
   nv: ExtendedNiivue
-  intensity: Signal<string>
   width: number
   height: number
   render: Signal<number>
@@ -16,11 +15,9 @@ interface NiiVueCanvasProps {
 
 export const NiiVueCanvas = ({
   nv,
-  intensity,
   width,
   height,
   sliceType,
-  location,
   render,
   nvArray,
 }: AppProps & NiiVueCanvasProps) => {
@@ -35,7 +32,6 @@ export const NiiVueCanvas = ({
     loadVolume(nv, nv.body).then(async () => {
       nv.isLoaded = true
       nv.body = null
-      nv.onLocationChange = (data: any) => setIntensityAndLocation(data, intensity, location)
       nv.createOnLocationChange()
       render.value++ // required to update the names
       nvArray.value = [...nvArray.value] // trigger react signal for changes
@@ -116,20 +112,4 @@ async function loadVolume(nv: ExtendedNiivue, item: any) {
     const meshList = [{ url: item.uri }]
     nv.loadMeshes(meshList)
   }
-}
-
-function setIntensityAndLocation(data: any, intensity: Signal<string>, location: Signal<string>) {
-  const parts = data.string.split('=')
-  if (parts.length === 2) {
-    intensity.value = parts.pop()
-  }
-  location.value = `${arrayToString(data.mm)} mm | Grid: ${arrayToString(data.vox, 0)}`
-}
-
-function arrayToString(array: number[], precision = 2) {
-  let str = ''
-  for (const val of array) {
-    str += val.toFixed(precision) + ' x '
-  }
-  return str.slice(0, -3)
 }

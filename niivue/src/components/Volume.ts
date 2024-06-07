@@ -1,6 +1,7 @@
 import { html } from 'htm/preact'
+import { useEffect } from 'preact/hooks'
 import { NiiVueCanvas } from './NiiVueCanvas'
-import { computed, useSignal } from '@preact/signals'
+import { computed, useSignal, Signal } from '@preact/signals'
 import { AppProps, SelectionMode } from './App'
 import { ExtendedNiivue } from '../events'
 
@@ -14,10 +15,15 @@ export interface VolumeProps {
 }
 
 export const Volume = (props: AppProps & VolumeProps) => {
-  const { name, volumeIndex, hideUI, selection, selectionMode, nv } = props
+  const { name, volumeIndex, hideUI, selection, selectionMode, nv, location } = props
   const intensity = useSignal('')
   const dispName = name.length > 20 ? `...${name.slice(-20)}` : name
   const selected = computed(() => selection.value.includes(volumeIndex))
+
+  useEffect(() => {
+    nv.onLocationChange = (data: any) =>
+      setIntensityAndLocation(data, intensity, location, volumeIndex == selection.value[0])
+  }, [selection.value])
 
   // it would maybe need a invisible box over the volume to prevent the click event, stopPropagation and preventDefault don't work
   const selectClick = () => {
@@ -49,7 +55,7 @@ export const Volume = (props: AppProps & VolumeProps) => {
       class="relative ${selectionMode.value && selected.value ? 'outline outline-blue-500' : ''}"
       onClick=${selectClick}
     >
-      <${NiiVueCanvas} ...${props} intensity=${intensity} />
+      <${NiiVueCanvas} ...${props} />
       ${hideUI.value > 0 &&
       html`
         <div class="absolute pointer-events-none text-xl text-outline left-1 top-0">
@@ -89,4 +95,27 @@ export const Volume = (props: AppProps & VolumeProps) => {
       `}
     </div>
   `
+}
+
+function setIntensityAndLocation(
+  data: any,
+  intensity: Signal<string>,
+  location: Signal<string>,
+  setLocation: Boolean,
+) {
+  const parts = data.string.split('=')
+  if (parts.length === 2) {
+    intensity.value = parts.pop()
+  }
+  if (setLocation) {
+    location.value = `${arrayToString(data.mm)} mm | Grid: ${arrayToString(data.vox, 0)}`
+  }
+}
+
+function arrayToString(array: number[], precision = 2) {
+  let str = ''
+  for (const val of array) {
+    str += val.toFixed(precision) + ' x '
+  }
+  return str.slice(0, -3)
 }
