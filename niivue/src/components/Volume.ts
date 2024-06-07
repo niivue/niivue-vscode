@@ -17,12 +17,19 @@ export interface VolumeProps {
 export const Volume = (props: AppProps & VolumeProps) => {
   const { name, volumeIndex, hideUI, selection, selectionMode, nv, location } = props
   const intensity = useSignal('')
+  const location_local = useSignal('')
   const dispName = name.length > 20 ? `...${name.slice(-20)}` : name
   const selected = computed(() => selection.value.includes(volumeIndex))
 
   useEffect(() => {
     nv.onLocationChange = (data: any) =>
-      setIntensityAndLocation(data, intensity, location, volumeIndex == selection.value[0])
+      setIntensityAndLocation(
+        data,
+        intensity,
+        location_local,
+        location,
+        volumeIndex == selection.value[0],
+      )
   }, [selection.value])
 
   // it would maybe need a invisible box over the volume to prevent the click event, stopPropagation and preventDefault don't work
@@ -64,6 +71,9 @@ export const Volume = (props: AppProps & VolumeProps) => {
         <div class="pointer-events-none absolute bottom-1 left-1">
           <span class="text-outline" data-testid="intensity-${volumeIndex}">${intensity}</span>
         </div>
+        <div class="pointer-events-none absolute bottom-1 right-1">
+          <span class="text-outline" data-testid="location-${volumeIndex}">${location_local}</span>
+        </div>
       `}
       ${hideUI.value > 2 &&
       html`
@@ -100,15 +110,17 @@ export const Volume = (props: AppProps & VolumeProps) => {
 function setIntensityAndLocation(
   data: any,
   intensity: Signal<string>,
+  location_local: Signal<string>,
   location: Signal<string>,
-  setLocation: Boolean,
+  setGlobalLocation: Boolean,
 ) {
   const parts = data.string.split('=')
   if (parts.length === 2) {
     intensity.value = parts.pop()
   }
-  if (setLocation) {
-    location.value = `${arrayToString(data.mm)} mm | Grid: ${arrayToString(data.vox, 0)}`
+  location_local.value = arrayToString(data.vox, 0)
+  if (setGlobalLocation) {
+    location.value = `${arrayToString(data.mm)} mm`
   }
 }
 
