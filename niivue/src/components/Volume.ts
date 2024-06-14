@@ -18,6 +18,7 @@ export const Volume = (props: AppProps & VolumeProps) => {
   const { name, volumeIndex, hideUI, selection, selectionMode, nv, location } = props
   const intensity = useSignal('')
   const location_local = useSignal('')
+  const vol4D = useSignal(0)
   const dispName = name.length > 20 ? `...${name.slice(-20)}` : name
   const selected = computed(() => selection.value.includes(volumeIndex))
 
@@ -48,11 +49,13 @@ export const Volume = (props: AppProps & VolumeProps) => {
   const nextVolume = () => {
     const currentVol = nv.volumes[0].frame4D
     nv.setFrame4D(nv.volumes[0].id, currentVol + 1)
+    vol4D.value = nv.volumes[0].frame4D
   }
 
   const prevVolume = () => {
     const currentVol = nv.volumes[0].frame4D
     nv.setFrame4D(nv.volumes[0].id, currentVol - 1)
+    vol4D.value = nv.volumes[0].frame4D
   }
 
   const is4D = computed(() => nv.volumes[0]?.nFrame4D && nv.volumes[0]?.nFrame4D > 1)
@@ -69,10 +72,9 @@ export const Volume = (props: AppProps & VolumeProps) => {
           ${dispName}
         </div>
         <div class="pointer-events-none absolute bottom-1 left-1">
-          <span class="text-outline" data-testid="intensity-${volumeIndex}">${intensity}</span>
-        </div>
-        <div class="pointer-events-none absolute bottom-1 right-1">
-          <span class="text-outline" data-testid="location-${volumeIndex}">${location_local}</span>
+          <span class="text-outline" data-testid="intensity-${volumeIndex}"
+            >${location_local}: ${intensity}</span
+          >
         </div>
       `}
       ${hideUI.value > 2 &&
@@ -88,6 +90,12 @@ export const Volume = (props: AppProps & VolumeProps) => {
       is4D.value &&
       html`
         <div class="absolute bottom-0 right-0">
+          <span
+            class="bg-gray-300 bg-opacity-50 rounded-md text-xl cursor-pointer border-none text-outline items-center w-5 h-6 flex justify-center m-1"
+            data-testid="volume-${volumeIndex}"
+          >
+            ${vol4D}
+          </span>
           <button
             class="bg-gray-300 bg-opacity-50 rounded-md text-2xl cursor-pointer border-none text-outline items-center w-5 h-6 flex justify-center m-1"
             onClick=${nextVolume}
