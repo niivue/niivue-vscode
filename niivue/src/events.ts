@@ -332,6 +332,7 @@ export class ExtendedNiivue extends Niivue {
 function growNvArrayBy(nvArray: Signal<Niivue[]>, n: number) {
   for (let i = 0; i < n; i++) {
     const nv = new ExtendedNiivue({
+      isResizeCanvas: false,
       dragMode: 4,
     })
     nv.key = Math.random()
