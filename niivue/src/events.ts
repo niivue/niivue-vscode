@@ -311,9 +311,6 @@ export class ExtendedNiivue extends Niivue {
     if (this.uiData.mouseButtonRightDown || this.uiData.mouseButtonCenterDown) {
       this.canvas?.focus()
       // handle the case where this.otherNV is of type Niivue
-      console.log('trying to move ')
-      console.log(this.uiData.mouseButtonCenterDown)
-      console.log(this.uiData.isDragging)
       if (this.otherNV != null) {
         if (this.otherNV instanceof Niivue) {
           this.otherNV.scene.pan2Dxyzmm = this.scene.pan2Dxyzmm
