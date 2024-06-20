@@ -23,7 +23,7 @@ export const NiiVueCanvas = ({
 }: AppProps & NiiVueCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>()
   useEffect(() => {
-    canvasRef.current && nv.attachToCanvas(canvasRef.current)
+    canvasRef.current && !nv.canvas && nv.attachToCanvas(canvasRef.current)
   }, [canvasRef.current])
   useEffect(() => {
     if (!nv.body) {
