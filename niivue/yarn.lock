@@ -1218,10 +1218,10 @@
   dependencies:
     "@lukeed/csprng" "^1.1.0"
 
-"@niivue/niivue@0.43.3":
-  version "0.43.3"
-  resolved "https://registry.yarnpkg.com/@niivue/niivue/-/niivue-0.43.3.tgz#5c0d16260d03671c54e55707407ddda0016ec0ec"
-  integrity sha512-pACuepFYebkSPq6qR6171Qz9VnKyz+7ZdgBs5gJ8a9ewdLi0O4SjenJuPw0d8NZDuLEIZp0PVeWbHfeuFae1pg==
+"@niivue/niivue@0.43.1":
+  version "0.43.1"
+  resolved "https://registry.yarnpkg.com/@niivue/niivue/-/niivue-0.43.1.tgz#a5cffd038ba062b82651a7e94ea4fbb62add404f"
+  integrity sha512-L64+/nUaBgCvCHM7TvxPslv2Z69YxUJpYp7NVJLUuWAXDyKUhSZuDnSJDRiTw+HG3TBz0JnNgICuZbrHOL/VUQ==
   dependencies:
     "@lukeed/uuid" "^2.0.1"
     "@ungap/structured-clone" "^1.2.0"

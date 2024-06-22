@@ -13,7 +13,7 @@
     "watch": "vite build --watch"
   },
   "dependencies": {
-    "@niivue/niivue": "0.43.3",
+    "@niivue/niivue": "0.43.1",
     "@preact/signals": "^1.2.2",
     "htm": "^3.1.1",
     "preact": "^10.19.6",
