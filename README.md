@@ -3,7 +3,11 @@
 **WebGL 2.0 medical image viewer**  
 This extension uses [NiiVue](https://github.com/niivue/niivue) to display images selected in VSCode.  
 
-## Web version
+## VS Code version
+
+The VS Code extension is published on the [VS Code marketplace](https://marketplace.visualstudio.com/items?itemName=KorbinianEckstein.niivue) and can be installed via the extension tab in VS Code, searching for `niivue`
+
+## Browser version
 
 The [web version](https://korbinian90.github.io/niivue-vscode) can be installed as a local app with file associations (only supported in Chrome)
 
