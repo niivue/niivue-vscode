@@ -11,6 +11,11 @@ The VS Code extension is published on the [VS Code marketplace](https://marketpl
 
 The [web version](https://korbinian90.github.io/niivue-vscode) can be installed as a local app with file associations (only supported in Chrome)
 
+## Development
+
+Currently my time that I can spend on this project is quite limited. I'm very happy for contributions in the form of pull requests.  
+Otherwise, if you would like to see a certain feature implemented, please let me know so I can prioritize the development. Either create a new issue or comment/react on an existing issue.  
+
 ## VS Code screenshots
 
 ![Default View when opening an image](media/default_view.png)
