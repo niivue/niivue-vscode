@@ -29,8 +29,8 @@ export function differenceInNames(names: string[], rec = true) {
   // if startCommon points to a letter then include all preceding letters as well
   while (
     startCommon > 0 &&
-    names[0].slice(startCommon - 1, startCommon) >= 'a' &&
-    names[0].slice(startCommon - 1, startCommon) <= 'z'
+    names[0].slice(startCommon - 1, startCommon).toLowerCase() >= 'a' &&
+    names[0].slice(startCommon - 1, startCommon).toLowerCase() <= 'z'
   ) {
     startCommon -= 1
   }
