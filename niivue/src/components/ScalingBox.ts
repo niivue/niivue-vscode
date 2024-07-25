@@ -1,4 +1,4 @@
-import { computed } from '@preact/signals'
+import { computed, useSignal } from '@preact/signals'
 import { html } from 'htm/preact'
 import { useRef, useEffect } from 'preact/hooks'
 import { ExtendedNiivue } from '../events'
@@ -13,6 +13,7 @@ export const ScalingBox = (props: any) => {
   if (visible && !visible.value) return html``
 
   const selectedOverlay = computed(() => getOverlay(nvArraySelected.value[0]))
+  const invertState = useSignal(selectedOverlay.value.colormapInvert)
 
   const setScaling = (val: ScalingOpts) => {
     nvArraySelected.value.forEach((nv: ExtendedNiivue) => {
@@ -43,6 +44,13 @@ export const ScalingBox = (props: any) => {
     })
   }
 
+  const changeInverted = () => {
+    invertState.value = !selectedOverlay.value.colormapInvert
+    nvArraySelected.value.forEach((nv: ExtendedNiivue) => {
+      handleOverlayInvert(nv, selectedOverlayNumber.value, invertState.value!)
+    })
+  }
+
   return html`
     <div class="absolute left-8 top-8 bg-gray-500 rounded-md z-50 space-y-1 space-x-1 p-1">
       <${Scaling} setScaling=${setScaling} init=${selectedOverlay.value} />
@@ -63,10 +71,13 @@ export const ScalingBox = (props: any) => {
         step="0.1"
       />
       <button
-        class="bg-gray-600 border-2 border-gray-600 rounded-md w-16 opacity-50 cursor-not-allowed"
-        onclick=${() => console.log('Not implemented yet')}
+        class="border-2 border-gray-600 rounded-md w-16 ${invertState.value
+          ? 'bg-white text-gray-600'
+          : 'bg-gray-600'}"
+        onclick=${changeInverted}
+        value=${invertState}
       >
-        Hide
+        Invert
       </button>
       <br />
       <button
@@ -128,6 +139,18 @@ export const Scaling = ({ setScaling, init }: ScalingProps) => {
 
 function isVolumeOverlay(nv: ExtendedNiivue) {
   return nv.volumes.length > 0
+}
+
+function handleOverlayInvert(nv: ExtendedNiivue, layerNumber: number, invert: boolean) {
+  if (isVolumeOverlay(nv)) {
+    const overlay = nv.volumes[layerNumber]
+    if (overlay) {
+      overlay.colormapInvert = invert
+    }
+  } else {
+    nv.setMeshLayerProperty(nv.meshes[0].id as any, layerNumber, 'colormapInvert', invert ? 1 : 0)
+  }
+  nv.updateGLVolume()
 }
 
 function handleOverlayScaling(nv: ExtendedNiivue, layerNumber: number, scaling: ScalingOpts) {
