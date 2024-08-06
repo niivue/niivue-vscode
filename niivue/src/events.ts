@@ -145,7 +145,7 @@ async function addMeshOverlay(nv: Niivue, item: any, type: string) {
     }
     item.data = await response.arrayBuffer()
   }
-  NVMeshLoaders.readLayer(
+  const newLayer = NVMeshLoaders.readLayer(
     item.uri,
     item.data,
     mesh,
@@ -156,6 +156,12 @@ async function addMeshOverlay(nv: Niivue, item: any, type: string) {
     a.calMin,
     a.calMax,
   )
+
+  if (newLayer) {
+    nv.meshes[0].layers.push(newLayer)
+  } else {
+    throw Error('Layer could not be loaded')
+  }
 
   mesh.updateMesh(nv.gl)
   nv.opts.isColorbar = true
