@@ -8,7 +8,6 @@ export default defineConfig({
   plugins: [
     preact(),
     VitePWA({
-      registerType: 'autoUpdate',
       includeAssets: ['favicon.ico'],
       workbox: { maximumFileSizeToCacheInBytes: 3000000 },
       manifest: {
