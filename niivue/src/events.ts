@@ -336,7 +336,7 @@ function growNvArrayBy(nvArray: Signal<Niivue[]>, n: number) {
   for (let i = 0; i < n; i++) {
     const nv = new ExtendedNiivue({
       isResizeCanvas: false,
-      dragMode: 4,
+      dragMode: 1, // contrast
     })
     nv.key = Math.random()
     nvArray.value = [...nvArray.value, nv]

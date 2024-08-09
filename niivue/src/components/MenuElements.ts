@@ -70,6 +70,21 @@ export const MenuButton = ({ label, onClick }: { label: string; onClick: Functio
   `
 }
 
+export const MenuToggle = ({ label, state }: any) => {
+  return html`
+    <div class="relative">
+      <button
+        class="px-2 rounded-md h-6 align-middle ${state.value
+          ? 'bg-gray-700'
+          : 'hover:bg-gray-700'}"
+        onClick=${toggle(state)}
+      >
+        ${label}
+      </button>
+    </div>
+  `
+}
+
 export const HeaderDialog = ({ nvArraySelected, isOpen }: any) => {
   const headerDialog = useRef<HTMLDialogElement>()
   const headerInfo = useSignal('')
