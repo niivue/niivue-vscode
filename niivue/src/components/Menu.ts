@@ -29,7 +29,7 @@ export const Menu = (props: AppProps) => {
 
   // State
   const headerDialog = useSignal(false)
-  const zoomPanDragMode = useSignal(false)
+  const zoomDragMode = useSignal(false)
   const selectedOverlayNumber = useSignal(0)
   const overlayMenu = useSignal(false)
   const setHeaderMenu = useSignal(false)
@@ -72,7 +72,7 @@ export const Menu = (props: AppProps) => {
   effect(() => applyCrosshairWidth(nvArray, crosshair))
   effect(() => applyRadiologicalConvention(nvArray, radiologicalConvention))
   effect(() => applyColorbar(nvArray, colorbar))
-  effect(() => applyDragMode(nvArray, zoomPanDragMode))
+  effect(() => applyDragMode(nvArray, zoomDragMode))
 
   // Menu Click events
   const homeEvent = () => {
@@ -212,7 +212,7 @@ export const Menu = (props: AppProps) => {
         <${ToggleEntry} label="Radiological" state=${radiologicalConvention} />
         <${ToggleEntry} label="Crosshair" state=${crosshair} />
       </${MenuItem}>
-      <${MenuToggle} label="Zoom+Pan" state=${zoomPanDragMode} />
+      <${MenuToggle} label="Zoom" state=${zoomDragMode} />
       <${MenuItem} label="ColorScale" visible=${isVolumeOrMesh} onClick=${openColorScaleLastOverlay} >
         <${MenuEntry} label="Volume" onClick=${openColorScale(0)} visible=${isVolume} />
         ${Array.from(
@@ -326,9 +326,9 @@ function applyColorbar(nvArray: Signal<ExtendedNiivue[]>, colorbar: Signal<boole
   })
 }
 
-function applyDragMode(nvArray: Signal<ExtendedNiivue[]>, zoomPanDragMode: Signal<boolean>) {
+function applyDragMode(nvArray: Signal<ExtendedNiivue[]>, zoomDragMode: Signal<boolean>) {
   nvArray.value.forEach((nv: ExtendedNiivue) => {
-    if (zoomPanDragMode.value) nv.opts.dragMode = nv.dragModes.slicer3D
+    if (zoomDragMode.value) nv.opts.dragMode = nv.dragModes.slicer3D
     else nv.opts.dragMode = nv.dragModes.contrast
   })
 }
