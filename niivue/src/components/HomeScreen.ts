@@ -39,14 +39,15 @@ export const HomeScreen = () => html`
 
   <h2 class="text-3xl font-bold text-gray-200 p-2">Data Privacy</h2>
   <p class="w-96 mb-4 text-m font-normal text-gray-300 pl-2">
-    The extension runs locally and only accesses the images from your machine for displaying. No
-    data is sent or stored remotely. The extension is a complete offline solution and does not use
-    any cache, storage, or network connectivity. The extension does not track or log any user data.
-    All logging is minimal and only related to hardware events.
+    The vscode extension (or static webpage) runs locally and only accesses the images from your
+    machine for displaying. No data is sent or stored remotely. The extension is a complete offline
+    solution and does not use any online cache, storage, or network connectivity. The extension does
+    not track or log any user data. Local logging is minimal and only related to hardware events.
   </p>
   <p class="w-96 mb-4 text-m font-normal text-gray-300 pl-2">
-    The extension is an open source project that was initially developed at The University of
-    Queensland by the Computational Imaging group /
-    <a href="https://www.neurodesk.org/"><b>NeuroDesk</b></a> group
+    The extension is an open source project depending on
+    <a href="https://github.com/niivue/niivue/"><b> NiiVue</b></a> and was initially developed at
+    The University of Queensland by the Computational Imaging and
+    <a href="https://www.neurodesk.org/"><b> NeuroDesk</b></a> group.
   </p>
 `
