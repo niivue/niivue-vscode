@@ -79,9 +79,8 @@ export const ScalingBox = (props: any) => {
       >
         Invert
       </button>
-      <br />
       <button
-        class="bg-gray-600 border-2 border-gray-600 rounded-md w-16"
+        class="bg-gray-600 border-2 border-gray-600 rounded-md w-16 float-right"
         onclick=${() => (overlayMenu.value = false)}
       >
         Close
@@ -121,7 +120,9 @@ export const Scaling = ({ setScaling, init }: ScalingProps) => {
           class="border-2 border-gray-600 rounded-md bg-gray-700 h-6 w-20"
           type="number"
           ref=${minRef}
-          onchange=${update}
+          onkeydown=${(e: any) => {
+            if (e.key === 'Enter') update()
+          }}
         />
       </label>
       <label class="items-baseline h-6 px-2">
@@ -130,9 +131,14 @@ export const Scaling = ({ setScaling, init }: ScalingProps) => {
           class="border-2 border-gray-600 rounded-md bg-gray-700 h-6 w-20"
           type="number"
           ref=${maxRef}
-          onchange=${update}
+          onkeydown=${(e: any) => {
+            if (e.key === 'Enter') update()
+          }}
         />
       </label>
+      <button class="bg-gray-600 border-2 border-gray-600 rounded-md w-16" onclick=${update}>
+        Apply
+      </button>
     </div>
   `
 }
