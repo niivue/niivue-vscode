@@ -127,7 +127,35 @@
           "when": "!listMultiSelection"
         }
       ]
-    }
+    },
+    "languages": [
+      {
+        "id": "niiVue",
+        "extensions": [
+          ".dcm",
+          ".nii",
+          ".nii.gz",
+          ".mih",
+          ".mif",
+          ".mif.gz",
+          ".nhdr",
+          ".nrrd",
+          ".mhd",
+          ".mha",
+          ".mgh",
+          ".mgz",
+          ".v",
+          ".v16",
+          ".vmr",
+          ".mz3",
+          ".gii"
+        ],
+        "icon": {
+          "light": "./niivue_icon.png",
+          "dark": "./niivue_icon.png"
+        }
+      }
+    ]
   },
   "capabilities": {
     "untrustedWorkspaces": {
