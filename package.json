@@ -151,8 +151,8 @@
           ".gii"
         ],
         "icon": {
-          "light": "./niivue_icon_transparent.png",
-          "dark": "./niivue_icon_transparent.png"
+          "light": "./niivue_icon_transparent2.png",
+          "dark": "./niivue_icon_transparent2.png"
         }
       }
     ]
