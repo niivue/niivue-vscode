@@ -17,7 +17,7 @@ export default defineConfig({
         theme_color: '#ffffff',
         icons: [
           {
-            src: 'niivue_icon.png',
+            src: 'niivue_icon_transparent.png',
             sizes: '200x200',
             type: 'image/png',
           },
