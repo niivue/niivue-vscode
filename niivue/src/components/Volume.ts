@@ -21,6 +21,8 @@ export const Volume = (props: AppProps & VolumeProps) => {
   const vol4D = useSignal(0)
   const dispName = name.length > 20 ? `...${name.slice(-20)}` : name
   const selected = computed(() => selection.value.includes(volumeIndex))
+  const tooltipVisible = useSignal(false)
+  const tooltipPos = useSignal({ x: 0, y: 0 })
 
   useEffect(() => {
     nv.onLocationChange = (data: any) =>
@@ -33,7 +35,27 @@ export const Volume = (props: AppProps & VolumeProps) => {
       )
   }, [selection.value])
 
-  // it would maybe need a invisible box over the volume to prevent the click event, stopPropagation and preventDefault don't work
+  // Mouse listeners for updating tooltip position and visibility
+  useEffect(() => {
+    const updateTooltipPosition = (e: MouseEvent) => {
+      tooltipPos.value = { x: e.clientX + 10, y: e.clientY + 10 }
+    }
+    const handleMouseDown = () => {
+      tooltipVisible.value = true
+    }
+    const handleMouseUp = () => {
+      tooltipVisible.value = false
+    }
+    window.addEventListener('mousemove', updateTooltipPosition)
+    window.addEventListener('mousedown', handleMouseDown)
+    window.addEventListener('mouseup', handleMouseUp)
+    return () => {
+      window.removeEventListener('mousemove', updateTooltipPosition)
+      window.removeEventListener('mousedown', handleMouseDown)
+      window.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [])
+
   const selectClick = () => {
     if (selectionMode.value == SelectionMode.SINGLE) {
       selection.value = [volumeIndex]
@@ -109,6 +131,14 @@ export const Volume = (props: AppProps & VolumeProps) => {
           >
             -
           </button>
+        </div>
+      `}
+      ${tooltipVisible.value &&
+      html`
+        <div
+          style=${`position: fixed; left: ${tooltipPos.value.x}px; top: ${tooltipPos.value.y}px; background: rgba(0, 0, 0, 0.7); color: white; padding: 4px 8px; border-radius: 4px; pointer-events: none;`}
+        >
+          ${intensity.value}
         </div>
       `}
     </div>
