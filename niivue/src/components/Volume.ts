@@ -1,5 +1,5 @@
 import { html } from 'htm/preact'
-import { useEffect } from 'preact/hooks'
+import { useEffect, useRef } from 'preact/hooks'
 import { NiiVueCanvas } from './NiiVueCanvas'
 import { computed, useSignal, Signal } from '@preact/signals'
 import { AppProps, SelectionMode } from './App'
@@ -23,6 +23,7 @@ export const Volume = (props: AppProps & VolumeProps) => {
   const selected = computed(() => selection.value.includes(volumeIndex))
   const tooltipVisible = useSignal(false)
   const tooltipPos = useSignal({ x: 0, y: 0 })
+  const canvasRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     nv.onLocationChange = (data: any) =>
@@ -40,21 +41,28 @@ export const Volume = (props: AppProps & VolumeProps) => {
     const updateTooltipPosition = (e: MouseEvent) => {
       tooltipPos.value = { x: e.clientX + 10, y: e.clientY + 10 }
     }
-    const handleMouseDown = () => {
-      tooltipVisible.value = true
+    const handleMouseDown = (e: MouseEvent) => {
+      if (canvasRef.current && canvasRef.current.contains(e.target as Node)) {
+        tooltipVisible.value = true
+      }
     }
     const handleMouseUp = () => {
+      tooltipVisible.value = false
+    }
+    const handleMouseLeave = () => {
       tooltipVisible.value = false
     }
     window.addEventListener('mousemove', updateTooltipPosition)
     window.addEventListener('mousedown', handleMouseDown)
     window.addEventListener('mouseup', handleMouseUp)
+    canvasRef.current?.addEventListener('mouseleave', handleMouseLeave)
     return () => {
       window.removeEventListener('mousemove', updateTooltipPosition)
       window.removeEventListener('mousedown', handleMouseDown)
       window.removeEventListener('mouseup', handleMouseUp)
+      canvasRef.current?.removeEventListener('mouseleave', handleMouseLeave)
     }
-  }, [])
+  }, [canvasRef.current])
 
   const selectClick = () => {
     if (selectionMode.value == SelectionMode.SINGLE) {
@@ -86,6 +94,7 @@ export const Volume = (props: AppProps & VolumeProps) => {
     <div
       class="relative ${selectionMode.value && selected.value ? 'outline outline-blue-500' : ''}"
       onClick=${selectClick}
+      ref=${canvasRef}
     >
       <${NiiVueCanvas} ...${props} />
       ${hideUI.value > 0 &&
