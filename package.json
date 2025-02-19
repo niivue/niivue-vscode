@@ -155,7 +155,23 @@
           "dark": "./niivue_icon_transparent_contrast.png"
         }
       }
-    ]
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "NiiVue Settings",
+      "properties": {
+        "niivue.defaultZoomLevel": {
+          "type": "number",
+          "default": 1,
+          "description": "Default zoom level for images."
+        },
+        "niivue.showCrosshairs": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show crosshairs on images by default."
+        }
+      }
+    }
   },
   "capabilities": {
     "untrustedWorkspaces": {

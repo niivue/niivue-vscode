@@ -43,11 +43,21 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
   }
 
   public static async createOrShow(context: vscode.ExtensionContext, uri: vscode.Uri) {
+    const config = vscode.workspace.getConfiguration('niivue')
+    const defaultZoomLevel = config.get<number>('defaultZoomLevel', 1)
+    const showCrosshairs = config.get<boolean>('showCrosshairs', true)
     const name = vscode.Uri.parse(uri.toString()).path.split('/').pop()
     const tabName = name ? `web: ${name}` : 'NiiVue Web Panel'
     this.createPanel(context, 'niivue.webview', tabName, uri).then((panel) => {
       panel.webview.onDidReceiveMessage(async (e) => {
         if (e.type === 'ready') {
+          panel.webview.postMessage({
+            type: 'initSettings',
+            body: {
+              defaultZoomLevel,
+              showCrosshairs,
+            },
+          })
           panel.webview.postMessage({
             type: 'addImage',
             body: { uri: uri.toString() },
