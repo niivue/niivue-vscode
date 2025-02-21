@@ -8,6 +8,7 @@ window.addEventListener('message', (e: any) => {
   const { type, body } = e.data
   if (type === 'initSettings') {
     const settings = body
+    localStorage.setItem('userSettings', JSON.stringify(settings)) // Save settings to localStorage
     const app = document.getElementById('app')
     if (app) {
       render(html`<${App} settings=${settings} />`, app)
@@ -20,9 +21,11 @@ window.addEventListener('DOMContentLoaded', () => {
   if (vscode) {
     vscode.postMessage({ type: 'ready' })
   } else {
+    const savedSettings = localStorage.getItem('userSettings')
+    const settings = savedSettings ? JSON.parse(savedSettings) : defaultSettings
     window.postMessage({
       type: 'initSettings',
-      body: defaultSettings,
+      body: settings,
     })
   }
 })

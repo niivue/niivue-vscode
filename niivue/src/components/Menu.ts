@@ -179,6 +179,18 @@ export const Menu = (props: AppProps) => {
     overlayMenu.value = true
   }
 
+  const saveSettings = () => {
+    const currentSettings = {
+      interpolation: interpolation.value,
+      showCrosshairs: crosshair.value,
+      radiologicalConvention: radiologicalConvention.value,
+      colorbar: colorbar.value,
+      zoomDragMode: zoomDragMode.value,
+    }
+    localStorage.setItem('userSettings', JSON.stringify(currentSettings))
+    alert('Settings saved!')
+  }
+
   return html`
     <div class="flex flex-wrap items-baseline gap-2">
       ${!isVscode && html`<${MenuButton} label="Home" onClick=${homeEvent} />`}
@@ -235,6 +247,7 @@ export const Menu = (props: AppProps) => {
         <${MenuEntry} label="Set Headers to 1" onClick=${setVoxelSize1AndOrigin0} />
         <${MenuEntry} label="Set Header" onClick=${toggle(setHeaderMenu)} />
       </${MenuItem}>
+      ${!isVscode && html` <${MenuButton} label="Save Settings" onClick=${saveSettings} /> `}
       <${ImageSelect} label="Select" state=${selectionActive} visible=${multipleVolumes}>
         <${ToggleEntry} label="Multiple" state=${selectMultiple} />
         <${MenuEntry} label="Select All" onClick=${selectAll} />
