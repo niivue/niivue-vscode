@@ -160,15 +160,30 @@
       "type": "object",
       "title": "NiiVue Settings",
       "properties": {
-        "niivue.defaultZoomLevel": {
-          "type": "number",
-          "default": 1,
-          "description": "Default zoom level for images."
-        },
         "niivue.showCrosshairs": {
           "type": "boolean",
           "default": true,
           "description": "Show crosshairs on images by default."
+        },
+        "niivue.interpolation": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable interpolation by default."
+        },
+        "niivue.colorbar": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show colorbar by default."
+        },
+        "niivue.radiologicalConvention": {
+          "type": "boolean",
+          "default": false,
+          "description": "Use radiological convention by default."
+        },
+        "niivue.zoomDragMode": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable zoom drag mode by default."
         }
       }
     }

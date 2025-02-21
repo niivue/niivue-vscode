@@ -29,14 +29,14 @@ export const Menu = (props: AppProps) => {
 
   // State
   const headerDialog = useSignal(false)
-  const zoomDragMode = useSignal(false)
   const selectedOverlayNumber = useSignal(0)
   const overlayMenu = useSignal(false)
   const setHeaderMenu = useSignal(false)
-  const interpolation = useSignal(true)
+  const interpolation = useSignal(settings.value.interpolation)
   const crosshair = useSignal(settings.value.showCrosshairs)
-  const radiologicalConvention = useSignal(false)
-  const colorbar = useSignal(false)
+  const radiologicalConvention = useSignal(settings.value.radiologicalConvention)
+  const colorbar = useSignal(settings.value.colorbar)
+  const zoomDragMode = useSignal(settings.value.zoomDragMode)
   const selectionActive = useSignal(false)
   const selectMultiple = useSignal(false)
 

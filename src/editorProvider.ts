@@ -45,10 +45,19 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
   private static postInitSettings(panel: vscode.WebviewPanel) {
     const config = vscode.workspace.getConfiguration('niivue')
     const showCrosshairs = config.get<boolean>('showCrosshairs', true)
+    const interpolation = config.get<boolean>('interpolation', true)
+    const colorbar = config.get<boolean>('colorbar', false)
+    const radiologicalConvention = config.get<boolean>('radiologicalConvention', false)
+    const zoomDragMode = config.get<boolean>('zoomDragMode', false)
+
     panel.webview.postMessage({
       type: 'initSettings',
       body: {
         showCrosshairs,
+        interpolation,
+        colorbar,
+        radiologicalConvention,
+        zoomDragMode,
       },
     })
   }
