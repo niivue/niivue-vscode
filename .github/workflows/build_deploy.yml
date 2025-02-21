@@ -32,8 +32,6 @@ jobs:
         uses: actions/checkout@v4
       - name: Set Node.js
         uses: actions/setup-node@v4
-        with:
-          node-version: 18.x
       - name: Run install
         run: yarn install
         working-directory: ./niivue
