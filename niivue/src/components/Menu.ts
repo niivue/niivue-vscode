@@ -24,7 +24,7 @@ import {
 import { HeaderBox } from './HeaderBox'
 
 export const Menu = (props: AppProps) => {
-  const { selection, selectionMode, nvArray, sliceType, hideUI } = props
+  const { selection, selectionMode, nvArray, sliceType, hideUI, settings } = props
   const isVscode = typeof vscode === 'object'
 
   // State
@@ -34,7 +34,7 @@ export const Menu = (props: AppProps) => {
   const overlayMenu = useSignal(false)
   const setHeaderMenu = useSignal(false)
   const interpolation = useSignal(true)
-  const crosshair = useSignal(true)
+  const crosshair = useSignal(settings.value.showCrosshairs)
   const radiologicalConvention = useSignal(false)
   const colorbar = useSignal(false)
   const selectionActive = useSignal(false)

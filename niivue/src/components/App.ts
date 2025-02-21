@@ -7,11 +7,15 @@ import { Container } from './Container'
 import { ImageDrop } from './ImageDrop'
 import { HomeScreen } from './HomeScreen'
 import { Menu } from './Menu'
+import { NiiVueSettings } from '../settings'
 
-export const App = () => {
+export const App = ({ settings }: { settings: NiiVueSettings }) => {
   const isVscode = typeof vscode === 'object'
-  const appProps = useAppState()
-  useEffect(() => listenToMessages(appProps), [])
+  const appProps = useAppState(settings)
+  useEffect(() => {
+    listenToMessages(appProps)
+    document.dispatchEvent(new Event('AppReady'))
+  }, [])
 
   const nImages = computed(() => appProps.nvArray.value.length)
   const showHomeScreen = computed(() => nImages.value == 0 && !isVscode)
@@ -39,6 +43,7 @@ export interface AppProps {
   hideUI: Signal<number>
   sliceType: Signal<number>
   location: Signal<string>
+  settings: Signal<NiiVueSettings>
 }
 
 export interface ScalingOpts {
@@ -47,7 +52,7 @@ export interface ScalingOpts {
   max: number
 }
 
-function useAppState(): AppProps {
+function useAppState(initialSettings: NiiVueSettings): AppProps {
   return {
     nvArray: useSignal<ExtendedNiivue[]>([]),
     selection: useSignal<Array<number>>([]),
@@ -55,5 +60,6 @@ function useAppState(): AppProps {
     hideUI: useSignal(3), // 0: hide all, 1: show name, 2: hide overlay, 3: show-all
     sliceType: useSignal<number>(SLICE_TYPE.MULTIPLANAR), // all views
     location: useSignal(''),
+    settings: useSignal<NiiVueSettings>(initialSettings),
   }
 }
