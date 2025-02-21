@@ -109,6 +109,10 @@ Open the command line and execute
 
 Open the vscode test interface and run the tests. New tests can be added under `niivue/tests`
 
+## Tests don't show
+
+It might be required to run this inside the `niivue` subdirectory: `npx playwright install` and `npx playwright test`.
+
 ### Test in the web version of vscode
 
 ```bash
