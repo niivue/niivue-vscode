@@ -2,17 +2,30 @@ import './index.css'
 import { render } from 'preact'
 import { html } from 'htm/preact'
 import { App } from './components/App'
+import { defaultSettings } from './settings'
 
-const app = document.getElementById('app')
-if (app) {
-  render(html`<${App} settings=${getInitSettings()} />`, app)
-}
-
-function getInitSettings() {
-  return {
-    showCrosshairs: false,
+window.addEventListener('message', (e: any) => {
+  const { type, body } = e.data
+  if (type === 'initSettings') {
+    const settings = body
+    const app = document.getElementById('app')
+    if (app) {
+      render(html`<${App} settings=${settings} />`, app)
+    }
   }
-}
+})
+
+window.addEventListener('DOMContentLoaded', () => {
+  const vscode = (window as any).vscode
+  if (vscode) {
+    vscode.postMessage({ type: 'ready' })
+  } else {
+    window.postMessage({
+      type: 'initSettings',
+      body: defaultSettings,
+    })
+  }
+})
 
 function addLaunchQueueImages() {
   if ('launchQueue' in window) {

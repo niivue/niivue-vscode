@@ -42,22 +42,24 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     return panel
   }
 
-  public static async createOrShow(context: vscode.ExtensionContext, uri: vscode.Uri) {
+  private static postInitSettings(panel: vscode.WebviewPanel) {
     const config = vscode.workspace.getConfiguration('niivue')
-    const defaultZoomLevel = config.get<number>('defaultZoomLevel', 1)
     const showCrosshairs = config.get<boolean>('showCrosshairs', true)
+    panel.webview.postMessage({
+      type: 'initSettings',
+      body: {
+        showCrosshairs,
+      },
+    })
+  }
+
+  public static async createOrShow(context: vscode.ExtensionContext, uri: vscode.Uri) {
     const name = vscode.Uri.parse(uri.toString()).path.split('/').pop()
     const tabName = name ? `web: ${name}` : 'NiiVue Web Panel'
     this.createPanel(context, 'niivue.webview', tabName, uri).then((panel) => {
       panel.webview.onDidReceiveMessage(async (e) => {
         if (e.type === 'ready') {
-          panel.webview.postMessage({
-            type: 'initSettings',
-            body: {
-              defaultZoomLevel,
-              showCrosshairs,
-            },
-          })
+          this.postInitSettings(panel)
           panel.webview.postMessage({
             type: 'addImage',
             body: { uri: uri.toString() },
@@ -73,6 +75,7 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     this.createPanel(context, 'niivue.webview', tabName, uri).then((panel) => {
       panel.webview.onDidReceiveMessage(async (e) => {
         if (e.type === 'ready') {
+          this.postInitSettings(panel)
           NiiVueEditorProvider.openDcmFolder(uri, panel)
         }
       })
@@ -84,6 +87,7 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     this.createPanel(context, 'niivue.compare', 'NiiVue Compare Panel', uris[0]).then((panel) => {
       panel.webview.onDidReceiveMessage(async (e) => {
         if (e.type === 'ready') {
+          this.postInitSettings(panel)
           panel.webview.postMessage({
             type: 'initCanvas',
             body: { n: uris.length },
@@ -220,6 +224,7 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     NiiVueEditorProvider.addCommonListeners(webviewPanel)
     webviewPanel.webview.onDidReceiveMessage(async (message) => {
       if (message.type === 'ready') {
+        NiiVueEditorProvider.postInitSettings(webviewPanel)
         webviewPanel.webview.postMessage({
           type: 'addImage',
           body: {
