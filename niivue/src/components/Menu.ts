@@ -223,6 +223,8 @@ export const Menu = (props: AppProps) => {
         <${ToggleEntry} label="Colorbar" state=${colorbar} />
         <${ToggleEntry} label="Radiological" state=${radiologicalConvention} />
         <${ToggleEntry} label="Crosshair" state=${crosshair} />
+        <hr />
+        ${!isVscode && html`<${MenuEntry} label="Save Settings" onClick=${saveSettings} />`}
       </${MenuItem}>
       <${MenuToggle} label="Zoom" state=${zoomDragMode} />
       <${MenuItem} label="ColorScale" visible=${isVolumeOrMesh} onClick=${openColorScaleLastOverlay} >
@@ -247,7 +249,6 @@ export const Menu = (props: AppProps) => {
         <${MenuEntry} label="Set Headers to 1" onClick=${setVoxelSize1AndOrigin0} />
         <${MenuEntry} label="Set Header" onClick=${toggle(setHeaderMenu)} />
       </${MenuItem}>
-      ${!isVscode && html` <${MenuButton} label="Save Settings" onClick=${saveSettings} /> `}
       <${ImageSelect} label="Select" state=${selectionActive} visible=${multipleVolumes}>
         <${ToggleEntry} label="Multiple" state=${selectMultiple} />
         <${MenuEntry} label="Select All" onClick=${selectAll} />
