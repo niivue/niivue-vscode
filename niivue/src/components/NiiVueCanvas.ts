@@ -112,14 +112,14 @@ async function loadVolume(nv: ExtendedNiivue, item: any) {
     if (!header) {
       return
     }
-    const volume = new NVImage(header, `${item.uri}.mha`, 'gray', 1.0, item.data)
+    const volume = await NVImage.new(header, `${item.uri}.mha`, 'gray', 1.0, item.data)
     nv.addVolume(volume)
   } else if (item?.data?.length > 0) {
-    const volume = new NVImage(item.data, item.uri)
+    const volume = await NVImage.new(item.data, item.uri)
     nv.addVolume(volume)
   } else if (isImageType(item.uri)) {
     if (item.data) {
-      const volume = new NVImage(item.data, item.uri)
+      const volume = await NVImage.new(item.data, item.uri)
       nv.addVolume(volume)
     } else {
       const volumeList = [{ url: item.uri }]
