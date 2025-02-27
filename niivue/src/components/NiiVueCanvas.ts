@@ -5,6 +5,7 @@ import { isImageType } from '../utility'
 import { Signal } from '@preact/signals'
 import { AppProps } from './App'
 import { ExtendedNiivue } from '../events'
+import { dicomLoader } from '@niivue/dicom-loader'
 
 interface NiiVueCanvasProps {
   nv: ExtendedNiivue
@@ -84,10 +85,29 @@ async function getUserInput() {
 }
 
 async function loadVolume(nv: ExtendedNiivue, item: any) {
-  if (item.uri.endsWith('.ima') || item.uri.endsWith('.IMA')) {
+  // Read .ima and .IMA as dicom files
+  if (Array.isArray(item.uri)) {
+    item.uri = item.uri.map((uri) => uri.replace('.ima', '.dcm').replace('.IMA', '.dcm'))
+  } else if (item.uri.endsWith('.ima') || item.uri.endsWith('.IMA')) {
     item.uri = item.uri.replace('.ima', '.dcm').replace('.IMA', '.dcm')
   }
-  if (item.uri.endsWith('.raw')) {
+  // Handle different file types
+  if (Array.isArray(item.uri) || item.uri.endsWith('.dcm')) {
+    if (!Array.isArray(item.uri)) {
+      item.uri = [item.uri]
+      item.data = [item.data]
+    }
+    const dicomInput = item.uri.map((uri, i) => ({
+      data: item.data[i],
+      name: uri,
+    }))
+    const loadedFiles = await dicomLoader(dicomInput)
+    const volume = await NVImage.loadFromUrl({
+      url: loadedFiles[0].data,
+      name: loadedFiles[0].name,
+    })
+    nv.addVolume(volume)
+  } else if (item.uri.endsWith('.raw')) {
     const header = await getMinimalHeaderMHA()
     if (!header) {
       return

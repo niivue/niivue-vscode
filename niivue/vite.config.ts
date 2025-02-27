@@ -4,6 +4,9 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  optimizeDeps: {
+    exclude: ['@niivue/dicom-loader'],
+  },
   server: { port: 4000 },
   plugins: [
     preact(),

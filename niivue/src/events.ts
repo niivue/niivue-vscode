@@ -286,7 +286,7 @@ export function addDcmFolderEvent() {
         type: 'addImage',
         body: {
           data: data,
-          uri: files[0].name,
+          uri: files.map((file) => file.name),
         },
       })
     }
