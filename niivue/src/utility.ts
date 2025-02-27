@@ -72,11 +72,11 @@ export function differenceInNames(names: string[], rec = true) {
     const filenames = diffNames.map((name) => name.split('/').slice(-1)[0])
     const diffFilenames = differenceInNames(filenames, false)
     diffNames.forEach((_, i) => {
-      let seperator = ' - '
+      let separator = ' - '
       if (!diffFolders[i] || !diffFilenames[i]) {
-        seperator = ''
+        separator = ''
       }
-      diffNames[i] = diffFolders[i] + seperator + diffFilenames[i]
+      diffNames[i] = diffFolders[i] + separator + diffFilenames[i]
     })
   }
   return diffNames

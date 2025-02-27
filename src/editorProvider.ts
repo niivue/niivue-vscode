@@ -142,7 +142,7 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
               canSelectFolders: false,
               canSelectMany: false,
               openLabel: 'Open Overlay',
-              // filters: fileTypes // does't work properly in remote
+              // filters: fileTypes // doesn't work properly in remote
             })
             .then((uris) => {
               if (uris && uris.length > 0) {
