@@ -161,20 +161,27 @@ function setIntensityAndLocation(
   location: Signal<string>,
   setGlobalLocation: Boolean,
 ) {
-  const parts = data.string.split('=')
-  if (parts.length === 2) {
-    intensity.value = parts.pop()
-  }
-  location_local.value = arrayToString(data.vox, 0)
+  intensity.value = arrayToStringFlexible(data.values.map((item: { value: number }) => item.value))
+  location_local.value = arrayToStringFixed(data.vox, 0)
   if (setGlobalLocation) {
-    location.value = `${arrayToString(data.mm)} mm`
+    location.value = `${arrayToStringFixed(data.mm)} mm`
   }
 }
 
-function arrayToString(array: number[], precision = 2) {
+function arrayToStringFixed(array: number[], precision = 2) {
   let str = ''
   for (const val of array) {
     str += val.toFixed(precision) + ' x '
   }
   return str.slice(0, -3)
+}
+
+// If < 0.01 or larger than 10000, use scientific notation
+function arrayToStringFlexible(array: number[]) {
+  let str = ''
+  for (const val of array) {
+    const num = val.toPrecision(5).replace(/\.?0+$/, '') // Remove trailing zeros
+    str += num + ', '
+  }
+  return str.slice(0, -2)
 }
