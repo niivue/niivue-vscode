@@ -74,9 +74,7 @@ export const MenuToggle = ({ label, state }: any) => {
   return html`
     <div class="relative">
       <button
-        class="px-2 rounded-md h-6 align-middle ${state.value
-          ? 'bg-gray-700'
-          : 'hover:bg-gray-700'}"
+        class="px-2 rounded-md h-6 align-middle hover:bg-gray-700 ${state.value && 'bg-gray-500'}"
         onClick=${toggle(state)}
       >
         ${label}
@@ -125,7 +123,7 @@ export const ImageSelect = ({ label, state, children, visible }: any) => {
     <div class="relative group">
       <button
         class="group-hover:bg-gray-700 px-2 rounded-l-md h-6 align-middle ${state.value &&
-        'bg-gray-700'}"
+        'bg-gray-500'}"
         onClick=${toggle(state)}
       >
         ${label}
