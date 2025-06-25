@@ -4,14 +4,14 @@ import {
 } from '@jupyterlab/application';
 
 /**
- * Initialization data for the niivue-juypterlab extension.
+ * Initialization data for the niivue-jupyterlab extension.
  */
 const plugin: JupyterFrontEndPlugin<void> = {
-  id: 'niivue-juypterlab:plugin',
+  id: 'niivue-jupyterlab:plugin',
   description: 'A JupyterLab extension.',
   autoStart: true,
   activate: (app: JupyterFrontEnd) => {
-    console.log('JupyterLab extension niivue-juypterlab is activated!');
+    console.log('JupyterLab extension niivue-jupyterlab is activated!');
   }
 };
 

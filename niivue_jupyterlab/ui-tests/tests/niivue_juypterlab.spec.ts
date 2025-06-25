@@ -16,6 +16,6 @@ test('should emit an activation console message', async ({ page }) => {
   await page.goto();
 
   expect(
-    logs.filter(s => s === 'JupyterLab extension niivue-juypterlab is activated!')
+    logs.filter(s => s === 'JupyterLab extension niivue-jupyterlab is activated!')
   ).toHaveLength(1);
 });

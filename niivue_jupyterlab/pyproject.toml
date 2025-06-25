@@ -3,7 +3,7 @@ requires = ["hatchling>=1.5.0", "jupyterlab>=4.0.0,<5", "hatch-nodejs-version"]
 build-backend = "hatchling.build"
 
 [project]
-name = "niivue_juypterlab"
+name = "niivue_jupyterlab"
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.8"
@@ -32,24 +32,24 @@ source = "nodejs"
 fields = ["description", "authors", "urls"]
 
 [tool.hatch.build.targets.sdist]
-artifacts = ["niivue_juypterlab/labextension"]
+artifacts = ["niivue_jupyterlab/labextension"]
 exclude = [".github", "binder"]
 
 [tool.hatch.build.targets.wheel.shared-data]
-"niivue_juypterlab/labextension" = "share/jupyter/labextensions/niivue-juypterlab"
-"install.json" = "share/jupyter/labextensions/niivue-juypterlab/install.json"
+"niivue_jupyterlab/labextension" = "share/jupyter/labextensions/niivue-jupyterlab"
+"install.json" = "share/jupyter/labextensions/niivue-jupyterlab/install.json"
 
 [tool.hatch.build.hooks.version]
-path = "niivue_juypterlab/_version.py"
+path = "niivue_jupyterlab/_version.py"
 
 [tool.hatch.build.hooks.jupyter-builder]
 dependencies = ["hatch-jupyter-builder>=0.5"]
 build-function = "hatch_jupyter_builder.npm_builder"
 ensured-targets = [
-    "niivue_juypterlab/labextension/static/style.js",
-    "niivue_juypterlab/labextension/package.json",
+    "niivue_jupyterlab/labextension/static/style.js",
+    "niivue_jupyterlab/labextension/package.json",
 ]
-skip-if-exists = ["niivue_juypterlab/labextension/static/style.js"]
+skip-if-exists = ["niivue_jupyterlab/labextension/static/style.js"]
 
 [tool.hatch.build.hooks.jupyter-builder.build-kwargs]
 build_cmd = "build:prod"
@@ -59,7 +59,7 @@ npm = ["jlpm"]
 build_cmd = "install:extension"
 npm = ["jlpm"]
 source_dir = "src"
-build_dir = "niivue_juypterlab/labextension"
+build_dir = "niivue_jupyterlab/labextension"
 
 [tool.jupyter-releaser.options]
 version_cmd = "hatch version"

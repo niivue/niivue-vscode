@@ -8673,18 +8673,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"niivue-juypterlab-ui-tests@workspace:ui-tests":
+"niivue-jupyterlab-ui-tests@workspace:ui-tests":
   version: 0.0.0-use.local
-  resolution: "niivue-juypterlab-ui-tests@workspace:ui-tests"
+  resolution: "niivue-jupyterlab-ui-tests@workspace:ui-tests"
   dependencies:
     "@jupyterlab/galata": ^5.0.0
     "@playwright/test": ^1.32.0
   languageName: unknown
   linkType: soft
 
-"niivue-juypterlab@workspace:.":
+"niivue-jupyterlab@workspace:.":
   version: 0.0.0-use.local
-  resolution: "niivue-juypterlab@workspace:."
+  resolution: "niivue-jupyterlab@workspace:."
   dependencies:
     "@jupyterlab/application": ^4.0.0
     "@jupyterlab/builder": ^4.0.0
