@@ -1,0 +1,14 @@
+# Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
+_commit: v4.3.8
+_src_path: https://github.com/jupyterlab/extension-template
+author_email: korbinian90@gmail.com
+author_name: Korbinian Eckstein
+has_binder: false
+has_settings: false
+kind: frontend
+labextension_name: niivue-jupyterlab
+project_short_description: A JupyterLab extension.
+python_name: niivue_jupyterlab
+repository: https://github.com/niivue/niivue-vscode
+test: true
+
