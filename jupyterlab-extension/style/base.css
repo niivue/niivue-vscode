@@ -1,0 +1,9 @@
+/*
+ * Base styles for NiiVue JupyterLab extension
+ */
+
+:root {
+  --jp-niivue-background: var(--jp-layout-color0);
+  --jp-niivue-border: var(--jp-border-color1);
+  --jp-niivue-text: var(--jp-ui-font-color1);
+}

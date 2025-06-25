@@ -1,0 +1,73 @@
+/*
+ * Copyright (c) Jupyter Development Team.
+ * Distributed under the terms of the Modified BSD License.
+ */
+
+/* Import base styles */
+@import url('./base.css');
+
+/* Main widget styles */
+.jp-NiiVueWidget {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 100%;
+  width: 100%;
+}
+
+.jp-NiiVueWidget canvas {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+}
+
+/* Error display styles */
+.jp-NiiVue-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 20px;
+  text-align: center;
+  color: var(--jp-ui-font-color1);
+  background: var(--jp-layout-color1);
+}
+
+.jp-NiiVue-error h3 {
+  color: var(--jp-error-color1);
+  margin-bottom: 10px;
+  font-size: 18px;
+}
+
+.jp-NiiVue-error p {
+  max-width: 400px;
+  line-height: 1.5;
+  font-size: 14px;
+}
+
+/* Loading indicator */
+.jp-NiiVue-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--jp-ui-font-color2);
+}
+
+.jp-NiiVue-loading::before {
+  content: '';
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--jp-border-color2);
+  border-top: 3px solid var(--jp-brand-color1);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 10px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
