@@ -1,64 +1,93 @@
 import { DocumentRegistry } from '@jupyterlab/docregistry';
 import { ABCWidgetFactory, DocumentWidget } from '@jupyterlab/docregistry';
 import { Widget } from '@lumino/widgets';
-import { Niivue } from '@niivue/niivue';
 
 export class NiivueWidget extends Widget {
-  private _niivue: Niivue | null = null;
-  private _canvas: HTMLCanvasElement;
   private _context: DocumentRegistry.IContext<DocumentRegistry.IModel>;
+  private _iframe: HTMLIFrameElement;
 
   constructor(context: DocumentRegistry.IContext<DocumentRegistry.IModel>) {
     super();
     this._context = context;
     this.addClass('jp-NiivueWidget');
 
-    this._canvas = document.createElement('canvas');
-    this._canvas.style.width = '100%';
-    this._canvas.style.height = '100%';
-    this.node.appendChild(this._canvas);
+    this._iframe = document.createElement('iframe');
+    this._iframe.style.width = '100%';
+    this._iframe.style.height = '100%';
+    this._iframe.style.border = 'none';
+    this.node.appendChild(this._iframe);
 
-    this._initializeNiivue();
-    this._loadFile();
+    this._initializeViewer();
   }
 
-  private async _initializeNiivue(): Promise<void> {
-    try {
-      this._niivue = new Niivue();
-      await this._niivue.attachToCanvas(this._canvas);
-
-      this._niivue.setSliceType(this._niivue.sliceTypeAxial);
-      this._niivue.setSliceMM(true);
-      // this._niivue.setRadiological(false);
-    } catch (error) {
-      console.error('Failed to initialize Niivue:', error);
-    }
-  }
-
-  private async _loadFile(): Promise<void> {
-    if (!this._niivue || !this._context.model) {
-      return;
-    }
-
+  private _initializeViewer(): void {
     try {
       const filePath = this._context.path;
-      console.log('Loading NIfTI file:', filePath);
+      console.log('Initializing Niivue viewer for file:', filePath);
 
-      const volume = {
-        url: `/files/${filePath}`,
-        name: filePath.split('/').pop() || 'volume'
+      const html = this._getHtmlForViewer();
+      
+      // Write HTML to iframe
+      this._iframe.srcdoc = html;
+      
+      // Set up message passing
+      this._iframe.onload = () => {
+        this._sendAddImageMessage(filePath);
       };
 
-      await this._niivue.loadVolumes([volume]);
-
-      if (this._niivue.volumes && this._niivue.volumes.length > 0) {
-        this._niivue.updateGLVolume();
-      }
-
-      console.log('NIfTI file loaded successfully');
+      console.log('Niivue viewer initialized successfully');
     } catch (error) {
-      console.error('Failed to load NIfTI file:', error);
-      this._showError(`Failed to load file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('Failed to initialize Niivue viewer:', error);
+      this._showError(`Failed to initialize viewer: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  private _getHtmlForViewer(): string {
+    // Use the static file handler we set up in handlers.py
+    const scriptPath = `/lab/extensions/jupyterlab-niivue/static/niivue/build/assets/index.js`;
+    const cssPath = `/lab/extensions/jupyterlab-niivue/static/niivue/build/assets/index.css`;
+    
+    return `<!doctype html>
+          <html lang="en">
+            <head>
+              <meta charset="utf-8" />
+              <style>
+                /* Embed critical CSS to avoid loading issues */
+                body { margin: 0; padding: 0; background: #1a1a1a; color: white; font-family: system-ui, sans-serif; }
+                #app { width: 100vw; height: 100vh; }
+                .loading { display: flex; justify-content: center; align-items: center; height: 100vh; }
+                .error { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; color: #ff6b6b; }
+              </style>
+              <link rel="stylesheet" crossorigin href="${cssPath}">
+            </head>
+            <body class="text-white p-0">
+              <div id="app" class="w-screen h-screen">
+                <div class="loading">Loading NIfTI viewer...</div>
+              </div>
+              <script>
+                // Mock vscode API for Jupyter environment
+                window.vscode = {
+                  postMessage: function(message) {
+                    window.parent.postMessage(message, '*');
+                  }
+                };
+              </script>
+              <script type="module" crossorigin src="${scriptPath}" 
+                      onerror="document.getElementById('app').innerHTML = '<div class=\\"error\\"><h3>Failed to load NIfTI viewer</h3><p>Could not load the required JavaScript files</p></div>';">
+              </script>
+            </body>
+          </html>`;
+  }
+
+  private _sendAddImageMessage(filePath: string): void {
+    if (this._iframe.contentWindow) {
+      // Send the addImage message to load the file
+      this._iframe.contentWindow.postMessage({
+        type: 'addImage',
+        body: {
+          uri: filePath,
+        },
+      }, '*');
     }
   }
 
@@ -76,21 +105,14 @@ export class NiivueWidget extends Widget {
   }
 
   onResize(): void {
-    if (this._niivue && this._canvas) {
-      const rect = this.node.getBoundingClientRect();
-      this._canvas.width = rect.width;
-      this._canvas.height = rect.height;
-
-      if (this._niivue.volumes && this._niivue.volumes.length > 0) {
-        this._niivue.resizeListener();
-      }
-    }
+    // Resize is handled by the iframe content
+    console.log('Widget resized');
   }
 
   dispose(): void {
-    if (this._niivue) {
-      // this._niivue.destroy();
-      this._niivue = null;
+    // Cleanup iframe
+    if (this._iframe) {
+      this._iframe.remove();
     }
     super.dispose();
   }

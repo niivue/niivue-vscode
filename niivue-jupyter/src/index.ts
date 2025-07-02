@@ -1,9 +1,4 @@
-import {
-  JupyterFrontEnd,
-  JupyterFrontEndPlugin
-} from '@jupyterlab/application';
-
-
+import { JupyterFrontEnd, JupyterFrontEndPlugin } from '@jupyterlab/application';
 import { NiivueViewer } from './viewer';
 
 const FACTORY_NAME = 'Niivue Viewer';
@@ -15,7 +10,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
   requires: [],
   activate: (app: JupyterFrontEnd) => {
     console.log('JupyterLab extension jupyterlab-niivue is activated!');
-
+    
     const factory = new NiivueViewer.Factory({
       name: FACTORY_NAME,
       fileTypes: ['nii', 'nii.gz'],

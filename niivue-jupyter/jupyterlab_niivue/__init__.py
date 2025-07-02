@@ -27,7 +27,8 @@ def _load_jupyter_server_extension(server_app):
     """Registers the API handler to provide lab configuration data and serve a
     React-based interface for extensions in JupyterLab.
     """
-    setup_handlers(server_app.web_app)
+    url_pattern = "/lab/extensions/jupyterlab-niivue"
+    setup_handlers(server_app.web_app, url_pattern)
     name = "jupyterlab_niivue"
     server_app.log.info(f"Registered {name} server extension")
 
