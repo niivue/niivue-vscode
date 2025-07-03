@@ -134,7 +134,7 @@ The GitHub Actions workflow will automatically publish to PyPI and npm when you 
 The project includes GitHub Actions workflows that automate the release process:
 
 ### Files Added:
-- `.github/workflows/release.yml`: Handles drafting and publishing releases
+- `.github/workflows/release_jupyter.yml`: Handles drafting and publishing releases
 - `.github/workflows/test.yml`: Runs tests on PRs and pushes
 - `.jupyter-releaser.json`: Configuration for Jupyter releaser
 - `release.sh`: Manual release script
