@@ -145,7 +145,7 @@ async function addMeshOverlay(nv: Niivue, item: any, type: string) {
     }
     item.data = await response.arrayBuffer()
   }
-  const newLayer = NVMeshLoaders.readLayer(
+  const newLayer = await NVMeshLoaders.readLayer(
     item.uri,
     item.data,
     mesh,
@@ -197,12 +197,12 @@ function getLayerDefaults(type: string) {
   return a
 }
 
-function addOverlay(nv: Niivue, item: any) {
+async function addOverlay(nv: Niivue, item: any) {
   if (isImageType(item.uri)) {
     const image = new NVImage(item.data, item.uri, 'redyell', 0.5)
     nv.addVolume(image)
   } else {
-    const mesh = NVMesh.readMesh(item.data, item.uri, nv.gl, 0.5)
+    const mesh = await NVMesh.readMesh(item.data, item.uri, nv.gl, 0.5)
     nv.addMesh(mesh)
   }
 }

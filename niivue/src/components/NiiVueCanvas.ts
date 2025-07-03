@@ -87,7 +87,7 @@ async function getUserInput() {
 async function loadVolume(nv: ExtendedNiivue, item: any) {
   // Read .ima and .IMA as dicom files
   if (Array.isArray(item.uri)) {
-    item.uri = item.uri.map((uri) => uri.replace('.ima', '.dcm').replace('.IMA', '.dcm'))
+    item.uri = item.uri.map((uri: any) => uri.replace('.ima', '.dcm').replace('.IMA', '.dcm'))
   } else if (item.uri.endsWith('.ima') || item.uri.endsWith('.IMA')) {
     item.uri = item.uri.replace('.ima', '.dcm').replace('.IMA', '.dcm')
   }
@@ -97,7 +97,7 @@ async function loadVolume(nv: ExtendedNiivue, item: any) {
       item.uri = [item.uri]
       item.data = [item.data]
     }
-    const dicomInput = item.uri.map((uri, i) => ({
+    const dicomInput = item.uri.map((uri: any, i: number) => ({
       data: item.data[i],
       name: uri,
     }))
