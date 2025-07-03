@@ -23,7 +23,7 @@ export class NiivueWidget extends Widget {
   private _initializeViewer(): void {
     try {
       const filePath = this._context.path;
-      console.log('Initializing Niivue viewer for file:', filePath);
+      console.log('Initializing this.onResize Niivue viewer for file:', filePath);
 
       const html = this._getHtmlForViewer();
       
@@ -31,7 +31,9 @@ export class NiivueWidget extends Widget {
       this._iframe.srcdoc = html;
       
       // Set up message passing
-      this._iframe.onload = () => {
+      this.onResize = () => {
+        
+        console.log('Sending message with image: ', filePath)
         this._sendAddImageMessage(filePath);
       };
 
@@ -65,6 +67,7 @@ export class NiivueWidget extends Widget {
                 <div class="loading">Loading NIfTI viewer...</div>
               </div>
               <script>
+                window.console.log("loading script", ${scriptPath})
                 // Mock vscode API for Jupyter environment
                 window.vscode = {
                   postMessage: function(message) {
@@ -72,22 +75,43 @@ export class NiivueWidget extends Widget {
                   }
                 };
               </script>
-              <script type="module" crossorigin src="${scriptPath}" 
+              <script type="module" crossorigin src="${scriptPath}"
                       onerror="document.getElementById('app').innerHTML = '<div class=\\"error\\"><h3>Failed to load NIfTI viewer</h3><p>Could not load the required JavaScript files</p></div>';">
               </script>
             </body>
           </html>`;
   }
 
-  private _sendAddImageMessage(filePath: string): void {
+  private async _sendAddImageMessage(filePath: string): Promise<void> {
     if (this._iframe.contentWindow) {
-      // Send the addImage message to load the file
-      this._iframe.contentWindow.postMessage({
-        type: 'addImage',
-        body: {
-          uri: filePath,
-        },
-      }, '*');
+      try {
+        console.log('Reading file data for:', filePath);
+        
+        // Use fetch to read the file directly
+        const fileUrl = `/files/${filePath}`;
+        console.log('Fetching file from URL:', fileUrl);
+        
+        const response = await fetch(fileUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch file: ${response.statusText}`);
+        }
+        
+        const buffer = await response.arrayBuffer();
+        console.log('Sending file data to iframe, size:', buffer.byteLength);
+        
+        // Send the file data directly to the iframe
+        this._iframe.contentWindow.postMessage({
+          type: 'addImage',
+          body: {
+            data: buffer,
+            uri: filePath,
+          },
+        }, '*');
+        
+      } catch (error) {
+        console.error('Error reading file:', error);
+        this._showError(`Could not load file: ${filePath}`);
+      }
     }
   }
 
@@ -121,6 +145,10 @@ export class NiivueWidget extends Widget {
 
 export namespace NiivueViewer {
   export class Factory extends ABCWidgetFactory<DocumentWidget> {
+    constructor(options: DocumentRegistry.IWidgetFactoryOptions) {
+      super(options);
+    }
+
     protected createNewWidget(
       context: DocumentRegistry.IContext<DocumentRegistry.IModel>
     ): DocumentWidget {
