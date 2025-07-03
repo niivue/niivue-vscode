@@ -1,0 +1,29 @@
+{
+  "hooks": {
+    "before-build-npm": [
+      "python -m pip install 'jupyterlab>=4.0.0,<5'",
+      "cd niivue && npm ci && npm run build",
+      "cd niivue-jupyter && npm install && npm run copy:assets && npm run build:prod"
+    ],
+    "before-build-python": [
+      "cd niivue && npm ci && npm run build", 
+      "cd niivue-jupyter && npm install && npm run copy:assets && npm run build:prod"
+    ]
+  },
+  "options": {
+    "ignore-glob": [
+      "niivue-jupyter/static/**",
+      "niivue/**",
+      "src/**",
+      "tests/**",
+      "*.md"
+    ],
+    "ignore-links": [],
+    "python-packages": [
+      "niivue-jupyter/"
+    ],
+    "npm-packages": [
+      "niivue-jupyter/"
+    ]
+  }
+}
