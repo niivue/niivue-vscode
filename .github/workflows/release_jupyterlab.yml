@@ -1,0 +1,39 @@
+name: Release
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version_spec:
+        description: "New Version Specifier"
+        default: "next"
+        required: false
+      branch:
+        description: "The target branch for the release"
+        required: false
+      release_url:
+        description: "The URL of the draft GitHub release"
+        required: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  draft_release:
+    uses: jupyter-server/jupyter_releaser/.github/workflows/draft-release.yml@v2
+    with:
+      version_spec: ${{ github.event.inputs.version_spec }}
+      branch: ${{ github.event.inputs.branch }}
+    secrets:
+      admin_github_token: ${{ secrets.ADMIN_GITHUB_TOKEN }}
+
+  publish_release:
+    uses: jupyter-server/jupyter_releaser/.github/workflows/publish-release.yml@v2
+    needs: [draft_release]
+    with:
+      release_url: ${{ github.event.inputs.release_url || needs.draft_release.outputs.release_url }}
+    secrets:
+      admin_github_token: ${{ secrets.ADMIN_GITHUB_TOKEN }}
+      npm_token: ${{ secrets.NPM_TOKEN }}

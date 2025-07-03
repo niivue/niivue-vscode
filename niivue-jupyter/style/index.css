@@ -1,0 +1,157 @@
+.jp-NiivueWidget {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  height: 100%;
+  background: #000;
+  overflow: hidden;
+}
+
+.jp-NiivueWidget canvas {
+  flex: 1;
+  min-height: 0;
+  cursor: crosshair;
+}
+
+.jp-NiivueWidget-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  background: var(--jp-layout-color0);
+  color: var(--jp-ui-font-color1);
+}
+
+.jp-NiivueWidget-error h3 {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.jp-NiivueWidget-error p {
+  margin: 0;
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.jp-NiivueWidget-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  background: var(--jp-layout-color0);
+  color: var(--jp-ui-font-color1);
+}
+
+.jp-NiivueWidget-loading::after {
+  content: '';
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--jp-ui-font-color3);
+  border-top: 2px solid var(--jp-brand-color1);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-left: 10px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Additional Preact App Styles */
+.jp-NiivueWidget .w-full {
+  width: 100%;
+}
+
+.jp-NiivueWidget .h-full {
+  height: 100%;
+}
+
+.jp-NiivueWidget .relative {
+  position: relative;
+}
+
+.jp-NiivueWidget .absolute {
+  position: absolute;
+}
+
+.jp-NiivueWidget .inset-0 {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+
+.jp-NiivueWidget .flex {
+  display: flex;
+}
+
+.jp-NiivueWidget .items-center {
+  align-items: center;
+}
+
+.jp-NiivueWidget .justify-center {
+  justify-content: center;
+}
+
+.jp-NiivueWidget .text-center {
+  text-align: center;
+}
+
+.jp-NiivueWidget .text-red-600 {
+  color: #dc2626;
+}
+
+.jp-NiivueWidget .text-gray-600 {
+  color: #4b5563;
+}
+
+.jp-NiivueWidget .bg-gray-100 {
+  background-color: #f3f4f6;
+}
+
+.jp-NiivueWidget .p-4 {
+  padding: 1rem;
+}
+
+.jp-NiivueWidget .mb-2 {
+  margin-bottom: 0.5rem;
+}
+
+.jp-NiivueWidget .mx-auto {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.jp-NiivueWidget .text-lg {
+  font-size: 1.125rem;
+}
+
+.jp-NiivueWidget .font-semibold {
+  font-weight: 600;
+}
+
+.jp-NiivueWidget .animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+.jp-NiivueWidget .rounded-full {
+  border-radius: 50%;
+}
+
+.jp-NiivueWidget .h-8 {
+  height: 2rem;
+}
+
+.jp-NiivueWidget .w-8 {
+  width: 2rem;
+}
+
+.jp-NiivueWidget .border-b-2 {
+  border-bottom-width: 2px;
+}
+
+.jp-NiivueWidget .border-blue-600 {
+  border-color: #2563eb;
+}
