@@ -31,8 +31,8 @@ export class NiivueWidget extends Widget {
       this._iframe.srcdoc = html;
       
       // Set up message passing
-      this.onResize = () => {
-        
+      // TODO check if iframe finished loading (check for ready message?)
+      this._iframe.onload = () => {
         console.log('Sending message with image: ', filePath)
         this._sendAddImageMessage(filePath);
       };
