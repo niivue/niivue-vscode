@@ -35,6 +35,8 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           version_spec: ${{ github.event.inputs.version_spec }}
           branch: ${{ github.event.inputs.branch }}
+        env:
+          RH_ADMIN_CHECK: false
 
   publish_release:
     needs: [prep_release]
