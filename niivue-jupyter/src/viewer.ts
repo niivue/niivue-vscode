@@ -46,8 +46,8 @@ export class NiivueWidget extends Widget {
 
   private _getHtmlForViewer(): string {
     // Use the static file handler we set up in handlers.py
-    const scriptPath = `/lab/extensions/jupyterlab-niivue/static/niivue/build/assets/index.js`;
-    const cssPath = `/lab/extensions/jupyterlab-niivue/static/niivue/build/assets/index.css`;
+    const scriptPath = '/lab/extensions/jupyterlab-niivue/static/niivue/build/assets/index.js';
+    const cssPath = '/lab/extensions/jupyterlab-niivue/static/niivue/build/assets/index.css';
     
     return `<!doctype html>
           <html lang="en">
