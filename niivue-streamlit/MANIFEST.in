@@ -1,0 +1,9 @@
+include README.md
+include LICENSE
+include requirements.txt
+recursive-include niivue_component *
+recursive-exclude niivue_component/frontend/node_modules *
+recursive-exclude niivue_component/frontend/src *
+recursive-exclude niivue_component/frontend/public *
+global-exclude *.pyc
+global-exclude __pycache__

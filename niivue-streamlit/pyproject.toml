@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "niivue-streamlit"
+version = "0.1.0"
+description = "A Streamlit component for NiiVue neuroimaging viewer"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "NiiVue Team"},
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+    "Topic :: Scientific/Engineering :: Visualization",
+]
+requires-python = ">=3.7"
+dependencies = [
+    "streamlit>=1.28.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "black",
+    "flake8",
+]
+
+[project.urls]
+Homepage = "https://github.com/niivue/niivue"
+Documentation = "https://niivue.github.io/niivue/"
+Repository = "https://github.com/niivue/niivue"
+Issues = "https://github.com/niivue/niivue/issues"
+
+[tool.setuptools.packages.find]
+include = ["niivue_component*"]
+
+[tool.setuptools.package-data]
+niivue_component = ["frontend/build/**/*"]
