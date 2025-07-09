@@ -7,14 +7,13 @@ name = "niivue-streamlit"
 version = "0.1.0"
 description = "A Streamlit component for NiiVue neuroimaging viewer"
 readme = "README.md"
-license = {text = "MIT"}
+license = "MIT"
 authors = [
     {name = "NiiVue Team"},
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.7",
@@ -50,3 +49,6 @@ include = ["niivue_component*"]
 
 [tool.setuptools.package-data]
 niivue_component = ["assets/*", "frontend/build/**/*"]
+
+[tool.setuptools]
+include-package-data = true

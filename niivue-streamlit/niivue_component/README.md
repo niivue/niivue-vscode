@@ -93,13 +93,13 @@ streamlit run test_simplified_api.py
 - `frontend/` - React frontend
   - `src/NiiVueViewer.tsx` - Main React component
   - `package.json` - Node dependencies
-- `setup.py` - Package configuration
+- `pyproject.toml` - Package configuration
 
 ## Publishing to PyPI
 
 The component is ready for PyPI publication with all assets bundled:
 
 ```bash
-python setup.py sdist bdist_wheel
+python -m build
 twine upload dist/*
 ```
