@@ -2,7 +2,13 @@ import os
 import streamlit.components.v1 as components
 import base64
 from pathlib import Path
-import pkg_resources
+
+# Use modern importlib.resources instead of deprecated pkg_resources
+try:
+    from importlib import resources
+except ImportError:
+    # Fallback for Python < 3.9
+    import importlib_resources as resources
 
 # Create a _RELEASE constant. We'll set this to False while we're developing
 # the component, and True when we're ready to package and distribute it.
@@ -27,8 +33,9 @@ def _load_niivue_assets():
     try:
         # Try to load from package resources first (when installed via pip)
         try:
-            css_content = pkg_resources.resource_string(__name__, 'assets/index.css').decode('utf-8')
-            js_content = pkg_resources.resource_string(__name__, 'assets/index.js').decode('utf-8')
+            # Use importlib.resources instead of deprecated pkg_resources
+            css_content = resources.files(__name__).joinpath('assets/index.css').read_text(encoding='utf-8')
+            js_content = resources.files(__name__).joinpath('assets/index.js').read_text(encoding='utf-8')
             return css_content, js_content
         except:
             # Fallback to file system access (development mode)

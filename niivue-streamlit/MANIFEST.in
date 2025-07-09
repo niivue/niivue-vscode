@@ -1,6 +1,5 @@
 include README.md
 include LICENSE
-include requirements.txt
 recursive-include niivue_component *
 recursive-include niivue_component/assets *
 recursive-exclude niivue_component/frontend/node_modules *

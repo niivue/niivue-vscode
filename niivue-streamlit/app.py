@@ -5,7 +5,7 @@ from niivue_component import niivue_viewer
 
 st.set_page_config(layout="wide", page_title="NIFTI Viewer")
 
-st.title("🧠 Interactive NIFTI File Viewer")
+st.title("NiiVue Streamlit Component")
 st.markdown("Upload a `.nii` or `.nii.gz` file to visualize it with the integrated NiiVue viewer.")
 
 # --- SIDEBAR FOR FILE UPLOAD AND OPTIONS ---

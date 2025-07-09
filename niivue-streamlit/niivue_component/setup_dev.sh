@@ -12,7 +12,7 @@ fi
 
 # Install Python dependencies
 echo "Installing Python dependencies..."
-pip install -r requirements.txt
+pip install -e .
 
 # Install Node.js dependencies
 echo "Installing Node.js dependencies..."
@@ -30,8 +30,8 @@ echo ""
 echo "To run in development mode:"
 echo "1. Set _RELEASE = False in __init__.py"
 echo "2. In one terminal: cd frontend && npm start"
-echo "3. In another terminal: streamlit run ../app_component.py"
+echo "3. In another terminal: streamlit run ../app.py"
 echo ""
 echo "To run in production mode:"
 echo "1. Set _RELEASE = True in __init__.py (default)"
-echo "2. Run: streamlit run ../app_component.py"
+echo "2. Run: streamlit run ../app.py"

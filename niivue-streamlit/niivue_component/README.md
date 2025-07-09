@@ -19,7 +19,7 @@ cd niivue_component
 
 2. Install Python dependencies:
 ```bash
-pip install -r requirements.txt
+pip install -e .
 ```
 
 3. Install and build the frontend:
@@ -36,7 +36,7 @@ pip install -e .
 
 ## Usage
 
-The component now handles all NiiVue assets internally, making it very simple to use:
+The component handles all NiiVue assets internally, making it simple to use:
 
 ```python
 import streamlit as st
