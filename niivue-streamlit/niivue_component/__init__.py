@@ -2,6 +2,7 @@ import os
 import streamlit.components.v1 as components
 import base64
 from pathlib import Path
+import pkg_resources
 
 # Create a _RELEASE constant. We'll set this to False while we're developing
 # the component, and True when we're ready to package and distribute it.
@@ -21,7 +22,32 @@ else:
         path=build_dir
     )
 
-def niivue_viewer(nifti_data=None, filename="", height=600, css_content="", js_content="", key=None):
+def _load_niivue_assets():
+    """Load CSS and JS content from bundled assets"""
+    try:
+        # Try to load from package resources first (when installed via pip)
+        try:
+            css_content = pkg_resources.resource_string(__name__, 'assets/index.css').decode('utf-8')
+            js_content = pkg_resources.resource_string(__name__, 'assets/index.js').decode('utf-8')
+            return css_content, js_content
+        except:
+            # Fallback to file system access (development mode)
+            assets_dir = Path(__file__).parent / 'assets'
+            css_file = assets_dir / 'index.css'
+            js_file = assets_dir / 'index.js'
+            
+            if css_file.exists() and js_file.exists():
+                with open(css_file, 'r', encoding='utf-8') as f:
+                    css_content = f.read()
+                with open(js_file, 'r', encoding='utf-8') as f:
+                    js_content = f.read()
+                return css_content, js_content
+            else:
+                raise FileNotFoundError("NiiVue assets not found")
+    except Exception as e:
+        raise RuntimeError(f"Failed to load NiiVue assets: {e}")
+
+def niivue_viewer(nifti_data=None, filename="", height=600, key=None):
     """Create a NiiVue viewer component.
     
     Parameters:
@@ -32,10 +58,6 @@ def niivue_viewer(nifti_data=None, filename="", height=600, css_content="", js_c
         Name of the file being displayed
     height : int
         Height of the component in pixels
-    css_content : str
-        CSS content from NiiVue build
-    js_content : str
-        JavaScript content from NiiVue build
     key : str or None
         Unique key for the component
         
@@ -44,11 +66,13 @@ def niivue_viewer(nifti_data=None, filename="", height=600, css_content="", js_c
     dict or None
         Component return value (if any)
     """
+    # Load CSS and JS content internally
+    css_content, js_content = _load_niivue_assets()
+    
     # Convert nifti_data to base64 if provided
     nifti_base64 = ""
     if nifti_data is not None:
         nifti_base64 = base64.b64encode(nifti_data).decode()
-    
     component_value = _component_func(
         nifti_data=nifti_base64,
         filename=filename,
@@ -59,36 +83,3 @@ def niivue_viewer(nifti_data=None, filename="", height=600, css_content="", js_c
         key=key
     )
     return component_value
-
-# Helper function to read build files (same as your original)
-def read_build_files():
-    """Read the CSS and JS files from the niivue build directory"""
-    app_dir = Path(__file__).parent.parent.absolute()
-    
-    # Try multiple possible locations for the niivue build directory
-    possible_build_dirs = [
-        app_dir.parent / "niivue" / "build",  # When running from parent dir
-        app_dir / ".." / "niivue" / "build",  # Alternative parent reference
-        Path.cwd() / "niivue" / "build",      # When running from root
-    ]
-    
-    css_content = ""
-    js_content = ""
-    
-    for build_dir in possible_build_dirs:
-        if build_dir.exists():
-            css_file = build_dir / "assets" / "index.css"
-            js_file = build_dir / "assets" / "index.js"
-            
-            if css_file.exists() and js_file.exists():
-                try:
-                    with open(css_file, 'r', encoding='utf-8') as f:
-                        css_content = f.read()
-                    with open(js_file, 'r', encoding='utf-8') as f:
-                        js_content = f.read()
-                    return css_content, js_content
-                except Exception as e:
-                    print(f"Error reading build files: {e}")
-                    continue
-    
-    return css_content, js_content

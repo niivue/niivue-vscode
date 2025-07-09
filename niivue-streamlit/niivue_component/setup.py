@@ -15,6 +15,9 @@ setup(
     url="https://github.com/yourusername/niivue-streamlit",
     packages=find_packages(),
     include_package_data=True,
+    package_data={
+        'niivue_component': ['assets/*', 'frontend/build/**/*'],
+    },
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

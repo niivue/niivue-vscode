@@ -5,23 +5,42 @@ A powerful Streamlit component that integrates the [NiiVue](https://github.com/n
 ## 🧠 Features
 
 - **Interactive 3D Brain Visualization**: Full NiiVue viewer with 3D rendering, crosshairs, and slicing
+- **Simple API**: Just install and use - all assets are bundled internally
 - **Multiple Integration Methods**: 
   - Simple HTML embedding (`app.py`)
-  - Custom React component (`app_component.py`)
+  - Custom React component with simplified API (`app_component.py`)
   - Feature-rich demo (`demo.py`)
 - **Drag & Drop Upload**: Easy NIFTI file upload with support for `.nii` and `.nii.gz` formats
 - **Real-time Interaction**: Message-passing interface for dynamic viewer control
-- **Local Build Integration**: Uses the built NiiVue PWA for optimal performance
+- **PyPI Ready**: Component includes all necessary assets for easy distribution
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### Simple Installation & Usage
 
-- Python 3.7+
-- Node.js 16+
-- npm
+1. **Install the component**:
+   ```bash
+   pip install niivue-streamlit
+   ```
 
-### Automated Setup
+2. **Use in your Streamlit app**:
+   ```python
+   import streamlit as st
+   from niivue_component import niivue_viewer
+
+   uploaded_file = st.file_uploader("Choose a NIFTI file", type=["nii", "nii.gz"])
+   
+   if uploaded_file is not None:
+       file_bytes = uploaded_file.getvalue()
+       niivue_viewer(
+           nifti_data=file_bytes,
+           filename=uploaded_file.name,
+           height=600,
+           key="niivue_viewer"
+       )
+   ```
+
+### Development Setup
 
 1. **Clone and setup** (run from the project root):
    ```bash
