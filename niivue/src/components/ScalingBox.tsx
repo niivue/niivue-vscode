@@ -1,5 +1,4 @@
 import { computed, useSignal } from '@preact/signals'
-import { html } from 'htm/preact'
 import { useRef, useEffect } from 'preact/hooks'
 import { ExtendedNiivue } from '../events'
 
@@ -8,9 +7,10 @@ export interface ScalingOpts {
   min: number
   max: number
 }
+
 export const ScalingBox = (props: any) => {
   const { nvArraySelected, selectedOverlayNumber, overlayMenu, visible } = props
-  if (visible && !visible.value) return html``
+  if (visible && !visible.value) return null
 
   const selectedOverlay = computed(() => getOverlay(nvArraySelected.value[0]))
   const invertState = useSignal(selectedOverlay.value.colormapInvert)
@@ -51,51 +51,56 @@ export const ScalingBox = (props: any) => {
     })
   }
 
-  return html`
-    <div class="absolute left-8 top-8 bg-gray-500 rounded-md z-50 space-y-1 space-x-1 p-1">
-      <${Scaling} setScaling=${setScaling} init=${selectedOverlay.value} />
+  return (
+    <div className="absolute left-8 top-8 bg-gray-500 rounded-md z-50 space-y-1 space-x-1 p-1">
+      <Scaling setScaling={setScaling} init={selectedOverlay.value} />
       <select
-        class="bg-gray-600 w-24 border-2 border-gray-600 rounded-md"
-        onchange=${changeColormap}
-        value=${selectedOverlay.value.colormap}
+        className="bg-gray-600 w-24 border-2 border-gray-600 rounded-md"
+        onChange={changeColormap}
+        value={selectedOverlay.value.colormap}
       >
-        ${colormaps.value.map((c) => html`<option value=${c}>${c}</option>`)}
+        {colormaps.value.map((c) => (
+          <option key={c} value={c}>
+            {c}
+          </option>
+        ))}
       </select>
       <input
-        class="bg-gray-600 w-16 border-2 border-gray-600 rounded-md"
+        className="bg-gray-600 w-16 border-2 border-gray-600 rounded-md"
         type="number"
-        value=${selectedOverlay.value.opacity}
-        onchange=${changeOpacity}
+        value={selectedOverlay.value.opacity}
+        onChange={changeOpacity}
         min="0"
         max="1"
         step="0.1"
       />
       <button
-        class="border-2 border-gray-600 rounded-md w-16 ${invertState.value
-          ? 'bg-white text-gray-600'
-          : 'bg-gray-600'}"
-        onclick=${changeInverted}
-        value=${invertState}
+        className={`border-2 border-gray-600 rounded-md w-16 ${
+          invertState.value ? 'bg-white text-gray-600' : 'bg-gray-600'
+        }`}
+        onClick={changeInverted}
       >
         Invert
       </button>
       <button
-        class="bg-gray-600 border-2 border-gray-600 rounded-md w-16 float-right"
-        onclick=${() => (overlayMenu.value = false)}
+        className="bg-gray-600 border-2 border-gray-600 rounded-md w-16 float-right"
+        onClick={() => (overlayMenu.value = false)}
       >
         Close
       </button>
     </div>
-  `
+  )
 }
 
 interface ScalingProps {
-  setScaling: Function
+  setScaling: (scaling: ScalingOpts) => void
   init: any
 }
+
 export const Scaling = ({ setScaling, init }: ScalingProps) => {
-  const minRef = useRef<HTMLInputElement>()
-  const maxRef = useRef<HTMLInputElement>()
+  const minRef = useRef<HTMLInputElement | null>(null)
+  const maxRef = useRef<HTMLInputElement | null>(null)
+  
   useEffect(() => {
     if (!minRef.current || !maxRef.current) {
       return
@@ -106,41 +111,43 @@ export const Scaling = ({ setScaling, init }: ScalingProps) => {
     minRef.current.step = step
     maxRef.current.step = step
   }, [init])
+  
   const update = () =>
     setScaling({
       isManual: true,
       min: parseFloat(minRef.current?.value ?? '0'),
       max: parseFloat(maxRef.current?.value ?? '1'),
     } as ScalingOpts)
-  return html`
-    <div clas="relative">
-      <label class="items-baseline h-6 px-2">
+    
+  return (
+    <div className="relative">
+      <label className="items-baseline h-6 px-2">
         <span>Min </span>
         <input
-          class="border-2 border-gray-600 rounded-md bg-gray-700 h-6 w-20"
+          className="border-2 border-gray-600 rounded-md bg-gray-700 h-6 w-20"
           type="number"
-          ref=${minRef}
-          onkeydown=${(e: any) => {
+          ref={minRef}
+          onKeyDown={(e: any) => {
             if (e.key === 'Enter') update()
           }}
         />
       </label>
-      <label class="items-baseline h-6 px-2">
+      <label className="items-baseline h-6 px-2">
         <span>Max </span>
         <input
-          class="border-2 border-gray-600 rounded-md bg-gray-700 h-6 w-20"
+          className="border-2 border-gray-600 rounded-md bg-gray-700 h-6 w-20"
           type="number"
-          ref=${maxRef}
-          onkeydown=${(e: any) => {
+          ref={maxRef}
+          onKeyDown={(e: any) => {
             if (e.key === 'Enter') update()
           }}
         />
       </label>
-      <button class="bg-gray-600 border-2 border-gray-600 rounded-md w-16" onclick=${update}>
+      <button className="bg-gray-600 border-2 border-gray-600 rounded-md w-16" onClick={update}>
         Apply
       </button>
     </div>
-  `
+  )
 }
 
 function isVolumeOverlay(nv: ExtendedNiivue) {

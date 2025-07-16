@@ -1,4 +1,3 @@
-import { html } from 'htm/preact'
 import { useEffect, useRef } from 'preact/hooks'
 import { NiiVueCanvas } from './NiiVueCanvas'
 import { computed, useSignal, Signal } from '@preact/signals'
@@ -9,9 +8,10 @@ export interface VolumeProps {
   name: string
   volumeIndex: number
   nv: ExtendedNiivue
-  remove: Function
+  remove: () => void
   width: number
   height: number
+  render: Signal<number>
 }
 
 export const Volume = (props: AppProps & VolumeProps) => {
@@ -23,7 +23,7 @@ export const Volume = (props: AppProps & VolumeProps) => {
   const selected = computed(() => selection.value.includes(volumeIndex))
   const tooltipVisible = useSignal(false)
   const tooltipPos = useSignal({ x: 0, y: 0 })
-  const canvasRef = useRef<HTMLDivElement>(null)
+  const canvasRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     nv.onLocationChange = (data: any) =>
@@ -90,68 +90,78 @@ export const Volume = (props: AppProps & VolumeProps) => {
 
   const is4D = computed(() => nv.volumes[0]?.nFrame4D && nv.volumes[0]?.nFrame4D > 1)
 
-  return html`
+  return (
     <div
-      class="relative ${selectionMode.value && selected.value ? 'outline outline-blue-500' : ''}"
-      onClick=${selectClick}
-      ref=${canvasRef}
+      className={`relative ${
+        selectionMode.value && selected.value ? 'outline outline-blue-500' : ''
+      }`}
+      onClick={selectClick}
+      ref={canvasRef}
     >
-      <${NiiVueCanvas} ...${props} />
-      ${hideUI.value > 0 &&
-      html`
-        <div class="absolute pointer-events-none text-xl text-outline left-1 top-0">
-          ${dispName}
-        </div>
-        <div class="pointer-events-none absolute bottom-1 left-1">
-          <span class="text-outline" data-testid="intensity-${volumeIndex}"
-            >${location_local}: ${intensity}</span
-          >
-        </div>
-      `}
-      ${hideUI.value > 2 &&
-      html`
+      <NiiVueCanvas {...props} render={props.render} />
+      {hideUI.value > 0 && (
+        <>
+          <div className="absolute pointer-events-none text-xl text-outline left-1 top-0">
+            {dispName}
+          </div>
+          <div className="pointer-events-none absolute bottom-1 left-1">
+            <span
+              className="text-outline"
+              data-testid={`intensity-${volumeIndex}`}
+            >
+              {location_local.value}: {intensity.value}
+            </span>
+          </div>
+        </>
+      )}
+      {hideUI.value > 2 && (
         <button
-          class="absolute bg-transparent text-xl cursor-pointer opacity-80 border-none text-outline top-0 right-1"
-          onClick=${props.remove}
+          className="absolute bg-transparent text-xl cursor-pointer opacity-80 border-none text-outline top-0 right-1"
+          onClick={props.remove}
         >
           X
         </button>
-      `}
-      ${hideUI.value > 2 &&
-      is4D.value &&
-      html`
-        <div class="absolute bottom-0 right-0">
+      )}
+      {hideUI.value > 2 && is4D.value && (
+        <div className="absolute bottom-0 right-0">
           <span
-            class="bg-gray-300 bg-opacity-50 rounded-md text-xl cursor-pointer border-none text-outline items-center w-5 h-6 flex justify-center m-1"
-            data-testid="volume-${volumeIndex}"
+            className="bg-gray-300 bg-opacity-50 rounded-md text-xl cursor-pointer border-none text-outline items-center w-5 h-6 flex justify-center m-1"
+            data-testid={`volume-${volumeIndex}`}
           >
-            ${vol4D}
+            {vol4D.value}
           </span>
           <button
-            class="bg-gray-300 bg-opacity-50 rounded-md text-2xl cursor-pointer border-none text-outline items-center w-5 h-6 flex justify-center m-1"
-            onClick=${nextVolume}
+            className="bg-gray-300 bg-opacity-50 rounded-md text-2xl cursor-pointer border-none text-outline items-center w-5 h-6 flex justify-center m-1"
+            onClick={nextVolume}
           >
             +
           </button>
-
           <button
-            class="bg-gray-300 bg-opacity-50 rounded-md text-3xl cursor-pointer border-none text-outline items-center w-5 h-6 flex justify-center m-1"
-            onClick=${prevVolume}
+            className="bg-gray-300 bg-opacity-50 rounded-md text-3xl cursor-pointer border-none text-outline items-center w-5 h-6 flex justify-center m-1"
+            onClick={prevVolume}
           >
             -
           </button>
         </div>
-      `}
-      ${tooltipVisible.value &&
-      html`
+      )}
+      {tooltipVisible.value && (
         <div
-          style=${`position: fixed; left: ${tooltipPos.value.x}px; top: ${tooltipPos.value.y}px; background: rgba(0, 0, 0, 0.7); color: white; padding: 4px 8px; border-radius: 4px; pointer-events: none;`}
+          style={{
+            position: 'fixed',
+            left: `${tooltipPos.value.x}px`,
+            top: `${tooltipPos.value.y}px`,
+            background: 'rgba(0, 0, 0, 0.7)',
+            color: 'white',
+            padding: '4px 8px',
+            borderRadius: '4px',
+            pointerEvents: 'none',
+          }}
         >
-          ${intensity.value}
+          {intensity.value}
         </div>
-      `}
+      )}
     </div>
-  `
+  )
 }
 
 function setIntensityAndLocation(

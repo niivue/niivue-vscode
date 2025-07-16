@@ -73,7 +73,7 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './test/setup.ts',
     css: true,
-    testMatch: ['niivue/src/**/*.test.ts'],
+    testMatch: ['niivue/src/**/*.test.ts', 'niivue/src/**/*.test.tsx'],
     exclude: ['node_modules/**', '**/*.spec.ts'],
   },
 })

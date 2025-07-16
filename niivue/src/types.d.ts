@@ -7,6 +7,28 @@ type VSCode = {
 declare const vscode: VSCode
 
 declare module '*.png' {
-  const value: any
-  export = value
+  const value: string
+  export default value
+}
+
+declare module '*.jpg' {
+  const value: string
+  export default value
+}
+
+declare module '*.jpeg' {
+  const value: string
+  export default value
+}
+
+declare module '*.svg' {
+  const value: string
+  export default value
+}
+
+// JSX namespace for Preact
+declare namespace JSX {
+  interface IntrinsicElements {
+    [elemName: string]: any
+  }
 }

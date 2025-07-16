@@ -1,5 +1,4 @@
 import { useSignal } from '@preact/signals'
-import { html } from 'htm/preact'
 import { useEffect } from 'preact/hooks'
 import { ExtendedNiivue } from '../events'
 
@@ -10,7 +9,7 @@ type HeaderInfo = {
 
 export const HeaderBox = (props: any) => {
   const { nvArraySelected, nvArray, visible } = props
-  if (visible && !visible.value) return html``
+  if (visible && !visible.value) return null
 
   const headerInfo = useSignal({ pixDims: [3, 1, 1, 1], qoffset: [0, 0, 0] } as HeaderInfo)
 
@@ -38,76 +37,75 @@ export const HeaderBox = (props: any) => {
     })
     nvArray.value = [...nvArray.value]
   }
-  return html`
-    <div
-      class="absolute grid grid-cols-2 left-80 top-12 bg-gray-500 rounded-md z-50 space-y-1 space-x-1 p-1"
-    >
+
+  return (
+    <div className="absolute grid grid-cols-2 left-80 top-12 bg-gray-500 rounded-md z-50 space-y-1 space-x-1 p-1">
       <div>Size</div>
       <div>Origin</div>
       <div>
         <input
-          class="bg-gray-600 w-16 border-2 border-gray-600 rounded-md"
+          className="bg-gray-600 w-16 border-2 border-gray-600 rounded-md"
           type="number"
           min="0"
-          value=${headerInfo.value.pixDims[1]}
-          onchange=${(e: any) => (headerInfo.value.pixDims[1] = parseFloat(e.target.value))}
+          value={headerInfo.value.pixDims[1]}
+          onChange={(e: any) => (headerInfo.value.pixDims[1] = parseFloat(e.target.value))}
         />
       </div>
       <div>
         <input
-          class="bg-gray-600 w-16 border-2 border-gray-600 rounded-md"
+          className="bg-gray-600 w-16 border-2 border-gray-600 rounded-md"
           type="number"
-          value=${headerInfo.value.qoffset[0]}
-          onchange=${(e: any) => (headerInfo.value.qoffset[0] = parseFloat(e.target.value))}
+          value={headerInfo.value.qoffset[0]}
+          onChange={(e: any) => (headerInfo.value.qoffset[0] = parseFloat(e.target.value))}
         />
       </div>
       <div>
         <input
-          class="bg-gray-600 w-16 border-2 border-gray-600 rounded-md"
-          type="number"
-          min="0"
-          value=${headerInfo.value.pixDims[2]}
-          onchange=${(e: any) => (headerInfo.value.pixDims[2] = parseFloat(e.target.value))}
-        />
-      </div>
-      <div>
-        <input
-          class="bg-gray-600 w-16 border-2 border-gray-600 rounded-md"
-          type="number"
-          value=${headerInfo.value.qoffset[1]}
-          onchange=${(e: any) => (headerInfo.value.qoffset[1] = parseFloat(e.target.value))}
-        />
-      </div>
-      <div>
-        <input
-          class="bg-gray-600 w-16 border-2 border-gray-600 rounded-md"
+          className="bg-gray-600 w-16 border-2 border-gray-600 rounded-md"
           type="number"
           min="0"
-          value=${headerInfo.value.pixDims[3]}
-          onchange=${(e: any) => (headerInfo.value.pixDims[3] = parseFloat(e.target.value))}
+          value={headerInfo.value.pixDims[2]}
+          onChange={(e: any) => (headerInfo.value.pixDims[2] = parseFloat(e.target.value))}
         />
       </div>
       <div>
         <input
-          class="bg-gray-600 w-16 border-2 border-gray-600 rounded-md"
+          className="bg-gray-600 w-16 border-2 border-gray-600 rounded-md"
           type="number"
-          value=${headerInfo.value.qoffset[2]}
-          onchange=${(e: any) => (headerInfo.value.qoffset[2] = parseFloat(e.target.value))}
+          value={headerInfo.value.qoffset[1]}
+          onChange={(e: any) => (headerInfo.value.qoffset[1] = parseFloat(e.target.value))}
+        />
+      </div>
+      <div>
+        <input
+          className="bg-gray-600 w-16 border-2 border-gray-600 rounded-md"
+          type="number"
+          min="0"
+          value={headerInfo.value.pixDims[3]}
+          onChange={(e: any) => (headerInfo.value.pixDims[3] = parseFloat(e.target.value))}
+        />
+      </div>
+      <div>
+        <input
+          className="bg-gray-600 w-16 border-2 border-gray-600 rounded-md"
+          type="number"
+          value={headerInfo.value.qoffset[2]}
+          onChange={(e: any) => (headerInfo.value.qoffset[2] = parseFloat(e.target.value))}
         />
       </div>
       <button
-        class="bg-gray-600 border-2 border-gray-600 rounded-md w-16"
-        onclick=${setVoxelSizeAndOrigin}
+        className="bg-gray-600 border-2 border-gray-600 rounded-md w-16"
+        onClick={setVoxelSizeAndOrigin}
       >
         Set
       </button>
       <br />
       <button
-        class="bg-gray-600 border-2 border-gray-600 rounded-md w-16"
-        onclick=${() => (visible.value = false)}
+        className="bg-gray-600 border-2 border-gray-600 rounded-md w-16"
+        onClick={() => (visible.value = false)}
       >
         Close
       </button>
     </div>
-  `
+  )
 }

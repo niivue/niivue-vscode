@@ -1,6 +1,5 @@
 import { SLICE_TYPE } from '@niivue/niivue'
 import { Signal, computed, useSignal } from '@preact/signals'
-import { html } from 'htm/preact'
 import { useEffect } from 'preact/hooks'
 import { listenToMessages, ExtendedNiivue } from '../events'
 import { Container } from './Container'
@@ -12,6 +11,7 @@ import { NiiVueSettings } from '../settings'
 export const App = ({ settings }: { settings: NiiVueSettings }) => {
   const isVscode = typeof vscode === 'object'
   const appProps = useAppState(settings)
+  
   useEffect(() => {
     listenToMessages(appProps)
     document.dispatchEvent(new Event('AppReady'))
@@ -20,14 +20,14 @@ export const App = ({ settings }: { settings: NiiVueSettings }) => {
   const nImages = computed(() => appProps.nvArray.value.length)
   const showHomeScreen = computed(() => nImages.value == 0 && !isVscode)
 
-  return html`
-    <${ImageDrop}>
-      <${Menu} ...${appProps} />
-      ${showHomeScreen.value && html`<${HomeScreen} />`}
-      <${Container} ...${appProps} />
-      <div class="pl-2">${appProps.location}</div>
-    <//>
-  `
+  return (
+    <ImageDrop>
+      <Menu {...appProps} />
+      {showHomeScreen.value && <HomeScreen />}
+      <Container {...appProps} />
+      <div className="pl-2">{appProps.location}</div>
+    </ImageDrop>
+  )
 }
 
 export const enum SelectionMode {

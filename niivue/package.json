@@ -6,7 +6,8 @@
   "scripts": {
     "start": "vite",
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "vite build",
+    "type-check": "tsc --noEmit",
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
@@ -29,6 +30,8 @@
     "@testing-library/jest-dom": "^6.5.0",
     "@testing-library/preact": "^3.2.3",
     "@types/node": "^22.7.4",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
     "@vitest/ui": "^3.0.6",
     "autoprefixer": "^10.4.18",
     "jsdom": "^26.0.0",

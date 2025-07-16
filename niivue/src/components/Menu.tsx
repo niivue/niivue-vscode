@@ -1,4 +1,3 @@
-import { html } from 'htm/preact'
 import { Signal, computed, effect, useSignal } from '@preact/signals'
 import { SLICE_TYPE } from '@niivue/niivue'
 import { AppProps, SelectionMode } from './App'
@@ -25,7 +24,7 @@ import { HeaderBox } from './HeaderBox'
 
 export const Menu = (props: AppProps) => {
   const { selection, selectionMode, nvArray, sliceType, hideUI, settings } = props
-  const isVscode = typeof vscode === 'object'
+  const isVscode = typeof (globalThis as any).vscode === 'object'
 
   // State
   const headerDialog = useSignal(false)
@@ -107,19 +106,12 @@ export const Menu = (props: AppProps) => {
     addOverlayEvent(selection.value[0], 'overlay')
   }
 
-  const addCurvature = () => {
-    addOverlayEvent(selection.value[0], 'addMeshCurvature')
-  }
-
   const addMeshOverlay = () => {
     addOverlayEvent(selection.value[0], 'addMeshOverlay')
   }
 
-  const removeLastVolume = () => {
-    const nv = nvArraySelected.value[0]
-    nv.removeVolumeByIndex(nv.volumes.length - 1)
-    nv.updateGLVolume()
-    nvArray.value = [...nvArray.value]
+  const addCurvature = () => {
+    addOverlayEvent(selection.value[0], 'addMeshCurvature')
   }
 
   const replaceLastVolume = () => {
@@ -130,6 +122,28 @@ export const Menu = (props: AppProps) => {
     } else {
       addOverlayEvent(selection.value[0], 'replaceMeshOverlay')
     }
+  }
+
+  const removeLastVolume = () => {
+    const nv = nvArraySelected.value[0]
+    nv.removeVolumeByIndex(nv.volumes.length - 1)
+    nv.updateGLVolume()
+    nvArray.value = [...nvArray.value]
+  }
+
+  const resetZoom = () => {
+    nvArray.value.forEach((nv) => {
+      nv.scene.pan2Dxyzmm = [0, 0, 0, 1]
+      nv.drawScene()
+    })
+  }
+
+  const setMultiplanar = () => {
+    sliceType.value = SLICE_TYPE.MULTIPLANAR
+    nvArraySelected.value.forEach((nv) => {
+      nv.graph.autoSizeMultiplanar = false
+      nv.updateGLVolume()
+    })
   }
 
   const setTimeSeries = () => {
@@ -144,26 +158,6 @@ export const Menu = (props: AppProps) => {
     })
   }
 
-  const setMultiplanar = () => {
-    sliceType.value = SLICE_TYPE.MULTIPLANAR
-    nvArraySelected.value.forEach((nv) => {
-      nv.graph.autoSizeMultiplanar = false
-      nv.updateGLVolume()
-    })
-  }
-
-  const resetZoom = () => {
-    nvArray.value.forEach((nv) => {
-      nv.scene.pan2Dxyzmm = [0, 0, 0, 1]
-      nv.drawScene()
-    })
-  }
-
-  const selectAll = () => {
-    selectMultiple.value = true
-    selection.value = nvArray.value.map((_, i) => i)
-  }
-
   const openColorScale = (overlayNumber: number) => () => {
     if (isVolume.value) {
       selectedOverlayNumber.value = overlayNumber
@@ -174,9 +168,15 @@ export const Menu = (props: AppProps) => {
     }
     overlayMenu.value = true
   }
+
   const openColorScaleLastOverlay = () => {
     selectedOverlayNumber.value = nOverlays.value - (isMesh.value ? 1 : 0)
     overlayMenu.value = true
+  }
+
+  const selectAll = () => {
+    selectMultiple.value = true
+    selection.value = nvArray.value.map((_, i) => i)
   }
 
   const saveSettings = () => {
@@ -191,84 +191,85 @@ export const Menu = (props: AppProps) => {
     alert('Settings saved!')
   }
 
-  return html`
-    <div class="flex flex-wrap items-baseline gap-2">
-      ${!isVscode && html`<${MenuButton} label="Home" onClick=${homeEvent} />`}
-      <${MenuItem} label="Add Image" onClick=${addImagesEvent}>
-        <${MenuEntry} label="File(s)" onClick=${addImagesEvent} />
-        <!-- <${MenuEntry} label="URL" onClick=${() =>
-    console.log('Not implemented yet - url')} /> -->
-        <${MenuEntry}
-          label="DICOM Folder"
-          onClick=${addDcmFolderEvent}
-        />
-        <${MenuEntry} label="Example Image" onClick=${() =>
-    openImageFromURL('https://niivue.github.io/niivue-demo-images/mni152.nii.gz')} />
-      </${MenuItem}>
-      <${MenuItem} label="View" onClick=${resetZoom} >
-        <${MenuEntry} label="Axial" onClick=${() => (sliceType.value = SLICE_TYPE.AXIAL)} />
-        <${MenuEntry} label="Sagittal" onClick=${() => (sliceType.value = SLICE_TYPE.SAGITTAL)} />
-        <${MenuEntry} label="Coronal" onClick=${() => (sliceType.value = SLICE_TYPE.CORONAL)} />
-        <${MenuEntry} label="Render" onClick=${() => (sliceType.value = SLICE_TYPE.RENDER)} />
-        <${MenuEntry} label="Multiplanar + Render" onClick=${setMultiplanar} />
-        <${MenuEntry} label="Multiplanar + Timeseries" onClick=${setTimeSeries} visible=${isMultiEcho} />
-        <hr />
-        <${MenuEntry} label="Show All" onClick=${() => (hideUI.value = 3)} />
-        <${MenuEntry} label="Hide UI" onClick=${() => (hideUI.value = 2)} />
-        <${MenuEntry} label="Hide All" onClick=${() => (hideUI.value = 0)} />
-        <hr />
-        <${MenuEntry} label="Reset View" onClick=${resetZoom} />
-        <hr />
-        <${ToggleEntry} label="Interpolation" state=${interpolation} />
-        <${ToggleEntry} label="Colorbar" state=${colorbar} />
-        <${ToggleEntry} label="Radiological" state=${radiologicalConvention} />
-        <${ToggleEntry} label="Crosshair" state=${crosshair} />
-        <hr />
-        ${!isVscode && html`<${MenuEntry} label="Save Settings" onClick=${saveSettings} />`}
-      </${MenuItem}>
-      <${MenuToggle} label="Zoom" state=${zoomDragMode} />
-      <${MenuItem} label="ColorScale" visible=${isVolumeOrMesh} onClick=${openColorScaleLastOverlay} >
-        <${MenuEntry} label="Volume" onClick=${openColorScale(0)} visible=${isVolume} />
-        ${Array.from(
-          { length: nOverlays.value },
-          (_, i) =>
-            html` <${MenuEntry} label="Overlay ${i + 1}" onClick=${openColorScale(i + 1)} /> `,
-        )}
-      </${MenuItem}>
-      <${MenuItem} label="Overlay" onClick=${overlayButtonOnClick} visible=${isVolumeOrMesh}>
-        <${MenuEntry} label="Add" onClick=${addOverlay} visible=${isVolume} />
-        <${MenuEntry} label="Add" onClick=${addMeshOverlay} visible=${isMesh} />
-        <${MenuEntry} label="Curvature" onClick=${addCurvature} visible=${isMesh} />
-        <${MenuEntry} label="ImageOverlay" onClick=${addOverlay} visible=${isMesh} />
-        <${MenuEntry} label="Replace" onClick=${replaceLastVolume} visible=${isOverlay} />
-        <${MenuEntry} label="Remove" onClick=${removeLastVolume} visible=${isOverlay} />
-      </${MenuItem}>
-      <${MenuItem} label="Header" onClick=${toggle(headerDialog)} visible=${isVolume} >
-        <!-- <${MenuEntry} label="Set Header" onClick=${() =>
-    console.log('Not implemented yet')} /> -->
-        <${MenuEntry} label="Set Headers to 1" onClick=${setVoxelSize1AndOrigin0} />
-        <${MenuEntry} label="Set Header" onClick=${toggle(setHeaderMenu)} />
-      </${MenuItem}>
-      <${ImageSelect} label="Select" state=${selectionActive} visible=${multipleVolumes}>
-        <${ToggleEntry} label="Multiple" state=${selectMultiple} />
-        <${MenuEntry} label="Select All" onClick=${selectAll} />
-      </${ImageSelect}>
-    </div>
-    ${isMesh.value && html`<p class="pl-2">${getNumberOfPoints(nvArraySelected.value[0])}</p>`}
-    ${isVolume.value && html`<p class="pl-2">${getMetadataString(nvArraySelected.value[0])}</p>`}
-    <${ScalingBox}
-        selectedOverlayNumber=${selectedOverlayNumber}
-        overlayMenu=${overlayMenu}
-        nvArraySelected=${nvArraySelected}
-        visible=${overlayMenu}
+  return (
+    <>
+      <div className="flex flex-wrap items-baseline gap-2">
+        {!isVscode && <MenuButton label="Home" onClick={homeEvent} />}
+        <MenuItem label="Add Image" onClick={addImagesEvent}>
+          <MenuEntry label="File(s)" onClick={addImagesEvent} />
+          <MenuEntry label="DICOM Folder" onClick={addDcmFolderEvent} />
+          <MenuEntry
+            label="Example Image"
+            onClick={() =>
+              openImageFromURL('https://niivue.github.io/niivue-demo-images/mni152.nii.gz')
+            }
+          />
+        </MenuItem>
+        <MenuItem label="View" onClick={resetZoom}>
+          <MenuEntry label="Axial" onClick={() => (sliceType.value = SLICE_TYPE.AXIAL)} />
+          <MenuEntry label="Sagittal" onClick={() => (sliceType.value = SLICE_TYPE.SAGITTAL)} />
+          <MenuEntry label="Coronal" onClick={() => (sliceType.value = SLICE_TYPE.CORONAL)} />
+          <MenuEntry label="Render" onClick={() => (sliceType.value = SLICE_TYPE.RENDER)} />
+          <MenuEntry label="Multiplanar + Render" onClick={setMultiplanar} />
+          <MenuEntry label="Multiplanar + Timeseries" onClick={setTimeSeries} visible={isMultiEcho} />
+          <hr />
+          <MenuEntry label="Show All" onClick={() => (hideUI.value = 3)} />
+          <MenuEntry label="Hide UI" onClick={() => (hideUI.value = 2)} />
+          <MenuEntry label="Hide All" onClick={() => (hideUI.value = 0)} />
+          <hr />
+          <MenuEntry label="Reset View" onClick={resetZoom} />
+          <hr />
+          <ToggleEntry label="Interpolation" state={interpolation} />
+          <ToggleEntry label="Colorbar" state={colorbar} />
+          <ToggleEntry label="Radiological" state={radiologicalConvention} />
+          <ToggleEntry label="Crosshair" state={crosshair} />
+          <hr />
+          {!isVscode && <MenuEntry label="Save Settings" onClick={saveSettings} />}
+        </MenuItem>
+        <MenuToggle label="Zoom" state={zoomDragMode} />
+        <MenuItem label="ColorScale" visible={isVolumeOrMesh} onClick={openColorScaleLastOverlay}>
+          <MenuEntry label="Volume" onClick={openColorScale(0)} visible={isVolume} />
+          {Array.from({ length: nOverlays.value }, (_, i) => (
+            <MenuEntry
+              key={i}
+              label={`Overlay ${i + 1}`}
+              onClick={openColorScale(i + 1)}
+            />
+          ))}
+        </MenuItem>
+        <MenuItem label="Overlay" onClick={overlayButtonOnClick} visible={isVolumeOrMesh}>
+          <MenuEntry label="Add" onClick={addOverlay} visible={isVolume} />
+          <MenuEntry label="Add" onClick={addMeshOverlay} visible={isMesh} />
+          <MenuEntry label="Curvature" onClick={addCurvature} visible={isMesh} />
+          <MenuEntry label="ImageOverlay" onClick={addOverlay} visible={isMesh} />
+          <MenuEntry label="Replace" onClick={replaceLastVolume} visible={isOverlay} />
+          <MenuEntry label="Remove" onClick={removeLastVolume} visible={isOverlay} />
+        </MenuItem>
+        <MenuItem label="Header" onClick={toggle(headerDialog)} visible={isVolume}>
+          <MenuEntry label="Set Headers to 1" onClick={setVoxelSize1AndOrigin0} />
+          <MenuEntry label="Set Header" onClick={toggle(setHeaderMenu)} />
+        </MenuItem>
+        <ImageSelect label="Select" state={selectionActive} visible={multipleVolumes}>
+          <ToggleEntry label="Multiple" state={selectMultiple} />
+          <MenuEntry label="Select All" onClick={selectAll} />
+        </ImageSelect>
+      </div>
+      {isMesh.value && <p className="pl-2">{getNumberOfPoints(nvArraySelected.value[0])}</p>}
+      {isVolume.value && <p className="pl-2">{getMetadataString(nvArraySelected.value[0])}</p>}
+      <ScalingBox
+        selectedOverlayNumber={selectedOverlayNumber}
+        overlayMenu={overlayMenu}
+        nvArraySelected={nvArraySelected}
+        visible={overlayMenu}
       />
-    <${HeaderBox}
-      nvArraySelected=${nvArraySelected}
-      nvArray=${nvArray}
-      visible=${setHeaderMenu}
+      <HeaderBox
+        nvArraySelected={nvArraySelected}
+        nvArray={nvArray}
+        visible={setHeaderMenu}
       />
-    <${HeaderDialog} nvArraySelected=${nvArraySelected} isOpen=${headerDialog} />
-  `
+      <HeaderDialog nvArraySelected={nvArraySelected} isOpen={headerDialog} />
+    </>
+  )
 }
 
 function applySelectionModeChange(

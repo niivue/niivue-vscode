@@ -1,5 +1,4 @@
 import { NVImage, NVMesh } from '@niivue/niivue'
-import { html } from 'htm/preact'
 import { useRef, useEffect } from 'preact/hooks'
 import { isImageType } from '../utility'
 import { Signal } from '@preact/signals'
@@ -7,7 +6,7 @@ import { AppProps } from './App'
 import { ExtendedNiivue } from '../events'
 import { dicomLoader } from '@niivue/dicom-loader'
 
-interface NiiVueCanvasProps {
+export interface NiiVueCanvasProps {
   nv: ExtendedNiivue
   width: number
   height: number
@@ -22,10 +21,12 @@ export const NiiVueCanvas = ({
   render,
   nvArray,
 }: AppProps & NiiVueCanvasProps) => {
-  const canvasRef = useRef<HTMLCanvasElement>()
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  
   useEffect(() => {
     canvasRef.current && !nv.canvas && nv.attachToCanvas(canvasRef.current)
   }, [canvasRef.current])
+  
   useEffect(() => {
     if (!nv.body) {
       return
@@ -47,7 +48,7 @@ export const NiiVueCanvas = ({
     nv.drawScene()
   }, [height, width]) // avoids black images
 
-  return html`<canvas ref=${canvasRef} width=${width} height=${height}></canvas>`
+  return <canvas ref={canvasRef} width={width} height={height}></canvas>
 }
 
 async function getMinimalHeaderMHA() {

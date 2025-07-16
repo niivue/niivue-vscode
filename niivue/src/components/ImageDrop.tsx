@@ -1,9 +1,9 @@
-import { html } from 'htm/preact'
 import { useSignal } from '@preact/signals'
 import { ComponentChildren } from 'preact'
 
 export const ImageDrop = ({ children }: { children: ComponentChildren }) => {
   const isDrag = useSignal(false)
+  
   const handleDragOver = (e: DragEvent) => {
     e.stopPropagation()
     e.preventDefault()
@@ -42,16 +42,16 @@ export const ImageDrop = ({ children }: { children: ComponentChildren }) => {
     readimages()
   }
 
-  return html`
+  return (
     <div
-      class="flex flex-col h-full ${isDrag.value
-        ? 'bg-gray-700'
-        : 'bg-gray-800'}"
-      ondragover=${handleDragOver}
-      ondrop=${handleDrop}
-      ondragleave=${handleDragLeave}
+      className={`flex flex-col h-full ${
+        isDrag.value ? 'bg-gray-700' : 'bg-gray-800'
+      }`}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+      onDragLeave={handleDragLeave}
     >
-      ${children}
+      {children}
     </div>
-  `
+  )
 }

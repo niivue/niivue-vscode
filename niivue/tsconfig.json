@@ -14,6 +14,7 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "jsxImportSource": "preact",
+    "types": ["vite/client"],
 
     /* Linting */
     "strict": true,
@@ -22,6 +23,6 @@
     "noFallthroughCasesInSwitch": true
   },
   "include": ["./src"],
-  "exclude": ["**/*.test.ts"],
+  "exclude": ["**/*.test.ts", "**/*.test.tsx"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

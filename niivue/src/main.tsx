@@ -1,6 +1,5 @@
 import './index.css'
 import { render } from 'preact'
-import { html } from 'htm/preact'
 import { App } from './components/App'
 import { defaultSettings } from './settings'
 
@@ -11,7 +10,7 @@ window.addEventListener('message', (e: any) => {
     localStorage.setItem('userSettings', JSON.stringify(settings)) // Save settings to localStorage
     const app = document.getElementById('app')
     if (app) {
-      render(html`<${App} settings=${settings} />`, app)
+      render(<App settings={settings} />, app)
     }
   }
 })

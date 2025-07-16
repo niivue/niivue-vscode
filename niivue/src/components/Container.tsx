@@ -1,4 +1,3 @@
-import { html } from 'htm/preact'
 import { useEffect, useRef } from 'preact/hooks'
 import { differenceInNames } from '../utility'
 import { Volume } from './Volume'
@@ -14,7 +13,7 @@ type Size = {
 
 export const Container = (props: AppProps) => {
   const { nvArray } = props
-  const sizeRef = useRef<HTMLDivElement>()
+  const sizeRef = useRef<HTMLDivElement | null>(null)
   const render = useSignal(0)
   const windowInnerSize = useSignal({
     width: 100,
@@ -50,17 +49,25 @@ export const Container = (props: AppProps) => {
   const fullNames = computed(() => getNames(nvArray.value))
   const names = computed(() => differenceInNames(fullNames.value))
 
-  return html`
-    <div class="flex-grow h-full overflow-hidden" ref=${sizeRef}>
-      <div class="flex flex-wrap gap-1 w-full m-1">
-        ${nvArray.value.map(
-          (nv, i) => html`<${Volume} nv=${nv} width=${canvasSize.value.width}
-          height=${canvasSize.value.height} volumeIndex=${i} name=${names.value[i]} key=${nv.key}
-          render=${render} remove=${remove(props, i)} "...${props}" />`,
-        )}
+  return (
+    <div className="flex-grow h-full overflow-hidden" ref={sizeRef}>
+      <div className="flex flex-wrap w-full gap-1 m-1">
+        {nvArray.value.map((nv, i) => (
+          <Volume
+            nv={nv}
+            width={canvasSize.value.width}
+            height={canvasSize.value.height}
+            volumeIndex={i}
+            name={names.value[i]}
+            key={nv.key}
+            render={render}
+            remove={remove(props, i)}
+            {...props}
+          />
+        ))}
       </div>
     </div>
-  `
+  )
 }
 
 function remove(props: AppProps, i: number) {
