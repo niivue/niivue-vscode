@@ -7,23 +7,63 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['@niivue/dicom-loader'],
   },
-  server: { port: 4000 },
+  server: {
+    port: 4000,
+    open: true,
+    cors: true,
+  },
   plugins: [
     preact(),
     VitePWA({
       registerType: 'prompt',
-      includeAssets: ['favicon.ico'],
-      workbox: { maximumFileSizeToCacheInBytes: 3000000 },
+      includeAssets: ['favicon.ico', '*.png'],
+      workbox: {
+        maximumFileSizeToCacheInBytes: 3000000,
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,wasm}'],
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/niivue\.github\.io\//,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'external-images',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+              },
+            },
+          },
+        ],
+      },
       manifest: {
-        name: 'niivue-vscode web app',
-        short_name: 'niivue',
-        description: 'Web App for viewing medical images (NIfTI)',
-        theme_color: '#ffffff',
+        name: 'NiiVue Medical Image Viewer',
+        short_name: 'NiiVue',
+        description: 'Advanced web-based medical image viewer for NIfTI and DICOM files',
+        start_url: '/niivue-vscode/',
+        display: 'standalone',
+        background_color: '#ffffff',
+        theme_color: '#2563eb',
+        orientation: 'any',
+        categories: ['medical', 'productivity', 'utilities'],
         icons: [
           {
             src: 'niivue_icon_transparent_contrast.png',
             sizes: '200x200',
             type: 'image/png',
+            purpose: 'any maskable',
+          },
+          {
+            src: 'niivue_icon.png',
+            sizes: '512x512',
+            type: 'image/png',
+          },
+        ],
+        shortcuts: [
+          {
+            name: 'Open Example Image',
+            short_name: 'Example',
+            description: 'Load MNI152 example image',
+            url: '/niivue-vscode/?example=mni152',
+            icons: [{ src: 'niivue_icon_transparent_contrast.png', sizes: '200x200' }],
           },
         ],
         file_handlers: [
@@ -54,13 +94,20 @@ export default defineConfig({
   ],
   build: {
     outDir: 'build',
+    sourcemap: true,
     rollupOptions: {
       output: {
-        entryFileNames: 'assets/[name].js',
-        chunkFileNames: 'assets/[name].js',
-        assetFileNames: 'assets/[name].[ext]',
+        entryFileNames: 'assets/[name]-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]',
+        manualChunks: {
+          vendor: ['preact', '@preact/signals'],
+          niivue: ['@niivue/niivue', '@niivue/dicom-loader'],
+        },
       },
     },
+    target: 'esnext',
+    minify: 'terser',
   },
   resolve: {
     // react-router-dom specifies "module" field in package.json for ESM entry
@@ -68,12 +115,4 @@ export default defineConfig({
     mainFields: ['module'],
   },
   base: '/niivue-vscode/', // this is the path for the github pages
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    setupFiles: './test/setup.ts',
-    css: true,
-    testMatch: ['niivue/src/**/*.test.ts', 'niivue/src/**/*.test.tsx'],
-    exclude: ['node_modules/**', '**/*.spec.ts'],
-  },
 })
