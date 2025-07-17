@@ -8,4 +8,36 @@ data/
 .yarn/
 *.nii*
 static/
+
+# Build artifacts
+*.timestamp-*.mjs
+tsconfig.tsbuildinfo
+.turbo/
 __pycache__
+build_log.json
+*.orig
+*.js.map
+
+# Generated directories
+lib/
+dist/
+static/
+build/
+
+# Python packaging
+*.egg-info/
+*.pyc
+
+# JupyterLab extension build output
+**/labextension/
+
+# Test artifacts
+test-results/
+playwright-report/
+coverage/
+
+# Individual package lockfiles (use root pnpm-lock.yaml only)
+**/package-lock.json
+**/yarn.lock
+**/pnpm-lock.yaml
+!pnpm-lock.yaml

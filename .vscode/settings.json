@@ -1,15 +1,47 @@
 // Place your settings in this file to overwrite default and user settings.
 {
+  // Package manager configuration
+  "npm.packageManager": "pnpm",
+  // TypeScript configuration
+  "typescript.tsc.autoDetect": "off",
+  "typescript.preferences.includePackageJsonAutoImports": "on",
+  "typescript.preferences.includeTypeOnlyAutoImports": "on",
+  "typescript.suggest.autoImports": true,
+  // ESLint configuration for monorepo
+  "eslint.workingDirectories": [
+    "apps/vscode",
+    "apps/pwa",
+    "apps/jupyter",
+    "apps/streamlit",
+    "packages/niivue-react"
+  ],
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact"
+  ],
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.organizeImports": "explicit"
+  },
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "vscode.typescript-language-features",
+  // File and search exclusions for monorepo
   "files.exclude": {
-    "out": false, // set this to true to hide the "out" folder with the compiled JS files
-    "dist": false // set this to true to hide the "dist" folder with the compiled JS files
+    "out": false,
+    "dist": false,
+    "**/node_modules": true,
+    "**/.turbo": true
   },
   "search.exclude": {
-    "out": true, // set this to false to include "out" folder in search results
-    "dist": true // set this to false to include "dist" folder in search results
+    "out": true,
+    "dist": true,
+    "**/node_modules": true,
+    "**/build": true,
+    "**/.turbo": true
   },
-  // Turn off tsc task auto detection since we have the necessary tasks as npm scripts
-  "typescript.tsc.autoDetect": "off",
+  
   "terminal.integrated.profiles.windows": {
     "PowerShell": {
       "source": "PowerShell",
@@ -18,14 +50,40 @@
     }
   },
   "terminal.integrated.defaultProfile.windows": "PowerShell",
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
   "[typescript]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.defaultFormatter": "vscode.typescript-language-features",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit",
+      "source.fixAll.eslint": "explicit"
+    }
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit",
+      "source.fixAll.eslint": "explicit"
+    }
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features",
     "editor.formatOnSave": true,
     "editor.tabSize": 2,
     "editor.insertSpaces": true
   },
-  "[html]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  "[json]": {
+    "editor.defaultFormatter": "vscode.json-language-features",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "vscode.json-language-features",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2
   }
 }

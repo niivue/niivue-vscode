@@ -4,17 +4,89 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"type": "npm",
-			"script": "watch",
-			"problemMatcher": "$tsc-watch",
-			"isBackground": true,
+			"label": "install",
+			"type": "shell",
+			"command": "pnpm",
+			"args": [
+				"install"
+			],
+			"group": "build",
 			"presentation": {
-				"reveal": "never"
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared"
 			},
+			"problemMatcher": []
+		},
+		{
+			"label": "build",
+			"type": "shell",
+			"command": "pnpm",
+			"args": [
+				"build"
+			],
 			"group": {
 				"kind": "build",
 				"isDefault": true
-			}
+			},
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared"
+			},
+			"problemMatcher": []
+		},
+		{
+			"label": "watch:vscode",
+			"type": "shell",
+			"command": "pnpm",
+			"args": [
+				"--filter",
+				"@niivue/vscode",
+				"watch"
+			],
+			"isBackground": true,
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "never"
+			},
+			"problemMatcher": "$tsc-watch"
+		},
+		{
+			"label": "dev",
+			"type": "shell",
+			"command": "pnpm",
+			"args": [
+				"dev"
+			],
+			"isBackground": true,
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared"
+			},
+			"problemMatcher": []
+		},
+		{
+			"label": "test",
+			"type": "shell",
+			"command": "pnpm",
+			"args": [
+				"test"
+			],
+			"group": "test",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared"
+			},
+			"problemMatcher": []
 		}
 	]
 }
