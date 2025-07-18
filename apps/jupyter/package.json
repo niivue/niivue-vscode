@@ -70,19 +70,13 @@
     "@niivue/niivue": "^0.45.0"
   },
   "devDependencies": {
-    "@niivue/pwa": "workspace:*",
-    "@eslint/js": "^9.30.0",
     "@jupyterlab/builder": "^4.0.0",
-    "@typescript-eslint/eslint-plugin": "^8.0.0",
-    "@typescript-eslint/parser": "^8.0.0",
+    "@niivue/pwa": "workspace:*",
     "copy-webpack-plugin": "^13.0.0",
     "css-loader": "^6.7.1",
-    "eslint": "^9.30.0",
-    "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.0",
     "mkdirp": "^1.0.3",
     "npm-run-all": "^4.1.5",
-    "prettier": "^3.0.0",
     "rimraf": "^5.0.1",
     "source-map-loader": "^1.0.2",
     "style-loader": "^3.3.2",
@@ -91,7 +85,6 @@
     "stylelint-config-standard": "^34.0.0",
     "stylelint-csstree-validator": "^3.0.0",
     "stylelint-prettier": "^4.0.0",
-    "typescript": "~5.0.2",
     "typescript-eslint": "^8.0.0",
     "yjs": "^13.5.40"
   },

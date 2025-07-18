@@ -1,10 +1,11 @@
-import { defineConfig } from 'vite'
 import preact from '@preact/preset-vite'
+import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vitejs.dev/config/
 export default defineConfig({
   optimizeDeps: {
+    include: ['@niivue/niivue', '@preact/signals', 'preact'],
     exclude: ['@niivue/dicom-loader'],
   },
   server: {
@@ -102,7 +103,6 @@ export default defineConfig({
         assetFileNames: 'assets/[name]-[hash].[ext]',
         manualChunks: {
           vendor: ['preact', '@preact/signals'],
-          niivue: ['@niivue/niivue', '@niivue/dicom-loader'],
         },
       },
     },

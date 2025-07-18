@@ -11,6 +11,9 @@
       "outputs": [
         "dist/**",
         "build/**",
+        "lib/**",
+        "jupyterlab_niivue/**",
+        "static/**",
         ".next/**",
         "!.next/cache/**"
       ]
