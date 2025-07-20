@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import preact from '@preact/preset-vite'
 import { resolve } from 'path'
 import { defineConfig } from 'vite'
@@ -34,5 +35,17 @@ export default defineConfig({
     alias: {
       '@': resolve(__dirname, 'src')
     }
-  }
+  },
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: ['./src/test-setup.ts'],
+    css: true,
+    include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    exclude: [
+      'node_modules/**',
+      'build/**',
+      'dist/**',
+    ],
+  },
 })

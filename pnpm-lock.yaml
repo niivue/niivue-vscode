@@ -220,13 +220,16 @@ importers:
       '@preact/signals':
         specifier: ^2.0.1
         version: 2.2.1(preact@10.26.9)
-      htm:
-        specifier: ^3.1.1
-        version: 3.1.1
       preact:
         specifier: ^10.24.1
         version: 10.26.9
     devDependencies:
+      '@testing-library/jest-dom':
+        specifier: ^6.5.0
+        version: 6.6.3
+      '@testing-library/preact':
+        specifier: ^3.2.3
+        version: 3.2.4(preact@10.26.9)
       '@vitejs/plugin-legacy':
         specifier: ^5.4.3
         version: 5.4.3(terser@5.43.1)(vite@5.4.19(@types/node@22.16.4)(less@4.4.0)(terser@5.43.1))
@@ -3126,9 +3129,6 @@ packages:
   hosted-git-info@4.1.0:
     resolution: {integrity: sha512-kyCuEOWjJqZuDbRHzL8V93NzQhwIB71oFWSyzVo+KPZI+pnQPPxucdkrOZvkLRnrf5URsQM+IJ09Dw29cRALIA==}
     engines: {node: '>=10'}
-
-  htm@3.1.1:
-    resolution: {integrity: sha512-983Vyg8NwUE7JkZ6NmOqpCZ+sh1bKv2iYTlUkzlWmA5JD2acKoxd4KVxbMmxX/85mtfdnDmTFoNKcg5DGAvxNQ==}
 
   html-encoding-sniffer@4.0.0:
     resolution: {integrity: sha512-Y22oTqIU4uuPgEemfz7NDJz6OeKf12Lsu+QC+s3BVpda64lTiMYCyGwg5ki4vFxkMwQdeZDl2adZoqUgdFuTgQ==}
@@ -9045,8 +9045,6 @@ snapshots:
   hosted-git-info@4.1.0:
     dependencies:
       lru-cache: 6.0.0
-
-  htm@3.1.1: {}
 
   html-encoding-sniffer@4.0.0:
     dependencies:

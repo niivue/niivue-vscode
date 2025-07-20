@@ -10,7 +10,7 @@
     "build:analyze": "pnpm run build && npx vite-bundle-analyzer",
     "type-check": "tsc --noEmit",
     "preview": "vite preview",
-    "test": "vitest",
+    "test": "playwright test",
     "test:ui": "vitest --ui",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
