@@ -66,8 +66,8 @@ importers:
         specifier: ^2.0.0
         version: 2.7.1
       '@niivue/niivue':
-        specifier: ^0.45.0
-        version: 0.45.1
+        specifier: ^0.61.0
+        version: 0.61.0
     devDependencies:
       '@jupyterlab/builder':
         specifier: ^4.0.0
@@ -77,10 +77,10 @@ importers:
         version: link:../pwa
       copy-webpack-plugin:
         specifier: ^13.0.0
-        version: 13.0.0(webpack@5.100.2(webpack-cli@5.1.4))
+        version: 13.0.0(webpack@5.100.2)
       css-loader:
         specifier: ^6.7.1
-        version: 6.11.0(webpack@5.100.2(webpack-cli@5.1.4))
+        version: 6.11.0(webpack@5.100.2)
       eslint-plugin-prettier:
         specifier: ^5.0.0
         version: 5.5.1(@types/eslint@9.6.1)(eslint-config-prettier@9.1.0(eslint@9.31.0(jiti@1.21.7)))(eslint@9.31.0(jiti@1.21.7))(prettier@3.6.2)
@@ -95,10 +95,10 @@ importers:
         version: 5.0.10
       source-map-loader:
         specifier: ^1.0.2
-        version: 1.1.3(webpack@5.100.2(webpack-cli@5.1.4))
+        version: 1.1.3(webpack@5.100.2)
       style-loader:
         specifier: ^3.3.2
-        version: 3.3.4(webpack@5.100.2(webpack-cli@5.1.4))
+        version: 3.3.4(webpack@5.100.2)
       stylelint:
         specifier: ^15.10.1
         version: 15.11.0(typescript@5.8.3)
@@ -127,8 +127,8 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0
       '@niivue/niivue':
-        specifier: ^0.50.0
-        version: 0.50.0
+        specifier: ^0.61.0
+        version: 0.61.0
       '@niivue/react':
         specifier: workspace:*
         version: link:../../packages/niivue-react
@@ -215,8 +215,8 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0
       '@niivue/niivue':
-        specifier: ^0.50.0
-        version: 0.50.0
+        specifier: 0.61.0
+        version: 0.61.0
       '@preact/signals':
         specifier: ^2.0.1
         version: 2.2.1(preact@10.26.9)
@@ -235,7 +235,7 @@ importers:
         version: 5.4.3(terser@5.43.1)(vite@5.4.19(@types/node@22.16.4)(less@4.4.0)(terser@5.43.1))
       '@vitest/coverage-v8':
         specifier: ^2.1.3
-        version: 2.1.9(vitest@2.1.9(@types/node@22.16.4)(@vitest/ui@2.1.9)(jsdom@25.0.1)(less@4.4.0)(terser@5.43.1))
+        version: 2.1.9(vitest@2.1.9)
       '@vitest/ui':
         specifier: ^2.1.3
         version: 2.1.9(vitest@2.1.9)
@@ -1483,11 +1483,8 @@ packages:
   '@niivue/dicom-loader@1.0.0':
     resolution: {integrity: sha512-eBSh5di8ADYQN1aqsUOiVc3zlIjBGJj4rpt+mijWns2UqLqvd83eWY6YyBw0iFpLX8dR0dmSzoPTjWVndXPO/A==}
 
-  '@niivue/niivue@0.45.1':
-    resolution: {integrity: sha512-1KfuiIbdJr0fi9Odv/Wjrej580B295q+fE+PAIW9L5ZrJhCmsMzYgxYecJGcj67tu8mcwQkKjbLaO6VxdVS3+g==}
-
-  '@niivue/niivue@0.50.0':
-    resolution: {integrity: sha512-6tHqajlC1KuJ2y4GyG960Xwp8Q0ygSjN+CJGQxoYiKOiT2lIziuAsPsdEsvay/pwTIuYTznZlSVZUT9TEFr2kg==}
+  '@niivue/niivue@0.61.0':
+    resolution: {integrity: sha512-QZCfYLuUATcbx2gtFVIkbCO52DW3SleZYNoNUKAmMJXyjTJLgu+n/+IQubYJ2TVfDuvgLz0ffe6jzHgdUErqaw==}
 
   '@nodelib/fs.scandir@2.1.5':
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
@@ -1997,10 +1994,6 @@ packages:
   '@vue/shared@3.5.17':
     resolution: {integrity: sha512-CabR+UN630VnsJO/jHWYBC1YVXyMq94KKp6iF5MQgZJs5I8cmjw6oVMO1oDbtBkENSHSSn/UadWlW/OAgdmKrg==}
 
-  '@wearemothership/dicom-character-set@1.0.4-opt.1':
-    resolution: {integrity: sha512-stqhnpawYHY2UZKj4RHTF71ab3q3z8S1SO9ToQKjsHQwowUdFVo6YFea93psFux3yqNbRlQjwoCdPjHcD0YQzw==}
-    engines: {node: '>=10'}
-
   '@webassemblyjs/ast@1.14.1':
     resolution: {integrity: sha512-nuBEDgQfm1ccRp/8bCQrx1frohyufl4JlbMMZ4P1wpeOfDhF6FQkxZJ1b/e+PLwr6X1Nhw6OLme5usuBWYBvuQ==}
 
@@ -2076,6 +2069,9 @@ packages:
 
   '@xtuc/long@4.2.2':
     resolution: {integrity: sha512-NuHqBY1PB/D8xU6s/thBgOAiAP7HOYDQ32+BFZILJ8ivkUkAHQnWfn6WhL79Owj1qmUnoN/YPhktdIoucipkAQ==}
+
+  '@zarrita/storage@0.1.1':
+    resolution: {integrity: sha512-6/NUCvpzsIxfxeMv59jRTl/bOZg3GZfMP6iR8EIqrTaaE0S2jLL/ceX1OxcFBKnuA8/Z2YmgX4SFBHwFGrCcsw==}
 
   abab@2.0.6:
     resolution: {integrity: sha512-j2afSsaIENvHZN2B8GOpF566vZ5WVk5opAiMTvWgaQT8DkbOqsTfvNAvHoRGU2zzP8cPoqys+xHTRDWW8L+/BA==}
@@ -2534,9 +2530,6 @@ packages:
     engines: {node: '>=4'}
     hasBin: true
 
-  cssfilter@0.0.10:
-    resolution: {integrity: sha512-FAaLDaplstoRsDR8XGYH51znUN0UY7nMc6Z9/fvE8EXGwvJE9hu7W2vHwx1+bd6gCYnln9nLbzxFTrcO9YQDZw==}
-
   cssstyle@4.6.0:
     resolution: {integrity: sha512-2z+rWdzbbSZv6/rhtvzvqeZQHrBaqgogqt85sqFNbabZOuFbCVFb8kPeEtZjiKkbrm395irpNKiYeFeLiQnFPg==}
     engines: {node: '>=18'}
@@ -2546,9 +2539,6 @@ packages:
 
   csstype@3.1.3:
     resolution: {integrity: sha512-M1uQkMl8rQK/szD0LNhtqxIPLpimGm8sOBwU7lLnCpSbTyY3yeU1Vc7l4KT5zT4s/yOxHH5O7tIuuLOCnLADRw==}
-
-  daikon@1.2.46:
-    resolution: {integrity: sha512-S8dTTlsWYTH3LQztjTW9KnNvxDeL2mr2cau0auLdYMJe4TrocYP1PmidHizO3rXUs+gXpBWI1PQ2qvB4b21QFw==}
 
   data-urls@2.0.0:
     resolution: {integrity: sha512-X5eWTSXO/BJmpdIKCRuKUgSCgAN0OwliVK3yPKbwIWU1Tdw5BRajxlzMidvh+gwko9AfQ9zIj52pzF91Q3YAvQ==}
@@ -3430,9 +3420,6 @@ packages:
   jju@1.4.0:
     resolution: {integrity: sha512-8wb9Yw966OSxApiCt0K3yNJL8pnNeIv+OEq2YMidz4FKP6nonSRoOXc80iXY4JaN2FC11B9qsNmDsm+ZOfMROA==}
 
-  jpeg-lossless-decoder-js@2.0.7:
-    resolution: {integrity: sha512-tbZlhFkKmx+JaqVMkq47SKWGuXLkIaV8fTbnhO39dYEnQrSShLGuLCGb0n6ntXjtmk6oAWGiIriWOLwj9od0yQ==}
-
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
 
@@ -3803,9 +3790,6 @@ packages:
   nice-try@1.0.5:
     resolution: {integrity: sha512-1nh45deeb5olNY7eX82BkPO7SSxR5SSYJiPTrTdFUVYwAl8CKMA5N9PjTYkHiRjisVcxcQ1HXdLhx2qxxJzLNQ==}
 
-  nifti-reader-js@0.6.9:
-    resolution: {integrity: sha512-oEC35cuYFR0i+KeXhaK0hJz4oSj511Vo7LmO/6iqbxzwek6XWnBi77VURlk4jsnJ86tlJNpYv6ujmSDpPP46Tw==}
-
   nifti-reader-js@0.8.0:
     resolution: {integrity: sha512-iO1iIhQDfKniy+l/86HfOPte7So+SxBmBiMSiUB2VXU7z4hSewMTlE3h0fCgfzfXvMUa+ilzLTJ2ZHmtFw6EWw==}
 
@@ -3837,6 +3821,9 @@ packages:
 
   nth-check@2.1.1:
     resolution: {integrity: sha512-lqjrjmaOoAnWfMmBPL+XNnynZh2+swxiX3WUE0s4yEHI6m+AwrK2UZOimIRl3X/4QctVqS8AiZjFqyOGrMXb/w==}
+
+  numcodecs@0.3.2:
+    resolution: {integrity: sha512-6YSPnmZgg0P87jnNhi3s+FVLOcIn3y+1CTIgUulA3IdASzK9fJM87sUFkpyA+be9GibGRaST2wCgkD+6U+fWKw==}
 
   nwsapi@2.2.20:
     resolution: {integrity: sha512-/ieB+mDe4MrrKMT8z+mQL8klXydZWGR5Dowt4RAGKbJ3kIGEx3X4ljUo+6V73IXtUPWgfOlU5B9MlGxFO5T+cA==}
@@ -3902,9 +3889,6 @@ packages:
 
   package-json-from-dist@1.0.1:
     resolution: {integrity: sha512-UEZIS3/by4OC8vL3P2dTXRETpebLI2NiI5vIrjaD/5UtrkFX/tNbwjTSRAGC/+7CAo2pIcBaRgWmcBBHcsaCIw==}
-
-  pako@2.1.0:
-    resolution: {integrity: sha512-w+eufiZ1WuJYgPXbV/PO3NCMEc3xqylkKHzp8bxp1uW4qaSNQUkwmLLEc3kKsfz8lpV1F8Ht3U1Cm+9Srog2ug==}
 
   parent-module@1.0.1:
     resolution: {integrity: sha512-GQ2EWRpQV8/o+Aw8YqtfZZPfNRWZYkbidE9k5rpl/hC3vtHHBfGm2Ifi6qWV+coDGkrUKZAxE3Lot5kcsRlh+g==}
@@ -4231,6 +4215,9 @@ packages:
     resolution: {integrity: sha512-tYkDkVVtYkSVhuQ4zBgfvciymHaeuel+zFKXShfDnFP5SyVEP7qo70Rf1jTOTCx3vGNAbnEi/xFkcfQVMIBWag==}
     engines: {node: '>=12'}
 
+  reference-spec-reader@0.2.0:
+    resolution: {integrity: sha512-q0mfCi5yZSSHXpCyxjgQeaORq3tvDsxDyzaadA/5+AbAUwRyRuuTh0aRQuE/vAOt/qzzxidJ5iDeu1cLHaNBlQ==}
+
   reflect.getprototypeof@1.0.10:
     resolution: {integrity: sha512-00o4I+DVrefhv+nX0ulyi3biSHCPDe+yLv5o/p6d/UVlirijB8E16FtfwSAi4g3tcqrQ4lRAqQSoFEZJehYEcw==}
     engines: {node: '>= 0.4'}
@@ -4329,9 +4316,6 @@ packages:
 
   run-parallel@1.2.0:
     resolution: {integrity: sha512-5l4VyZR86LZ/lDxZTR6jqL8AFE2S0IFLMP26AbjsLVADxHdhB/c0GUsH+y39UfCi3dzz8OlQuPmnaJOMoDHQBA==}
-
-  rxjs@7.8.2:
-    resolution: {integrity: sha512-dhKf903U/PQZY6boNNtAGdWbG85WAbjT/1xYoZIC7FAY0yWapOBQVsVrDl58W86//e1VpMNBtRV4MaXfdMySFA==}
 
   safe-array-concat@1.1.3:
     resolution: {integrity: sha512-AURm5f0jYEOydBj7VQlVvDrjeFgthDdEF5H1dP+6mNpoXOMo1quQqJ4wvJDyRZ9+pO3kGWoOdmV08cSv2aJV6Q==}
@@ -4951,6 +4935,10 @@ packages:
     resolution: {integrity: sha512-gptHNQghINnc/vTGIk0SOFGFNXw7JVrlRUtConJRlvaw6DuX0wO5Jeko9sWrMBhh+PsYAZ7oXAiOnf/UKogyiw==}
     engines: {node: '>= 10.0.0'}
 
+  unzipit@1.4.3:
+    resolution: {integrity: sha512-gsq2PdJIWWGhx5kcdWStvNWit9FVdTewm4SEG7gFskWs+XCVaULt9+BwuoBtJiRE8eo3L1IPAOrbByNLtLtIlg==}
+    engines: {node: '>=12'}
+
   upath@1.2.0:
     resolution: {integrity: sha512-aZwGpamFO61g3OlfT7OQCHqhGnW43ieH9WZeP7QxN/G/jS4jfqUkZxoryvJgVPEcrl5NL/ggHsSmLMHuH64Lhg==}
     engines: {node: '>=4'}
@@ -4969,6 +4957,9 @@ packages:
 
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
+
+  uzip-module@1.0.3:
+    resolution: {integrity: sha512-AMqwWZaknLM77G+VPYNZLEruMGWGzyigPK3/Whg99B3S6vGHuqsyl5ZrOv1UUF3paGK1U6PM0cnayioaryg/fA==}
 
   validate-npm-package-license@3.0.4:
     resolution: {integrity: sha512-DpKm2Ui/xN7/HQKCtpZxoRWBhZ9Z0kqtygG8XCgNQ8ZlDnxuQmWhj566j8fN4Cu3/JmbhsDo7fcAJq4s9h27Ew==}
@@ -5344,11 +5335,6 @@ packages:
   xmlchars@2.2.0:
     resolution: {integrity: sha512-JZnDKK8B0RCDw84FNdDAIpZK+JuJw+s7Lz8nksI7SIuU3UXJJslUthsi+uWBUYOwPFwW7W7PRLRfUKpxjtjFCw==}
 
-  xss@1.0.14:
-    resolution: {integrity: sha512-og7TEJhXvn1a7kzZGQ7ETjdQVS2UfZyTlsEdDOqvQF7GoxNfY+0YLCzBy1kPdsDDx4QuNAonQPddpsn6Xl/7sw==}
-    engines: {node: '>= 0.10.0'}
-    hasBin: true
-
   y-protocols@1.0.6:
     resolution: {integrity: sha512-vHRF2L6iT3rwj1jub/K5tYcTT/mEYDUppgNPXwp8fmLpui9f7Yeq3OEtTLVF012j39QnV+KEQpNqoN7CWU7Y9Q==}
     engines: {node: '>=16.0.0', npm: '>=8.0.0'}
@@ -5377,6 +5363,9 @@ packages:
   yocto-queue@0.1.0:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
+
+  zarrita@0.5.2:
+    resolution: {integrity: sha512-BN/miFnvBuVqLLObrI08crkbyi+Oc/HWZpgCmWusrWUNIauIV9vR5zlvpSAnhOjZwjomEKFb728K7ax7FiDgJQ==}
 
 snapshots:
 
@@ -6589,23 +6578,23 @@ snapshots:
       '@lumino/widgets': 2.7.1
       ajv: 8.17.1
       commander: 9.5.0
-      css-loader: 6.11.0(webpack@5.100.2(webpack-cli@5.1.4))
+      css-loader: 6.11.0(webpack@5.100.2)
       duplicate-package-checker-webpack-plugin: 3.0.0
       fs-extra: 10.1.0
       glob: 7.1.7
-      license-webpack-plugin: 2.3.21(webpack@5.100.2(webpack-cli@5.1.4))
-      mini-css-extract-plugin: 2.9.2(webpack@5.100.2(webpack-cli@5.1.4))
+      license-webpack-plugin: 2.3.21(webpack@5.100.2)
+      mini-css-extract-plugin: 2.9.2(webpack@5.100.2)
       mini-svg-data-uri: 1.4.4
       path-browserify: 1.0.1
       process: 0.11.10
-      source-map-loader: 1.0.2(webpack@5.100.2(webpack-cli@5.1.4))
-      style-loader: 3.3.4(webpack@5.100.2(webpack-cli@5.1.4))
+      source-map-loader: 1.0.2(webpack@5.100.2)
+      style-loader: 3.3.4(webpack@5.100.2)
       supports-color: 7.2.0
-      terser-webpack-plugin: 5.3.14(webpack@5.100.2(webpack-cli@5.1.4))
+      terser-webpack-plugin: 5.3.14(webpack@5.100.2)
       webpack: 5.100.2(webpack-cli@5.1.4)
       webpack-cli: 5.1.4(webpack@5.100.2)
       webpack-merge: 5.10.0
-      worker-loader: 3.0.8(webpack@5.100.2(webpack-cli@5.1.4))
+      worker-loader: 3.0.8(webpack@5.100.2)
     transitivePeerDependencies:
       - '@rspack/core'
       - '@swc/core'
@@ -7142,27 +7131,15 @@ snapshots:
     dependencies:
       '@niivue/dcm2niix': 1.2.0
 
-  '@niivue/niivue@0.45.1':
+  '@niivue/niivue@0.61.0':
     dependencies:
       '@lukeed/uuid': 2.0.1
       '@ungap/structured-clone': 1.3.0
       array-equal: 1.0.2
-      daikon: 1.2.46
       fflate: 0.8.2
       gl-matrix: 3.4.3
-      nifti-reader-js: 0.6.9
-      rxjs: 7.8.2
-    optionalDependencies:
-      '@rollup/rollup-linux-x64-gnu': 4.45.1
-
-  '@niivue/niivue@0.50.0':
-    dependencies:
-      '@lukeed/uuid': 2.0.1
-      '@ungap/structured-clone': 1.3.0
-      array-equal: 1.0.2
-      gl-matrix: 3.4.3
       nifti-reader-js: 0.8.0
-      rxjs: 7.8.2
+      zarrita: 0.5.2
     optionalDependencies:
       '@rollup/rollup-linux-x64-gnu': 4.45.1
 
@@ -7614,7 +7591,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@vitest/coverage-v8@2.1.9(vitest@2.1.9(@types/node@22.16.4)(@vitest/ui@2.1.9)(jsdom@25.0.1)(less@4.4.0)(terser@5.43.1))':
+  '@vitest/coverage-v8@2.1.9(vitest@2.1.9)':
     dependencies:
       '@ampproject/remapping': 2.3.0
       '@bcoe/v8-coverage': 0.2.3
@@ -7781,8 +7758,6 @@ snapshots:
 
   '@vue/shared@3.5.17': {}
 
-  '@wearemothership/dicom-character-set@1.0.4-opt.1': {}
-
   '@webassemblyjs/ast@1.14.1':
     dependencies:
       '@webassemblyjs/helper-numbers': 1.13.2
@@ -7859,17 +7834,17 @@ snapshots:
       '@webassemblyjs/ast': 1.14.1
       '@xtuc/long': 4.2.2
 
-  '@webpack-cli/configtest@2.1.1(webpack-cli@5.1.4(webpack@5.100.2))(webpack@5.100.2(webpack-cli@5.1.4))':
+  '@webpack-cli/configtest@2.1.1(webpack-cli@5.1.4)(webpack@5.100.2)':
     dependencies:
       webpack: 5.100.2(webpack-cli@5.1.4)
       webpack-cli: 5.1.4(webpack@5.100.2)
 
-  '@webpack-cli/info@2.0.2(webpack-cli@5.1.4(webpack@5.100.2))(webpack@5.100.2(webpack-cli@5.1.4))':
+  '@webpack-cli/info@2.0.2(webpack-cli@5.1.4)(webpack@5.100.2)':
     dependencies:
       webpack: 5.100.2(webpack-cli@5.1.4)
       webpack-cli: 5.1.4(webpack@5.100.2)
 
-  '@webpack-cli/serve@2.0.5(webpack-cli@5.1.4(webpack@5.100.2))(webpack@5.100.2(webpack-cli@5.1.4))':
+  '@webpack-cli/serve@2.0.5(webpack-cli@5.1.4)(webpack@5.100.2)':
     dependencies:
       webpack: 5.100.2(webpack-cli@5.1.4)
       webpack-cli: 5.1.4(webpack@5.100.2)
@@ -7877,6 +7852,11 @@ snapshots:
   '@xtuc/ieee754@1.2.0': {}
 
   '@xtuc/long@4.2.2': {}
+
+  '@zarrita/storage@0.1.1':
+    dependencies:
+      reference-spec-reader: 0.2.0
+      unzipit: 1.4.3
 
   abab@2.0.6: {}
 
@@ -8246,7 +8226,7 @@ snapshots:
     dependencies:
       is-what: 3.14.1
 
-  copy-webpack-plugin@13.0.0(webpack@5.100.2(webpack-cli@5.1.4)):
+  copy-webpack-plugin@13.0.0(webpack@5.100.2):
     dependencies:
       glob-parent: 6.0.2
       normalize-path: 3.0.0
@@ -8290,7 +8270,7 @@ snapshots:
 
   css-functions-list@3.2.3: {}
 
-  css-loader@6.11.0(webpack@5.100.2(webpack-cli@5.1.4)):
+  css-loader@6.11.0(webpack@5.100.2):
     dependencies:
       icss-utils: 5.1.0(postcss@8.5.6)
       postcss: 8.5.6
@@ -8322,8 +8302,6 @@ snapshots:
 
   cssesc@3.0.0: {}
 
-  cssfilter@0.0.10: {}
-
   cssstyle@4.6.0:
     dependencies:
       '@asamuzakjp/css-color': 3.2.0
@@ -8332,14 +8310,6 @@ snapshots:
   csstype@3.0.10: {}
 
   csstype@3.1.3: {}
-
-  daikon@1.2.46:
-    dependencies:
-      '@wearemothership/dicom-character-set': 1.0.4-opt.1
-      fflate: 0.8.2
-      jpeg-lossless-decoder-js: 2.0.7
-      pako: 2.1.0
-      xss: 1.0.14
 
   data-urls@2.0.0:
     dependencies:
@@ -9327,8 +9297,6 @@ snapshots:
 
   jju@1.4.0: {}
 
-  jpeg-lossless-decoder-js@2.0.7: {}
-
   js-tokens@4.0.0: {}
 
   js-tokens@9.0.1: {}
@@ -9465,7 +9433,7 @@ snapshots:
     dependencies:
       isomorphic.js: 0.2.5
 
-  license-webpack-plugin@2.3.21(webpack@5.100.2(webpack-cli@5.1.4)):
+  license-webpack-plugin@2.3.21(webpack@5.100.2):
     dependencies:
       '@types/webpack-sources': 0.1.12
       webpack-sources: 1.4.3
@@ -9650,7 +9618,7 @@ snapshots:
 
   min-indent@1.0.1: {}
 
-  mini-css-extract-plugin@2.9.2(webpack@5.100.2(webpack-cli@5.1.4)):
+  mini-css-extract-plugin@2.9.2(webpack@5.100.2):
     dependencies:
       schema-utils: 4.3.2
       tapable: 2.2.2
@@ -9721,10 +9689,6 @@ snapshots:
 
   nice-try@1.0.5: {}
 
-  nifti-reader-js@0.6.9:
-    dependencies:
-      fflate: 0.8.2
-
   nifti-reader-js@0.8.0:
     dependencies:
       fflate: 0.8.2
@@ -9769,6 +9733,10 @@ snapshots:
   nth-check@2.1.1:
     dependencies:
       boolbase: 1.0.0
+
+  numcodecs@0.3.2:
+    dependencies:
+      fflate: 0.8.2
 
   nwsapi@2.2.20: {}
 
@@ -9836,8 +9804,6 @@ snapshots:
   p-try@2.2.0: {}
 
   package-json-from-dist@1.0.1: {}
-
-  pako@2.1.0: {}
 
   parent-module@1.0.1:
     dependencies:
@@ -10120,6 +10086,8 @@ snapshots:
       indent-string: 5.0.0
       strip-indent: 4.0.0
 
+  reference-spec-reader@0.2.0: {}
+
   reflect.getprototypeof@1.0.10:
     dependencies:
       call-bind: 1.0.8
@@ -10241,10 +10209,6 @@ snapshots:
   run-parallel@1.2.0:
     dependencies:
       queue-microtask: 1.2.3
-
-  rxjs@7.8.2:
-    dependencies:
-      tslib: 2.8.1
 
   safe-array-concat@1.1.3:
     dependencies:
@@ -10428,7 +10392,7 @@ snapshots:
 
   source-map-js@1.2.1: {}
 
-  source-map-loader@1.0.2(webpack@5.100.2(webpack-cli@5.1.4)):
+  source-map-loader@1.0.2(webpack@5.100.2):
     dependencies:
       data-urls: 2.0.0
       iconv-lite: 0.6.3
@@ -10437,7 +10401,7 @@ snapshots:
       source-map: 0.6.1
       webpack: 5.100.2(webpack-cli@5.1.4)
 
-  source-map-loader@1.1.3(webpack@5.100.2(webpack-cli@5.1.4)):
+  source-map-loader@1.1.3(webpack@5.100.2):
     dependencies:
       abab: 2.0.6
       iconv-lite: 0.6.3
@@ -10587,7 +10551,7 @@ snapshots:
     dependencies:
       js-tokens: 9.0.1
 
-  style-loader@3.3.4(webpack@5.100.2(webpack-cli@5.1.4)):
+  style-loader@3.3.4(webpack@5.100.2):
     dependencies:
       webpack: 5.100.2(webpack-cli@5.1.4)
 
@@ -10748,7 +10712,7 @@ snapshots:
       type-fest: 0.16.0
       unique-string: 2.0.0
 
-  terser-webpack-plugin@5.3.14(webpack@5.100.2(webpack-cli@5.1.4)):
+  terser-webpack-plugin@5.3.14(webpack@5.100.2):
     dependencies:
       '@jridgewell/trace-mapping': 0.3.29
       jest-worker: 27.5.1
@@ -10953,6 +10917,10 @@ snapshots:
 
   universalify@2.0.1: {}
 
+  unzipit@1.4.3:
+    dependencies:
+      uzip-module: 1.0.3
+
   upath@1.2.0: {}
 
   update-browserslist-db@1.1.3(browserslist@4.25.1):
@@ -10971,6 +10939,8 @@ snapshots:
       requires-port: 1.0.0
 
   util-deprecate@1.0.2: {}
+
+  uzip-module@1.0.3: {}
 
   validate-npm-package-license@3.0.4:
     dependencies:
@@ -11195,9 +11165,9 @@ snapshots:
   webpack-cli@5.1.4(webpack@5.100.2):
     dependencies:
       '@discoveryjs/json-ext': 0.5.7
-      '@webpack-cli/configtest': 2.1.1(webpack-cli@5.1.4(webpack@5.100.2))(webpack@5.100.2(webpack-cli@5.1.4))
-      '@webpack-cli/info': 2.0.2(webpack-cli@5.1.4(webpack@5.100.2))(webpack@5.100.2(webpack-cli@5.1.4))
-      '@webpack-cli/serve': 2.0.5(webpack-cli@5.1.4(webpack@5.100.2))(webpack@5.100.2(webpack-cli@5.1.4))
+      '@webpack-cli/configtest': 2.1.1(webpack-cli@5.1.4)(webpack@5.100.2)
+      '@webpack-cli/info': 2.0.2(webpack-cli@5.1.4)(webpack@5.100.2)
+      '@webpack-cli/serve': 2.0.5(webpack-cli@5.1.4)(webpack@5.100.2)
       colorette: 2.0.20
       commander: 10.0.1
       cross-spawn: 7.0.6
@@ -11246,7 +11216,7 @@ snapshots:
       neo-async: 2.6.2
       schema-utils: 4.3.2
       tapable: 2.2.2
-      terser-webpack-plugin: 5.3.14(webpack@5.100.2(webpack-cli@5.1.4))
+      terser-webpack-plugin: 5.3.14(webpack@5.100.2)
       watchpack: 2.4.4
       webpack-sources: 3.3.3
     optionalDependencies:
@@ -11452,7 +11422,7 @@ snapshots:
       '@types/trusted-types': 2.0.7
       workbox-core: 7.3.0
 
-  worker-loader@3.0.8(webpack@5.100.2(webpack-cli@5.1.4)):
+  worker-loader@3.0.8(webpack@5.100.2):
     dependencies:
       loader-utils: 2.0.4
       schema-utils: 3.3.0
@@ -11489,11 +11459,6 @@ snapshots:
 
   xmlchars@2.2.0: {}
 
-  xss@1.0.14:
-    dependencies:
-      commander: 2.20.3
-      cssfilter: 0.0.10
-
   y-protocols@1.0.6(yjs@13.6.27):
     dependencies:
       lib0: 0.2.114
@@ -11512,3 +11477,8 @@ snapshots:
       lib0: 0.2.114
 
   yocto-queue@0.1.0: {}
+
+  zarrita@0.5.2:
+    dependencies:
+      '@zarrita/storage': 0.1.1
+      numcodecs: 0.3.2

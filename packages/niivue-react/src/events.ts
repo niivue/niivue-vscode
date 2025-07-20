@@ -1,7 +1,7 @@
 import { Niivue, NVImage, NVMesh, NVMeshLoaders, SLICE_TYPE } from '@niivue/niivue'
-import { isImageType } from './utility'
-import { AppProps } from './components/App'
 import { Signal } from '@preact/signals'
+import { AppProps } from './components/App'
+import { isImageType } from './utility'
 
 export function listenToMessages(appProps: AppProps) {
   const { nvArray, sliceType } = appProps
@@ -335,7 +335,7 @@ export class ExtendedNiivue extends Niivue {
 function growNvArrayBy(nvArray: Signal<Niivue[]>, n: number) {
   for (let i = 0; i < n; i++) {
     const nv = new ExtendedNiivue({
-      isResizeCanvas: false,
+      isResizeCanvas: true,
       dragMode: 1, // contrast
     })
     nv.key = Math.random()

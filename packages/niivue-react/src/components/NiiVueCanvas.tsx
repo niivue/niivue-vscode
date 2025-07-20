@@ -1,10 +1,10 @@
-import { NVImage, NVMesh } from '@niivue/niivue'
-import { useRef, useEffect } from 'preact/hooks'
-import { isImageType } from '../utility'
-import { Signal } from '@preact/signals'
-import { AppProps } from './App'
-import { ExtendedNiivue } from '../events'
 import { dicomLoader } from '@niivue/dicom-loader'
+import { NVImage, NVMesh } from '@niivue/niivue'
+import { Signal } from '@preact/signals'
+import { useEffect, useRef } from 'preact/hooks'
+import { ExtendedNiivue } from '../events'
+import { isImageType } from '../utility'
+import { AppProps } from './App'
 
 export interface NiiVueCanvasProps {
   nv: ExtendedNiivue
@@ -48,7 +48,23 @@ export const NiiVueCanvas = ({
     nv.drawScene()
   }, [height, width]) // avoids black images
 
-  return <canvas ref={canvasRef} width={width} height={height}></canvas>
+  return (
+    <div
+      className="relative"
+      style={{
+        width: `${Math.min(width, height)}px`,
+        height: `${Math.min(width, height)}px`,
+        aspectRatio: '1/1'
+      }}
+    >
+      <canvas
+        ref={canvasRef}
+        width={width}
+        height={height}
+        className="absolute inset-0 w-full h-full object-contain"
+      ></canvas>
+    </div>
+  )
 }
 
 async function getMinimalHeaderMHA() {
@@ -113,14 +129,25 @@ async function loadVolume(nv: ExtendedNiivue, item: any) {
     if (!header) {
       return
     }
-    const volume = await NVImage.new(header, `${item.uri}.mha`, 'gray', 1.0, item.data)
+    const volume = await NVImage.loadFromUrl({
+      url: header,
+      name: `${item.uri}.mha`,
+      colormap: 'gray',
+      opacity: 1.0,
+    })
     nv.addVolume(volume)
   } else if (item?.data?.length > 0) {
-    const volume = await NVImage.new(item.data, item.uri)
+    const volume = await NVImage.loadFromUrl({
+      url: item.data,
+      name: item.uri,
+    })
     nv.addVolume(volume)
   } else if (isImageType(item.uri)) {
     if (item.data) {
-      const volume = await NVImage.new(item.data, item.uri)
+      const volume = await NVImage.loadFromUrl({
+        url: item.data,
+        name: item.uri,
+      })
       nv.addVolume(volume)
     } else {
       const volumeList = [{ url: item.uri }]

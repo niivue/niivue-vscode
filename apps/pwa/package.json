@@ -25,7 +25,7 @@
   },
   "dependencies": {
     "@niivue/dicom-loader": "^1.0.0",
-    "@niivue/niivue": "^0.50.0",
+    "@niivue/niivue": "^0.61.0",
     "@niivue/react": "workspace:*",
     "@preact/signals": "^2.0.1",
     "preact": "^10.24.1",
