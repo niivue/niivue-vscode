@@ -21,8 +21,10 @@
     "src"
   ],
   "scripts": {
-    "build": "vite build && tsc --emitDeclarationOnly --declaration --outDir dist",
+    "build": "vite build",
+    "build:types": "vite build && tsc --emitDeclarationOnly --declaration --outDir dist",
     "dev": "concurrently \"vite build --watch\" \"tsc --emitDeclarationOnly --declaration --outDir dist --watch\"",
+    "dev:types-only": "tsc --emitDeclarationOnly --declaration --outDir dist --watch",
     "type-check": "tsc --noEmit",
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "test": "vitest",

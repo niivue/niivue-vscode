@@ -1,4 +1,5 @@
 import preact from '@preact/preset-vite'
+import { resolve } from 'path'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
@@ -6,12 +7,31 @@ import { VitePWA } from 'vite-plugin-pwa'
 export default defineConfig({
   optimizeDeps: {
     include: ['@niivue/niivue', '@preact/signals', 'preact'],
-    exclude: ['@niivue/dicom-loader'],
+    exclude: ['@niivue/dicom-loader', '@niivue/react'], // Exclude local package from pre-bundling
+  },
+  resolve: {
+    alias: {
+      // Point directly to source files for hot reload
+      '@niivue/react': resolve(__dirname, '../../packages/niivue-react/src'),
+    },
+    // react-router-dom specifies "module" field in package.json for ESM entry
+    // if it's not mapped, it uses the "main" field which is CommonJS that redirects to CJS preact
+    mainFields: ['module'],
   },
   server: {
     port: 4000,
     open: true,
     cors: true,
+    watch: {
+      // Watch for changes in the React package
+      ignored: ['!../../packages/niivue-react/src/**'],
+      usePolling: true, // Use polling for better cross-platform compatibility
+      interval: 100, // Check every 100ms
+    },
+    fs: {
+      // Allow serving files from the monorepo
+      allow: ['../..'],
+    },
   },
   plugins: [
     preact(),
@@ -108,11 +128,6 @@ export default defineConfig({
     },
     target: 'esnext',
     minify: 'terser',
-  },
-  resolve: {
-    // react-router-dom specifies "module" field in package.json for ESM entry
-    // if it's not mapped, it uses the "main" field which is CommonJS that redirects to CJS preact
-    mainFields: ['module'],
   },
   base: '/niivue-vscode/', // this is the path for the github pages
 })

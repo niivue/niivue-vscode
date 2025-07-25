@@ -48,6 +48,15 @@
       "cache": false,
       "persistent": true
     },
+    "dev:source": {
+      "cache": false,
+      "persistent": true,
+      "dependsOn": []
+    },
+    "dev:types-only": {
+      "cache": false,
+      "persistent": true
+    },
     "watch": {
       "cache": false,
       "persistent": true
