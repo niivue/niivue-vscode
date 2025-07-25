@@ -4,197 +4,377 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+catalogs:
+  default:
+    '@babel/core':
+      specifier: ^7.24.0
+      version: 7.28.0
+    '@jupyterlab/application':
+      specifier: ^4.4.4
+      version: 4.4.4
+    '@jupyterlab/apputils':
+      specifier: ^4.5.4
+      version: 4.5.4
+    '@jupyterlab/builder':
+      specifier: ^4.0.0
+      version: 4.4.4
+    '@jupyterlab/docregistry':
+      specifier: ^4.4.4
+      version: 4.4.4
+    '@jupyterlab/fileeditor':
+      specifier: ^4.0.0
+      version: 4.4.4
+    '@jupyterlab/services':
+      specifier: ^7.0.0
+      version: 7.4.4
+    '@lumino/widgets':
+      specifier: ^2.0.0
+      version: 2.7.1
+    '@niivue/dicom-loader':
+      specifier: ^1.0.0
+      version: 1.0.0
+    '@niivue/niivue':
+      specifier: ^0.61.0
+      version: 0.61.0
+    '@playwright/test':
+      specifier: ^1.47.2
+      version: 1.54.1
+    '@preact/preset-vite':
+      specifier: ^2.9.1
+      version: 2.10.2
+    '@preact/signals':
+      specifier: ^2.0.1
+      version: 2.2.1
+    '@testing-library/jest-dom':
+      specifier: ^6.5.0
+      version: 6.6.3
+    '@testing-library/preact':
+      specifier: ^3.2.3
+      version: 3.2.4
+    '@types/node':
+      specifier: ^22.16.4
+      version: 22.16.4
+    '@types/react':
+      specifier: ^19.1.8
+      version: 19.1.8
+    '@types/react-dom':
+      specifier: ^19.1.6
+      version: 19.1.6
+    '@types/vscode':
+      specifier: ^1.70.0
+      version: 1.102.0
+    '@typescript-eslint/eslint-plugin':
+      specifier: ^8.12.2
+      version: 8.37.0
+    '@typescript-eslint/parser':
+      specifier: ^8.12.2
+      version: 8.37.0
+    '@vitejs/plugin-legacy':
+      specifier: ^5.4.3
+      version: 5.4.3
+    '@vitest/coverage-v8':
+      specifier: ^2.1.3
+      version: 2.1.9
+    autoprefixer:
+      specifier: ^10.4.18
+      version: 10.4.21
+    concurrently:
+      specifier: ^9.1.0
+      version: 9.2.0
+    copy-webpack-plugin:
+      specifier: ^13.0.0
+      version: 13.0.0
+    css-loader:
+      specifier: ^6.7.1
+      version: 6.11.0
+    esbuild:
+      specifier: ^0.20.2
+      version: 0.20.2
+    eslint:
+      specifier: ^9.13.0
+      version: 9.31.0
+    eslint-config-prettier:
+      specifier: ^9.0.0
+      version: 9.1.0
+    eslint-plugin-prettier:
+      specifier: ^5.0.0
+      version: 5.5.1
+    eslint-plugin-react-hooks:
+      specifier: ^5.0.0
+      version: 5.2.0
+    eslint-plugin-react-refresh:
+      specifier: ^0.4.14
+      version: 0.4.20
+    husky:
+      specifier: ^9.1.7
+      version: 9.1.7
+    less:
+      specifier: ^4.1.3
+      version: 4.4.0
+    lint-staged:
+      specifier: ^16.1.2
+      version: 16.1.2
+    mkdirp:
+      specifier: ^1.0.3
+      version: 1.0.4
+    npm-run-all:
+      specifier: ^4.1.5
+      version: 4.1.5
+    postcss:
+      specifier: ^8.4.47
+      version: 8.5.6
+    preact:
+      specifier: ^10.24.1
+      version: 10.26.9
+    prettier:
+      specifier: ^3.0.0
+      version: 3.6.2
+    react-router-dom:
+      specifier: ^6.26.0
+      version: 6.30.1
+    rimraf:
+      specifier: ^5.0.1
+      version: 5.0.10
+    source-map-loader:
+      specifier: ^1.0.2
+      version: 1.1.3
+    style-loader:
+      specifier: ^3.3.2
+      version: 3.3.4
+    stylelint:
+      specifier: ^15.10.1
+      version: 15.11.0
+    stylelint-config-recommended:
+      specifier: ^13.0.0
+      version: 13.0.0
+    stylelint-config-standard:
+      specifier: ^34.0.0
+      version: 34.0.0
+    stylelint-csstree-validator:
+      specifier: ^3.0.0
+      version: 3.0.0
+    stylelint-prettier:
+      specifier: ^4.0.0
+      version: 4.1.0
+    tailwindcss:
+      specifier: ^3.4.13
+      version: 3.4.17
+    turbo:
+      specifier: ^2.0.0
+      version: 2.5.5
+    typescript:
+      specifier: ^5.6.3
+      version: 5.8.3
+    typescript-eslint:
+      specifier: ^8.0.0
+      version: 8.37.0
+    vite:
+      specifier: ^5.4.10
+      version: 5.4.19
+    vite-plugin-dts:
+      specifier: ^4.5.4
+      version: 4.5.4
+    vite-plugin-pwa:
+      specifier: ^0.21.1
+      version: 0.21.2
+    workbox-build:
+      specifier: ^7.0.0
+      version: 7.3.0
+    yjs:
+      specifier: ^13.5.40
+      version: 13.6.27
+
 importers:
 
   .:
     devDependencies:
       '@preact/preset-vite':
-        specifier: ^2.9.1
+        specifier: 'catalog:'
         version: 2.10.2(@babel/core@7.28.0)(preact@10.26.9)(vite@5.4.19(@types/node@22.16.4)(less@4.4.0)(terser@5.43.1))
       '@types/node':
-        specifier: ^22.16.4
+        specifier: 'catalog:'
         version: 22.16.4
       '@typescript-eslint/eslint-plugin':
-        specifier: ^8.12.2
+        specifier: 'catalog:'
         version: 8.37.0(@typescript-eslint/parser@8.37.0(eslint@9.31.0(jiti@1.21.7))(typescript@5.8.3))(eslint@9.31.0(jiti@1.21.7))(typescript@5.8.3)
       '@typescript-eslint/parser':
-        specifier: ^8.12.2
+        specifier: 'catalog:'
         version: 8.37.0(eslint@9.31.0(jiti@1.21.7))(typescript@5.8.3)
       '@vitejs/plugin-legacy':
-        specifier: ^5.4.3
+        specifier: 'catalog:'
         version: 5.4.3(terser@5.43.1)(vite@5.4.19(@types/node@22.16.4)(less@4.4.0)(terser@5.43.1))
       eslint:
-        specifier: ^9.13.0
+        specifier: 'catalog:'
         version: 9.31.0(jiti@1.21.7)
       eslint-config-prettier:
-        specifier: ^9.0.0
+        specifier: 'catalog:'
         version: 9.1.0(eslint@9.31.0(jiti@1.21.7))
       prettier:
-        specifier: ^3.0.0
+        specifier: 'catalog:'
         version: 3.6.2
       turbo:
-        specifier: ^2.0.0
+        specifier: 'catalog:'
         version: 2.5.5
       typescript:
-        specifier: ^5.6.3
+        specifier: 'catalog:'
         version: 5.8.3
       vite:
-        specifier: ^5.4.10
+        specifier: 'catalog:'
         version: 5.4.19(@types/node@22.16.4)(less@4.4.0)(terser@5.43.1)
       vite-plugin-dts:
-        specifier: ^4.5.4
+        specifier: 'catalog:'
         version: 4.5.4(@types/node@22.16.4)(rollup@4.45.1)(typescript@5.8.3)(vite@5.4.19(@types/node@22.16.4)(less@4.4.0)(terser@5.43.1))
 
   apps/jupyter:
     dependencies:
       '@jupyterlab/application':
-        specifier: ^4.4.4
+        specifier: 'catalog:'
         version: 4.4.4(react@18.3.1)
       '@jupyterlab/apputils':
-        specifier: ^4.5.4
+        specifier: 'catalog:'
         version: 4.5.4
       '@jupyterlab/docregistry':
-        specifier: ^4.4.4
+        specifier: 'catalog:'
         version: 4.4.4
       '@jupyterlab/fileeditor':
-        specifier: ^4.0.0
+        specifier: 'catalog:'
         version: 4.4.4
       '@jupyterlab/services':
-        specifier: ^7.0.0
+        specifier: 'catalog:'
         version: 7.4.4(react@18.3.1)
       '@lumino/widgets':
-        specifier: ^2.0.0
+        specifier: 'catalog:'
         version: 2.7.1
       '@niivue/niivue':
-        specifier: ^0.61.0
+        specifier: 'catalog:'
         version: 0.61.0
     devDependencies:
       '@jupyterlab/builder':
-        specifier: ^4.0.0
+        specifier: 'catalog:'
         version: 4.4.4
       '@niivue/pwa':
         specifier: workspace:*
         version: link:../pwa
       copy-webpack-plugin:
-        specifier: ^13.0.0
+        specifier: 'catalog:'
         version: 13.0.0(webpack@5.100.2)
       css-loader:
-        specifier: ^6.7.1
+        specifier: 'catalog:'
         version: 6.11.0(webpack@5.100.2)
       eslint-plugin-prettier:
-        specifier: ^5.0.0
+        specifier: 'catalog:'
         version: 5.5.1(@types/eslint@9.6.1)(eslint-config-prettier@9.1.0(eslint@9.31.0(jiti@1.21.7)))(eslint@9.31.0(jiti@1.21.7))(prettier@3.6.2)
       mkdirp:
-        specifier: ^1.0.3
+        specifier: 'catalog:'
         version: 1.0.4
       npm-run-all:
-        specifier: ^4.1.5
+        specifier: 'catalog:'
         version: 4.1.5
       rimraf:
-        specifier: ^5.0.1
+        specifier: 'catalog:'
         version: 5.0.10
       source-map-loader:
-        specifier: ^1.0.2
+        specifier: 'catalog:'
         version: 1.1.3(webpack@5.100.2)
       style-loader:
-        specifier: ^3.3.2
+        specifier: 'catalog:'
         version: 3.3.4(webpack@5.100.2)
       stylelint:
-        specifier: ^15.10.1
+        specifier: 'catalog:'
         version: 15.11.0(typescript@5.8.3)
       stylelint-config-recommended:
-        specifier: ^13.0.0
+        specifier: 'catalog:'
         version: 13.0.0(stylelint@15.11.0(typescript@5.8.3))
       stylelint-config-standard:
-        specifier: ^34.0.0
+        specifier: 'catalog:'
         version: 34.0.0(stylelint@15.11.0(typescript@5.8.3))
       stylelint-csstree-validator:
-        specifier: ^3.0.0
+        specifier: 'catalog:'
         version: 3.0.0(stylelint@15.11.0(typescript@5.8.3))
       stylelint-prettier:
-        specifier: ^4.0.0
+        specifier: 'catalog:'
         version: 4.1.0(prettier@3.6.2)(stylelint@15.11.0(typescript@5.8.3))
       typescript-eslint:
-        specifier: ^8.0.0
+        specifier: 'catalog:'
         version: 8.37.0(eslint@9.31.0(jiti@1.21.7))(typescript@5.8.3)
       yjs:
-        specifier: ^13.5.40
+        specifier: 'catalog:'
         version: 13.6.27
 
   apps/pwa:
     dependencies:
       '@niivue/dicom-loader':
-        specifier: ^1.0.0
+        specifier: 'catalog:'
         version: 1.0.0
       '@niivue/niivue':
-        specifier: ^0.61.0
+        specifier: 'catalog:'
         version: 0.61.0
       '@niivue/react':
         specifier: workspace:*
         version: link:../../packages/niivue-react
       '@preact/signals':
-        specifier: ^2.0.1
+        specifier: 'catalog:'
         version: 2.2.1(preact@10.26.9)
       preact:
-        specifier: ^10.24.1
+        specifier: 'catalog:'
         version: 10.26.9
       react-router-dom:
-        specifier: ^6.26.0
+        specifier: 'catalog:'
         version: 6.30.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
     devDependencies:
       '@babel/core':
-        specifier: ^7.24.0
+        specifier: 'catalog:'
         version: 7.28.0
       '@playwright/test':
-        specifier: ^1.47.2
+        specifier: 'catalog:'
         version: 1.54.1
       '@preact/preset-vite':
-        specifier: ^2.9.1
+        specifier: 'catalog:'
         version: 2.10.2(@babel/core@7.28.0)(preact@10.26.9)(vite@5.4.19(@types/node@22.16.4)(less@4.4.0)(terser@5.43.1))
       '@testing-library/jest-dom':
-        specifier: ^6.5.0
+        specifier: 'catalog:'
         version: 6.6.3
       '@testing-library/preact':
-        specifier: ^3.2.3
+        specifier: 'catalog:'
         version: 3.2.4(preact@10.26.9)
       '@types/react':
-        specifier: ^19.1.8
+        specifier: 'catalog:'
         version: 19.1.8
       '@types/react-dom':
-        specifier: ^19.1.6
+        specifier: 'catalog:'
         version: 19.1.6(@types/react@19.1.8)
       '@vitest/ui':
         specifier: ^3.0.6
         version: 3.2.4(vitest@3.2.4)
       autoprefixer:
-        specifier: ^10.4.18
+        specifier: 'catalog:'
         version: 10.4.21(postcss@8.5.6)
       husky:
-        specifier: ^9.1.7
+        specifier: 'catalog:'
         version: 9.1.7
       jsdom:
         specifier: ^26.0.0
         version: 26.1.0
       less:
-        specifier: ^4.1.3
+        specifier: 'catalog:'
         version: 4.4.0
       lint-staged:
-        specifier: ^16.1.2
+        specifier: 'catalog:'
         version: 16.1.2
       postcss:
-        specifier: ^8.4.47
+        specifier: 'catalog:'
         version: 8.5.6
       tailwindcss:
-        specifier: ^3.4.13
+        specifier: 'catalog:'
         version: 3.4.17
       vite-plugin-pwa:
-        specifier: ^0.21.1
+        specifier: 'catalog:'
         version: 0.21.2(vite@5.4.19(@types/node@22.16.4)(less@4.4.0)(terser@5.43.1))(workbox-build@7.3.0)(workbox-window@7.3.0)
       vitest:
         specifier: ^3.0.6
         version: 3.2.4(@types/node@22.16.4)(@vitest/ui@3.2.4)(jsdom@26.1.0)(less@4.4.0)(terser@5.43.1)
       workbox-build:
-        specifier: ^7.0.0
+        specifier: 'catalog:'
         version: 7.3.0
       workbox-window:
         specifier: ^7.0.0
@@ -203,10 +383,10 @@ importers:
   apps/vscode:
     devDependencies:
       '@types/vscode':
-        specifier: ^1.70.0
+        specifier: 'catalog:'
         version: 1.102.0
       esbuild:
-        specifier: ^0.20.2
+        specifier: 'catalog:'
         version: 0.20.2
 
   packages/niivue-react:
@@ -225,25 +405,28 @@ importers:
         version: 10.26.9
     devDependencies:
       '@testing-library/jest-dom':
-        specifier: ^6.5.0
+        specifier: 'catalog:'
         version: 6.6.3
       '@testing-library/preact':
-        specifier: ^3.2.3
+        specifier: 'catalog:'
         version: 3.2.4(preact@10.26.9)
       '@vitejs/plugin-legacy':
-        specifier: ^5.4.3
+        specifier: 'catalog:'
         version: 5.4.3(terser@5.43.1)(vite@5.4.19(@types/node@22.16.4)(less@4.4.0)(terser@5.43.1))
       '@vitest/coverage-v8':
-        specifier: ^2.1.3
+        specifier: 'catalog:'
         version: 2.1.9(vitest@2.1.9)
       '@vitest/ui':
         specifier: ^2.1.3
         version: 2.1.9(vitest@2.1.9)
+      concurrently:
+        specifier: 'catalog:'
+        version: 9.2.0
       eslint-plugin-react-hooks:
-        specifier: ^5.0.0
+        specifier: 'catalog:'
         version: 5.2.0(eslint@9.31.0(jiti@1.21.7))
       eslint-plugin-react-refresh:
-        specifier: ^0.4.14
+        specifier: 'catalog:'
         version: 0.4.20(eslint@9.31.0(jiti@1.21.7))
       jsdom:
         specifier: ^25.0.1
@@ -2385,6 +2568,10 @@ packages:
     resolution: {integrity: sha512-nPdaFdQ0h/GEigbPClz11D0v/ZJEwxmeVZGeMo3Z5StPtUTkA9o1lD6QwoirYiSDzbcwn2XcjwmCp68W1IS4TA==}
     engines: {node: '>=18'}
 
+  cliui@8.0.1:
+    resolution: {integrity: sha512-BSeNnyus75C4//NQ9gQt1/csTXyo/8Sb+afLAkzAptFuMsod9HFokGNudZpi/oQV73hnVK+sR+5PVRMd+Dr7YQ==}
+    engines: {node: '>=12'}
+
   clone-deep@4.0.1:
     resolution: {integrity: sha512-neHB9xuzh/wk0dIHweyAXv2aPGZIVk3pLMe+/RNzINf17fe0OG96QroktYAUm7SM1PBnzTabaLboqqxDyMU+SQ==}
     engines: {node: '>=6'}
@@ -2446,6 +2633,11 @@ packages:
 
   concat-map@0.0.1:
     resolution: {integrity: sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg==}
+
+  concurrently@9.2.0:
+    resolution: {integrity: sha512-IsB/fiXTupmagMW4MNp2lx2cdSN2FfZq78vF90LBB+zZHArbIQZjQtzXCiXnvTxCZSvXanTqFLWBjw2UkLx1SQ==}
+    engines: {node: '>=18'}
+    hasBin: true
 
   confbox@0.1.8:
     resolution: {integrity: sha512-RMtmw0iFkeR4YV+fUOSucriAQNb9g8zFR52MWCtl+cCZOFRNL6zeB395vPzFhEjjn4fMxXudmELnl/KF/WrK6w==}
@@ -2995,6 +3187,10 @@ packages:
   gensync@1.0.0-beta.2:
     resolution: {integrity: sha512-3hN7NaskYvMDLQY55gnW3NQ+mesEAepTqlg+VEbj7zzqEMBVNhzcGYYeqFo/TlYz6eQiFcp1HcsCZO+nGgS8zg==}
     engines: {node: '>=6.9.0'}
+
+  get-caller-file@2.0.5:
+    resolution: {integrity: sha512-DyFP3BM/3YHTQOCUL/w0OZHR0lpKeGrxotcHWcqNEdnltqFwXVfhEBQ94eIo34AfQpo0rGki4cyIiftY06h2Fg==}
+    engines: {node: 6.* || 8.* || >= 10.*}
 
   get-east-asian-width@1.3.0:
     resolution: {integrity: sha512-vpeMIQKxczTD/0s2CdEWHcb0eeJe6TFjxb+J5xgX7hScxqrGuyjmv4c1D4A/gelKfyox0gJJwIHF+fLjeaM8kQ==}
@@ -4254,6 +4450,10 @@ packages:
     resolution: {integrity: sha512-cnE+y8bz4NhMjISKbgeVJtqNbtf5QpjZP+Bslo+UqkIt9QPnX9q095eiRRASJG1/tz6dlNr6Z5NsBiWYokp6EQ==}
     hasBin: true
 
+  require-directory@2.1.1:
+    resolution: {integrity: sha512-fGxEI7+wsG9xrvdjsrlmL22OMTTiHRwAMroiEeMgq8gzoLC/PQr7RsRDSTLUg/bZAZtF+TVIkHc6/4RIKrui+Q==}
+    engines: {node: '>=0.10.0'}
+
   require-from-string@2.0.2:
     resolution: {integrity: sha512-Xf0nWe6RseziFMu+Ap9biiUbmplq6S9/p+7w7YXP/JBHhrUDDUhwa+vANyubuqfZWTveU//DYVGsDG7RKL/vEw==}
     engines: {node: '>=0.10.0'}
@@ -4316,6 +4516,9 @@ packages:
 
   run-parallel@1.2.0:
     resolution: {integrity: sha512-5l4VyZR86LZ/lDxZTR6jqL8AFE2S0IFLMP26AbjsLVADxHdhB/c0GUsH+y39UfCi3dzz8OlQuPmnaJOMoDHQBA==}
+
+  rxjs@7.8.2:
+    resolution: {integrity: sha512-dhKf903U/PQZY6boNNtAGdWbG85WAbjT/1xYoZIC7FAY0yWapOBQVsVrDl58W86//e1VpMNBtRV4MaXfdMySFA==}
 
   safe-array-concat@1.1.3:
     resolution: {integrity: sha512-AURm5f0jYEOydBj7VQlVvDrjeFgthDdEF5H1dP+6mNpoXOMo1quQqJ4wvJDyRZ9+pO3kGWoOdmV08cSv2aJV6Q==}
@@ -4799,6 +5002,10 @@ packages:
   tr46@5.1.1:
     resolution: {integrity: sha512-hdF5ZgjTqgAntKkklYw0R03MG2x/bSzTtkxmIRw/sTNV8YXsCJ1tfLAX23lhxhHJlEf3CRCOCGGWw3vI3GaSPw==}
     engines: {node: '>=18'}
+
+  tree-kill@1.2.2:
+    resolution: {integrity: sha512-L0Orpi8qGpRG//Nd+H90vFB+3iHnue1zSSGmNOOCh1GLJ7rUKVwV2HvijphGQS2UmhUZewS9VgvxYIdgr+fG1A==}
+    hasBin: true
 
   trim-newlines@4.1.1:
     resolution: {integrity: sha512-jRKj0n0jXWo6kh62nA5TEh3+4igKDXLvzBJcPpiizP7oOolUrYIxmVBG9TOtHYFHoddUk6YvAkGeGoSVTXfQXQ==}
@@ -5341,6 +5548,10 @@ packages:
     peerDependencies:
       yjs: ^13.0.0
 
+  y18n@5.0.8:
+    resolution: {integrity: sha512-0pfFzegeDWJHJIAmTLRP2DwHjdF5s7jo9tuztdQxAhINCdvS+3nGINqPd00AphqJR/0LhANUS6/+7SCb98YOfA==}
+    engines: {node: '>=10'}
+
   yallist@3.1.1:
     resolution: {integrity: sha512-a4UGQaWPH59mOXUYnAG2ewncQS4i4F43Tv3JoAM+s2VDAmS9NsK8GpDMLrCHPksFT7h3K6TOoUNn2pb7RoXx4g==}
 
@@ -5355,6 +5566,14 @@ packages:
   yargs-parser@20.2.9:
     resolution: {integrity: sha512-y11nGElTIV+CT3Zv9t7VKl+Q3hTQoT9a1Qzezhhl6Rp21gJ/IVTW7Z3y9EWXhuUBC2Shnf+DX0antecpAwSP8w==}
     engines: {node: '>=10'}
+
+  yargs-parser@21.1.1:
+    resolution: {integrity: sha512-tVpsJW7DdjecAiFpbIB1e3qxIQsE6NoPc5/eTdrbbIC4h0LVsWhnoa3g+m2HclBIujHzsxZ4VJVA+GUuc2/LBw==}
+    engines: {node: '>=12'}
+
+  yargs@17.7.2:
+    resolution: {integrity: sha512-7dSzzRQ++CKnNI/krKnYRV7JKKPUXMEh61soaHKg9mrWEhzFWhFnxPxGl+69cD1Ou63C13NUPCnmIcrvqCuM6w==}
+    engines: {node: '>=12'}
 
   yjs@13.6.27:
     resolution: {integrity: sha512-OIDwaflOaq4wC6YlPBy2L6ceKeKuF7DeTxx+jPzv1FHn9tCZ0ZwSRnUBxD05E3yed46fv/FWJbvR+Ud7x0L7zw==}
@@ -8161,6 +8380,12 @@ snapshots:
       slice-ansi: 5.0.0
       string-width: 7.2.0
 
+  cliui@8.0.1:
+    dependencies:
+      string-width: 4.2.3
+      strip-ansi: 6.0.1
+      wrap-ansi: 7.0.0
+
   clone-deep@4.0.1:
     dependencies:
       is-plain-object: 2.0.4
@@ -8215,6 +8440,16 @@ snapshots:
       validate.io-integer-array: 1.0.0
 
   concat-map@0.0.1: {}
+
+  concurrently@9.2.0:
+    dependencies:
+      chalk: 4.1.2
+      lodash: 4.17.21
+      rxjs: 7.8.2
+      shell-quote: 1.8.3
+      supports-color: 8.1.1
+      tree-kill: 1.2.2
+      yargs: 17.7.2
 
   confbox@0.1.8: {}
 
@@ -8880,6 +9115,8 @@ snapshots:
   functions-have-names@1.2.3: {}
 
   gensync@1.0.0-beta.2: {}
+
+  get-caller-file@2.0.5: {}
 
   get-east-asian-width@1.3.0: {}
 
@@ -10137,6 +10374,8 @@ snapshots:
     dependencies:
       jsesc: 3.0.2
 
+  require-directory@2.1.1: {}
+
   require-from-string@2.0.2: {}
 
   requires-port@1.0.0: {}
@@ -10209,6 +10448,10 @@ snapshots:
   run-parallel@1.2.0:
     dependencies:
       queue-microtask: 1.2.3
+
+  rxjs@7.8.2:
+    dependencies:
+      tslib: 2.8.1
 
   safe-array-concat@1.1.3:
     dependencies:
@@ -10788,6 +11031,8 @@ snapshots:
   tr46@5.1.1:
     dependencies:
       punycode: 2.3.1
+
+  tree-kill@1.2.2: {}
 
   trim-newlines@4.1.1: {}
 
@@ -11464,6 +11709,8 @@ snapshots:
       lib0: 0.2.114
       yjs: 13.6.27
 
+  y18n@5.0.8: {}
+
   yallist@3.1.1: {}
 
   yallist@4.0.0: {}
@@ -11471,6 +11718,18 @@ snapshots:
   yaml@2.8.0: {}
 
   yargs-parser@20.2.9: {}
+
+  yargs-parser@21.1.1: {}
+
+  yargs@17.7.2:
+    dependencies:
+      cliui: 8.0.1
+      escalade: 3.2.0
+      get-caller-file: 2.0.5
+      require-directory: 2.1.1
+      string-width: 4.2.3
+      y18n: 5.0.8
+      yargs-parser: 21.1.1
 
   yjs@13.6.27:
     dependencies:
