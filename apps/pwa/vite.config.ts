@@ -116,6 +116,7 @@ export default defineConfig({
   build: {
     outDir: 'build',
     sourcemap: true,
+    chunkSizeWarningLimit: 1000, // Increase threshold for medical imaging libs that include compression algorithms
     rollupOptions: {
       output: {
         entryFileNames: 'assets/[name]-[hash].js',
