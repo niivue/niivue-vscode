@@ -1,0 +1,58 @@
+{
+  "name": "NiiVue Development",
+  "image": "mcr.microsoft.com/devcontainers/python:3.12-bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "22",
+      "nodeGypDependencies": true
+    },
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.pylint",
+        "ms-python.black-formatter",
+        "ms-toolsai.jupyter",
+        "ms-vscode.vscode-typescript-next",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss",
+        "ms-vscode.vscode-json"
+      ]
+    }
+  },
+  "postCreateCommand": ".devcontainer/setup.sh",
+  "remoteUser": "vscode",
+  
+  // Secure git configuration - only mount gitconfig, use SSH agent forwarding
+  "mounts": [
+    "source=${localEnv:HOME}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,consistency=cached"
+  ],
+  
+  // Forward SSH agent instead of mounting SSH keys (more secure)
+  "containerEnv": {
+    "SSH_AUTH_SOCK": "${localEnv:SSH_AUTH_SOCK}"
+  },
+  
+  "forwardPorts": [
+    3000,
+    8888,
+    8080
+  ],
+  "portsAttributes": {
+    "3000": {
+      "label": "PWA Dev Server",
+      "onAutoForward": "notify"
+    },
+    "8888": {
+      "label": "JupyterLab",
+      "onAutoForward": "openBrowser"
+    },
+    "8080": {
+      "label": "Preview Server",
+      "onAutoForward": "silent"
+    }
+  }
+}

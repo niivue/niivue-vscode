@@ -1,36 +1,33 @@
-// Place your settings in this file to overwrite default and user settings.
+// Workspace settings for NiiVue monorepo
 {
-  // Package manager configuration
+  // Package manager
   "npm.packageManager": "pnpm",
-  // TypeScript configuration
+  
+  // TypeScript
   "typescript.tsc.autoDetect": "off",
   "typescript.preferences.includePackageJsonAutoImports": "on",
-  "typescript.preferences.includeTypeOnlyAutoImports": "on",
   "typescript.suggest.autoImports": true,
-  // ESLint configuration for monorepo
+  
+  // ESLint for monorepo
   "eslint.workingDirectories": [
     "apps/vscode",
-    "apps/pwa",
+    "apps/pwa", 
     "apps/jupyter",
-    "apps/streamlit",
     "packages/niivue-react"
   ],
-  "eslint.validate": [
-    "javascript",
-    "javascriptreact",
-    "typescript",
-    "typescriptreact"
-  ],
+  
+  // Editor
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "vscode.typescript-language-features",
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit",
     "source.organizeImports": "explicit"
   },
-  "editor.formatOnSave": true,
-  "editor.defaultFormatter": "vscode.typescript-language-features",
-  // File and search exclusions for monorepo
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  
+  // File exclusions for monorepo
   "files.exclude": {
-    "out": false,
-    "dist": false,
     "**/node_modules": true,
     "**/.turbo": true
   },
@@ -42,48 +39,10 @@
     "**/.turbo": true
   },
   
-  "terminal.integrated.profiles.windows": {
-    "PowerShell": {
-      "source": "PowerShell",
-      "icon": "terminal-powershell",
-      "args": ["-ExecutionPolicy", "Bypass"]
-    }
-  },
-  "terminal.integrated.defaultProfile.windows": "PowerShell",
-  "[typescript]": {
-    "editor.defaultFormatter": "vscode.typescript-language-features",
-    "editor.formatOnSave": true,
-    "editor.tabSize": 2,
-    "editor.insertSpaces": true,
-    "editor.codeActionsOnSave": {
-      "source.organizeImports": "explicit",
-      "source.fixAll.eslint": "explicit"
-    }
-  },
-  "[typescriptreact]": {
-    "editor.defaultFormatter": "vscode.typescript-language-features",
-    "editor.formatOnSave": true,
-    "editor.tabSize": 2,
-    "editor.insertSpaces": true,
-    "editor.codeActionsOnSave": {
-      "source.organizeImports": "explicit",
-      "source.fixAll.eslint": "explicit"
-    }
-  },
-  "[javascript]": {
-    "editor.defaultFormatter": "vscode.typescript-language-features",
-    "editor.formatOnSave": true,
-    "editor.tabSize": 2,
-    "editor.insertSpaces": true
-  },
-  "[json]": {
-    "editor.defaultFormatter": "vscode.json-language-features",
-    "editor.formatOnSave": true,
-    "editor.tabSize": 2
-  },
-  "[jsonc]": {
-    "editor.defaultFormatter": "vscode.json-language-features",
-    "editor.formatOnSave": true,
-    "editor.tabSize": 2
+  // Python and Jupyter
+  "python.defaultInterpreterPath": "python",
+  "jupyter.jupyterServerType": "local",
+  "files.associations": {
+    "*.ipynb": "jupyter-notebook"
   }
 }
