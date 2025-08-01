@@ -1,8 +1,14 @@
-import { App } from '@niivue/react'
+import { useAppState } from '@niivue/react'
 import { render } from 'preact'
+import { Pwa } from './Pwa'
 import './index.css'
 import { getSettings } from './settings'
 
 const settings = getSettings()
 
-render(<App settings={settings} />, document.getElementById('app')!)
+function Main() {
+  const appProps = useAppState(settings)
+  return <Pwa appProps={appProps} />
+}
+
+render(<Main />, document.getElementById('app')!)

@@ -1,4 +1,6 @@
-export const HomeScreen = ({ imageUrl }: { imageUrl?: string }) => (
+import imageUrl from '/resources/pwa_install.png'
+
+export const HomeScreen = () => (
   <>
     <h2 className="text-3xl font-bold text-gray-200 p-2">Drop Files to load images</h2>
     <p className="w-96 mb-4 text-m font-normal text-gray-300 pl-2">
@@ -8,7 +10,7 @@ export const HomeScreen = ({ imageUrl }: { imageUrl?: string }) => (
 
     <h2 className="text-3xl font-bold text-gray-200 p-2">Install as local App</h2>
     <p className="w-96 mb-4 text-m font-normal text-gray-300 pl-2">
-      {imageUrl && <img className="float-right" src={imageUrl} style={{ width: '150px', height: '90px' }} />}
+      <img className="float-right" src={imageUrl} style={{ width: '150px', height: '90px' }} />
       To install niivue-vscode as a local app, click the install button in the address bar.
       <i> This is currently only supported in chromium-based browsers.</i>
     </p>

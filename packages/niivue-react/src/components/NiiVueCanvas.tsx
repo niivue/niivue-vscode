@@ -4,7 +4,7 @@ import { Signal } from '@preact/signals'
 import { useEffect, useRef } from 'preact/hooks'
 import { ExtendedNiivue } from '../events'
 import { isImageType } from '../utility'
-import { AppProps } from './App'
+import { AppProps } from './AppProps'
 
 export interface NiiVueCanvasProps {
   nv: ExtendedNiivue
@@ -130,7 +130,7 @@ async function loadVolume(nv: ExtendedNiivue, item: any) {
       return
     }
     const volume = await NVImage.loadFromUrl({
-      url: header,
+      url: header as ArrayBuffer,
       name: `${item.uri}.mha`,
       colormap: 'gray',
       opacity: 1.0,

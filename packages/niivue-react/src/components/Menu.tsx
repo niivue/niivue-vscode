@@ -1,26 +1,26 @@
-import { Signal, computed, effect, useSignal } from '@preact/signals'
 import { SLICE_TYPE } from '@niivue/niivue'
-import { AppProps, SelectionMode } from './App'
-import { ScalingBox } from './ScalingBox'
-import { getMetadataString, getNumberOfPoints } from '../utility'
+import { Signal, computed, effect, useSignal } from '@preact/signals'
 import {
+  ExtendedNiivue,
   addDcmFolderEvent,
   addImagesEvent,
   addOverlayEvent,
   openImageFromURL,
-  ExtendedNiivue,
 } from '../events'
+import { getMetadataString, getNumberOfPoints } from '../utility'
+import { AppProps, SelectionMode } from './AppProps'
+import { HeaderBox } from './HeaderBox'
 import {
   HeaderDialog,
   ImageSelect,
   MenuButton,
-  MenuToggle,
   MenuEntry,
   MenuItem,
+  MenuToggle,
   ToggleEntry,
   toggle,
 } from './MenuElements'
-import { HeaderBox } from './HeaderBox'
+import { ScalingBox } from './ScalingBox'
 
 export const Menu = (props: AppProps) => {
   const { selection, selectionMode, nvArray, sliceType, hideUI, settings } = props

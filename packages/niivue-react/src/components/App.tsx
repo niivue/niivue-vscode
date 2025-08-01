@@ -1,65 +1,21 @@
-import { SLICE_TYPE } from '@niivue/niivue'
-import { Signal, computed, useSignal } from '@preact/signals'
 import { useEffect } from 'preact/hooks'
-import { listenToMessages, ExtendedNiivue } from '../events'
+import { listenToMessages } from '../events'
+import { AppProps } from './AppProps'
 import { Container } from './Container'
 import { ImageDrop } from './ImageDrop'
-import { HomeScreen } from './HomeScreen'
 import { Menu } from './Menu'
-import { NiiVueSettings } from '../settings'
 
-export const App = ({ settings }: { settings: NiiVueSettings }) => {
-  const isVscode = typeof vscode === 'object'
-  const appProps = useAppState(settings)
-  
+export const App = ({ appProps }: { appProps: AppProps }) => {
   useEffect(() => {
     listenToMessages(appProps)
     document.dispatchEvent(new Event('AppReady'))
   }, [])
 
-  const nImages = computed(() => appProps.nvArray.value.length)
-  const showHomeScreen = computed(() => nImages.value == 0 && !isVscode)
-
   return (
     <ImageDrop>
       <Menu {...appProps} />
-      {showHomeScreen.value && <HomeScreen />}
       <Container {...appProps} />
       <div className="pl-2">{appProps.location}</div>
     </ImageDrop>
   )
-}
-
-export const enum SelectionMode {
-  NONE,
-  SINGLE,
-  MULTIPLE,
-}
-
-export interface AppProps {
-  nvArray: Signal<ExtendedNiivue[]>
-  selection: Signal<Array<number>>
-  selectionMode: Signal<SelectionMode>
-  hideUI: Signal<number>
-  sliceType: Signal<number>
-  location: Signal<string>
-  settings: Signal<NiiVueSettings>
-}
-
-export interface ScalingOpts {
-  isManual: boolean
-  min: number
-  max: number
-}
-
-function useAppState(initialSettings: NiiVueSettings): AppProps {
-  return {
-    nvArray: useSignal<ExtendedNiivue[]>([]),
-    selection: useSignal<Array<number>>([]),
-    selectionMode: useSignal(SelectionMode.NONE),
-    hideUI: useSignal(3), // 0: hide all, 1: show name, 2: hide overlay, 3: show-all
-    sliceType: useSignal<number>(SLICE_TYPE.MULTIPLANAR), // all views
-    location: useSignal(''),
-    settings: useSignal<NiiVueSettings>(initialSettings),
-  }
 }

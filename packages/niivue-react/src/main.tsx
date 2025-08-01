@@ -1,7 +1,13 @@
-import './index.css'
 import { render } from 'preact'
 import { App } from './components/App'
+import { useAppState } from './components/AppProps'
+import './index.css'
 import { defaultSettings } from './settings'
+
+function AppWithSettings({ settings }: { settings: any }) {
+  const appProps = useAppState(settings)
+  return <App appProps={appProps} />
+}
 
 window.addEventListener('message', (e: any) => {
   const { type, body } = e.data
@@ -10,7 +16,7 @@ window.addEventListener('message', (e: any) => {
     localStorage.setItem('userSettings', JSON.stringify(settings)) // Save settings to localStorage
     const app = document.getElementById('app')
     if (app) {
-      render(<App settings={settings} />, app)
+      render(<AppWithSettings settings={settings} />, app)
     }
   }
 })

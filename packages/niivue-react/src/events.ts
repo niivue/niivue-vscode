@@ -1,6 +1,6 @@
 import { Niivue, NVImage, NVMesh, NVMeshLoaders, SLICE_TYPE } from '@niivue/niivue'
 import { Signal } from '@preact/signals'
-import { AppProps } from './components/App'
+import { AppProps } from './components/AppProps'
 import { isImageType } from './utility'
 
 export function listenToMessages(appProps: AppProps) {

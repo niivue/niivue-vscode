@@ -1,8 +1,8 @@
+import { computed, Signal, useSignal } from '@preact/signals'
 import { useEffect, useRef } from 'preact/hooks'
-import { NiiVueCanvas } from './NiiVueCanvas'
-import { computed, useSignal, Signal } from '@preact/signals'
-import { AppProps, SelectionMode } from './App'
 import { ExtendedNiivue } from '../events'
+import { AppProps, SelectionMode } from './AppProps'
+import { NiiVueCanvas } from './NiiVueCanvas'
 
 export interface VolumeProps {
   name: string

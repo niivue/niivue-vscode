@@ -1,10 +1,10 @@
-import { useEffect, useRef } from 'preact/hooks'
-import { differenceInNames } from '../utility'
-import { Volume } from './Volume'
-import { SLICE_TYPE, Niivue } from '@niivue/niivue'
-import { AppProps } from './App'
+import { Niivue, SLICE_TYPE } from '@niivue/niivue'
 import { computed, effect, useSignal } from '@preact/signals'
+import { useEffect, useRef } from 'preact/hooks'
 import { ExtendedNiivue } from '../events'
+import { differenceInNames } from '../utility'
+import { AppProps } from './AppProps'
+import { Volume } from './Volume'
 
 type Size = {
   height: number
