@@ -42,7 +42,7 @@
   "browser": "./dist/extension.js",
   "scripts": {
     "build": "pnpm build:webview && pnpm compile",
-    "build:webview": "cd ../../packages/niivue-react && pnpm build",
+    "build:webview": "cd ../../packages/niivue-react && BUILD_TARGET=vscode pnpm build && mkdir -p ../../apps/vscode/niivue && cp -r dist/* ../../apps/vscode/niivue/",
     "compile": "pnpm esbuild-base --minify",
     "dev": "pnpm esbuild-watch",
     "watch": "pnpm esbuild-watch",
@@ -51,6 +51,11 @@
     "lint": "eslint src --ext .ts,.tsx --report-unused-disable-directives --max-warnings 0",
     "type-check": "tsc --noEmit",
     "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.0",
+    "@types/vscode": "^1.102.0",
+    "esbuild": "^0.25.8"
   },
   "contributes": {
     "commands": [
@@ -207,9 +212,5 @@
   },
   "activationEvents": [
     "*"
-  ],
-  "devDependencies": {
-    "@types/vscode": "^1.102.0",
-    "esbuild": "^0.25.8"
-  }
+  ]
 }

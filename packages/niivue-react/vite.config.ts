@@ -14,13 +14,17 @@ export default defineConfig({
   ],
     build: {
       lib: {
-        entry: resolve(__dirname, 'src/index.ts'),
+        entry: process.env.BUILD_TARGET === 'vscode'
+          ? resolve(__dirname, 'src/main.tsx')
+          : resolve(__dirname, 'src/index.ts'),
         name: 'NiivueReact',
         formats: ['es'],
         fileName: 'index'
       },
       rollupOptions: {
-        external: ['preact', 'preact/hooks', '@niivue/niivue', '@niivue/dicom-loader', '@preact/signals'],
+        external: process.env.BUILD_TARGET === 'vscode'
+          ? [] // Bundle all dependencies for VS Code
+          : ['preact', 'preact/hooks', '@niivue/niivue', '@niivue/dicom-loader', '@preact/signals'],
         output: {
           globals: {
             preact: 'preact',

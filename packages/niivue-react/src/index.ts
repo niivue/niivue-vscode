@@ -1,3 +1,5 @@
+import './index.css'
+
 export { App } from './components/App'
 export { useAppState } from './components/AppProps'
 export type { AppProps, ScalingOpts, SelectionMode } from './components/AppProps'

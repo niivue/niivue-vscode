@@ -8,7 +8,9 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
       NiiVueEditorProvider.viewType,
       new NiiVueEditorProvider(context),
       {
-        webviewOptions: { retainContextWhenHidden: true },
+        webviewOptions: {
+          retainContextWhenHidden: true,
+        },
         supportsMultipleEditorsPerDocument: false,
       },
     )
@@ -34,6 +36,7 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     const panel = vscode.window.createWebviewPanel(viewType, tabName, vscode.ViewColumn.One, {
       enableScripts: true,
       retainContextWhenHidden: true,
+      localResourceRoots: [context.extensionUri],
     })
     panel.webview.html = await getHtmlForWebview(panel.webview, context.extensionUri)
     const editor = new NiiVueEditorProvider(context)
@@ -209,7 +212,10 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     webviewPanel: vscode.WebviewPanel,
   ): Promise<void> {
     this.webviews.add(document.uri, webviewPanel)
-    webviewPanel.webview.options = { enableScripts: true }
+    webviewPanel.webview.options = {
+      enableScripts: true,
+      localResourceRoots: [this._context.extensionUri],
+    }
     webviewPanel.webview.html = await getHtmlForWebview(
       webviewPanel.webview,
       this._context.extensionUri,

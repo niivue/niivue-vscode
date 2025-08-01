@@ -23,6 +23,7 @@ lib/
 dist/
 static/
 build/
+apps/vscode/niivue/
 
 # Python packaging
 *.egg-info/
