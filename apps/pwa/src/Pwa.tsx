@@ -10,7 +10,7 @@ export const Pwa = ({ appProps }: { appProps: AppProps }) => {
     <>
       <App appProps={appProps} />
       {showHomeScreen.value && (
-        <div className="absolute inset-0 bg-gray-800 z-10 flex flex-col items-start justify-start overflow-y-auto">
+        <div className="absolute z-10 flex flex-col items-start justify-start overflow-y-auto bg-gray-800 inset-7">
           <HomeScreen />
         </div>
       )}
