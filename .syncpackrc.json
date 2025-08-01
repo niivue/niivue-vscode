@@ -17,7 +17,8 @@
         "vite",
         "turbo",
         "eslint",
-        "prettier"
+        "prettier",
+        "syncpack"
       ],
       "packages": ["**"],
       "policy": "sameRange"
@@ -29,7 +30,34 @@
         "react-dom",
         "@types/react",
         "@types/react-dom",
-        "preact"
+        "preact",
+        "@preact/**"
+      ],
+      "packages": [
+        "**"
+      ],
+      "policy": "sameRange"
+    },
+    {
+      "label": "Testing tools - consistent versions",
+      "dependencies": [
+        "vitest",
+        "@vitest/**",
+        "@testing-library/**",
+        "playwright",
+        "@playwright/**",
+        "jsdom",
+        "jest"
+      ],
+      "packages": [
+        "**"
+      ],
+      "policy": "sameRange"
+    },
+    {
+      "label": "Workspace packages - always use workspace protocol",
+      "dependencies": [
+        "@niivue/**"
       ],
       "packages": ["**"],
       "policy": "sameRange"
