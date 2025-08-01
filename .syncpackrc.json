@@ -1,0 +1,65 @@
+{
+  "$schema": "https://unpkg.com/syncpack@13.0.4/dist/schema.json",
+  "versionGroups": [
+    {
+      "label": "JupyterLab ecosystem - pinned for compatibility",
+      "dependencies": [
+        "@jupyterlab/**",
+        "@lumino/**"
+      ],
+      "packages": ["**"],
+      "policy": "sameRange"
+    },
+    {
+      "label": "Build tools - flexible ranges",
+      "dependencies": [
+        "typescript",
+        "vite",
+        "turbo",
+        "eslint",
+        "prettier"
+      ],
+      "packages": ["**"],
+      "policy": "sameRange"
+    },
+    {
+      "label": "React ecosystem - consistent versions",
+      "dependencies": [
+        "react",
+        "react-dom",
+        "@types/react",
+        "@types/react-dom",
+        "preact"
+      ],
+      "packages": ["**"],
+      "policy": "sameRange"
+    },
+    {
+      "label": "Default - all other dependencies",
+      "dependencies": ["**"],
+      "packages": ["**"],
+      "policy": "sameRange"
+    }
+  ],
+  "semverGroups": [
+    {
+      "label": "JupyterLab - require exact major.minor compatibility",
+      "dependencies": ["@jupyterlab/**"],
+      "packages": ["**"],
+      "range": "^"
+    },
+    {
+      "label": "Development tools - allow minor updates",
+      "dependencies": [
+        "typescript",
+        "eslint",
+        "prettier",
+        "vite",
+        "turbo"
+      ],
+      "packages": ["**"],
+      "range": "^"
+    }
+  ],
+  "source": ["package.json", "packages/*/package.json", "apps/*/package.json"]
+}

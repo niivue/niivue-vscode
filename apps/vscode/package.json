@@ -209,8 +209,8 @@
     "*"
   ],
   "devDependencies": {
-    "@types/vscode": "catalog:",
-    "esbuild": "catalog:"
+    "@types/vscode": "^1.70.0",
+    "esbuild": "^0.20.2"
   },
   "dependencies": {}
 }
