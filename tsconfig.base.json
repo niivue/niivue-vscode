@@ -1,26 +1,34 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
+    "target": "ES2020",
     "module": "ESNext",
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "esModuleInterop": true,
-    "strict": true,
-    "skipLibCheck": true,
-    "isolatedModules": true,
-    "noEmit": true,
-    "composite": true,
-    "declaration": true,
-    "sourceMap": true,
-    "forceConsistentCasingInFileNames": true,
-    "allowSyntheticDefaultImports": true,
     "lib": [
-      "ESNext",
+      "ES2020",
       "DOM",
       "DOM.Iterable"
-    ]
+    ],
+    /* Module Resolution */
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
+    /* Emit */
+    "isolatedModules": true,
+    "noEmit": true,
+    "declaration": true,
+    "sourceMap": true,
+    /* Type Checking */
+    "strict": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    /* Interop */
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    /* Advanced */
+    "composite": true
   },
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "dist",
+    "build"
   ]
 }

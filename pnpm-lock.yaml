@@ -370,6 +370,9 @@ importers:
       tailwindcss:
         specifier: 'catalog:'
         version: 3.4.17
+      typescript:
+        specifier: 'catalog:'
+        version: 5.8.3
       vite-plugin-pwa:
         specifier: 'catalog:'
         version: 0.21.2(vite@5.4.19(@types/node@22.16.4)(less@4.4.0)(terser@5.43.1))(workbox-build@7.3.0)(workbox-window@7.3.0)

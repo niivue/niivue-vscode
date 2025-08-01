@@ -47,6 +47,7 @@
     "lint-staged": "catalog:",
     "postcss": "catalog:",
     "tailwindcss": "catalog:",
+    "typescript": "catalog:",
     "vite-plugin-pwa": "catalog:",
     "vitest": "^3.0.6",
     "workbox-build": "catalog:",

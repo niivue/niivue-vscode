@@ -39,7 +39,7 @@
     "build:labextension:dev": "jupyter labextension build --development True .",
     "build:lib": "tsc --sourceMap",
     "build:lib:prod": "tsc",
-    "copy:assets": "mkdir -p static/niivue/build && cp -r ../pwa/build/* static/niivue/build/",
+    "copy:assets": "if not exist static\\niivue\\build mkdir static\\niivue\\build && xcopy /E /I /Y ..\\pwa\\build\\* static\\niivue\\build\\",
     "clean": "npm run clean:lib",
     "clean:lib": "rimraf lib tsconfig.tsbuildinfo",
     "clean:lintcache": "rimraf .eslintcache .stylelintcache",
