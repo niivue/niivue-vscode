@@ -16,8 +16,8 @@
   },
   "license": "BSD-3-Clause",
   "author": {
-    "name": "Niivue Lab Extension",
-    "email": ""
+    "name": "Korbinian Eckstein",
+    "email": "korbinian90@gmail.com"
   },
   "files": [
     "lib/**/*.{d.ts,eot,gif,html,jpg,js,js.map,json,png,svg,woff2,ttf}",
