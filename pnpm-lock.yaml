@@ -226,6 +226,9 @@ importers:
       '@types/vscode':
         specifier: ^1.102.0
         version: 1.102.0
+      concurrently:
+        specifier: ^9.2.0
+        version: 9.2.0
       esbuild:
         specifier: ^0.25.8
         version: 0.25.8
