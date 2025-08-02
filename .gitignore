@@ -25,6 +25,9 @@ static/
 build/
 apps/vscode/niivue/
 
+# VS Code extension generated files
+apps/vscode/vscode-styles.css
+
 # Python packaging
 *.egg-info/
 *.pyc

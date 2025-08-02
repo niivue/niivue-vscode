@@ -10,12 +10,17 @@ export async function getHtmlForWebview(
   const styleUri = webview.asWebviewUri(
     vscode.Uri.joinPath(extensionUri, 'niivue', 'index.css'),
   )
+  const vscodeStyleUri = webview.asWebviewUri(
+    vscode.Uri.joinPath(extensionUri, 'vscode-styles.css'),
+  )
   const nonce = getNonce()
+  
   return `<!doctype html>
           <html lang="en">
             <head>
               <meta charset="utf-8" />
               <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data: blob: ${webview.cspSource}; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}';">
+              <link href="${vscodeStyleUri}" rel="stylesheet">
               <link href="${styleUri}" rel="stylesheet">
               <script type="module" crossorigin src="${scriptUri}" nonce="${nonce}"></script>
             </head>
