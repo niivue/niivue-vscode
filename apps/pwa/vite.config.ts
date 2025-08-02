@@ -19,8 +19,9 @@ export default defineConfig({
     mainFields: ['module'],
   },
   server: {
+    host: '0.0.0.0', // Allow connections from any host
     port: 4000,
-    open: true,
+    open: false,
     cors: true,
     watch: {
       // Watch for changes in the React package
