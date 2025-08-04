@@ -31,6 +31,9 @@
     "test:coverage": "vitest run --coverage",
     "clean": "rm -rf dist"
   },
+  "dependencies": {
+    "@niivue/dcm2niix": "^1.0.0"
+  },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.6.4",
     "@testing-library/preact": "^3.2.4",
@@ -41,6 +44,7 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "jsdom": "^26.1.0",
+    "vite-plugin-virtual": "^0.4.0",
     "vitest": "^3.2.4",
     "workbox-window": "^7.3.0"
   },

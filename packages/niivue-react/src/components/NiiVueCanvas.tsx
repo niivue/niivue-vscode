@@ -1,3 +1,28 @@
+/// <reference types="../types/virtual-modules" />
+// Patch Dcm2niix for worker inlining before importing dicom-loader
+import { Dcm2niix } from '@niivue/dcm2niix'
+import workerUrl from 'dcm2niix-worker'
+
+const originalInit = Dcm2niix.prototype.init
+
+Dcm2niix.prototype.init = function () {
+  this.worker = new Worker(workerUrl, { type: 'module' })
+
+  return new Promise((resolve, reject) => {
+    if (this.worker) {
+      this.worker.onmessage = (event: MessageEvent) => {
+        if (event.data?.type === 'ready') {
+          resolve(true)
+        }
+      }
+
+      this.worker.onerror = (error: ErrorEvent) => {
+        reject(new Error(`Worker failed to load: ${error.message || 'Unknown error'}`))
+      }
+    }
+  })
+}
+
 import { dicomLoader } from '@niivue/dicom-loader'
 import { NVImage, NVMesh } from '@niivue/niivue'
 import { Signal } from '@preact/signals'
@@ -22,11 +47,11 @@ export const NiiVueCanvas = ({
   nvArray,
 }: AppProps & NiiVueCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
-  
+
   useEffect(() => {
     canvasRef.current && !nv.canvas && nv.attachToCanvas(canvasRef.current)
   }, [canvasRef.current])
-  
+
   useEffect(() => {
     if (!nv.body) {
       return
@@ -54,7 +79,7 @@ export const NiiVueCanvas = ({
       style={{
         width: `${Math.min(width, height)}px`,
         height: `${Math.min(width, height)}px`,
-        aspectRatio: '1/1'
+        aspectRatio: '1/1',
       }}
     >
       <canvas
@@ -104,7 +129,9 @@ async function getUserInput() {
 async function loadVolume(nv: ExtendedNiivue, item: any) {
   // Read .ima and .IMA as dicom files
   if (Array.isArray(item.uri)) {
-    item.uri = item.uri.map((uri: any) => uri.replace('.ima', '.dcm').replace('.IMA', '.dcm'))
+    item.uri = item.uri.map((uri: any) =>
+      uri.replace('.ima', '.dcm').replace('.IMA', '.dcm'),
+    )
   } else if (item.uri.endsWith('.ima') || item.uri.endsWith('.IMA')) {
     item.uri = item.uri.replace('.ima', '.dcm').replace('.IMA', '.dcm')
   }

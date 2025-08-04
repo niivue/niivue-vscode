@@ -33,7 +33,7 @@
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true
   },
-  "include": ["src/**/*", "test/setup.ts", "vitest.config.ts"],
+  "include": ["src/**/*", "src/types/virtual-modules.d.ts", "test/setup.ts", "vitest.config.ts"],
   "exclude": ["tests/**/*", "build/**/*", "node_modules/**/*"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
