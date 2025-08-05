@@ -1,0 +1,78 @@
+name: Release VS Code Extension
+
+on:
+  push:
+    tags: ['vscode-v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 2.4.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build dependencies
+        run: pnpm turbo build --filter=@niivue/vscode^...
+
+      - name: Package extension
+        run: pnpm vsce package
+        working-directory: ./apps/vscode
+
+      - name: Publish to VS Code Marketplace
+        run: pnpm vsce publish
+        working-directory: ./apps/vscode
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+
+      - name: Publish to Open VSX Registry
+        run: pnpm ovsx publish
+        working-directory: ./apps/vscode
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: VS Code Extension ${{ github.ref }}
+          body: |
+            ## Changes
+            
+            - VS Code extension release
+            
+            ## Installation
+            
+            Install from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=KorbinianEckstein.niivue)
+          draft: false
+          prerelease: false
+
+      - name: Upload extension artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vscode-extension
+          path: apps/vscode/*.vsix
