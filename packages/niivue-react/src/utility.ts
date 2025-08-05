@@ -96,6 +96,8 @@ export function isImageType(item: string) {
     '.v',
     '.v16',
     '.vmr',
+    '.mnc',
+    '.mnc.gz',
   ].find((fileType) => item.endsWith(fileType))
 }
 

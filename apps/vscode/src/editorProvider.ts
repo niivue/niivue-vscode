@@ -36,7 +36,7 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     const panel = vscode.window.createWebviewPanel(viewType, tabName, vscode.ViewColumn.One, {
       enableScripts: true,
       retainContextWhenHidden: true,
-      localResourceRoots: [context.extensionUri],
+      localResourceRoots: [context.extensionUri, vscode.Uri.joinPath(vscode.workspace.workspaceFolders?.[0]?.uri ?? vscode.Uri.file('/'), '..')],
     })
     panel.webview.html = await getHtmlForWebview(panel.webview, context.extensionUri)
     const editor = new NiiVueEditorProvider(context)
@@ -69,12 +69,17 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     const name = vscode.Uri.parse(uri.toString()).path.split('/').pop()
     const tabName = name ? `web: ${name}` : 'NiiVue Web Panel'
     this.createPanel(context, 'niivue.webview', tabName, uri).then((panel) => {
+      const editor = new NiiVueEditorProvider(context)
+
       panel.webview.onDidReceiveMessage(async (e) => {
         if (e.type === 'ready') {
           this.postInitSettings(panel)
+
+          // Send file URL instead of reading the entire file
+          const fileUrl = editor.createFileUrl(uri, panel.webview)
           panel.webview.postMessage({
             type: 'addImage',
-            body: { uri: uri.toString() },
+            body: { uri: fileUrl },
           })
         }
       })
@@ -97,6 +102,8 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
   public static async createCompareView(context: vscode.ExtensionContext, items: any) {
     const uris = items.map((item: any) => vscode.Uri.parse(item))
     this.createPanel(context, 'niivue.compare', 'NiiVue Compare Panel', uris[0]).then((panel) => {
+      const editor = new NiiVueEditorProvider(context)
+
       panel.webview.onDidReceiveMessage(async (e) => {
         if (e.type === 'ready') {
           this.postInitSettings(panel)
@@ -105,12 +112,11 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
             body: { n: uris.length },
           })
           for (const uri of uris) {
-            const data = await vscode.workspace.fs.readFile(uri)
+            const fileUrl = editor.createFileUrl(uri, panel.webview)
             panel.webview.postMessage({
               type: 'addImage',
               body: {
-                data: data.buffer,
-                uri: uri.toString(),
+                uri: fileUrl,
               },
             })
           }
@@ -120,6 +126,8 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
   }
 
   private static addCommonListeners(panel: vscode.WebviewPanel) {
+    const editor = new NiiVueEditorProvider(null as any) // Temporary instance for createFileUrl method
+
     panel.webview.onDidReceiveMessage(async (e) => {
       switch (e.type) {
         case 'addOverlay':
@@ -133,15 +141,13 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
             })
             .then((uris) => {
               if (uris && uris.length > 0) {
-                vscode.workspace.fs.readFile(uris[0]).then((data) => {
-                  panel.webview.postMessage({
-                    type: e.body.type,
-                    body: {
-                      data: data.buffer,
-                      uri: uris[0].toString(),
-                      index: e.body.index,
-                    },
-                  })
+                const fileUrl = editor.createFileUrl(uris[0], panel.webview)
+                panel.webview.postMessage({
+                  type: e.body.type,
+                  body: {
+                    uri: fileUrl,
+                    index: e.body.index,
+                  },
                 })
               }
             })
@@ -162,14 +168,25 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
                   body: { n: uris.length },
                 })
                 for (const uri of uris) {
-                  const data = await vscode.workspace.fs.readFile(uri)
-                  panel.webview.postMessage({
-                    type: 'addImage',
-                    body: {
-                      data: data.buffer,
-                      uri: uri.toString(),
-                    },
-                  })
+                  // Handle DICOM files differently - send data instead of URL
+                  if (uri.path.toLowerCase().endsWith('.dcm')) {
+                    const data = await vscode.workspace.fs.readFile(uri)
+                    panel.webview.postMessage({
+                      type: 'addImage',
+                      body: {
+                        data: data.buffer,
+                        uri: uri.toString(),
+                      },
+                    })
+                  } else {
+                    const fileUrl = editor.createFileUrl(uri, panel.webview)
+                    panel.webview.postMessage({
+                      type: 'addImage',
+                      body: {
+                        uri: fileUrl,
+                      },
+                    })
+                  }
                 }
               }
             })
@@ -214,25 +231,45 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     this.webviews.add(document.uri, webviewPanel)
     webviewPanel.webview.options = {
       enableScripts: true,
-      localResourceRoots: [this._context.extensionUri],
+      localResourceRoots: [this._context.extensionUri, vscode.Uri.joinPath(vscode.workspace.workspaceFolders?.[0]?.uri ?? vscode.Uri.file('/'), '..')],
     }
     webviewPanel.webview.html = await getHtmlForWebview(
       webviewPanel.webview,
       this._context.extensionUri,
     )
+
     NiiVueEditorProvider.addCommonListeners(webviewPanel)
+
     webviewPanel.webview.onDidReceiveMessage(async (message) => {
       if (message.type === 'ready') {
         NiiVueEditorProvider.postInitSettings(webviewPanel)
-        webviewPanel.webview.postMessage({
-          type: 'addImage',
-          body: {
-            data: document.data.buffer,
-            uri: document.uri.toString(),
-          },
-        })
+
+        // Handle DICOM files differently - send data instead of URL
+        if (document.uri.path.toLowerCase().endsWith('.dcm')) {
+          webviewPanel.webview.postMessage({
+            type: 'addImage',
+            body: {
+              data: document.data.buffer,
+              uri: document.uri.toString(),
+            },
+          })
+        } else {
+          // Send file URL instead of data for non-DICOM files
+          const fileUrl = this.createFileUrl(document.uri, webviewPanel.webview)
+          webviewPanel.webview.postMessage({
+            type: 'addImage',
+            body: {
+              uri: fileUrl,
+            },
+          })
+        }
       }
     })
+  }
+
+  private createFileUrl(uri: vscode.Uri, webview: vscode.Webview): string {
+    // Use VS Code's secure webview URI system for serving files
+    return webview.asWebviewUri(uri).toString()
   }
 }
 

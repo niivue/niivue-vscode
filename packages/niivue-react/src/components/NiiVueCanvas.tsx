@@ -145,6 +145,13 @@ async function loadVolume(nv: ExtendedNiivue, item: any) {
     }
   }
 
+  if (isImageType(item.uri) && !item.data && !item.uri.endsWith('.dcm')) {
+    // If the item is an image type but has no data, load it from the URL
+    const image = { url: item.uri }
+    nv.loadImages([image])
+    return
+  }
+
   // Read .ima and .IMA as dicom files
   if (Array.isArray(item.uri)) {
     item.uri = item.uri.map((uri: any) =>
