@@ -1,19 +1,29 @@
-import { App, type AppProps } from '@niivue/react'
+import {
+  Container,
+  ImageDrop,
+  listenToMessages,
+  Menu,
+  type AppProps,
+} from '@niivue/react'
 import { computed } from '@preact/signals'
+import { useEffect } from 'preact/hooks'
 import { HomeScreen } from './components/HomeScreen'
 
 export const Pwa = ({ appProps }: { appProps: AppProps }) => {
   const nImages = computed(() => appProps.nvArray.value.length)
   const showHomeScreen = computed(() => nImages.value == 0)
 
+  useEffect(() => {
+    listenToMessages(appProps)
+    document.dispatchEvent(new Event('AppReady'))
+  }, [])
+
   return (
-    <>
-      <App appProps={appProps} />
-      {showHomeScreen.value && (
-        <div className="absolute z-10 flex flex-col items-start justify-start overflow-y-auto bg-gray-800 inset-7">
-          <HomeScreen />
-        </div>
-      )}
-    </>
+    <ImageDrop>
+      <Menu {...appProps} />
+      {showHomeScreen.value && <HomeScreen />}
+      <Container {...appProps} />
+      <div className="pl-2">{appProps.location}</div>
+    </ImageDrop>
   )
 }
