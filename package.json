@@ -1,6 +1,7 @@
 {
   "name": "@niivue/monorepo",
   "version": "0.0.0",
+  "type": "module",
   "private": true,
   "description": "NiiVue monorepo with multiple packages and applications",
   "homepage": "https://github.com/niivue/niivue-vscode",
@@ -29,6 +30,7 @@
     "update:check": "pnpm dlx syncpack list && echo '\n📋 Run pnpm update:safe for safe updates or pnpm update:all for latest versions'"
   },
   "devDependencies": {
+    "@eslint/js": "^9.32.0",
     "@preact/preset-vite": "^2.10.2",
     "@types/node": "^24.1.0",
     "@typescript-eslint/eslint-plugin": "^8.38.0",
@@ -37,10 +39,12 @@
     "concurrently": "9.2.0",
     "eslint": "^9.32.0",
     "eslint-config-prettier": "^10.1.8",
+    "globals": "^15.0.0",
     "prettier": "^3.6.2",
     "syncpack": "^13.0.4",
     "turbo": "^2.5.5",
     "typescript": "^5.9.2",
+    "typescript-eslint": "^8.38.0",
     "vite": "^7.0.6",
     "vite-plugin-dts": "^4.5.4"
   },

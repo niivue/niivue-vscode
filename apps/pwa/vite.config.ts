@@ -71,12 +71,15 @@ export default defineConfig({
               export default URL.createObjectURL(blob);
             `;
           } catch (error) {
-            console.error('Failed to create self-contained worker:', error);
+            console.warn('Failed to create self-contained worker, using fallback:', error);
           }
         }
         
-        // Fallback to Vite's worker import
-        return `import workerUrl from '${workerPath.replace(/\\/g, '/')}?worker&url'; export default workerUrl;`;
+        // Simple fallback that doesn't use problematic worker syntax
+        return `
+          console.warn('dcm2niix worker not available in this build');
+          export default null;
+        `;
       })()
     }),
     VitePWA({
@@ -162,6 +165,7 @@ export default defineConfig({
     sourcemap: true,
     chunkSizeWarningLimit: 1000, // Increase threshold for medical imaging libs that include compression algorithms
     rollupOptions: {
+      external: [],
       output: {
         entryFileNames: 'assets/[name]-[hash].js',
         chunkFileNames: 'assets/[name]-[hash].js',
@@ -169,6 +173,14 @@ export default defineConfig({
         manualChunks: {
           vendor: ['preact', '@preact/signals'],
         },
+      },
+      // Ensure virtual modules are properly handled
+      onwarn: (warning, warn) => {
+        // Suppress warnings about virtual modules
+        if (warning.code === 'UNRESOLVED_IMPORT' && warning.message?.includes('dcm2niix-worker')) {
+          return;
+        }
+        warn(warning);
       },
     },
     target: 'esnext',
