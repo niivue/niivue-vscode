@@ -1,0 +1,125 @@
+name: Release JupyterLab Extension
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version_spec:
+        description: "New Version Specifier"
+        default: "next"
+        required: false
+      branch:
+        description: "The target branch for the release"
+        required: false
+      release_url:
+        description: "The URL of the draft GitHub release"
+        required: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  prep_release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build dependencies
+        run: pnpm turbo build --filter=@niivue/jupyter^...
+
+      - name: Prep Release
+        id: prep-release
+        uses: jupyter-server/jupyter_releaser/.github/actions/prep-release@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          version_spec: ${{ github.event.inputs.version_spec }}
+          branch: ${{ github.event.inputs.branch }}
+        env:
+          RH_ADMIN_CHECK: false
+
+  publish_release:
+    needs: [prep_release]
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      id-token: write
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build dependencies
+        run: pnpm turbo build --filter=@niivue/jupyter^...
+
+      - name: Populate Release
+        id: populate-release
+        uses: jupyter-server/jupyter_releaser/.github/actions/populate-release@v2
+        with:
+          token: ${{ secrets.ADMIN_GITHUB_TOKEN }}
+          branch: ${{ github.event.inputs.branch }}
+          release_url: ${{ github.event.inputs.release_url }}
+
+      - name: Finalize Release
+        id: finalize-release
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+        uses: jupyter-server/jupyter_releaser/.github/actions/finalize-release@v2
+        with:
+          token: ${{ secrets.ADMIN_GITHUB_TOKEN }}
+          release_url: ${{ steps.populate-release.outputs.release_url }}
+
+      - name: "** Next Step **"
+        if: ${{ success() }}
+        run: |
+          echo "Verify the final release"
+          echo ${{ steps.finalize-release.outputs.release_url }}
+
+      - name: "** Failure Message **"
+        if: ${{ failure() }}
+        run: |
+          echo "Failed to Publish the Draft Release Url:"
+          echo ${{ steps.populate-release.outputs.release_url }}
