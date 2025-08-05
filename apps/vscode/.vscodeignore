@@ -1,0 +1,48 @@
+# Development and build files
+src/
+tsconfig.json
+postcss.config.js
+tailwind.config.js
+.turbo/
+node_modules/
+*.log
+
+# Test files and sample data (large files)
+*.nii
+*.nii.gz
+*.dcm
+*.mnc
+*.mz3
+
+# Documentation
+CHANGELOG.md
+
+# Version control and CI
+.git/
+.github/
+.gitignore
+
+# IDE and editor files
+.vscode/
+*.swp
+*.swo
+*~
+
+# Source maps (reduce package size significantly)
+*.map
+**/*.map
+
+# TypeScript declaration files (not needed at runtime)
+*.d.ts
+**/*.d.ts
+
+# Test directories and files
+**/test/
+**/*.test.*
+
+# Build artifacts not needed in extension
+dist/tsconfig.tsbuildinfo
+
+# Duplicate icons in niivue directory
+niivue/niivue_icon.png
+niivue/niivue_icon_transparent_contrast.png
