@@ -155,8 +155,6 @@ vsce publish patch|minor|major [--pre-release]
 ovsx publish --pat <openVSX access key>
 ```
 
-**Note:** The VS Code extension uses `"name": "niivue"` (not scoped) in its package.json because VS Code extensions cannot have scoped names, even though this is part of the `@niivue` monorepo.
-
 **Prerequisites:**
 - Personal Access Token for [VS Code Marketplace](https://marketplace.visualstudio.com/manage)
 - Personal Access Token for [Open VSX Registry](https://open-vsx.org/)
