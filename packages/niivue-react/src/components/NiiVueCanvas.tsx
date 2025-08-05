@@ -17,13 +17,18 @@ Dcm2niix.prototype.init = function () {
       }
 
       this.worker.onerror = (error: ErrorEvent) => {
-        reject(new Error(`Worker failed to load: ${error.message || 'Unknown error'}`))
+        reject(
+          new Error(
+            `Worker failed to load: ${error.message || 'Unknown error'}`,
+          ),
+        )
       }
     }
   })
 }
 
 import { dicomLoader } from '@niivue/dicom-loader'
+import { mnc2nii } from '@niivue/minc-loader'
 import { NVImage, NVMesh } from '@niivue/niivue'
 import { Signal } from '@preact/signals'
 import { useEffect, useRef } from 'preact/hooks'
@@ -127,6 +132,19 @@ async function getUserInput() {
 }
 
 async function loadVolume(nv: ExtendedNiivue, item: any) {
+  const isMincFile = (uri: string) => {
+    const lowerUri = uri.toLowerCase()
+    return lowerUri.endsWith('.mnc') || lowerUri.endsWith('.mnc.gz')
+  }
+  if (isMincFile(item.uri)) {
+    nv.useLoader(mnc2nii, 'mnc', 'nii')
+    if (item.data) {
+      const image = { name: item.uri, url: item.data }
+      nv.loadImages([image])
+      return
+    }
+  }
+
   // Read .ima and .IMA as dicom files
   if (Array.isArray(item.uri)) {
     item.uri = item.uri.map((uri: any) =>

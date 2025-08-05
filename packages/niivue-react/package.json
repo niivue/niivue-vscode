@@ -32,7 +32,8 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@niivue/dcm2niix": "^1.0.0"
+    "@niivue/dcm2niix": "^1.0.0",
+    "@niivue/minc-loader": "^1.0.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.6.4",

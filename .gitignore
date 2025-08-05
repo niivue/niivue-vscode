@@ -7,6 +7,8 @@ node_modules
 data/
 .yarn/
 *.nii*
+*.mz3
+*.mnc*
 static/
 
 # Build artifacts

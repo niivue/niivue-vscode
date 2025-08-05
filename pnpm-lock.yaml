@@ -250,6 +250,9 @@ importers:
       '@niivue/dicom-loader':
         specifier: ^1.0.0
         version: 1.0.0
+      '@niivue/minc-loader':
+        specifier: ^1.0.0
+        version: 1.0.0
       '@niivue/niivue':
         specifier: 0.61.0
         version: 0.61.0
@@ -1409,6 +1412,9 @@ packages:
 
   '@niivue/dicom-loader@1.0.0':
     resolution: {integrity: sha512-eBSh5di8ADYQN1aqsUOiVc3zlIjBGJj4rpt+mijWns2UqLqvd83eWY6YyBw0iFpLX8dR0dmSzoPTjWVndXPO/A==}
+
+  '@niivue/minc-loader@1.0.0':
+    resolution: {integrity: sha512-wcrFHr+7F5aGg7cdxFoOYolJH6EHlW5xZNkh0+lAkDPnOneLAWlS8+RzPw383jcqIx5+xf+dgK4TVgU/OZ8KUQ==}
 
   '@niivue/niivue@0.61.0':
     resolution: {integrity: sha512-QZCfYLuUATcbx2gtFVIkbCO52DW3SleZYNoNUKAmMJXyjTJLgu+n/+IQubYJ2TVfDuvgLz0ffe6jzHgdUErqaw==}
@@ -3784,6 +3790,9 @@ packages:
 
   nice-try@1.0.5:
     resolution: {integrity: sha512-1nh45deeb5olNY7eX82BkPO7SSxR5SSYJiPTrTdFUVYwAl8CKMA5N9PjTYkHiRjisVcxcQ1HXdLhx2qxxJzLNQ==}
+
+  nifti-reader-js@0.7.1:
+    resolution: {integrity: sha512-nogmYGO0md1ger0GXwzPo/KSbhsujPOpsqV6jJEQcfw+q97iyXfjFpmKyqnSFZMD6XxCa3zzIk6Aqe9zCZJC2A==}
 
   nifti-reader-js@0.8.0:
     resolution: {integrity: sha512-iO1iIhQDfKniy+l/86HfOPte7So+SxBmBiMSiUB2VXU7z4hSewMTlE3h0fCgfzfXvMUa+ilzLTJ2ZHmtFw6EWw==}
@@ -7100,6 +7109,10 @@ snapshots:
     dependencies:
       '@niivue/dcm2niix': 1.2.0
 
+  '@niivue/minc-loader@1.0.0':
+    dependencies:
+      nifti-reader-js: 0.7.1
+
   '@niivue/niivue@0.61.0':
     dependencies:
       '@lukeed/uuid': 2.0.1
@@ -9660,6 +9673,10 @@ snapshots:
   neo-async@2.6.2: {}
 
   nice-try@1.0.5: {}
+
+  nifti-reader-js@0.7.1:
+    dependencies:
+      fflate: 0.8.2
 
   nifti-reader-js@0.8.0:
     dependencies:
