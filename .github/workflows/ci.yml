@@ -191,7 +191,7 @@ jobs:
   e2e-tests:
     needs: [changes, build]
     if: needs.changes.outputs.pwa == 'true'
-    timeout-minutes: 60
+    timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

@@ -11,6 +11,7 @@ export async function loadTestImage(page) {
     },
   }
   await page.evaluate((m) => window.postMessage(m, '*'), message)
+  await page.waitForSelector('canvas', { timeout: 10000 })
 }
 
 export async function loadOverlay(page) {
@@ -38,6 +39,7 @@ export async function loadTestSurfImage(page) {
     },
   }
   await page.evaluate((m) => window.postMessage(m, '*'), message)
+  await page.waitForSelector('canvas', { timeout: 10000 })
 }
 
 export async function loadTestSurfOverlay(page, file_type) {
@@ -64,7 +66,9 @@ export function listenForDebugMessage(page) {
   const message = page.evaluate(() => {
     return new Promise((resolve) => {
       window.addEventListener('message', (event) => {
-        if (event.data?.type == 'debugAnswer') resolve(event.data.body)
+        if (event.data?.type == 'debugAnswer') {
+          resolve(event.data.body)
+        }
       })
     })
   })

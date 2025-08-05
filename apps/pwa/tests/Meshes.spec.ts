@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 import { BASE_URL, loadTestSurfImage, loadTestSurfOverlay } from './utils'
 
 test.describe('Loading meshes', () => {
@@ -8,7 +8,6 @@ test.describe('Loading meshes', () => {
     await loadTestSurfImage(page)
     await page.waitForTimeout(1000) // wait time to work around a bug
 
-    expect(await page.waitForSelector('canvas')).toBeTruthy()
     expect(await page.$$('canvas')).toHaveLength(1)
 
     await loadTestSurfImage(page)

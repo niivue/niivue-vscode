@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 import { BASE_URL, loadTestImage } from './utils'
 
 test.describe('Menu', () => {
@@ -28,7 +28,6 @@ test.describe('Menu', () => {
 
     // load an image
     await loadTestImage(page)
-    expect(await page.waitForSelector('canvas')).toBeTruthy()
     expect(
       await page.textContent('text=/matrix size: 207 x 256 x 215, voxelsize: 0.74 x 0.74 x 0.74/i'),
     ).toBeTruthy()
@@ -52,7 +51,6 @@ test.describe('Menu', () => {
 
     await loadTestImage(page)
 
-    expect(await page.waitForSelector('canvas')).toBeTruthy()
     expect(await page.$$('canvas')).toHaveLength(1)
     expect(
       await page.textContent('text=/matrix size: 207 x 256 x 215, voxelsize: 0.74 x 0.74 x 0.74/i'),
@@ -70,7 +68,7 @@ test.describe('Menu', () => {
     await page.click('data-testid=menu-item-dropdown-Add Image')
     await page.click('text=/Example Image/i')
 
-    expect(await page.waitForSelector('canvas')).toBeTruthy()
+    expect(await page.waitForSelector('canvas', { timeout: 10000 })).toBeTruthy()
     expect(await page.$$('canvas')).toHaveLength(1)
     expect(
       await page.textContent('text=/matrix size: 207 x 256 x 215, voxelsize: 0.74 x 0.74 x 0.74/i'),
