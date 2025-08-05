@@ -62,74 +62,102 @@ If niivue-vscode fails to open any of these files, please create an issue.
 ## Developing this extension in VSCode
 
 - Fork this repository;
-- Clone [this repository](https://github.com/korbinian90/niivue-vscode) and open in VSCode
+- Clone [this repository](https://github.com/niivue/niivue-vscode) and open in VSCode
 - Run inside the `niivue-vscode` folder
 
 ### Installing
 
+This project uses pnpm for package management and Turborepo for build orchestration.
+
 ```bash
-    npm install --global yarn
-    yarn install:all
+pnpm install
 ```
 
-It might be required to update *node* first before running 'yarn install'. This can be done with the following:
+### Development Workflow
+
+For development with live reload:
 
 ```bash
-    npm install --global n
-    n latest
-```
-
-### Hot Reload Development in browser
-
-```bash
-    yarn start:webview
+# Start the VS Code extension in watch mode
+pnpm --filter @niivue/vscode watch
 ```
 
 ### Debugging the extension in vscode
 
-This requires a full compilation and is slow
-
-```bash
-    yarn watch:webview
-```
-
+- Ensure the watch task is running (see above)
 - Press `F5` (a new VSCode window opens: Extension Development Host)
 - Test the extension in the Extension Development Host by opening an image file
 - Press `Ctrl+R` in the Extension Development Host for reload after a code change
 
-### Playwright Tests
+### Building
 
-The playwright tests are for the niivue webview.
-Install the vscode extension `Playwright Test for VSCode`.
-Open the command line and execute
+To build the extension:
 
 ```bash
-    yarn start:webview
+# Build all dependencies and the extension
+pnpm build
+
+# Or build just the VS Code extension and its dependencies
+pnpm --filter @niivue/vscode build
 ```
 
-Open the vscode test interface and run the tests. New tests can be added under `niivue/tests`
+### Testing
 
-## Tests don't show
-
-It might be required to run this inside the `niivue` subdirectory: `npx playwright install` and `npx playwright test`.
-
-### Test in the web version of vscode
+Run tests across the monorepo:
 
 ```bash
-    yarn esbuild
-    yarn open-in-browser
+pnpm test
 ```
 
 ### Publishing
 
-First publish to vscode marketplace, this automatically increments the version number and creates a git commit
 
+#### Option 1: Automated Release via GitHub Actions
+
+**Tag-based release:**
 ```bash
-    vsce publish patch|minor|major [--pre-release]    
+# Create and push a tag (replace x.y.z with actual version)
+git tag vscode-vx.y.z
+git push origin vscode-vx.y.z
 ```
 
-Then publish to openVSX marketplace
+The GitHub Action will automatically:
+- Build the extension
+- Publish to VS Code Marketplace
+- Publish to Open VSX Registry
+- Create a GitHub release
+- Upload the `.vsix` file as an artifact
+
+**Prerequisites:**
+- Repository secrets must be configured (for automated releases):
+  - `VSCE_PAT`: Personal Access Token for VS Code Marketplace
+  - `OVSX_PAT`: Personal Access Token for Open VSX Registry
+
+#### Option 2: Manual Publishing
+
+For manual publishing, you'll need to install the publishing tools and have the necessary access tokens:
 
 ```bash
-    npx ovsx publish --pat <openVSX access key>
+# Install publishing tools globally
+npm install -g @vscode/vsce ovsx
+
+# Navigate to the VS Code extension directory
+cd apps/vscode
+
+# Build the extension
+pnpm build
+
+# Update version in package.json (optional - vsce can do this automatically)
+# Then publish to VS Code Marketplace
+vsce publish patch|minor|major [--pre-release]
+
+# Publish to Open VSX Registry
+ovsx publish --pat <openVSX access key>
 ```
+
+**Note:** The VS Code extension uses `"name": "niivue"` (not scoped) in its package.json because VS Code extensions cannot have scoped names, even though this is part of the `@niivue` monorepo.
+
+**Prerequisites:**
+- Personal Access Token for [VS Code Marketplace](https://marketplace.visualstudio.com/manage)
+- Personal Access Token for [Open VSX Registry](https://open-vsx.org/)
+
