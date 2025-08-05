@@ -23,7 +23,6 @@ export default [
       // TypeScript specific rules
       "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
       "@typescript-eslint/no-explicit-any": "warn",
-      "@typescript-eslint/prefer-const": "error",
 
       // Code style rules (formatting-like)
       "no-console": ["warn", { "allow": ["warn", "error"] }],
