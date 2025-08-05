@@ -20,6 +20,10 @@ build_log.json
 *.orig
 *.js.map
 
+# Lint cache files
+.eslintcache
+.stylelintcache
+
 # Generated directories
 lib/
 dist/

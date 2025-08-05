@@ -38,6 +38,7 @@ Add these secrets to your GitHub repository (Settings → Secrets and variables 
 ### 2. Package Registry Accounts
 
 #### PyPI Setup
+
 1. Create an account on [PyPI](https://pypi.org/account/register/)
 2. Enable 2FA on your account
 3. Create an API token:
@@ -47,6 +48,7 @@ Add these secrets to your GitHub repository (Settings → Secrets and variables 
    - Copy the token (starts with `pypi-`)
 
 #### npm Setup
+
 1. Create an account on [npmjs.com](https://www.npmjs.com/signup)
 2. Enable 2FA on your account
 3. Create an access token:
@@ -58,6 +60,7 @@ Add these secrets to your GitHub repository (Settings → Secrets and variables 
 ### 3. Development Environment
 
 Ensure you have the following installed:
+
 - Python 3.8+
 - Node.js 18+
 - JupyterLab 4.0+
@@ -69,11 +72,13 @@ If you prefer to release manually or need to troubleshoot:
 ### Step 1: Prepare the Release
 
 1. **Ensure clean working directory:**
+
    ```bash
    git status  # Should show no uncommitted changes
    ```
 
 2. **Update version in package.json:**
+
    ```bash
    cd niivue-jupyter
    npm version patch  # or minor, major, or specific version like 1.2.3
@@ -85,17 +90,20 @@ If you prefer to release manually or need to troubleshoot:
 ### Step 2: Build and Test
 
 1. **Install dependencies:**
+
    ```bash
    cd niivue-jupyter
    npm ci
    ```
 
 2. **Build the extension:**
+
    ```bash
    npm run build:prod
    ```
 
 3. **Run tests:**
+
    ```bash
    npm run lint:check
    npm test
@@ -110,6 +118,7 @@ If you prefer to release manually or need to troubleshoot:
 ### Step 3: Create GitHub Release
 
 1. **Commit and tag:**
+
    ```bash
    git add package.json
    git commit -m "Release v$(node -p 'require("./niivue-jupyter/package.json").version')"
@@ -134,6 +143,7 @@ The GitHub Actions workflow will automatically publish to PyPI and npm when you 
 The project includes GitHub Actions workflows that automate the release process:
 
 ### Files Added:
+
 - `.github/workflows/release_jupyter.yml`: Handles drafting and publishing releases
 - `.github/workflows/test.yml`: Runs tests on PRs and pushes
 - `.jupyter-releaser.json`: Configuration for Jupyter releaser
@@ -142,6 +152,7 @@ The project includes GitHub Actions workflows that automate the release process:
 ### Workflow Triggers:
 
 1. **Automatic on tag push:**
+
    ```bash
    git tag v1.0.0
    git push origin v1.0.0
@@ -156,10 +167,12 @@ The project includes GitHub Actions workflows that automate the release process:
 ## 📦 Package Structure
 
 The extension is published as:
+
 - **Python package:** `jupyterlab-niivue` on PyPI
 - **npm package:** `jupyterlab-niivue` on npm
 
 Both packages contain the same JupyterLab extension but in different formats:
+
 - Python package includes the built labextension
 - npm package is for development and contains TypeScript source
 
