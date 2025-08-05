@@ -133,6 +133,12 @@
           },
           {
             "filenamePattern": "*.gii"
+          },
+          {
+            "filenamePattern": "*.mnc"
+          },
+          {
+            "filenamePattern": "*.mnc.gz"
           }
         ]
       }
@@ -169,7 +175,9 @@
           ".v16",
           ".vmr",
           ".mz3",
-          ".gii"
+          ".gii",
+          ".mnc",
+          ".mnc.gz"
         ],
         "icon": {
           "light": "./niivue_icon_transparent_contrast.png",
