@@ -26,7 +26,8 @@ export const HomeScreen = () => (
 
     <h2 className="text-3xl font-bold text-gray-200 p-2">Update App</h2>
     <p className="w-96 mb-4 text-m font-normal text-gray-300 pl-2">
-      To update the app to the latest version, press{' '}
+      The app will automatically check for updates and show a notification when a new version is available. 
+      You can also manually force an update by pressing{' '}
       <kbd className="bg-gray-600 px-1 rounded">Ctrl+Shift+R</kbd> to force
       refresh and clear the cache.
     </p>
