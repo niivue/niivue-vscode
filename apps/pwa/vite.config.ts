@@ -1,6 +1,6 @@
 import preact from '@preact/preset-vite'
-import path, { resolve } from 'path'
 import fs from 'fs'
+import path, { resolve } from 'path'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import virtual from 'vite-plugin-virtual'

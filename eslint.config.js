@@ -25,7 +25,7 @@ export default [
       "@typescript-eslint/no-explicit-any": "warn",
 
       // Code style rules (formatting-like)
-      "no-console": ["warn", { "allow": ["warn", "error"] }],
+      "no-console": ["warn", { "allow": ["warn", "error", "log"] }],
       "prefer-const": "error",
       "no-var": "error",
       "eqeqeq": ["error", "always"],
@@ -37,6 +37,14 @@ export default [
         "ignoreDeclarationSort": true,
         "ignoreMemberSort": false
       }]
+    }
+  },
+  // More relaxed rules for VS Code extension development
+  {
+    files: ["apps/vscode/**/*.{ts,tsx}"],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off", // VS Code APIs often use any
+      "no-console": "off", // Console logging is common in extensions for debugging
     }
   }
 ];
