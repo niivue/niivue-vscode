@@ -82,9 +82,8 @@ export const NiiVueCanvas = ({
     <div
       className="relative"
       style={{
-        width: `${Math.min(width, height)}px`,
-        height: `${Math.min(width, height)}px`,
-        aspectRatio: '1/1',
+        width: `${width}px`,
+        height: `${height}px`,
       }}
     >
       <canvas
