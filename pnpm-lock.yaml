@@ -233,7 +233,7 @@ importers:
   apps/vscode:
     devDependencies:
       '@types/vscode':
-        specifier: ^1.102.0
+        specifier: ^1.70.0
         version: 1.102.0
       autoprefixer:
         specifier: ^10.4.0
