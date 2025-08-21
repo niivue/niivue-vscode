@@ -23,7 +23,20 @@
         "mhutchie.git-graph",
         "dbaeumer.vscode-eslint",
         "ms-playwright.playwright"
-      ]
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.formatting.provider": "black",
+        "typescript.preferences.include": [
+          "@niivue/react"
+        ],
+        "eslint.workingDirectories": [
+          "apps/vscode",
+          "apps/pwa",
+          "apps/jupyter",
+          "packages/niivue-react"
+        ]
+      }
     }
   },
   "postCreateCommand": ".devcontainer/setup.sh",

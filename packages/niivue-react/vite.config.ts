@@ -1,12 +1,22 @@
 /// <reference types="vitest" />
 import preact from '@preact/preset-vite'
-import path, { resolve } from 'path'
 import fs from 'fs'
+import path, { resolve } from 'path'
 import { defineConfig } from 'vite'
 import dts from 'vite-plugin-dts'
 import virtual from 'vite-plugin-virtual'
 
 export default defineConfig({
+  server: {
+    host: '0.0.0.0', // Allow connections from any host
+    port: 4000,
+    open: false,
+    cors: true,
+    fs: {
+      // Allow serving files from the monorepo
+      allow: ['../..'],
+    },
+  },
   plugins: [
     preact(),
     dts({

@@ -21,6 +21,7 @@
     "src"
   ],
   "scripts": {
+    "webview": "vite",
     "build": "vite build",
     "build:types": "vite build && tsc --emitDeclarationOnly --declaration --outDir dist",
     "dev": "concurrently \"vite build --watch\" \"tsc --emitDeclarationOnly --declaration --outDir dist --watch\"",

@@ -3,52 +3,47 @@ set -e
 
 echo "🚀 Setting up NiiVue development environment..."
 
-# Update npm to latest version (suppress funding messages)
-echo "📦 Updating npm..."
-npm install -g npm@latest --silent
-
-# Install pnpm
+# Install pnpm globally
 echo "📦 Installing pnpm..."
-npm install -g pnpm@latest --silent
+npm install -g pnpm@latest
 
-# Configure pnpm for monorepo
+# Create and configure pnpm store
 echo "⚙️ Configuring pnpm..."
 mkdir -p /tmp/pnpm-store
 pnpm config set store-dir /tmp/pnpm-store
-pnpm config set auto-install-peers true
 
-# Install dependencies
+# Install all dependencies
 echo "📦 Installing project dependencies..."
-pnpm install --frozen-lockfile
+pnpm install
 
-# Setup Python environment for Jupyter
-echo "🐍 Setting up Python environment..."
+# Install Python development dependencies for Jupyter
+echo "🐍 Setting up Python environment for JupyterLab development..."
 pip install --upgrade pip
-pip install jupyterlab>=4.0.0 jupyter-packaging build hatch --quiet
+pip install jupyterlab>=4.0.0 jupyter-packaging build hatch
 
 # Install Jupyter extension in development mode
 echo "🔧 Setting up JupyterLab extension..."
 cd apps/jupyter
-pip install -e .[test] --quiet
+pip install -e .[test]
 
-# Build packages
-echo "🏗️ Building packages..."
+# Build the initial setup
+echo "🏗️ Building initial packages..."
 cd ../..
 pnpm build
 
 # Install JupyterLab extension in development mode
-echo "🔌 Installing JupyterLab extension..."
+echo "🔌 Installing JupyterLab extension in development mode..."
 cd apps/jupyter
 jupyter labextension develop . --overwrite
-cd ../..
 
-echo "✅ Setup complete!"
+echo "✅ Development environment setup complete!"
 echo ""
-echo "🚀 Quick start:"
-echo "  pnpm dev             - Start development servers"
-echo "  pnpm build           - Build all packages"
-echo "  pnpm test            - Run tests"
+echo "🎯 Quick start commands:"
+echo "  - Start PWA dev server: pnpm dev:source"
+echo "  - Start JupyterLab: jupyter lab"
+echo "  - Build all packages: pnpm build"
+echo "  - Run tests: pnpm test"
 echo ""
-echo "📁 Applications:"
-echo "  PWA:        http://localhost:3000"
-echo "  JupyterLab: http://localhost:8888"
+echo "📁 Available applications:"
+echo "  - PWA: http://localhost:3000"
+echo "  - JupyterLab: http://localhost:8888"
