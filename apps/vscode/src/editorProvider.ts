@@ -70,8 +70,10 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     this.createPanel(context, 'niivue.webview', tabName, uri).then((panel) => {
       const editor = new NiiVueEditorProvider(context)
 
+      let isImageSent = false
       panel.webview.onDidReceiveMessage(async (e) => {
-        if (e.type === 'ready') {
+        if (e.type === 'ready' && !isImageSent) {
+          isImageSent = true
           this.postInitSettings(panel)
 
           // Send file URL instead of reading the entire file
@@ -89,8 +91,10 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     const name = vscode.Uri.parse(uri.toString()).path.split('/').pop()
     const tabName = name ? name : 'NiiVue DICOM'
     this.createPanel(context, 'niivue.webview', tabName, uri).then((panel) => {
+      let isImageSent = false
       panel.webview.onDidReceiveMessage(async (e) => {
-        if (e.type === 'ready') {
+        if (e.type === 'ready' && !isImageSent) {
+          isImageSent = true
           this.postInitSettings(panel)
           NiiVueEditorProvider.openDcmFolder(uri, panel)
         }
@@ -103,8 +107,10 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     this.createPanel(context, 'niivue.compare', 'NiiVue Compare Panel', uris[0]).then((panel) => {
       const editor = new NiiVueEditorProvider(context)
 
+      let isImageSent = false
       panel.webview.onDidReceiveMessage(async (e) => {
-        if (e.type === 'ready') {
+        if (e.type === 'ready' && !isImageSent) {
+          isImageSent = true
           this.postInitSettings(panel)
           panel.webview.postMessage({
             type: 'initCanvas',
@@ -239,8 +245,10 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
 
     NiiVueEditorProvider.addCommonListeners(webviewPanel)
 
+    let isImageSent = false
     webviewPanel.webview.onDidReceiveMessage(async (message) => {
-      if (message.type === 'ready') {
+      if (message.type === 'ready' && !isImageSent) {
+        isImageSent = true
         NiiVueEditorProvider.postInitSettings(webviewPanel)
 
         // Handle DICOM and MINC files differently - send data instead of URL
