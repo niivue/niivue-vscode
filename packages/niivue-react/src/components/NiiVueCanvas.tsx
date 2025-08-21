@@ -33,6 +33,7 @@ import { NVImage, NVMesh } from '@niivue/niivue'
 import { Signal } from '@preact/signals'
 import { useEffect, useRef } from 'preact/hooks'
 import { ExtendedNiivue } from '../events'
+import { NiiVueSettings } from '../settings'
 import { isImageType } from '../utility'
 import { AppProps } from './AppProps'
 
@@ -50,6 +51,7 @@ export const NiiVueCanvas = ({
   sliceType,
   render,
   nvArray,
+  settings,
 }: AppProps & NiiVueCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
@@ -61,7 +63,7 @@ export const NiiVueCanvas = ({
     if (!nv.body) {
       return
     }
-    loadVolume(nv, nv.body).then(async () => {
+    loadVolume(nv, nv.body, settings.value).then(async () => {
       nv.isLoaded = true
       nv.body = null
       nv.createOnLocationChange()
@@ -130,7 +132,7 @@ async function getUserInput() {
   return matrixSize
 }
 
-async function loadVolume(nv: ExtendedNiivue, item: any) {
+async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSettings) {
   const isMincFile = (uri: string) => {
     const lowerUri = uri.toLowerCase()
     return lowerUri.endsWith('.mnc') || lowerUri.endsWith('.mnc.gz')
@@ -183,7 +185,7 @@ async function loadVolume(nv: ExtendedNiivue, item: any) {
     const volume = await NVImage.loadFromUrl({
       url: header as ArrayBuffer,
       name: `${item.uri}.mha`,
-      colormap: 'gray',
+      colormap: settings.defaultVolumeColormap,
       opacity: 1.0,
     })
     nv.addVolume(volume)
