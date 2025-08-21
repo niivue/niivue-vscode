@@ -7,5 +7,7 @@ export function getSettings(): NiiVueSettings {
     colorbar: false,
     radiologicalConvention: false,
     zoomDragMode: false,
+    defaultVolumeColormap: 'gray',
+    defaultOverlayColormap: 'redyell',
   }
 }

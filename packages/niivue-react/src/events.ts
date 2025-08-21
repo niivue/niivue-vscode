@@ -1,10 +1,11 @@
 import { Niivue, NVImage, NVMesh, NVMeshLoaders, SLICE_TYPE } from '@niivue/niivue'
 import { Signal } from '@preact/signals'
 import { AppProps } from './components/AppProps'
+import { NiiVueSettings } from './settings'
 import { isImageType } from './utility'
 
 export function listenToMessages(appProps: AppProps) {
-  const { nvArray, sliceType } = appProps
+  const { nvArray, sliceType, settings } = appProps
   window.onmessage = (e: any) => {
     const { type, body } = e.data
     switch (type) {
@@ -17,7 +18,7 @@ export function listenToMessages(appProps: AppProps) {
         break
       case 'overlay':
         {
-          addOverlay(nvArray.value[body.index], body)
+          addOverlay(nvArray.value[body.index], body, settings.value)
         }
         break
       case 'addImage':
@@ -197,9 +198,9 @@ function getLayerDefaults(type: string) {
   return a
 }
 
-async function addOverlay(nv: Niivue, item: any) {
+async function addOverlay(nv: Niivue, item: any, settings: NiiVueSettings) {
   if (isImageType(item.uri)) {
-    const image = new NVImage(item.data, item.uri, 'redyell', 0.5)
+    const image = new NVImage(item.data, item.uri, settings.defaultOverlayColormap, 0.5)
     nv.addVolume(image)
   } else {
     const mesh = await NVMesh.readMesh(item.data, item.uri, nv.gl, 0.5)

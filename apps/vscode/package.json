@@ -213,6 +213,16 @@
           "type": "boolean",
           "default": false,
           "description": "Enable zoom drag mode by default."
+        },
+        "niivue.defaultVolumeColormap": {
+          "type": "string",
+          "default": "gray",
+          "description": "Default colormap to use for volume images (background images)."
+        },
+        "niivue.defaultOverlayColormap": {
+          "type": "string",
+          "default": "redyell",
+          "description": "Default colormap to use for overlay images."
         }
       }
     }

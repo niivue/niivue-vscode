@@ -4,6 +4,8 @@ export interface NiiVueSettings {
   colorbar: boolean
   radiologicalConvention: boolean
   zoomDragMode: boolean
+  defaultVolumeColormap: string
+  defaultOverlayColormap: string
 }
 
 export const defaultSettings: NiiVueSettings = {
@@ -12,4 +14,6 @@ export const defaultSettings: NiiVueSettings = {
   colorbar: false,
   radiologicalConvention: false,
   zoomDragMode: false,
+  defaultVolumeColormap: 'gray',
+  defaultOverlayColormap: 'redyell',
 }
