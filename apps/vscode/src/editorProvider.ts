@@ -23,8 +23,7 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
 
   async openCustomDocument(uri: vscode.Uri): Promise<NiiVueDocument> {
     console.log(`Opening document ${uri}`)
-    const data: Uint8Array = await vscode.workspace.fs.readFile(uri)
-    return new NiiVueDocument(uri, data)
+    return new NiiVueDocument(uri)
   }
 
   private static async createPanel(
@@ -244,17 +243,19 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
       if (message.type === 'ready') {
         NiiVueEditorProvider.postInitSettings(webviewPanel)
 
-        // Handle DICOM files differently - send data instead of URL
-        if (document.uri.path.toLowerCase().endsWith('.dcm')) {
+        // Handle DICOM and MINC files differently - send data instead of URL
+        const lowerCasePath = document.uri.path.toLowerCase()
+        if (lowerCasePath.endsWith('.dcm') || lowerCasePath.endsWith('.mnc')) {
+          const data = await vscode.workspace.fs.readFile(document.uri)
           webviewPanel.webview.postMessage({
             type: 'addImage',
             body: {
-              data: document.data.buffer,
+              data: data.buffer,
               uri: document.uri.toString(),
             },
           })
         } else {
-          // Send file URL instead of data for non-DICOM files
+          // Send file URL instead of data for other files
           const fileUrl = this.createFileUrl(document.uri, webviewPanel.webview)
           webviewPanel.webview.postMessage({
             type: 'addImage',
@@ -281,7 +282,7 @@ class WebviewCollection {
 
   public *get(uri: vscode.Uri): Iterable<vscode.WebviewPanel> {
     const key = uri.toString()
-    for (const entry of this._webviews) {
+    for (const entry of Array.from(this._webviews)) {
       if (entry.resource === key) {
         yield entry.webviewPanel
       }

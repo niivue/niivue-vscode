@@ -6,19 +6,14 @@ export class NiiVueDocument
   implements vscode.CustomDocument
 {
   private readonly _uri: vscode.Uri
-  private readonly _data: Uint8Array
 
-  constructor(uri: vscode.Uri, data: Uint8Array) {
+  constructor(uri: vscode.Uri) {
     super()
     this._uri = uri
-    this._data = data
   }
 
   public get uri() {
     return this._uri
-  }
-  public get data() {
-    return this._data
   }
 
   private readonly _onDidDispose = this._register(
