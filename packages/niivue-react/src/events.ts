@@ -3,52 +3,59 @@ import { Signal } from '@preact/signals'
 import { AppProps } from './components/AppProps'
 import { NiiVueSettings } from './settings'
 import { isImageType } from './utility'
+import { readyStateManager } from './readyState'
+
+export function handleMessage(message: any, appProps: AppProps) {
+  const { nvArray, sliceType, settings } = appProps
+  const { type, body } = message
+  
+  switch (type) {
+    case 'addMeshOverlay':
+    case 'addMeshCurvature':
+    case 'replaceMeshOverlay':
+      {
+        addMeshOverlay(nvArray.value[body.index], body, type)
+      }
+      break
+    case 'overlay':
+      {
+        addOverlay(nvArray.value[body.index], body, settings.value)
+      }
+      break
+    case 'addImage':
+      {
+        const nv = getUnitinializedNvInstance(nvArray)
+        nv.body = body
+        nv.isNew = false
+      }
+      break
+    case 'initCanvas':
+      {
+        if (nvArray.value.length === 0 && body.n > 1) {
+          sliceType.value = SLICE_TYPE.AXIAL
+        }
+        growNvArrayBy(nvArray, body.n)
+      }
+      break
+    case 'debugRequest':
+      {
+        handleDebugMessage(body, appProps)
+      }
+      break
+    default:
+      return false // Message not handled
+  }
+  
+  nvArray.value = [...nvArray.value] // triggers rerender after each received message
+  return true // Message was handled
+}
 
 export function listenToMessages(appProps: AppProps) {
   const { nvArray, sliceType, settings } = appProps
   window.onmessage = (e: any) => {
-    const { type, body } = e.data
-    switch (type) {
-      case 'addMeshOverlay':
-      case 'addMeshCurvature':
-      case 'replaceMeshOverlay':
-        {
-          addMeshOverlay(nvArray.value[body.index], body, type)
-        }
-        break
-      case 'overlay':
-        {
-          addOverlay(nvArray.value[body.index], body, settings.value)
-        }
-        break
-      case 'addImage':
-        {
-          const nv = getUnitinializedNvInstance(nvArray)
-          nv.body = body
-          nv.isNew = false
-        }
-        break
-      case 'initCanvas':
-        {
-          if (nvArray.value.length === 0 && body.n > 1) {
-            sliceType.value = SLICE_TYPE.AXIAL
-          }
-          growNvArrayBy(nvArray, body.n)
-        }
-        break
-      case 'debugRequest':
-        {
-          handleDebugMessage(body, appProps)
-        }
-        break
-      default:
-        return
-    }
-    nvArray.value = [...nvArray.value] // triggers rerender after each received message
+    handleMessage(e.data, appProps)
   }
-  if (typeof vscode === 'object') {
-    vscode.postMessage({ type: 'ready' })
-  }
+  readyStateManager.setEventListenerReady()
   addImageFromURLParams()
 }
 
@@ -94,7 +101,7 @@ export function openImageFromURL(uri: string) {
   })
 }
 
-function addImageFromURLParams() {
+export function addImageFromURLParams() {
   const urlParams = new URLSearchParams(window.location.search)
   const imageURLs = urlParams.get('images')?.split(',') ?? []
   if (imageURLs.length > 0) {

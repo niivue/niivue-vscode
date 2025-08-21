@@ -27,7 +27,7 @@ export async function getHtmlForWebview(
             <body class="text-white p-0">
               <div id="app" class="w-screen h-screen"></div>
               <script nonce="${nonce}">
-                var vscode = acquireVsCodeApi()
+                window.vscode = acquireVsCodeApi()
               </script>
             </body>
           </html> `

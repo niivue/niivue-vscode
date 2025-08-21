@@ -249,10 +249,8 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
 
     NiiVueEditorProvider.addCommonListeners(webviewPanel)
 
-    let isImageSent = false
     webviewPanel.webview.onDidReceiveMessage(async (message) => {
-      if (message.type === 'ready' && !isImageSent) {
-        isImageSent = true
+      if (message.type === 'ready') {
         NiiVueEditorProvider.postInitSettings(webviewPanel)
 
         // Handle DICOM and MINC files differently - send data instead of URL
