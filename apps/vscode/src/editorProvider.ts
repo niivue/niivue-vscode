@@ -245,7 +245,11 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
 
         // Handle DICOM and MINC files differently - send data instead of URL
         const lowerCasePath = document.uri.path.toLowerCase()
-        if (lowerCasePath.endsWith('.dcm') || lowerCasePath.endsWith('.mnc')) {
+        if (
+          lowerCasePath.endsWith('.dcm') ||
+          lowerCasePath.endsWith('.mnc') ||
+          !this.isUriAccessible(document.uri)
+        ) {
           const data = await vscode.workspace.fs.readFile(document.uri)
           webviewPanel.webview.postMessage({
             type: 'addImage',
@@ -271,6 +275,19 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
   private createFileUrl(uri: vscode.Uri, webview: vscode.Webview): string {
     // Use VS Code's secure webview URI system for serving files
     return webview.asWebviewUri(uri).toString()
+  }
+
+  private isUriAccessible(uri: vscode.Uri): boolean {
+    const workspaceFolders = vscode.workspace.workspaceFolders
+    if (!workspaceFolders) {
+      return false
+    }
+    for (const folder of workspaceFolders) {
+      if (uri.path.startsWith(folder.uri.path)) {
+        return true
+      }
+    }
+    return false
   }
 }
 
