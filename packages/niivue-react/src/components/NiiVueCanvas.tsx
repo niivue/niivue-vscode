@@ -140,7 +140,11 @@ async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSetting
   if (isMincFile(item.uri)) {
     nv.useLoader(mnc2nii, 'mnc', 'nii')
     if (item.data) {
-      const image = { name: item.uri, url: item.data }
+      const image = {
+        name: item.uri,
+        url: item.data,
+        colormap: settings.defaultVolumeColormap,
+      }
       nv.loadImages([image])
       return
     }
@@ -148,7 +152,7 @@ async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSetting
 
   if (isImageType(item.uri) && !item.data && !item.uri.endsWith('.dcm')) {
     // If the item is an image type but has no data, load it from the URL
-    const image = { url: item.uri }
+    const image = { url: item.uri, colormap: settings.defaultVolumeColormap }
     nv.loadImages([image])
     return
   }
@@ -175,6 +179,7 @@ async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSetting
     const volume = await NVImage.loadFromUrl({
       url: loadedFiles[0].data,
       name: loadedFiles[0].name,
+      colormap: settings.defaultVolumeColormap,
     })
     nv.addVolume(volume)
   } else if (item.uri.endsWith('.raw')) {
@@ -193,6 +198,7 @@ async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSetting
     const volume = await NVImage.loadFromUrl({
       url: item.data,
       name: item.uri,
+      colormap: settings.defaultVolumeColormap,
     })
     nv.addVolume(volume)
   } else if (isImageType(item.uri)) {
@@ -200,10 +206,13 @@ async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSetting
       const volume = await NVImage.loadFromUrl({
         url: item.data,
         name: item.uri,
+        colormap: settings.defaultVolumeColormap,
       })
       nv.addVolume(volume)
     } else {
-      const volumeList = [{ url: item.uri }]
+      const volumeList = [
+        { url: item.uri, colormap: settings.defaultVolumeColormap },
+      ]
       await nv.loadVolumes(volumeList)
     }
   } else if (item.data) {
