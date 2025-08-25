@@ -6,7 +6,7 @@
   "scripts": {
     "start": "vite",
     "dev": "vite",
-    "build": "pnpm run type-check && vite build",
+    "build": "node copy-assets.mjs && pnpm run type-check && vite build",
     "build:analyze": "pnpm run build && npx vite-bundle-analyzer",
     "type-check": "tsc --noEmit",
     "preview": "vite preview",
