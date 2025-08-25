@@ -76,5 +76,15 @@ export const HomeScreen = () => (
       </a>{' '}
       group.
     </p>
+    <footer className="text-xs p-2">
+      <a
+        href={__GIT_REPO_URL__ ? `${__GIT_REPO_URL__}/commit/${__GIT_HASH__}` : '#'}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-gray-500 hover:underline"
+      >
+        Version: {__GIT_HASH__} (Built: {new Date(__BUILD_DATE__).toLocaleDateString()})
+      </a>
+    </footer>
   </>
 )

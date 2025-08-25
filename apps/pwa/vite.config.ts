@@ -3,10 +3,36 @@ import fs from 'fs'
 import path, { resolve } from 'path'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import { execSync } from 'child_process'
 import virtual from 'vite-plugin-virtual'
+
+function getGitRepoUrl() {
+  try {
+    const remoteUrl = execSync('git remote get-url origin').toString().trim()
+    if (remoteUrl.startsWith('https://')) {
+      return remoteUrl.replace(/\.git$/, '')
+    }
+    if (remoteUrl.startsWith('git@')) {
+      return `https://${remoteUrl.slice(4).replace(/:/, '/').replace(/\.git$/, '')}`
+    }
+  } catch (error) {
+    console.warn('Could not get git remote URL', error)
+    return ''
+  }
+  return ''
+}
+
+const gitHash = execSync('git rev-parse --short HEAD').toString().trim()
+const buildDate = new Date().toISOString()
+const gitRepoUrl = getGitRepoUrl()
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  define: {
+    '__GIT_HASH__': JSON.stringify(gitHash),
+    '__BUILD_DATE__': JSON.stringify(buildDate),
+    '__GIT_REPO_URL__': JSON.stringify(gitRepoUrl),
+  },
   optimizeDeps: {
     include: ['@niivue/niivue', '@preact/signals', 'preact'],
     exclude: ['@niivue/dicom-loader', '@niivue/react'], // Exclude local package from pre-bundling
