@@ -15,6 +15,32 @@ export const Pwa = ({ appProps }: { appProps: AppProps }) => {
 
   useEffect(() => {
     listenToMessages(appProps)
+
+    if ('launchQueue' in window) {
+      const launchQueue = (window as any).launchQueue
+      launchQueue.setConsumer(async (launchParams: any) => {
+        if (!launchParams.files || launchParams.files.length === 0) {
+          return
+        }
+        window.postMessage({
+          type: 'initCanvas',
+          body: { n: launchParams.files.length },
+        })
+        for (const fileHandle of launchParams.files) {
+          const file = await fileHandle.getFile()
+          const data = await file.arrayBuffer()
+          window.postMessage({
+            type: 'addImage',
+            body: {
+              data,
+              uri: file.name,
+            },
+          })
+        }
+      })
+    }
+
+    console.log('AppReady')
     document.dispatchEvent(new Event('AppReady'))
   }, [])
 
