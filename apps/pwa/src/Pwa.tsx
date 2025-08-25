@@ -40,7 +40,6 @@ export const Pwa = ({ appProps }: { appProps: AppProps }) => {
       })
     }
 
-    console.log('AppReady')
     document.dispatchEvent(new Event('AppReady'))
   }, [])
 

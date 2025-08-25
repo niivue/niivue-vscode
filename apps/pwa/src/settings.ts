@@ -1,13 +1,9 @@
-import { NiiVueSettings } from '@niivue/react'
+import { NiiVueSettings, defaultSettings } from '@niivue/react'
 
 export function getSettings(): NiiVueSettings {
-  return {
-    showCrosshairs: true,
-    interpolation: true,
-    colorbar: false,
-    radiologicalConvention: false,
-    zoomDragMode: false,
-    defaultVolumeColormap: 'gray',
-    defaultOverlayColormap: 'redyell',
+  const savedSettings = localStorage.getItem('userSettings')
+  if (savedSettings) {
+    return JSON.parse(savedSettings)
   }
+  return defaultSettings
 }
