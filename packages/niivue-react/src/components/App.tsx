@@ -14,7 +14,7 @@ export const App = ({ appProps }: { appProps: AppProps }) => {
     <ImageDrop>
       <Menu {...appProps} />
       <Container {...appProps} />
-      <div className="pl-2">{appProps.location}</div>
+      <div className="pl-2">{appProps.location?.value || '\u00A0'}</div>
     </ImageDrop>
   )
 }

@@ -23,7 +23,7 @@ export const Pwa = ({ appProps }: { appProps: AppProps }) => {
       <Menu {...appProps} />
       {showHomeScreen.value && <HomeScreen />}
       <Container {...appProps} />
-      <div className="pl-2">{appProps.location}</div>
+      <div className="pl-2">{appProps.location?.value || '\u00A0'}</div>
     </ImageDrop>
   )
 }
