@@ -33,6 +33,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.28.0",
+    "@niivue/dcm2niix": "^1.0.0",
     "@playwright/test": "^1.54.2",
     "@preact/preset-vite": "^2.10.2",
     "@testing-library/jest-dom": "^6.6.4",
