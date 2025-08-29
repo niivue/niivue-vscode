@@ -173,6 +173,8 @@ export default defineConfig({
                 '.nhdr',
                 '.nrrd',
                 '.mgh',
+                '.npy',
+                '.npz',
                 '.mgz',
                 '.v',
                 '.v16',

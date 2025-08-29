@@ -19,6 +19,8 @@ export const SUPPORTED_FILE_EXTENSIONS = [
   '.nrrd',
   '.mgh',
   '.mgz',
+  '.npy',
+  '.npz',
   '.v',
   '.v16',
   '.vmr',

@@ -93,6 +93,8 @@ export function isImageType(item: string) {
     '.nrrd',
     '.mgh',
     '.mgz',
+    '.npy',
+    '.npz',
     '.v',
     '.v16',
     '.vmr',

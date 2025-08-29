@@ -9,6 +9,8 @@ export class LinkHoverProvider implements vscode.HoverProvider {
     const extensions = [
       '.nii.gz',
       '.nii',
+      '.npy',
+      '.npz',
       '.dcm',
       '.mih',
       '.mif',

@@ -142,6 +142,12 @@
           },
           {
             "filenamePattern": "*.mnc.gz"
+          },
+          {
+            "filenamePattern": "*.npy"
+          },
+          {
+            "filenamePattern": "*.npz"
           }
         ]
       }
@@ -180,7 +186,9 @@
           ".mz3",
           ".gii",
           ".mnc",
-          ".mnc.gz"
+          ".mnc.gz",
+          ".npy",
+          ".npz"
         ],
         "icon": {
           "light": "./niivue_icon_transparent_contrast.png",
