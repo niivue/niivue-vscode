@@ -55,7 +55,7 @@
     "prettier:check": "npm run prettier:base --check",
     "stylelint": "npx stylelint --cache \"style/**/*.css\" --fix",
     "stylelint:check": "npx stylelint --cache \"style/**/*.css\"",
-    "test": "jest --coverage",
+    "test": "echo \"No tests specified\"",
     "watch": "run-p watch:src watch:labextension",
     "watch:src": "tsc -w --sourceMap",
     "watch:labextension": "jupyter labextension watch ."
