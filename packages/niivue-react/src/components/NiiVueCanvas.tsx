@@ -62,9 +62,10 @@ export const NiiVueCanvas = ({
     loadVolume(nv, nv.body, settings.value).then(async () => {
       nv.isLoaded = true
       nv.body = null
-      nv.createOnLocationChange()
-      render.value++ // required to update the names
+      // nv.createOnLocationChange() // TODO fix, still required?
       nvArray.value = [...nvArray.value] // trigger react signal for changes
+      await new Promise((resolve) => setTimeout(resolve, 100)) // workaround to render the metadata line
+      render.value++ // required to update the names
     })
   }, [nv.body])
 

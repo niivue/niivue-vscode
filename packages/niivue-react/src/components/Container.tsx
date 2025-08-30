@@ -25,8 +25,19 @@ export const Container = (props: AppProps) => {
       ? nvArray.value.filter((_, i) => selection.value.includes(i))
       : nvArray.value,
   )
+
   const isVolume = computed(() => nvArraySelected.value[0]?.volumes?.length > 0)
   const isMesh = computed(() => nvArraySelected.value[0]?.meshes?.length > 0)
+
+  const displayInfo = computed(() => {
+    if (isVolume.value) {
+      return getMetadataString(nvArraySelected.value[0])
+    } else if (isMesh.value) {
+      return getNumberOfPoints(nvArraySelected.value[0])
+    } else {
+      return '\u00A0' // non-breaking space for empty line
+    }
+  })
 
   const setSize = () => {
     windowInnerSize.value = {
@@ -59,8 +70,7 @@ export const Container = (props: AppProps) => {
 
   return (
     <div className="flex-grow h-full overflow-hidden" ref={sizeRef}>
-      {isMesh.value && <p className="pl-2">{getNumberOfPoints(nvArraySelected.value[0])}</p>}
-      {isVolume.value && <p className="pl-2">{getMetadataString(nvArraySelected.value[0])}</p>}
+      <p className="pl-2">{displayInfo.value}</p>
       <div className="flex flex-wrap w-full gap-1 m-1">
         {nvArray.value.map((nv, i) => (
           <Volume
