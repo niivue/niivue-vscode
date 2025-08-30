@@ -2,11 +2,7 @@
   "compilerOptions": {
     "target": "ES2020",
     "module": "ESNext",
-    "lib": [
-      "ES2020",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
     /* Module Resolution */
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
@@ -26,9 +22,5 @@
     /* Advanced */
     "composite": true
   },
-  "exclude": [
-    "node_modules",
-    "dist",
-    "build"
-  ]
+  "exclude": ["node_modules", "dist", "build"]
 }

@@ -4,17 +4,13 @@ export async function getHtmlForWebview(
   webview: vscode.Webview,
   extensionUri: vscode.Uri,
 ): Promise<string> {
-  const scriptUri = webview.asWebviewUri(
-    vscode.Uri.joinPath(extensionUri, 'niivue', 'index.js'),
-  )
-  const styleUri = webview.asWebviewUri(
-    vscode.Uri.joinPath(extensionUri, 'niivue', 'index.css'),
-  )
+  const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'niivue', 'index.js'))
+  const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'niivue', 'index.css'))
   const vscodeStyleUri = webview.asWebviewUri(
     vscode.Uri.joinPath(extensionUri, 'vscode-styles.css'),
   )
   const nonce = getNonce()
-  
+
   return `<!doctype html>
           <html lang="en">
             <head>

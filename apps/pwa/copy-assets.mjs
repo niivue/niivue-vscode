@@ -1,8 +1,8 @@
-import fs from 'fs/promises';
-import path from 'path';
+import fs from 'fs/promises'
+import path from 'path'
 
-const rootDir = path.resolve(process.cwd(), '..', '..');
-const pwaPublicDir = path.resolve(process.cwd(), 'public');
+const rootDir = path.resolve(process.cwd(), '..', '..')
+const pwaPublicDir = path.resolve(process.cwd(), 'public')
 
 const assetsToCopy = [
   {
@@ -17,19 +17,19 @@ const assetsToCopy = [
     src: path.resolve(rootDir, 'packages', 'niivue-react', 'public', 'favicon.ico'),
     dest: path.resolve(pwaPublicDir, 'favicon.ico'),
   },
-];
+]
 
 async function copyAssets() {
   try {
-    await fs.mkdir(pwaPublicDir, { recursive: true });
+    await fs.mkdir(pwaPublicDir, { recursive: true })
     for (const asset of assetsToCopy) {
-      await fs.copyFile(asset.src, asset.dest);
-      console.log(`Copied ${path.basename(asset.src)} to ${pwaPublicDir}`);
+      await fs.copyFile(asset.src, asset.dest)
+      console.log(`Copied ${path.basename(asset.src)} to ${pwaPublicDir}`)
     }
   } catch (error) {
-    console.error('Error copying assets:', error);
-    process.exit(1);
+    console.error('Error copying assets:', error)
+    process.exit(1)
   }
 }
 
-copyAssets();
+copyAssets()

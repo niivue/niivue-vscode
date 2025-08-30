@@ -62,11 +62,11 @@ jobs:
           release_name: VS Code Extension ${{ github.ref }}
           body: |
             ## Changes
-            
+
             - VS Code extension release
-            
+
             ## Installation
-            
+
             Install from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=KorbinianEckstein.niivue)
           draft: false
           prerelease: false

@@ -40,9 +40,7 @@ export class LinkHoverProvider implements vscode.HoverProvider {
         const commandUri = vscode.Uri.parse(
           `command:niiVue.openLink?${encodeURIComponent(JSON.stringify(args))}`,
         )
-        const contents = new vscode.MarkdownString(
-          `[Show with NiiVue](${commandUri})`,
-        )
+        const contents = new vscode.MarkdownString(`[Show with NiiVue](${commandUri})`)
         contents.isTrusted = true
         resolve(new vscode.Hover(contents))
       }
@@ -52,21 +50,14 @@ export class LinkHoverProvider implements vscode.HoverProvider {
           .join('|')})\\b`,
         'i',
       )
-      const localWordRange = document.getWordRangeAtPosition(
-        position,
-        localPattern,
-      )
+      const localWordRange = document.getWordRangeAtPosition(position, localPattern)
       if (localWordRange) {
         const linkText = document.getText(localWordRange)
         const args = [{ resourceUri: vscode.Uri.file(linkText) }]
         const commandUri = vscode.Uri.parse(
-          `command:niiVue.openLocal?${encodeURIComponent(
-            JSON.stringify(args),
-          )}`,
+          `command:niiVue.openLocal?${encodeURIComponent(JSON.stringify(args))}`,
         )
-        const contents = new vscode.MarkdownString(
-          `[Show with NiiVue](${commandUri})`,
-        )
+        const contents = new vscode.MarkdownString(`[Show with NiiVue](${commandUri})`)
         contents.isTrusted = true
         resolve(new vscode.Hover(contents))
       }

@@ -6,14 +6,14 @@ on:
   workflow_dispatch:
     inputs:
       version_spec:
-        description: "New Version Specifier"
-        default: "next"
+        description: 'New Version Specifier'
+        default: 'next'
         required: false
       branch:
-        description: "The target branch for the release"
+        description: 'The target branch for the release'
         required: false
       release_url:
-        description: "The URL of the draft GitHub release"
+        description: 'The URL of the draft GitHub release'
         required: false
 
 permissions:
@@ -112,13 +112,13 @@ jobs:
           token: ${{ secrets.ADMIN_GITHUB_TOKEN }}
           release_url: ${{ steps.populate-release.outputs.release_url }}
 
-      - name: "** Next Step **"
+      - name: '** Next Step **'
         if: ${{ success() }}
         run: |
           echo "Verify the final release"
           echo ${{ steps.finalize-release.outputs.release_url }}
 
-      - name: "** Failure Message **"
+      - name: '** Failure Message **'
         if: ${{ failure() }}
         run: |
           echo "Failed to Publish the Draft Release Url:"

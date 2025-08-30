@@ -3,23 +3,13 @@
   "versionGroups": [
     {
       "label": "JupyterLab ecosystem - pinned for compatibility",
-      "dependencies": [
-        "@jupyterlab/**",
-        "@lumino/**"
-      ],
+      "dependencies": ["@jupyterlab/**", "@lumino/**"],
       "packages": ["**"],
       "policy": "sameRange"
     },
     {
       "label": "Build tools - flexible ranges",
-      "dependencies": [
-        "typescript",
-        "vite",
-        "turbo",
-        "eslint",
-        "prettier",
-        "syncpack"
-      ],
+      "dependencies": ["typescript", "vite", "turbo", "eslint", "prettier", "syncpack"],
       "packages": ["**"],
       "policy": "sameRange"
     },
@@ -33,9 +23,7 @@
         "preact",
         "@preact/**"
       ],
-      "packages": [
-        "**"
-      ],
+      "packages": ["**"],
       "policy": "sameRange"
     },
     {
@@ -49,16 +37,12 @@
         "jsdom",
         "jest"
       ],
-      "packages": [
-        "**"
-      ],
+      "packages": ["**"],
       "policy": "sameRange"
     },
     {
       "label": "Workspace packages - always use workspace protocol",
-      "dependencies": [
-        "@niivue/**"
-      ],
+      "dependencies": ["@niivue/**"],
       "packages": ["**"],
       "policy": "sameRange"
     },
@@ -78,13 +62,7 @@
     },
     {
       "label": "Development tools - allow minor updates",
-      "dependencies": [
-        "typescript",
-        "eslint",
-        "prettier",
-        "vite",
-        "turbo"
-      ],
+      "dependencies": ["typescript", "eslint", "prettier", "vite", "turbo"],
       "packages": ["**"],
       "range": "^"
     }

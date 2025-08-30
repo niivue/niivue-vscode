@@ -5,18 +5,16 @@
     "useDefineForClassFields": true,
     "allowJs": true,
     "jsx": "react-jsx",
-    
+
     /* Linting */
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    
+
     /* Path mapping */
     "baseUrl": ".",
     "paths": {
-      "@niivue/*": [
-        "packages/*/src"
-      ]
+      "@niivue/*": ["packages/*/src"]
     }
   },
   "include": [],

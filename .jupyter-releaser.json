@@ -6,24 +6,14 @@
       "cd niivue-jupyter && npm install && npm run copy:assets && npm run build:prod"
     ],
     "before-build-python": [
-      "cd niivue && npm ci && npm run build", 
+      "cd niivue && npm ci && npm run build",
       "cd niivue-jupyter && npm install && npm run copy:assets && npm run build:prod"
     ]
   },
   "options": {
-    "ignore-glob": [
-      "niivue-jupyter/static/**",
-      "niivue/**",
-      "src/**",
-      "tests/**",
-      "*.md"
-    ],
+    "ignore-glob": ["niivue-jupyter/static/**", "niivue/**", "src/**", "tests/**", "*.md"],
     "ignore-links": [],
-    "python-packages": [
-      "niivue-jupyter/"
-    ],
-    "npm-packages": [
-      "niivue-jupyter/"
-    ]
+    "python-packages": ["niivue-jupyter/"],
+    "npm-packages": ["niivue-jupyter/"]
   }
 }

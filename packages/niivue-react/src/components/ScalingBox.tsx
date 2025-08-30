@@ -100,7 +100,7 @@ interface ScalingProps {
 export const Scaling = ({ setScaling, init }: ScalingProps) => {
   const minRef = useRef<HTMLInputElement | null>(null)
   const maxRef = useRef<HTMLInputElement | null>(null)
-  
+
   useEffect(() => {
     if (!minRef.current || !maxRef.current) {
       return
@@ -111,14 +111,14 @@ export const Scaling = ({ setScaling, init }: ScalingProps) => {
     minRef.current.step = step
     maxRef.current.step = step
   }, [init])
-  
+
   const update = () =>
     setScaling({
       isManual: true,
       min: parseFloat(minRef.current?.value ?? '0'),
       max: parseFloat(maxRef.current?.value ?? '1'),
     } as ScalingOpts)
-    
+
   return (
     <div className="relative">
       <label className="items-baseline h-6 px-2">

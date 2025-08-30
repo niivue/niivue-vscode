@@ -4,7 +4,7 @@ import { vi } from 'vitest'
 // Setup jsdom environment for testing
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
-  value: vi.fn().mockImplementation(query => ({
+  value: vi.fn().mockImplementation((query) => ({
     matches: false,
     media: query,
     onchange: null,

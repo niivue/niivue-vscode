@@ -89,14 +89,14 @@ export const MenuToggle = ({ label, state }: any) => {
 export const HeaderDialog = ({ nvArraySelected, isOpen }: any) => {
   const headerDialog = useRef<HTMLDialogElement | null>(null)
   const headerInfo = useSignal('')
-  
+
   const showHeader = () => {
     headerInfo.value = nvArraySelected.value?.[0]?.volumes?.[0]?.hdr?.toFormattedString() || ''
     if (headerInfo.value && headerDialog.current) {
       headerDialog.current.showModal()
     }
   }
-  
+
   effect(() => {
     if (isOpen.value) {
       showHeader()
@@ -146,15 +146,18 @@ export const ImageSelect = ({ label, state, children, visible }: any) => {
       >
         <DownArrow />
       </button>
-      <div className="absolute cursor-pointer left-0 z-50">
-        {isOpen.value && children}
-      </div>
+      <div className="absolute cursor-pointer left-0 z-50">{isOpen.value && children}</div>
     </div>
   )
 }
 
 const DownArrow = () => (
-  <svg className="w-2.5 h-2.5 ms-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
+  <svg
+    className="w-2.5 h-2.5 ms-1"
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 10 6"
+  >
     <path
       stroke="currentColor"
       strokeLinecap="round"

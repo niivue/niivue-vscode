@@ -1,105 +1,105 @@
 {
-	"version": "2.0.0",
-	"tasks": [
-		{
-			"label": "install",
-			"type": "shell",
-			"command": "pnpm",
-			"args": ["install"],
-			"group": "build"
-		},
-		{
-			"label": "build",
-			"type": "shell", 
-			"command": "pnpm",
-			"args": ["build"],
-			"group": {
-				"kind": "build",
-				"isDefault": true
-			}
-		},
-		{
-			"label": "watch:vscode",
-			"type": "shell",
-			"command": "pnpm",
-			"args": ["--filter", "@niivue/vscode", "watch"],
-			"isBackground": true,
-			"group": "build",
-			"presentation": {
-				"reveal": "never"
-			},
-			"problemMatcher": {
-				"owner": "esbuild",
-				"fileLocation": ["relative", "${workspaceFolder}"],
-				"pattern": {
-					"regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
-					"file": 1,
-					"line": 2,
-					"column": 3,
-					"severity": 4,
-					"message": 5
-				},
-				"background": {
-					"activeOnStart": true,
-					"beginsPattern": "^\\[watch\\] build started",
-					"endsPattern": "^\\[watch\\] build finished"
-				}
-			}
-		},
-		{
-			"label": "dev",
-			"type": "shell",
-			"command": "pnpm",
-			"args": ["dev"],
-			"isBackground": true,
-			"group": "build"
-		},
-		{
-			"label": "test",
-			"type": "shell",
-			"command": "pnpm",
-			"args": ["test"],
-			"group": "test"
-		},
-		{
-			"label": "jupyter:setup",
-			"type": "shell",
-			"command": "pip",
-			"args": ["install", "-e", ".[test]"],
-			"options": {
-				"cwd": "${workspaceFolder}/apps/jupyter"
-			},
-			"group": "build"
-		},
-		{
-			"label": "jupyter:develop",
-			"type": "shell",
-			"command": "jupyter",
-			"args": ["labextension", "develop", ".", "--overwrite"],
-			"options": {
-				"cwd": "${workspaceFolder}/apps/jupyter"
-			},
-			"group": "build",
-			"dependsOn": ["build", "jupyter:setup"]
-		},
-		{
-			"label": "jupyter:start",
-			"type": "shell",
-			"command": "jupyter",
-			"args": ["lab", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--allow-root"],
-			"isBackground": true,
-			"group": "build",
-			"presentation": {
-				"panel": "dedicated"
-			},
-			"problemMatcher": {
-				"pattern": {"regexp": "."},
-				"background": {
-					"activeOnStart": true,
-					"beginsPattern": "^.*Jupyter Server.*is running at:",
-					"endsPattern": "^.*Use Control-C to stop this server"
-				}
-			}
-		}
-	]
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "install",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["install"],
+      "group": "build"
+    },
+    {
+      "label": "build",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["build"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "watch:vscode",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["--filter", "@niivue/vscode", "watch"],
+      "isBackground": true,
+      "group": "build",
+      "presentation": {
+        "reveal": "never"
+      },
+      "problemMatcher": {
+        "owner": "esbuild",
+        "fileLocation": ["relative", "${workspaceFolder}"],
+        "pattern": {
+          "regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "severity": 4,
+          "message": 5
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^\\[watch\\] build started",
+          "endsPattern": "^\\[watch\\] build finished"
+        }
+      }
+    },
+    {
+      "label": "dev",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["dev"],
+      "isBackground": true,
+      "group": "build"
+    },
+    {
+      "label": "test",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["test"],
+      "group": "test"
+    },
+    {
+      "label": "jupyter:setup",
+      "type": "shell",
+      "command": "pip",
+      "args": ["install", "-e", ".[test]"],
+      "options": {
+        "cwd": "${workspaceFolder}/apps/jupyter"
+      },
+      "group": "build"
+    },
+    {
+      "label": "jupyter:develop",
+      "type": "shell",
+      "command": "jupyter",
+      "args": ["labextension", "develop", ".", "--overwrite"],
+      "options": {
+        "cwd": "${workspaceFolder}/apps/jupyter"
+      },
+      "group": "build",
+      "dependsOn": ["build", "jupyter:setup"]
+    },
+    {
+      "label": "jupyter:start",
+      "type": "shell",
+      "command": "jupyter",
+      "args": ["lab", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--allow-root"],
+      "isBackground": true,
+      "group": "build",
+      "presentation": {
+        "panel": "dedicated"
+      },
+      "problemMatcher": {
+        "pattern": { "regexp": "." },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^.*Jupyter Server.*is running at:",
+          "endsPattern": "^.*Use Control-C to stop this server"
+        }
+      }
+    }
+  ]
 }

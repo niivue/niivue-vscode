@@ -8,7 +8,7 @@ import { readyStateManager } from './readyState'
 export function handleMessage(message: any, appProps: AppProps) {
   const { nvArray, sliceType, settings } = appProps
   const { type, body } = message
-  
+
   switch (type) {
     case 'addMeshOverlay':
     case 'addMeshCurvature':
@@ -45,7 +45,7 @@ export function handleMessage(message: any, appProps: AppProps) {
     default:
       return false // Message not handled
   }
-  
+
   nvArray.value = [...nvArray.value] // triggers rerender after each received message
   return true // Message was handled
 }

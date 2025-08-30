@@ -1,5 +1,5 @@
-import js from '@eslint/js';
-import tseslint from 'typescript-eslint';
+import js from '@eslint/js'
+import tseslint from 'typescript-eslint'
 
 export default [
   {
@@ -14,8 +14,8 @@ export default [
       'static/**',
       '.pnp.cjs',
       '.pnp.loader.mjs',
-      'webpack.config.js'
-    ]
+      'webpack.config.js',
+    ],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
@@ -28,7 +28,7 @@ export default [
       quotes: ['error', 'single', { avoidEscape: true }],
       curly: 'error',
       eqeqeq: 'error',
-      'prefer-arrow-callback': 'error'
-    }
-  }
-];
+      'prefer-arrow-callback': 'error',
+    },
+  },
+]

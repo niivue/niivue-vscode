@@ -23,10 +23,7 @@ export class NiivueWidget extends Widget {
   private _initializeViewer(): void {
     try {
       const filePath = this._context.path
-      console.log(
-        'Initializing this.onResize Niivue viewer for file:',
-        filePath,
-      )
+      console.log('Initializing this.onResize Niivue viewer for file:', filePath)
 
       const html = this._getHtmlForViewer()
 
@@ -51,10 +48,8 @@ export class NiivueWidget extends Widget {
 
   private _getHtmlForViewer(): string {
     // Use the static file handler we set up in handlers.py
-    const scriptPath =
-      '/lab/extensions/jupyterlab-niivue/static/niivue/build/assets/index.js'
-    const cssPath =
-      '/lab/extensions/jupyterlab-niivue/static/niivue/build/assets/index.css'
+    const scriptPath = '/lab/extensions/jupyterlab-niivue/static/niivue/build/assets/index.js'
+    const cssPath = '/lab/extensions/jupyterlab-niivue/static/niivue/build/assets/index.css'
 
     return `<!doctype html>
           <html lang="en">

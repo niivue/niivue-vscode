@@ -2,20 +2,15 @@
 {
   // Package manager
   "npm.packageManager": "pnpm",
-  
+
   // TypeScript
   "typescript.tsc.autoDetect": "off",
   "typescript.preferences.includePackageJsonAutoImports": "on",
   "typescript.suggest.autoImports": true,
-  
+
   // ESLint for monorepo
-  "eslint.workingDirectories": [
-    "apps/vscode",
-    "apps/pwa", 
-    "apps/jupyter",
-    "packages/niivue-react"
-  ],
-  
+  "eslint.workingDirectories": ["apps/vscode", "apps/pwa", "apps/jupyter", "packages/niivue-react"],
+
   // Editor
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "vscode.typescript-language-features",
@@ -25,7 +20,7 @@
   },
   "editor.tabSize": 2,
   "editor.insertSpaces": true,
-  
+
   // File exclusions for monorepo
   "files.exclude": {
     "**/node_modules": true,
@@ -38,7 +33,7 @@
     "**/build": true,
     "**/.turbo": true
   },
-  
+
   // Python and Jupyter
   "python.defaultInterpreterPath": "python",
   "jupyter.jupyterServerType": "local",

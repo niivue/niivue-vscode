@@ -1,6 +1,6 @@
-import { render } from "@testing-library/preact";
-import { describe, expect, it } from "vitest";
-import { HomeScreen } from "../src/components/HomeScreen";
+import { render } from '@testing-library/preact'
+import { describe, expect, it } from 'vitest'
+import { HomeScreen } from '../src/components/HomeScreen'
 
 describe('HomeScreen', () => {
   it('should render the bookmarklet link', () => {

@@ -1,10 +1,4 @@
-import {
-  Container,
-  ImageDrop,
-  listenToMessages,
-  Menu,
-  type AppProps,
-} from '@niivue/react'
+import { Container, ImageDrop, listenToMessages, Menu, type AppProps } from '@niivue/react'
 import { computed } from '@preact/signals'
 import { useEffect } from 'preact/hooks'
 import { HomeScreen } from './components/HomeScreen'

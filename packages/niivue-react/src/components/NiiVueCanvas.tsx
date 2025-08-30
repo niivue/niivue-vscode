@@ -17,11 +17,7 @@ Dcm2niix.prototype.init = function () {
       }
 
       this.worker.onerror = (error: ErrorEvent) => {
-        reject(
-          new Error(
-            `Worker failed to load: ${error.message || 'Unknown error'}`,
-          ),
-        )
+        reject(new Error(`Worker failed to load: ${error.message || 'Unknown error'}`))
       }
     }
   })
@@ -159,9 +155,7 @@ async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSetting
 
   // Read .ima and .IMA as dicom files
   if (Array.isArray(item.uri)) {
-    item.uri = item.uri.map((uri: any) =>
-      uri.replace('.ima', '.dcm').replace('.IMA', '.dcm'),
-    )
+    item.uri = item.uri.map((uri: any) => uri.replace('.ima', '.dcm').replace('.IMA', '.dcm'))
   } else if (item.uri.endsWith('.ima') || item.uri.endsWith('.IMA')) {
     item.uri = item.uri.replace('.ima', '.dcm').replace('.IMA', '.dcm')
   }
@@ -210,9 +204,7 @@ async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSetting
       })
       nv.addVolume(volume)
     } else {
-      const volumeList = [
-        { url: item.uri, colormap: settings.defaultVolumeColormap },
-      ]
+      const volumeList = [{ url: item.uri, colormap: settings.defaultVolumeColormap }]
       await nv.loadVolumes(volumeList)
     }
   } else if (item.data) {

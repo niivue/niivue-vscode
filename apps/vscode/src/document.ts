@@ -1,10 +1,7 @@
 import * as vscode from 'vscode'
 import { Disposable } from './dispose'
 
-export class NiiVueDocument
-  extends Disposable
-  implements vscode.CustomDocument
-{
+export class NiiVueDocument extends Disposable implements vscode.CustomDocument {
   private readonly _uri: vscode.Uri
 
   constructor(uri: vscode.Uri) {
@@ -16,9 +13,7 @@ export class NiiVueDocument
     return this._uri
   }
 
-  private readonly _onDidDispose = this._register(
-    new vscode.EventEmitter<void>(),
-  )
+  private readonly _onDidDispose = this._register(new vscode.EventEmitter<void>())
   public readonly onDidDispose = this._onDidDispose.event
 
   dispose(): void {

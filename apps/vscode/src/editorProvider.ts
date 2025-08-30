@@ -19,7 +19,7 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
   private static readonly viewType = 'niiVue.default'
   private readonly webviews = new WebviewCollection()
 
-  constructor(private readonly _context: vscode.ExtensionContext) { }
+  constructor(private readonly _context: vscode.ExtensionContext) {}
 
   async openCustomDocument(uri: vscode.Uri): Promise<NiiVueDocument> {
     console.log(`Opening document ${uri}`)
@@ -35,7 +35,13 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     const panel = vscode.window.createWebviewPanel(viewType, tabName, vscode.ViewColumn.One, {
       enableScripts: true,
       retainContextWhenHidden: true,
-      localResourceRoots: [context.extensionUri, vscode.Uri.joinPath(vscode.workspace.workspaceFolders?.[0]?.uri ?? vscode.Uri.file('/'), '..')],
+      localResourceRoots: [
+        context.extensionUri,
+        vscode.Uri.joinPath(
+          vscode.workspace.workspaceFolders?.[0]?.uri ?? vscode.Uri.file('/'),
+          '..',
+        ),
+      ],
     })
     panel.webview.html = await getHtmlForWebview(panel.webview, context.extensionUri)
     const editor = new NiiVueEditorProvider(context)
@@ -240,7 +246,13 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     this.webviews.add(document.uri, webviewPanel)
     webviewPanel.webview.options = {
       enableScripts: true,
-      localResourceRoots: [this._context.extensionUri, vscode.Uri.joinPath(vscode.workspace.workspaceFolders?.[0]?.uri ?? vscode.Uri.file('/'), '..')],
+      localResourceRoots: [
+        this._context.extensionUri,
+        vscode.Uri.joinPath(
+          vscode.workspace.workspaceFolders?.[0]?.uri ?? vscode.Uri.file('/'),
+          '..',
+        ),
+      ],
     }
     webviewPanel.webview.html = await getHtmlForWebview(
       webviewPanel.webview,

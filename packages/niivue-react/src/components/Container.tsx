@@ -112,12 +112,7 @@ function getAspectRatio(meta: any, sliceType: number) {
   return 1
 }
 
-function getCanvasSize(
-  nCanvas: number,
-  meta: any,
-  sliceType: number,
-  windowSize: Size,
-) {
+function getCanvasSize(nCanvas: number, meta: any, sliceType: number, windowSize: Size) {
   const gap = 4
   const aspectRatio = getAspectRatio(meta, sliceType)
   if (nCanvas === 0) {
@@ -128,9 +123,7 @@ function getCanvasSize(
   for (let nrow = 1; nrow <= nCanvas; nrow++) {
     const ncol = Math.ceil(nCanvas / nrow)
     const maxHeight = Math.floor(windowSize.height / nrow - gap)
-    const maxWidth = Math.floor(
-      Math.min(windowSize.width / ncol - gap, maxHeight * aspectRatio),
-    )
+    const maxWidth = Math.floor(Math.min(windowSize.width / ncol - gap, maxHeight * aspectRatio))
     if (maxWidth > bestWidth) {
       bestWidth = maxWidth
     }

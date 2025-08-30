@@ -1,7 +1,7 @@
 # NiiVue VSCode README
 
 **WebGL 2.0 medical image viewer**  
-This extension uses [NiiVue](https://github.com/niivue/niivue) to display images selected in VSCode.  
+This extension uses [NiiVue](https://github.com/niivue/niivue) to display images selected in VSCode.
 
 ## VS Code version
 
@@ -14,7 +14,7 @@ The [web version](https://korbinian90.github.io/niivue-vscode) can be installed 
 ## Development
 
 Currently my time that I can spend on this project is quite limited. I'm very happy for contributions in the form of pull requests.  
-Otherwise, if you would like to see a certain feature implemented, please let me know so I can prioritize the development. Either create a new issue or comment/react on an existing issue.  
+Otherwise, if you would like to see a certain feature implemented, please let me know so I can prioritize the development. Either create a new issue or comment/react on an existing issue.
 
 ## VS Code screenshots
 
@@ -45,7 +45,7 @@ Otherwise, if you would like to see a certain feature implemented, please let me
 - Open local or remote files when hovering over the link in an open editor
 - Add overlays
 - Works in web-based VSCode
-![NiiVue in web-based VSCode](media/web_based.png)
+  ![NiiVue in web-based VSCode](media/web_based.png)
 
 ## Supported Formats
 
@@ -111,10 +111,10 @@ pnpm test
 
 ### Publishing
 
-
 #### Option 1: Automated Release via GitHub Actions
 
 **Tag-based release:**
+
 ```bash
 # Create and push a tag (replace x.y.z with actual version)
 git tag vscode-vx.y.z
@@ -122,6 +122,7 @@ git push origin vscode-vx.y.z
 ```
 
 The GitHub Action will automatically:
+
 - Build the extension
 - Publish to VS Code Marketplace
 - Publish to Open VSX Registry
@@ -129,6 +130,7 @@ The GitHub Action will automatically:
 - Upload the `.vsix` file as an artifact
 
 **Prerequisites:**
+
 - Repository secrets must be configured (for automated releases):
   - `VSCE_PAT`: Personal Access Token for VS Code Marketplace
   - `OVSX_PAT`: Personal Access Token for Open VSX Registry
@@ -156,6 +158,6 @@ ovsx publish --pat <openVSX access key>
 ```
 
 **Prerequisites:**
+
 - Personal Access Token for [VS Code Marketplace](https://marketplace.visualstudio.com/manage)
 - Personal Access Token for [Open VSX Registry](https://open-vsx.org/)
-

@@ -1,13 +1,9 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalDependencies": [
-    "**/.env.*local"
-  ],
+  "globalDependencies": ["**/.env.*local"],
   "tasks": {
     "build": {
-      "dependsOn": [
-        "^build"
-      ],
+      "dependsOn": ["^build"],
       "outputs": [
         "dist/**",
         "build/**",
@@ -19,29 +15,16 @@
       ]
     },
     "test": {
-      "dependsOn": [
-        "build"
-      ],
-      "outputs": [
-        "coverage/**"
-      ],
-      "inputs": [
-        "src/**/*.tsx",
-        "src/**/*.ts",
-        "test/**/*.ts",
-        "tests/**/*.ts"
-      ]
+      "dependsOn": ["build"],
+      "outputs": ["coverage/**"],
+      "inputs": ["src/**/*.tsx", "src/**/*.ts", "test/**/*.ts", "tests/**/*.ts"]
     },
     "lint": {
-      "dependsOn": [
-        "^build"
-      ],
+      "dependsOn": ["^build"],
       "outputs": []
     },
     "type-check": {
-      "dependsOn": [
-        "^build"
-      ],
+      "dependsOn": ["^build"],
       "outputs": []
     },
     "dev": {

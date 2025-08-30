@@ -7,9 +7,6 @@
     "jsxImportSource": "preact",
     "moduleResolution": "bundler"
   },
-  "include": [
-    "src",
-    "src/types/virtual-modules.d.ts"
-  ],
+  "include": ["src", "src/types/virtual-modules.d.ts"],
   "references": []
 }

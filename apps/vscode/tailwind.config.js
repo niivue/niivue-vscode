@@ -9,12 +9,7 @@ export default {
     './src/**/*.{js,ts,jsx,tsx}',
     join(__dirname, '../../packages/niivue-react/src/**/*.{js,ts,jsx,tsx}'),
   ],
-  safelist: [
-    'text-white',
-    'p-0',
-    'w-screen', 
-    'h-screen'
-  ],
+  safelist: ['text-white', 'p-0', 'w-screen', 'h-screen'],
   theme: {
     extend: {},
   },

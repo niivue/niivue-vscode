@@ -1,31 +1,25 @@
 // Launch configurations for NiiVue development
 {
-	"version": "0.2.0",
-	"configurations": [
-		{
-			"name": "Run Extension",
-			"type": "extensionHost",
-			"request": "launch",
-			"args": [
-				"--extensionDevelopmentPath=${workspaceFolder}/apps/vscode"
-			],
-			"outFiles": [
-				"${workspaceFolder}/apps/vscode/dist/**/*.js"
-			],
-			"preLaunchTask": "watch:vscode"
-		},
-		{
-			"name": "Extension Tests",
-			"type": "extensionHost",
-			"request": "launch",
-			"args": [
-				"--extensionDevelopmentPath=${workspaceFolder}/apps/vscode",
-				"--extensionTestsPath=${workspaceFolder}/apps/vscode/out/test/suite/index"
-			],
-			"outFiles": [
-				"${workspaceFolder}/apps/vscode/out/test/**/*.js"
-			],
-			"preLaunchTask": "build"
-		}
-	]
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run Extension",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": ["--extensionDevelopmentPath=${workspaceFolder}/apps/vscode"],
+      "outFiles": ["${workspaceFolder}/apps/vscode/dist/**/*.js"],
+      "preLaunchTask": "watch:vscode"
+    },
+    {
+      "name": "Extension Tests",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}/apps/vscode",
+        "--extensionTestsPath=${workspaceFolder}/apps/vscode/out/test/suite/index"
+      ],
+      "outFiles": ["${workspaceFolder}/apps/vscode/out/test/**/*.js"],
+      "preLaunchTask": "build"
+    }
+  ]
 }

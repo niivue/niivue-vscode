@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from "react"
-import { Streamlit, withStreamlitConnection, ComponentProps } from "streamlit-component-lib"
+import React, { useEffect, useRef, useState } from 'react'
+import { Streamlit, withStreamlitConnection, ComponentProps } from 'streamlit-component-lib'
 
 interface Args {
   nifti_data: string
@@ -26,7 +26,7 @@ const NiiVueViewer: React.FC<ComponentProps> = ({ args }) => {
     // Create the NiiVue viewer HTML structure
     const createNiiVueHTML = () => {
       const hasData = typedArgs.nifti_data && typedArgs.nifti_data.length > 0
-      
+
       return `
         <!DOCTYPE html>
         <html lang="en">
@@ -188,11 +188,11 @@ const NiiVueViewer: React.FC<ComponentProps> = ({ args }) => {
       iframe.style.height = `${typedArgs.height || 600}px`
       iframe.style.border = 'none'
       iframe.style.backgroundColor = '#1a1a1a'
-      
+
       // Clear container and add iframe
       containerRef.current.innerHTML = ''
       containerRef.current.appendChild(iframe)
-      
+
       // Write HTML content to iframe
       const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document
       if (iframeDoc) {
@@ -204,19 +204,27 @@ const NiiVueViewer: React.FC<ComponentProps> = ({ args }) => {
       console.error('Error creating NiiVue viewer:', err)
       setError(err instanceof Error ? err.message : 'Unknown error')
     }
-  }, [typedArgs.nifti_data, typedArgs.filename, typedArgs.css_content, typedArgs.js_content, typedArgs.height])
+  }, [
+    typedArgs.nifti_data,
+    typedArgs.filename,
+    typedArgs.css_content,
+    typedArgs.js_content,
+    typedArgs.height,
+  ])
 
   if (error) {
     return (
-      <div style={{ 
-        height: typedArgs.height || 600,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#1a1a1a',
-        color: '#ff6b6b',
-        fontFamily: 'Arial, sans-serif'
-      }}>
+      <div
+        style={{
+          height: typedArgs.height || 600,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#1a1a1a',
+          color: '#ff6b6b',
+          fontFamily: 'Arial, sans-serif',
+        }}
+      >
         <div>
           <h3>Error loading NiiVue viewer</h3>
           <p>{error}</p>
@@ -226,12 +234,12 @@ const NiiVueViewer: React.FC<ComponentProps> = ({ args }) => {
   }
 
   return (
-    <div 
+    <div
       ref={containerRef}
-      style={{ 
-        width: "100%", 
+      style={{
+        width: '100%',
         height: `${typedArgs.height || 600}px`,
-        backgroundColor: '#1a1a1a'
+        backgroundColor: '#1a1a1a',
       }}
     />
   )

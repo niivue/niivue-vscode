@@ -55,6 +55,7 @@ pnpm lint
 ## Architecture
 
 The monorepo uses:
+
 - **pnpm workspaces** for dependency management
 - **Turborepo** for build orchestration and caching
 - **TypeScript project references** for type checking
@@ -63,6 +64,7 @@ The monorepo uses:
 ## Deployment
 
 Each app has its own deployment strategy:
+
 - **VSCode**: Published to VS Code Marketplace
 - **PWA**: Deployed as static site
 - **Jupyter**: Published to PyPI

@@ -211,7 +211,11 @@ export const Menu = (props: AppProps) => {
           <MenuEntry label="Coronal" onClick={() => (sliceType.value = SLICE_TYPE.CORONAL)} />
           <MenuEntry label="Render" onClick={() => (sliceType.value = SLICE_TYPE.RENDER)} />
           <MenuEntry label="Multiplanar + Render" onClick={setMultiplanar} />
-          <MenuEntry label="Multiplanar + Timeseries" onClick={setTimeSeries} visible={isMultiEcho} />
+          <MenuEntry
+            label="Multiplanar + Timeseries"
+            onClick={setTimeSeries}
+            visible={isMultiEcho}
+          />
           <hr />
           <MenuEntry label="Show All" onClick={() => (hideUI.value = 3)} />
           <MenuEntry label="Hide UI" onClick={() => (hideUI.value = 2)} />
@@ -230,11 +234,7 @@ export const Menu = (props: AppProps) => {
         <MenuItem label="ColorScale" visible={isVolumeOrMesh} onClick={openColorScaleLastOverlay}>
           <MenuEntry label="Volume" onClick={openColorScale(0)} visible={isVolume} />
           {Array.from({ length: nOverlays.value }, (_, i) => (
-            <MenuEntry
-              key={i}
-              label={`Overlay ${i + 1}`}
-              onClick={openColorScale(i + 1)}
-            />
+            <MenuEntry key={i} label={`Overlay ${i + 1}`} onClick={openColorScale(i + 1)} />
           ))}
         </MenuItem>
         <MenuItem label="Overlay" onClick={overlayButtonOnClick} visible={isVolumeOrMesh}>
@@ -262,11 +262,7 @@ export const Menu = (props: AppProps) => {
         nvArraySelected={nvArraySelected}
         visible={overlayMenu}
       />
-      <HeaderBox
-        nvArraySelected={nvArraySelected}
-        nvArray={nvArray}
-        visible={setHeaderMenu}
-      />
+      <HeaderBox nvArraySelected={nvArraySelected} nvArray={nvArray} visible={setHeaderMenu} />
       <HeaderDialog nvArraySelected={nvArraySelected} isOpen={headerDialog} />
     </>
   )
@@ -288,9 +284,9 @@ function ensureValidSelection(
   selectionMode: Signal<SelectionMode>,
 ) {
   if (nvArray.value.length == 0) return
-  else if (selectionMode.value == SelectionMode.SINGLE && selection.value.length != 1)
+  else if (selectionMode.value == SelectionMode.SINGLE && selection.value.length != 1) {
     selection.value = [0]
-  else if (
+  } else if (
     (selectionMode.value == SelectionMode.MULTIPLE || selectionMode.value == SelectionMode.NONE) &&
     selection.value.length == 0
   ) {

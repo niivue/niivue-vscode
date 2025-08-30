@@ -105,10 +105,7 @@ export const Volume = (props: AppProps & VolumeProps) => {
             {dispName}
           </div>
           <div className="pointer-events-none absolute bottom-1 left-1">
-            <span
-              className="text-outline"
-              data-testid={`intensity-${volumeIndex}`}
-            >
+            <span className="text-outline" data-testid={`intensity-${volumeIndex}`}>
               {location_local.value}: {intensity.value}
             </span>
           </div>

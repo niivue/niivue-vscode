@@ -29,7 +29,7 @@ class ReadyStateManager {
   private checkAndSendReady() {
     if (this.eventListenerReady && this.domReady && !this.readySent) {
       this.readySent = true
-      
+
       if (window.vscode) {
         window.vscode.postMessage({ type: 'ready' })
       }
