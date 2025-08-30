@@ -2,8 +2,8 @@ import { Niivue, SLICE_TYPE } from '@niivue/niivue'
 import { computed, effect, useSignal } from '@preact/signals'
 import { useEffect, useRef } from 'preact/hooks'
 import { ExtendedNiivue } from '../events'
-import { differenceInNames } from '../utility'
-import { AppProps } from './AppProps'
+import { differenceInNames, getMetadataString, getNumberOfPoints } from '../utility'
+import { AppProps, SelectionMode } from './AppProps'
 import { Volume } from './Volume'
 
 type Size = {
@@ -12,13 +12,21 @@ type Size = {
 }
 
 export const Container = (props: AppProps) => {
-  const { nvArray } = props
+  const { nvArray, selection, selectionMode } = props
   const sizeRef = useRef<HTMLDivElement | null>(null)
   const render = useSignal(0)
   const windowInnerSize = useSignal({
     width: 100,
     height: 100,
   })
+
+  const nvArraySelected = computed(() =>
+    selectionMode.value != SelectionMode.NONE && selection.value.length > 0
+      ? nvArray.value.filter((_, i) => selection.value.includes(i))
+      : nvArray.value,
+  )
+  const isVolume = computed(() => nvArraySelected.value[0]?.volumes?.length > 0)
+  const isMesh = computed(() => nvArraySelected.value[0]?.meshes?.length > 0)
 
   const setSize = () => {
     windowInnerSize.value = {
@@ -51,6 +59,8 @@ export const Container = (props: AppProps) => {
 
   return (
     <div className="flex-grow h-full overflow-hidden" ref={sizeRef}>
+      {isMesh.value && <p className="pl-2">{getNumberOfPoints(nvArraySelected.value[0])}</p>}
+      {isVolume.value && <p className="pl-2">{getMetadataString(nvArraySelected.value[0])}</p>}
       <div className="flex flex-wrap w-full gap-1 m-1">
         {nvArray.value.map((nv, i) => (
           <Volume

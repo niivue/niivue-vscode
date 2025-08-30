@@ -7,7 +7,6 @@ import {
   addOverlayEvent,
   openImageFromURL,
 } from '../events'
-import { getMetadataString, getNumberOfPoints } from '../utility'
 import { AppProps, SelectionMode } from './AppProps'
 import { HeaderBox } from './HeaderBox'
 import {
@@ -254,8 +253,6 @@ export const Menu = (props: AppProps) => {
           <MenuEntry label="Select All" onClick={selectAll} />
         </ImageSelect>
       </div>
-      {isMesh.value && <p className="pl-2">{getNumberOfPoints(nvArraySelected.value[0])}</p>}
-      {isVolume.value && <p className="pl-2">{getMetadataString(nvArraySelected.value[0])}</p>}
       <ScalingBox
         selectedOverlayNumber={selectedOverlayNumber}
         overlayMenu={overlayMenu}
