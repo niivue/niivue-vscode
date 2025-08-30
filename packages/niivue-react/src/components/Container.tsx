@@ -35,7 +35,7 @@ export const Container = (props: AppProps) => {
     } else if (isMesh.value) {
       return getNumberOfPoints(nvArraySelected.value[0])
     } else {
-      return '\u00A0' // non-breaking space for empty line
+      return 'Metadata Information' // if nothing can be shown to keep the layout
     }
   })
 
