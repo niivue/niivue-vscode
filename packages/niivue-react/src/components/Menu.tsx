@@ -64,6 +64,16 @@ export const Menu = (props: AppProps) => {
     }
   })
 
+  const displayInfo = computed(() => {
+    if (isVolume.value) {
+      return getMetadataString(nvArraySelected.value[0])
+    } else if (isMesh.value) {
+      return getNumberOfPoints(nvArraySelected.value[0])
+    } else {
+      return 'Metadata Info' // non-breaking space for empty line
+    }
+  })
+
   // Effects that occur when state or computed changes
   effect(() => applySelectionModeChange(selectionMode, selectionActive, selectMultiple))
   effect(() => ensureValidSelection(selection, nvArray, selectionMode))
@@ -254,8 +264,7 @@ export const Menu = (props: AppProps) => {
           <MenuEntry label="Select All" onClick={selectAll} />
         </ImageSelect>
       </div>
-      {isMesh.value && <p className="pl-2">{getNumberOfPoints(nvArraySelected.value[0])}</p>}
-      {isVolume.value && <p className="pl-2">{getMetadataString(nvArraySelected.value[0])}</p>}
+      <p className="pl-2">{displayInfo.value}</p>
       <ScalingBox
         selectedOverlayNumber={selectedOverlayNumber}
         overlayMenu={overlayMenu}
