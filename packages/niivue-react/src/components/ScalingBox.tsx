@@ -1,5 +1,5 @@
 import { computed, useSignal } from '@preact/signals'
-import { useRef, useEffect } from 'preact/hooks'
+import { useEffect, useRef } from 'preact/hooks'
 import { ExtendedNiivue } from '../events'
 
 export interface ScalingOpts {
@@ -12,7 +12,9 @@ export const ScalingBox = (props: any) => {
   const { nvArraySelected, selectedOverlayNumber, overlayMenu, visible } = props
   if (visible && !visible.value) return null
 
-  const selectedOverlay = computed(() => getOverlay(nvArraySelected.value[0]))
+  const selectedOverlay = computed(() =>
+    getOverlay(nvArraySelected.value[0], selectedOverlayNumber.value),
+  )
   const invertState = useSignal(selectedOverlay.value.colormapInvert)
 
   const setScaling = (val: ScalingOpts) => {
@@ -227,7 +229,7 @@ function setMeshColormap(nv: ExtendedNiivue, layerNumber: number, colormap: stri
   }
 }
 
-function getOverlay(nv: ExtendedNiivue) {
+function getOverlay(nv: ExtendedNiivue, layerNumber: number) {
   const layers = isVolumeOverlay(nv) ? nv.volumes : nv.meshes[0].layers
-  return layers[layers.length - 1]
+  return layers[layerNumber]
 }
