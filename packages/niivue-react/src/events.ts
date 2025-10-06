@@ -1,9 +1,9 @@
 import { Niivue, NVImage, NVMesh, NVMeshLoaders, SLICE_TYPE } from '@niivue/niivue'
 import { Signal } from '@preact/signals'
 import { AppProps } from './components/AppProps'
+import { readyStateManager } from './readyState'
 import { NiiVueSettings } from './settings'
 import { isImageType } from './utility'
-import { readyStateManager } from './readyState'
 
 export function handleMessage(message: any, appProps: AppProps) {
   const { nvArray, sliceType, settings } = appProps
@@ -207,7 +207,12 @@ function getLayerDefaults(type: string) {
 
 async function addOverlay(nv: Niivue, item: any, settings: NiiVueSettings) {
   if (isImageType(item.uri)) {
-    const image = new NVImage(item.data, item.uri, settings.defaultOverlayColormap, 0.5)
+    const image = await NVImage.loadFromUrl({
+      url: item.data,
+      name: item.uri,
+      colormap: settings.defaultOverlayColormap,
+      opacity: 0.5
+    })
     nv.addVolume(image)
   } else {
     const mesh = await NVMesh.readMesh(item.data, item.uri, nv.gl, 0.5)
