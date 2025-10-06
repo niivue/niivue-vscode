@@ -63,7 +63,10 @@ export const NiiVueCanvas = ({
       nv.isLoaded = true
       nv.body = null
       render.value++ // required to update the names
-      await new Promise((resolve) => setTimeout(resolve, 100)) // workaround to render the metadata line
+
+      // Wait for metadata to be available before proceeding
+      await waitForMetadata(nv)
+
       nvArray.value = [...nvArray.value] // trigger react signal for changes
       nv.createOnLocationChange() // TODO fix, still required?
     })
@@ -127,6 +130,25 @@ async function getUserInput() {
   dialog.close()
   document.body.removeChild(dialog)
   return matrixSize
+}
+
+async function waitForMetadata(nv: ExtendedNiivue, maxAttempts = 50, intervalMs = 50) {
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    // Check if we have volumes with metadata available
+    if (nv.volumes.length > 0 && nv.volumes[0].hdr) {
+      // Additional check to ensure the header contains meaningful data
+      const hdr = nv.volumes[0].hdr
+      if (hdr.dims && hdr.dims.length > 0) {
+        return // Metadata is ready
+      }
+    }
+
+    // Wait before checking again
+    await new Promise((resolve) => setTimeout(resolve, intervalMs))
+  }
+
+  // If we've exhausted all attempts, log a warning but continue
+  console.warn('Metadata not available after maximum attempts, proceeding anyway')
 }
 
 async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSettings) {
