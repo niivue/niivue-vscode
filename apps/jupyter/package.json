@@ -67,7 +67,7 @@
     "@jupyterlab/fileeditor": "^4.4.5",
     "@jupyterlab/services": "^7.4.5",
     "@lumino/widgets": "^2.7.1",
-    "@niivue/niivue": "^0.61.0"
+    "@niivue/niivue": "^0.62.1"
   },
   "devDependencies": {
     "@jupyterlab/builder": "^4.4.5",
