@@ -249,7 +249,7 @@ export const Menu = (props: AppProps) => {
         </MenuItem>
         <MenuItem label="Overlay" onClick={overlayButtonOnClick} visible={isVolumeOrMesh}>
           <MenuEntry label="Add" onClick={addOverlay} visible={isVolume} />
-          <MenuEntry label="Add" onClick={addMeshOverlay} visible={isMesh} />
+          <MenuEntry label="MeshOverlay" onClick={addMeshOverlay} visible={isMesh} />
           <MenuEntry label="Curvature" onClick={addCurvature} visible={isMesh} />
           <MenuEntry label="ImageOverlay" onClick={addOverlay} visible={isMesh} />
           <MenuEntry label="Replace" onClick={replaceLastVolume} visible={isOverlay} />
