@@ -5,7 +5,7 @@ import { readyStateManager } from './readyState'
 import { NiiVueSettings } from './settings'
 import { isImageType } from './utility'
 
-export function handleMessage(message: any, appProps: AppProps) {
+export async function handleMessage(message: any, appProps: AppProps) {
   const { nvArray, sliceType, settings } = appProps
   const { type, body } = message
 
@@ -14,12 +14,12 @@ export function handleMessage(message: any, appProps: AppProps) {
     case 'addMeshCurvature':
     case 'replaceMeshOverlay':
       {
-        addMeshOverlay(nvArray.value[body.index], body, type)
+        await addMeshOverlay(nvArray.value[body.index], body, type)
       }
       break
     case 'overlay':
       {
-        addOverlay(nvArray.value[body.index], body, settings.value)
+        await addOverlay(nvArray.value[body.index], body, settings.value)
       }
       break
     case 'addImage':
@@ -207,10 +207,11 @@ function getLayerDefaults(type: string) {
 
 async function addOverlay(nv: Niivue, item: any, settings: NiiVueSettings) {
   if (isImageType(item.uri)) {
+    const overlayColormap = settings?.defaultOverlayColormap || 'redyell'
     const image = await NVImage.loadFromUrl({
-      url: item.data,
+      url: item.data || item.uri,
       name: item.uri,
-      colormap: settings.defaultOverlayColormap,
+      colormap: overlayColormap,
       opacity: 0.5
     })
     nv.addVolume(image)
