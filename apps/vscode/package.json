@@ -41,7 +41,8 @@
   "main": "./dist/extension.js",
   "browser": "./dist/extension.js",
   "scripts": {
-    "build": "pnpm build:css && pnpm build:webview && pnpm compile",
+    "build": "pnpm build:license && pnpm build:css && pnpm build:webview && pnpm compile",
+    "build:license": "cp ../../LICENSE .",
     "build:css": "tailwindcss -i ./src/styles.css -o ./vscode-styles.css --minify",
     "build:webview": "cd ../../packages/niivue-react && BUILD_TARGET=vscode pnpm build && mkdir -p ../../apps/vscode/niivue && cp -r dist/* ../../apps/vscode/niivue/",
     "compile": "pnpm esbuild-base --minify",
