@@ -28,7 +28,7 @@ export const ScalingBox = (props: any) => {
     if (isVolume) {
       return ['symmetric', ...nvArraySelected.value[0].colormaps()]
     } else {
-      return ['ge_color', 'hsv', 'symmetric', 'warm']
+      return ['ge_color', 'gray', 'hsv', 'symmetric', 'warm']
     }
   })
 
