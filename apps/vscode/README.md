@@ -18,8 +18,8 @@ Otherwise, if you would like to see a certain feature implemented, please let me
 
 ## VS Code screenshots
 
-![Default View when opening an image](media/default_view.png)
-![Comparing multiple images](media/compare_view.png)
+![Default View when opening an image](https://raw.githubusercontent.com/niivue/niivue-vscode/main/apps/vscode/media/default_view.png)
+![Comparing multiple images](https://raw.githubusercontent.com/niivue/niivue-vscode/main/apps/vscode/media/compare_view.png)
 
 ## List of Hotkeys
 
@@ -45,7 +45,7 @@ Otherwise, if you would like to see a certain feature implemented, please let me
 - Open local or remote files when hovering over the link in an open editor
 - Add overlays
 - Works in web-based VSCode
-  ![NiiVue in web-based VSCode](media/web_based.png)
+  ![NiiVue in web-based VSCode](https://raw.githubusercontent.com/niivue/niivue-vscode/main/apps/vscode/media/web_based.png)
 
 ## Supported Formats
 

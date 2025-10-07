@@ -13,9 +13,14 @@ node_modules/
 *.dcm
 *.mnc
 *.mz3
+*.npy
+*.npz
 
 # Documentation
 CHANGELOG.md
+
+# Screenshots (now hosted on GitHub, no need in package)
+media/
 
 # Version control and CI
 .git/
