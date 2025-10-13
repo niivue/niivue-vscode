@@ -86,13 +86,22 @@ importers:
       '@niivue/niivue':
         specifier: ^0.62.1
         version: 0.62.1
+      '@niivue/react':
+        specifier: workspace:*
+        version: link:../../packages/niivue-react
     devDependencies:
       '@jupyterlab/builder':
         specifier: ^4.4.5
         version: 4.4.5
+      '@niivue/dicom-loader':
+        specifier: ^1.0.0
+        version: 1.0.0
       '@niivue/pwa':
         specifier: workspace:*
         version: link:../pwa
+      '@preact/signals':
+        specifier: ^2.0.1
+        version: 2.2.1(preact@10.27.0)
       copy-webpack-plugin:
         specifier: ^13.0.0
         version: 13.0.0(webpack@5.101.0)
@@ -108,6 +117,9 @@ importers:
       npm-run-all:
         specifier: ^4.1.5
         version: 4.1.5
+      preact:
+        specifier: ^10.24.1
+        version: 10.27.0
       rimraf:
         specifier: ^6.0.1
         version: 6.0.1

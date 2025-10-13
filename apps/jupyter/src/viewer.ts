@@ -48,8 +48,8 @@ export class NiivueWidget extends Widget {
 
   private _getHtmlForViewer(): string {
     // Use the static file handler we set up in handlers.py
-    const scriptPath = '/lab/extensions/jupyterlab-niivue/static/niivue/build/assets/index.js'
-    const cssPath = '/lab/extensions/jupyterlab-niivue/static/niivue/build/assets/index.css'
+    const scriptPath = '/lab/extensions/jupyterlab-niivue/static/niivue/index.js'
+    const cssPath = '/lab/extensions/jupyterlab-niivue/static/niivue/index.css'
 
     return `<!doctype html>
           <html lang="en">
@@ -69,7 +69,6 @@ export class NiivueWidget extends Widget {
                 <div class="loading">Loading NIfTI viewer...</div>
               </div>
               <script>
-                window.console.log("loading script", ${scriptPath})
                 // Mock vscode API for Jupyter environment
                 window.vscode = {
                   postMessage: function(message) {
