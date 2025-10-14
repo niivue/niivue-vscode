@@ -5,8 +5,8 @@ import { Widget } from '@lumino/widgets'
 
 export class NiivueWidget extends Widget {
   private _context: DocumentRegistry.IContext<DocumentRegistry.IModel>
-  private _iframe: HTMLIFrameElement
-  private _docManager: IDocumentManager
+  protected _iframe: HTMLIFrameElement
+  protected _docManager: IDocumentManager
 
   constructor(context: DocumentRegistry.IContext<DocumentRegistry.IModel>, docManager: IDocumentManager) {
     super()
@@ -96,7 +96,7 @@ export class NiivueWidget extends Widget {
           </html>`
   }
 
-  private _sendInitSettings(): void {
+  protected _sendInitSettings(): void {
     if (this._iframe.contentWindow) {
       const defaultSettings = {
         showCrosshairs: true,
@@ -244,7 +244,7 @@ export class NiivueWidget extends Widget {
     }
   }
 
-  private async _loadFileAndSend(
+  protected async _loadFileAndSend(
     filePath: string,
     messageType: string,
     body?: any,
@@ -396,6 +396,77 @@ export namespace NiivueViewer {
       const content = new NiivueWidget(context, this._docManager)
       const widget = new DocumentWidget({ content, context })
       return widget
+    }
+  }
+
+  /**
+   * Create a compare view widget for multiple images
+   */
+  export function createCompareView(app: any, docManager: IDocumentManager, selectedItems: any[]): void {
+    const widget = new CompareWidget(selectedItems, docManager)
+    widget.title.label = `Compare (${selectedItems.length} images)`
+    widget.title.closable = true
+
+    app.shell.add(widget, 'main')
+    app.shell.activateById(widget.id)
+  }
+}
+
+/**
+ * Widget for comparing multiple NIfTI images
+ * Shares core functionality with NiivueWidget but initializes with multiple panels
+ */
+class CompareWidget extends NiivueWidget {
+  private _selectedItems: any[]
+
+  constructor(selectedItems: any[], docManager: IDocumentManager) {
+    // Create a dummy context - we won't use it for compare view
+    const dummyContext = {
+      path: '',
+      localPath: '',
+      pathChanged: { connect: () => { } },
+    } as any
+
+    super(dummyContext, docManager)
+    this._selectedItems = selectedItems
+    this.removeClass('jp-NiivueWidget')
+    this.addClass('jp-NiivueCompareWidget')
+    this.id = `niivue-compare-${Date.now()}`
+
+    // Re-initialize for compare mode
+    this._initializeCompareView()
+  }
+
+  private _initializeCompareView(): void {
+    this._iframe.onload = () => {
+      console.log('Compare view iframe loaded')
+      setTimeout(() => {
+        this._sendInitSettings()
+        // Initialize with multiple panels
+        if (this._iframe.contentWindow) {
+          this._iframe.contentWindow.postMessage(
+            {
+              type: 'initCanvas',
+              body: { n: this._selectedItems.length },
+            },
+            '*',
+          )
+        }
+        setTimeout(() => {
+          this._loadAllImages()
+        }, 500)
+      }, 100)
+    }
+
+    // Trigger onload
+    if (this._iframe.contentWindow) {
+      this._iframe.onload(new Event('load') as any)
+    }
+  }
+
+  private async _loadAllImages(): Promise<void> {
+    for (const item of this._selectedItems) {
+      await this._loadFileAndSend(item.path, 'addImage')
     }
   }
 }
