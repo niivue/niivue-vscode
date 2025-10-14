@@ -1,87 +1,119 @@
 {
   "version": "2.0.0",
   "tasks": [
+    // ====================
+    // Workspace-level tasks (orchestrated by Turborepo)
+    // ====================
     {
       "label": "install",
       "type": "shell",
       "command": "pnpm",
       "args": ["install"],
-      "group": "build"
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "detail": "Install all dependencies for the monorepo"
     },
     {
       "label": "build",
       "type": "shell",
-      "command": "pnpm",
+      "command": "turbo",
       "args": ["build"],
       "group": {
         "kind": "build",
         "isDefault": true
-      }
-    },
-    {
-      "label": "watch:vscode",
-      "type": "shell",
-      "command": "pnpm",
-      "args": ["--filter", "@niivue/vscode", "watch"],
-      "isBackground": true,
-      "group": "build",
-      "presentation": {
-        "reveal": "never"
       },
-      "problemMatcher": {
-        "owner": "esbuild",
-        "fileLocation": ["relative", "${workspaceFolder}"],
-        "pattern": {
-          "regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
-          "file": 1,
-          "line": 2,
-          "column": 3,
-          "severity": 4,
-          "message": 5
-        },
-        "background": {
-          "activeOnStart": true,
-          "beginsPattern": "^\\[watch\\] build started",
-          "endsPattern": "^\\[watch\\] build finished"
-        }
-      }
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": ["$tsc"],
+      "detail": "Build all packages (uses Turborepo cache and parallel execution)"
     },
     {
       "label": "dev",
       "type": "shell",
-      "command": "pnpm",
-      "args": ["dev"],
+      "command": "turbo",
+      "args": ["dev", "--parallel"],
       "isBackground": true,
-      "group": "build"
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "detail": "Start all development servers and watch modes in parallel"
     },
     {
       "label": "test",
       "type": "shell",
-      "command": "pnpm",
+      "command": "turbo",
       "args": ["test"],
-      "group": "test"
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "detail": "Run all tests (orchestrated by Turborepo)"
     },
     {
-      "label": "jupyter:setup",
+      "label": "lint",
       "type": "shell",
-      "command": "pip",
-      "args": ["install", "-e", ".[test]"],
-      "options": {
-        "cwd": "${workspaceFolder}/apps/jupyter"
+      "command": "turbo",
+      "args": ["lint"],
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
       },
-      "group": "build"
+      "problemMatcher": ["$eslint-stylish"],
+      "detail": "Lint all packages (orchestrated by Turborepo)"
     },
     {
-      "label": "jupyter:develop",
+      "label": "type-check",
       "type": "shell",
-      "command": "jupyter",
-      "args": ["labextension", "develop", ".", "--overwrite"],
-      "options": {
-        "cwd": "${workspaceFolder}/apps/jupyter"
+      "command": "turbo",
+      "args": ["type-check"],
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
       },
+      "problemMatcher": ["$tsc"],
+      "detail": "Type-check all TypeScript code (orchestrated by Turborepo)"
+    },
+    {
+      "label": "format",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["format"],
       "group": "build",
-      "dependsOn": ["build", "jupyter:setup"]
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared"
+      },
+      "detail": "Format all code with Prettier"
     },
+    {
+      "label": "clean",
+      "type": "shell",
+      "command": "turbo",
+      "args": ["clean"],
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "detail": "Clean all build artifacts (orchestrated by Turborepo)"
+    },
+
+    // ====================
+    // Special runtime tasks (not in Turborepo pipeline)
+    // ====================
     {
       "label": "jupyter:start",
       "type": "shell",
@@ -90,16 +122,20 @@
       "isBackground": true,
       "group": "build",
       "presentation": {
+        "reveal": "always",
         "panel": "dedicated"
       },
       "problemMatcher": {
-        "pattern": { "regexp": "." },
+        "pattern": {
+          "regexp": "."
+        },
         "background": {
           "activeOnStart": true,
           "beginsPattern": "^.*Jupyter Server.*is running at:",
           "endsPattern": "^.*Use Control-C to stop this server"
         }
-      }
+      },
+      "detail": "Start JupyterLab server (runtime server, not a build task)"
     }
   ]
 }

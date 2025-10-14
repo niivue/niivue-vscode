@@ -17,7 +17,7 @@
   "engines": {
     "vscode": "^1.70.0"
   },
-  "license": "MIT",
+  "license": "BSD-2-Clause",
   "categories": [
     "Visualization"
   ],
@@ -41,20 +41,19 @@
   "main": "./dist/extension.js",
   "browser": "./dist/extension.js",
   "scripts": {
-    "build": "pnpm build:license && pnpm build:css && pnpm build:webview && pnpm compile",
-    "build:license": "cp ../../LICENSE .",
+    "dev": "pnpm run esbuild-watch",
+    "watch": "pnpm run esbuild-watch",
+    "build": "pnpm run build:css && pnpm run build:webview && pnpm run compile",
+    "compile": "pnpm run esbuild-base --minify",
     "build:css": "tailwindcss -i ./src/styles.css -o ./vscode-styles.css --minify",
     "build:webview": "cd ../../packages/niivue-react && BUILD_TARGET=vscode pnpm build && mkdir -p ../../apps/vscode/niivue && cp -r dist/* ../../apps/vscode/niivue/",
-    "compile": "pnpm esbuild-base --minify",
-    "dev": "pnpm esbuild-watch",
-    "watch": "pnpm esbuild-watch",
     "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
-    "esbuild-watch": "pnpm esbuild-base --sourcemap --watch",
+    "esbuild-watch": "pnpm run esbuild-base --sourcemap --watch",
+    "clean": "rm -rf dist",
     "lint": "eslint src --ext .ts,.tsx --report-unused-disable-directives --max-warnings 0",
     "type-check": "tsc --noEmit",
-    "clean": "rm -rf dist",
-    "package": "pnpm build && vsce package",
-    "publish": "pnpm build && vsce publish"
+    "package": "pnpm run build && vsce package",
+    "publish": "pnpm run build && vsce publish"
   },
   "devDependencies": {
     "concurrently": "^9.2.0",
@@ -243,8 +242,5 @@
     "untrustedWorkspaces": {
       "supported": true
     }
-  },
-  "activationEvents": [
-    "*"
-  ]
+  }
 }

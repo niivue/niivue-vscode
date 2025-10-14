@@ -14,7 +14,7 @@
   "bugs": {
     "url": "https://github.com/niivue/jupyterlab-niivue/issues"
   },
-  "license": "BSD-3-Clause",
+  "license": "BSD-2-Clause",
   "author": {
     "name": "Korbinian Eckstein",
     "email": "korbinian90@gmail.com"
