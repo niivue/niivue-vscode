@@ -1,5 +1,4 @@
-import { DocumentRegistry } from '@jupyterlab/docregistry'
-import { ABCWidgetFactory, DocumentWidget } from '@jupyterlab/docregistry'
+import { ABCWidgetFactory, DocumentRegistry, DocumentWidget } from '@jupyterlab/docregistry'
 import { Widget } from '@lumino/widgets'
 
 export class NiivueWidget extends Widget {
@@ -31,10 +30,17 @@ export class NiivueWidget extends Widget {
       this._iframe.srcdoc = html
 
       // Set up message passing
-      // TODO check if iframe finished loading (check for ready message?)
       this._iframe.onload = () => {
-        console.log('Sending message with image: ', filePath)
-        this._sendAddImageMessage(filePath)
+        console.log('Iframe loaded, initializing viewer')
+        // Send initial settings to initialize the app
+        setTimeout(() => {
+          this._sendInitSettings()
+          // Then send the image
+          setTimeout(() => {
+            console.log('Sending message with image: ', filePath)
+            this._sendAddImageMessage(filePath)
+          }, 500)
+        }, 100)
       }
 
       console.log('Niivue viewer initialized successfully')
@@ -48,8 +54,8 @@ export class NiivueWidget extends Widget {
 
   private _getHtmlForViewer(): string {
     // Use the static file handler we set up in handlers.py
-    const scriptPath = '/lab/extensions/jupyterlab-niivue/static/niivue/index.js'
-    const cssPath = '/lab/extensions/jupyterlab-niivue/static/niivue/index.css'
+    const scriptPath = '/lab/extensions/@niivue/jupyter/static/niivue/index.js'
+    const cssPath = '/lab/extensions/@niivue/jupyter/static/niivue/index.css'
 
     return `<!doctype html>
           <html lang="en">
@@ -81,6 +87,29 @@ export class NiivueWidget extends Widget {
               </script>
             </body>
           </html>`
+  }
+
+  private _sendInitSettings(): void {
+    if (this._iframe.contentWindow) {
+      const defaultSettings = {
+        showCrosshairs: true,
+        interpolation: true,
+        colorbar: false,
+        radiologicalConvention: false,
+        zoomDragMode: false,
+        defaultVolumeColormap: 'gray',
+        defaultOverlayColormap: 'redyell',
+      }
+
+      console.log('Sending init settings:', defaultSettings)
+      this._iframe.contentWindow.postMessage(
+        {
+          type: 'initSettings',
+          body: defaultSettings,
+        },
+        '*',
+      )
+    }
   }
 
   private async _sendAddImageMessage(filePath: string): Promise<void> {
