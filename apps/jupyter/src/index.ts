@@ -1,4 +1,5 @@
 import { JupyterFrontEnd, JupyterFrontEndPlugin } from '@jupyterlab/application'
+import { IDocumentManager } from '@jupyterlab/docmanager'
 import { NiivueViewer } from './viewer'
 
 const FACTORY_NAME = 'Niivue Viewer'
@@ -7,8 +8,8 @@ const plugin: JupyterFrontEndPlugin<void> = {
   id: 'jupyterlab-niivue:plugin',
   description: 'A JupyterLab extension for viewing NIfTI files with Niivue',
   autoStart: true,
-  requires: [],
-  activate: (app: JupyterFrontEnd) => {
+  requires: [IDocumentManager],
+  activate: (app: JupyterFrontEnd, docManager: IDocumentManager) => {
     console.log('JupyterLab extension jupyterlab-niivue is activated!')
 
     // All supported file types
@@ -36,12 +37,15 @@ const plugin: JupyterFrontEndPlugin<void> = {
       'npz',
     ]
 
-    const factory = new NiivueViewer.Factory({
-      name: FACTORY_NAME,
-      fileTypes: fileTypes,
-      defaultFor: fileTypes,
-      modelName: 'base64',
-    })
+    const factory = new NiivueViewer.Factory(
+      {
+        name: FACTORY_NAME,
+        fileTypes: fileTypes,
+        defaultFor: fileTypes,
+        modelName: 'base64',
+      },
+      docManager,
+    )
 
     factory.widgetCreated.connect((sender, widget) => {
       console.log('Niivue widget created:', widget)
