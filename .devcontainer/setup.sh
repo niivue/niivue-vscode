@@ -20,18 +20,18 @@ pnpm install
 echo "🐍 Setting up Python environment for JupyterLab development..."
 pip install --upgrade pip
 pip install jupyterlab>=4.0.0 jupyter-packaging build hatch
-
-# Install Jupyter extension in development mode
-echo "🔧 Setting up JupyterLab extension..."
-cd apps/jupyter
-pip install -e .[test]
+pip install coverage pytest pytest-asyncio pytest-cov pytest-jupyter pytest-xvfb
 
 # Build the initial setup
 echo "🏗️ Building initial packages..."
-cd ../..
 pnpm build
 
-# Install JupyterLab extension in development mode
+# Fix JupyterLab permissions for development mode installation
+echo "🔐 Fixing JupyterLab directory permissions..."
+sudo mkdir -p /usr/local/share/jupyter/labextensions
+sudo chown -R vscode:vscode /usr/local/share/jupyter
+
+# Install JupyterLab extension in development mode (creates symlink only)
 echo "🔌 Installing JupyterLab extension in development mode..."
 cd apps/jupyter
 jupyter labextension develop . --overwrite

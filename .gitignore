@@ -14,11 +14,13 @@ static/
 # Build artifacts
 *.timestamp-*.mjs
 tsconfig.tsbuildinfo
+.tsbuildinfo
 .turbo/
 __pycache__
 build_log.json
 *.orig
 *.js.map
+.webpack-cache/
 
 # Lint cache files
 .eslintcache
@@ -34,12 +36,18 @@ apps/vscode/niivue/
 # VS Code extension generated files
 apps/vscode/vscode-styles.css
 
+# PWA generated public assets (copied from niivue-react)
+apps/pwa/public/
+
 # Python packaging
 *.egg-info/
 *.pyc
 
 # JupyterLab extension build output
 **/labextension/
+**/.ipynb_checkpoints
+_version.py
+
 
 # Test artifacts
 test-results/
