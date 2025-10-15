@@ -1,6 +1,6 @@
 {
   "name": "@niivue/jupyter",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "A JupyterLab extension for viewing NIfTI files with Niivue",
   "keywords": [
     "jupyter",
@@ -35,12 +35,13 @@
   "scripts": {
     "build": "pnpm run build:assets && pnpm run build:lib && pnpm run build:labextension:dev",
     "build:prod": "pnpm run clean && pnpm run build:assets && pnpm run build:lib:prod && pnpm run build:labextension",
-    "build:assets": "cd ../../packages/niivue-react && BUILD_TARGET=vscode pnpm build && mkdir -p ../../apps/jupyter/static/niivue && cp -r dist/* ../../apps/jupyter/static/niivue/",
+    "build:assets": "cd ../../packages/niivue-react && BUILD_TARGET=vscode pnpm build && mkdir -p ../../apps/jupyter/static/niivue && rm -rf ../../apps/jupyter/static/niivue/* && rsync -av --exclude='build' --exclude='*.html' --exclude='manifest.webmanifest' --exclude='registerSW.js' --exclude='sw.js' --exclude='workbox-*.js' dist/ ../../apps/jupyter/static/niivue/",
     "build:lib": "tsc --sourceMap",
     "build:lib:prod": "tsc",
     "build:labextension": "jupyter labextension build .",
     "build:labextension:dev": "jupyter labextension build --development True .",
-    "clean": "rimraf lib tsconfig.tsbuildinfo .tsbuildinfo .webpack-cache jupyterlab_niivue/labextension jupyterlab_niivue/_version.py .eslintcache .stylelintcache",
+    "clean": "rimraf lib tsconfig.tsbuildinfo .tsbuildinfo .webpack-cache jupyterlab_niivue/labextension jupyterlab_niivue/_version.py .eslintcache .stylelintcache static/niivue build *.egg-info",
+    "clean:all": "pnpm run clean && rimraf dist",
     "dev": "run-p watch:lib watch:labextension",
     "watch": "pnpm run dev",
     "watch:lib": "tsc -w --sourceMap --preserveWatchOutput",
@@ -51,7 +52,10 @@
     "lint:prettier": "prettier \"**/*.{ts,tsx,js,jsx,css,json,md}\" --check",
     "lint:style": "stylelint --cache \"style/**/*.css\"",
     "format": "prettier \"**/*.{ts,tsx,js,jsx,css,json,md}\" --write",
-    "test": "echo \"Error: no tests specified\" && exit 0"
+    "test": "echo \"Error: no tests specified\" && exit 0",
+    "release:test": "pnpm run clean:all && pnpm run build:prod && python -m build --wheel && python -m twine upload --repository testpypi dist/*",
+    "release:prod": "pnpm run clean:all && pnpm run build:prod && python -m build --wheel && python -m twine upload dist/*",
+    "release:check": "pnpm run clean:all && pnpm run build:prod && python -m build --wheel && python -m twine check dist/*"
   },
   "dependencies": {
     "@jupyterlab/application": "^4.4.5",
@@ -61,14 +65,14 @@
     "@jupyterlab/filebrowser": "^4.4.9",
     "@jupyterlab/fileeditor": "^4.4.5",
     "@jupyterlab/services": "^7.4.5",
+    "@jupyterlab/translation": "^4.4.5",
     "@lumino/widgets": "^2.7.1",
-    "@niivue/niivue": "^0.62.1",
-    "@niivue/react": "workspace:*"
+    "@niivue/niivue": "^0.62.1"
   },
   "devDependencies": {
     "@jupyterlab/builder": "^4.4.5",
     "@niivue/dicom-loader": "^1.0.0",
-    "@niivue/pwa": "workspace:*",
+    "@niivue/react": "workspace:*",
     "@preact/signals": "^2.0.1",
     "copy-webpack-plugin": "^13.0.0",
     "css-loader": "^7.1.2",

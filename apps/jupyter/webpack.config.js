@@ -28,6 +28,16 @@ module.exports = {
         {
           from: path.resolve(__dirname, 'static'),
           to: path.resolve(__dirname, 'jupyterlab_niivue/labextension/static'),
+          globOptions: {
+            ignore: [
+              '**/build/**', // Ignore any build subdirectories
+              '**/*.html',
+              '**/manifest.webmanifest',
+              '**/registerSW.js',
+              '**/sw.js',
+              '**/workbox-*.js',
+            ],
+          },
         },
       ],
     }),

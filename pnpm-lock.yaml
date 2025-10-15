@@ -86,15 +86,15 @@ importers:
       '@jupyterlab/services':
         specifier: ^7.4.5
         version: 7.4.5(react@18.3.1)
+      '@jupyterlab/translation':
+        specifier: ^4.4.5
+        version: 4.4.9(react@18.3.1)
       '@lumino/widgets':
         specifier: ^2.7.1
         version: 2.7.1
       '@niivue/niivue':
         specifier: ^0.62.1
         version: 0.62.1
-      '@niivue/react':
-        specifier: workspace:*
-        version: link:../../packages/niivue-react
     devDependencies:
       '@jupyterlab/builder':
         specifier: ^4.4.5
@@ -102,9 +102,9 @@ importers:
       '@niivue/dicom-loader':
         specifier: ^1.0.0
         version: 1.0.0
-      '@niivue/pwa':
+      '@niivue/react':
         specifier: workspace:*
-        version: link:../pwa
+        version: link:../../packages/niivue-react
       '@preact/signals':
         specifier: ^2.0.1
         version: 2.2.1(preact@10.27.0)
@@ -1420,9 +1420,6 @@ packages:
 
   '@jupyterlab/toc@6.4.5':
     resolution: {integrity: sha512-H2xUmgcRLAo7T0TSPCFHb4MbFAvJVgZIl12Sl1pPDgu/2lKg7lZYTkwmAnVQz2otC76dIoAzcOqlqew0NhUoLw==}
-
-  '@jupyterlab/translation@4.4.5':
-    resolution: {integrity: sha512-sxKnRiv39Swx+Hn0jnEDURG3dzHy3RzxdMKVzbs2meZ3/OgzH4zaNPXbxGRMmdx4U4rcvfM40u74OEAml8Eq0Q==}
 
   '@jupyterlab/translation@4.4.9':
     resolution: {integrity: sha512-R/ZDX5p/B3tTSEmpsc6OzPw+kewn3NeYTf7yLUJlKReWvqfvc3umnt/h596eP7NpandOVG+JHoijE6ldWgrpew==}
@@ -7467,7 +7464,7 @@ snapshots:
       '@jupyterlab/rendermime-interfaces': 3.12.5
       '@jupyterlab/services': 7.4.5(react@18.3.1)
       '@jupyterlab/statedb': 4.4.5
-      '@jupyterlab/translation': 4.4.5(react@18.3.1)
+      '@jupyterlab/translation': 4.4.9(react@18.3.1)
       '@jupyterlab/ui-components': 4.4.5(react@18.3.1)
       '@lumino/algorithm': 2.0.3
       '@lumino/application': 2.4.4
@@ -7493,7 +7490,7 @@ snapshots:
       '@jupyterlab/settingregistry': 4.4.5(react@18.3.1)
       '@jupyterlab/statedb': 4.4.5
       '@jupyterlab/statusbar': 4.4.5
-      '@jupyterlab/translation': 4.4.5(react@18.3.1)
+      '@jupyterlab/translation': 4.4.9(react@18.3.1)
       '@jupyterlab/ui-components': 4.4.5(react@18.3.1)
       '@lumino/algorithm': 2.0.3
       '@lumino/commands': 2.3.2
@@ -7589,7 +7586,7 @@ snapshots:
       '@jupyterlab/nbformat': 4.4.5
       '@jupyterlab/observables': 5.4.5
       '@jupyterlab/statusbar': 4.4.5
-      '@jupyterlab/translation': 4.4.5(react@18.3.1)
+      '@jupyterlab/translation': 4.4.9(react@18.3.1)
       '@jupyterlab/ui-components': 4.4.5(react@18.3.1)
       '@lumino/coreutils': 2.2.1
       '@lumino/disposable': 2.1.4
@@ -7651,7 +7648,7 @@ snapshots:
       '@jupyterlab/coreutils': 6.4.5
       '@jupyterlab/documentsearch': 4.4.5
       '@jupyterlab/nbformat': 4.4.5
-      '@jupyterlab/translation': 4.4.5(react@18.3.1)
+      '@jupyterlab/translation': 4.4.9(react@18.3.1)
       '@lezer/common': 1.2.3
       '@lezer/generator': 1.8.0
       '@lezer/highlight': 1.2.1
@@ -7716,7 +7713,7 @@ snapshots:
       '@jupyterlab/rendermime': 4.4.5(react@18.3.1)
       '@jupyterlab/rendermime-interfaces': 3.12.5
       '@jupyterlab/services': 7.4.5(react@18.3.1)
-      '@jupyterlab/translation': 4.4.5(react@18.3.1)
+      '@jupyterlab/translation': 4.4.9(react@18.3.1)
       '@jupyterlab/ui-components': 4.4.5(react@18.3.1)
       '@lumino/algorithm': 2.0.3
       '@lumino/coreutils': 2.2.1
@@ -7757,7 +7754,7 @@ snapshots:
   '@jupyterlab/documentsearch@4.4.5':
     dependencies:
       '@jupyterlab/apputils': 4.5.5
-      '@jupyterlab/translation': 4.4.5(react@18.3.1)
+      '@jupyterlab/translation': 4.4.9(react@18.3.1)
       '@jupyterlab/ui-components': 4.4.5(react@18.3.1)
       '@lumino/commands': 2.3.2
       '@lumino/coreutils': 2.2.1
@@ -7812,7 +7809,7 @@ snapshots:
       '@jupyterlab/lsp': 4.4.5(react@18.3.1)
       '@jupyterlab/statusbar': 4.4.5
       '@jupyterlab/toc': 6.4.5
-      '@jupyterlab/translation': 4.4.5(react@18.3.1)
+      '@jupyterlab/translation': 4.4.9(react@18.3.1)
       '@jupyterlab/ui-components': 4.4.5(react@18.3.1)
       '@lumino/commands': 2.3.2
       '@lumino/coreutils': 2.2.1
@@ -7832,7 +7829,7 @@ snapshots:
       '@jupyterlab/coreutils': 6.4.5
       '@jupyterlab/docregistry': 4.4.5
       '@jupyterlab/services': 7.4.5(react@18.3.1)
-      '@jupyterlab/translation': 4.4.5(react@18.3.1)
+      '@jupyterlab/translation': 4.4.9(react@18.3.1)
       '@lumino/coreutils': 2.2.1
       '@lumino/disposable': 2.1.4
       '@lumino/signaling': 2.1.4
@@ -7888,7 +7885,7 @@ snapshots:
       '@jupyterlab/observables': 5.4.5
       '@jupyterlab/rendermime-interfaces': 3.12.5
       '@jupyterlab/services': 7.4.5(react@18.3.1)
-      '@jupyterlab/translation': 4.4.5(react@18.3.1)
+      '@jupyterlab/translation': 4.4.9(react@18.3.1)
       '@lumino/coreutils': 2.2.1
       '@lumino/messaging': 2.0.3
       '@lumino/signaling': 2.1.4
@@ -8033,7 +8030,7 @@ snapshots:
       '@jupyterlab/observables': 5.4.5
       '@jupyterlab/rendermime': 4.4.5(react@18.3.1)
       '@jupyterlab/rendermime-interfaces': 3.12.5
-      '@jupyterlab/translation': 4.4.5(react@18.3.1)
+      '@jupyterlab/translation': 4.4.9(react@18.3.1)
       '@jupyterlab/ui-components': 4.4.5(react@18.3.1)
       '@lumino/coreutils': 2.2.1
       '@lumino/disposable': 2.1.4
@@ -8043,18 +8040,6 @@ snapshots:
       react: 18.3.1
     transitivePeerDependencies:
       - bufferutil
-      - utf-8-validate
-
-  '@jupyterlab/translation@4.4.5(react@18.3.1)':
-    dependencies:
-      '@jupyterlab/coreutils': 6.4.5
-      '@jupyterlab/rendermime-interfaces': 3.12.5
-      '@jupyterlab/services': 7.4.5(react@18.3.1)
-      '@jupyterlab/statedb': 4.4.5
-      '@lumino/coreutils': 2.2.1
-    transitivePeerDependencies:
-      - bufferutil
-      - react
       - utf-8-validate
 
   '@jupyterlab/translation@4.4.9(react@18.3.1)':
@@ -8076,7 +8061,7 @@ snapshots:
       '@jupyterlab/coreutils': 6.4.5
       '@jupyterlab/observables': 5.4.5
       '@jupyterlab/rendermime-interfaces': 3.12.5
-      '@jupyterlab/translation': 4.4.5(react@18.3.1)
+      '@jupyterlab/translation': 4.4.9(react@18.3.1)
       '@lumino/algorithm': 2.0.3
       '@lumino/commands': 2.3.2
       '@lumino/coreutils': 2.2.1
