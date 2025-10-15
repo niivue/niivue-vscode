@@ -1,27 +1,51 @@
 {
   "name": "@niivue/pwa",
-  "private": true,
   "version": "0.0.1",
+  "private": true,
   "type": "module",
+  "description": "Progressive Web App for NiiVue neuroimaging viewer",
+  "license": "BSD-2-Clause",
+  "author": {
+    "name": "Korbinian Eckstein",
+    "email": "korbinian90@gmail.com"
+  },
+  "homepage": "https://github.com/niivue/niivue-vscode",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/niivue/niivue-vscode.git",
+    "directory": "apps/pwa"
+  },
+  "bugs": {
+    "url": "https://github.com/niivue/niivue-vscode/issues"
+  },
+  "keywords": [
+    "pwa",
+    "niivue",
+    "neuroimaging",
+    "medical-imaging",
+    "nifti",
+    "dicom",
+    "visualization",
+    "offline-first"
+  ],
   "scripts": {
-    "start": "vite",
     "dev": "vite",
     "build": "node copy-assets.mjs && pnpm run type-check && vite build",
     "build:analyze": "pnpm run build && npx vite-bundle-analyzer",
-    "type-check": "tsc --noEmit",
     "preview": "vite preview",
-    "test": "vitest run",
-    "test:ui": "vitest --ui",
-    "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui",
-    "test:coverage": "vitest run --coverage",
+    "watch": "vite build --watch",
+    "clean": "rm -rf dist build",
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "pnpm run lint -- --fix",
     "format": "prettier --write src/**/*.{ts,tsx,css,md}",
     "format:check": "prettier --check src/**/*.{ts,tsx,css,md}",
-    "watch": "vite build --watch",
-    "ci": "pnpm run lint && pnpm run type-check && pnpm run test:coverage && pnpm run test:e2e",
-    "clean": "rm -rf dist build"
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "ci": "pnpm run lint && pnpm run type-check && pnpm run test:coverage && pnpm run test:e2e"
   },
   "dependencies": {
     "@niivue/dicom-loader": "^1.0.0",

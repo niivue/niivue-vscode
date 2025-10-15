@@ -49,14 +49,18 @@ fields = ["description", "authors", "urls"]
 artifacts = ["jupyterlab_niivue/labextension"]
 exclude = [".github", "binder"]
 
-[tool.hatch.build.targets.wheel.shared-data]
-"jupyterlab_niivue/labextension" = "share/jupyter/labextensions/jupyterlab-niivue"
-"install.json" = "share/jupyter/labextensions/jupyterlab-niivue/install.json"
-"jupyter-config/server-config" = "etc/jupyter/jupyter_server_config.d"
-"jupyter-config/nb-config" = "etc/jupyter/jupyter_notebook_config.d"
+[tool.hatch.build.targets.wheel]
+artifacts = ["jupyterlab_niivue/labextension"]
+only-include = [
+    "jupyterlab_niivue",
+    "install.json",
+]
 
 [tool.hatch.build.hooks.version]
 path = "jupyterlab_niivue/_version.py"
+
+[tool.hatch.build.hooks.custom]
+path = "hatch_build.py"
 
 [tool.hatch.build.hooks.jupyter-builder]
 dependencies = ["hatch-jupyter-builder>=0.5"]
@@ -65,27 +69,26 @@ ensured-targets = [
     "jupyterlab_niivue/labextension/static/style.js",
     "jupyterlab_niivue/labextension/package.json",
 ]
+# Skip build if labextension already exists (pre-built in monorepo)
 skip-if-exists = ["jupyterlab_niivue/labextension/static/style.js"]
 
 [tool.hatch.build.hooks.jupyter-builder.build-kwargs]
 build_cmd = "build:prod"
+npm = ["pnpm"]
 
 [tool.hatch.build.hooks.jupyter-builder.editable-build-kwargs]
 build_cmd = "install:extension"
 source_dir = "src"
 build_dir = "jupyterlab_niivue/labextension"
+npm = ["pnpm"]
+
+# Don't rebuild when building wheel from sdist (assets already included)
+[tool.hatch.build.hooks.jupyter-builder.wheel-build-kwargs]
+skip_if_exists = ["jupyterlab_niivue/labextension/static/style.js"]
 
 [tool.jupyter-releaser.options]
 version_cmd = "hatch version"
 admin_check = false
-
-[tool.jupyter-releaser.hooks]
-before-build-npm = [
-    "python -m pip install 'jupyterlab>=4.0.0,<5'",
-    "npm",
-    "npm build:prod"
-]
-before-build-python = ["npm clean:all"]
 
 [tool.check-wheel-contents]
 ignore = ["W002"]

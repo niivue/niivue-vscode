@@ -3,6 +3,31 @@
   "version": "0.1.0",
   "type": "module",
   "description": "React components and utilities for NiiVue neuroimaging viewer",
+  "license": "BSD-2-Clause",
+  "author": {
+    "name": "Korbinian Eckstein",
+    "email": "korbinian90@gmail.com"
+  },
+  "homepage": "https://github.com/niivue/niivue-vscode",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/niivue/niivue-vscode.git",
+    "directory": "packages/niivue-react"
+  },
+  "bugs": {
+    "url": "https://github.com/niivue/niivue-vscode/issues"
+  },
+  "keywords": [
+    "niivue",
+    "react",
+    "preact",
+    "neuroimaging",
+    "medical-imaging",
+    "nifti",
+    "dicom",
+    "visualization",
+    "components"
+  ],
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -20,17 +45,18 @@
     "dist",
     "src"
   ],
+  "sideEffects": false,
   "scripts": {
-    "webview": "vite",
-    "build": "vite build",
-    "build:types": "vite build && tsc --emitDeclarationOnly --declaration --outDir dist",
     "dev": "concurrently \"vite build --watch\" \"tsc --emitDeclarationOnly --declaration --outDir dist --watch\"",
     "dev:types-only": "tsc --emitDeclarationOnly --declaration --outDir dist --watch",
-    "type-check": "tsc --noEmit",
+    "build": "vite build && tsc --emitDeclarationOnly --declaration --outDir dist",
+    "preview": "vite",
+    "clean": "rm -rf dist",
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "type-check": "tsc --noEmit",
     "test": "vitest",
-    "test:coverage": "vitest run --coverage",
-    "clean": "rm -rf dist"
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@niivue/dcm2niix": "^1.0.0",
@@ -42,10 +68,13 @@
     "@vitejs/plugin-legacy": "^7.1.0",
     "@vitest/coverage-v8": "^3.2.4",
     "@vitest/ui": "^3.2.4",
+    "autoprefixer": "^10.4.0",
     "concurrently": "9.2.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "jsdom": "^26.1.0",
+    "postcss": "^8.4.0",
+    "tailwindcss": "^3.4.0",
     "vite-plugin-virtual": "^0.4.0",
     "vitest": "^3.2.4",
     "workbox-window": "^7.3.0"

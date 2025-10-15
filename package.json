@@ -9,7 +9,23 @@
     "type": "git",
     "url": "https://github.com/niivue/niivue-vscode"
   },
-  "license": "MIT",
+  "license": "BSD-2-Clause",
+  "author": {
+    "name": "Korbinian Eckstein",
+    "email": "korbinian90@gmail.com"
+  },
+  "keywords": [
+    "monorepo",
+    "neuroimaging",
+    "medical-imaging",
+    "nifti",
+    "dicom",
+    "niivue",
+    "visualization",
+    "vscode-extension",
+    "jupyterlab-extension",
+    "pwa"
+  ],
   "scripts": {
     "build": "turbo build",
     "test": "turbo test",

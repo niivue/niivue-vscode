@@ -63,6 +63,13 @@
   }
 }
 
+/* Custom NiiVue file icon */
+.jp-NiivueFileIcon {
+  background-image: url('../static/niivue/niivue_icon_transparent_contrast.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
 /* Additional Preact App Styles */
 .jp-NiivueWidget .w-full {
   width: 100%;

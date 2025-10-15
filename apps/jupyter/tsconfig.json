@@ -8,7 +8,7 @@
     "jsx": "react",
     "module": "esnext",
     "moduleResolution": "node",
-    "noEmitOnError": true,
+    "noEmitOnError": false, // Allow emitting even with errors during watch mode
     "noImplicitAny": true,
     "noImplicitReturns": true,
     "noImplicitThis": true,
@@ -21,8 +21,19 @@
     "outDir": "lib",
     "rootDir": "src",
     "skipLibCheck": true,
-    "types": ["node"]
+    "types": ["node"],
+    // Optimizations for faster incremental builds
+    "assumeChangesOnlyAffectDirectDependencies": true,
+    "tsBuildInfoFile": ".tsbuildinfo"
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "lib"]
+  "exclude": ["node_modules", "lib"],
+  // Watch mode optimizations
+  "watchOptions": {
+    "watchFile": "useFsEvents",
+    "watchDirectory": "useFsEvents",
+    "fallbackPolling": "dynamicPriority",
+    "synchronousWatchDirectory": true,
+    "excludeDirectories": ["**/node_modules", "lib"]
+  }
 }
