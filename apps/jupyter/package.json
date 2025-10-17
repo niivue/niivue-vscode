@@ -1,6 +1,6 @@
 {
   "name": "@niivue/jupyter",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "A JupyterLab extension for viewing NIfTI files with Niivue",
   "keywords": [
     "jupyter",
@@ -10,9 +10,9 @@
     "nifti",
     "neuroimaging"
   ],
-  "homepage": "https://github.com/niivue/jupyterlab-niivue",
+  "homepage": "https://github.com/niivue/niivue-vscode/tree/main/apps/jupyter",
   "bugs": {
-    "url": "https://github.com/niivue/jupyterlab-niivue/issues"
+    "url": "https://github.com/niivue/niivue-vscode/issues"
   },
   "license": "BSD-2-Clause",
   "author": {
@@ -30,7 +30,8 @@
   "style": "style/index.css",
   "repository": {
     "type": "git",
-    "url": "https://github.com/niivue/jupyterlab-niivue.git"
+    "url": "https://github.com/niivue/niivue-vscode.git",
+    "directory": "apps/jupyter"
   },
   "scripts": {
     "build": "pnpm run build:assets && pnpm run build:lib && pnpm run build:labextension:dev",
