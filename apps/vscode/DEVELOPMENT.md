@@ -150,6 +150,8 @@ Get access tokens:
 ```bash
 cd apps/vscode
 
+# Update version in vscode package.json
+
 # Build the extension
 pnpm build
 
@@ -157,9 +159,7 @@ pnpm build
 vsce package
 
 # Publish to VS Code Marketplace
-vsce publish minor
-# Or specific version
-vsce publish x.y.z
+vsce publish --packagePath niivue-x.y.z.vsix
 
 # Publish to Open VSX Registry
 ovsx publish niivue-x.y.z.vsix --pat <your-token>

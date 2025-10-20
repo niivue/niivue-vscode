@@ -76,13 +76,14 @@ export default defineConfig(({ mode }) => ({
     }),
   ],
   build: {
-    watch: {
+    // Only enable watch mode in development
+    watch: mode === 'development' ? {
       // Rollup watch options with polling for dev containers
       chokidar: {
         usePolling: true,
         interval: 1000,
       },
-    },
+    } : null,
     lib: {
       entry:
         process.env.BUILD_TARGET === 'vscode'
