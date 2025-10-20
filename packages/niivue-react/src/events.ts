@@ -14,7 +14,7 @@ export async function handleMessage(message: any, appProps: AppProps) {
     case 'addMeshCurvature':
     case 'replaceMeshOverlay':
       {
-        await addMeshOverlay(nvArray.value[body.index], body, type)
+        await addMeshOverlay(nvArray.value[body.index], body, type, settings.value)
       }
       break
     case 'overlay':
@@ -136,12 +136,12 @@ interface LayerOptions {
   calMax?: number
 }
 
-async function addMeshOverlay(nv: Niivue, item: any, type: string) {
+async function addMeshOverlay(nv: Niivue, item: any, type: string, settings: NiiVueSettings) {
   if (nv.meshes.length === 0) {
     return
   }
 
-  const a = getLayerDefaults(type)
+  const a = getLayerDefaults(type, settings)
   const mesh = nv.meshes[0]
   if (type === 'replaceMeshOverlay') {
     mesh.layers.pop()
@@ -180,7 +180,7 @@ async function addMeshOverlay(nv: Niivue, item: any, type: string) {
   }
 }
 
-function getLayerDefaults(type: string) {
+function getLayerDefaults(type: string, settings: NiiVueSettings) {
   const a: LayerOptions = {}
   switch (type) {
     case 'addMeshCurvature':
@@ -196,7 +196,7 @@ function getLayerDefaults(type: string) {
     case 'replaceMeshOverlay':
       {
         a.opacity = 0.7
-        a.colormap = 'hsv'
+        a.colormap = settings?.defaultMeshOverlayColormap || 'hsv'
         a.colormapNegative = ''
         a.useNegativeCmap = false
       }
