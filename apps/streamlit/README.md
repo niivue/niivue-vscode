@@ -8,7 +8,7 @@ A Streamlit component that integrates the [NiiVue](https://github.com/niivue/nii
 
 1. **Install the component**:
    ```bash
-   pip install niivue-streamlit
+   pip install --index-url https://test.pypi.org/simple/ --no-deps niivue-streamlit
    ```
 
 2. **Use in your Streamlit app**:
