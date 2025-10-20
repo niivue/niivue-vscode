@@ -16,6 +16,16 @@ node_modules/
 *.npy
 *.npz
 
+# Entire images directory with test data (should not be in VSIX)
+images/
+
+# Development files that shouldn't be in VSIX
+DEVELOPMENT.md
+BrainMesh_ICBM152.lh.mz3
+csi_template.mnc
+enh.dcm
+imag_spec_walinet_small.nii
+
 # Documentation
 CHANGELOG.md
 
@@ -41,13 +51,22 @@ media/
 *.d.ts
 **/*.d.ts
 
+# Test directories and files in niivue
+niivue/test/
+niivue/**/*.test.*
+niivue/components/
+niivue/hooks/
+niivue/constants/
+niivue/types/
+
+# Unnecessary icons in niivue (duplicates)
+niivue/niivue_icon.png
+niivue/niivue_icon_transparent_contrast.png
+niivue/favicon.ico
+
 # Test directories and files
 **/test/
 **/*.test.*
 
 # Build artifacts not needed in extension
 dist/tsconfig.tsbuildinfo
-
-# Duplicate icons in niivue directory
-niivue/niivue_icon.png
-niivue/niivue_icon_transparent_contrast.png

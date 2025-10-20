@@ -19,7 +19,7 @@ pnpm install
 # Install Python development dependencies for Jupyter
 echo "🐍 Setting up Python environment for JupyterLab development..."
 pip install --upgrade pip
-pip install jupyterlab>=4.0.0 jupyter-packaging build hatch
+pip install jupyterlab>=4.0.0 jupyter-packaging build hatch twine
 pip install coverage pytest pytest-asyncio pytest-cov pytest-jupyter pytest-xvfb
 
 # Build the initial setup
