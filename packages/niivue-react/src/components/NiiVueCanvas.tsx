@@ -65,7 +65,9 @@ export const NiiVueCanvas = ({
       render.value++ // required to update the names
 
       // Wait for metadata to be available before proceeding
+      console.log('Waiting for metadata to be available...')
       await waitForMetadata(nv)
+      console.log('Metadata is now available.')
 
       nvArray.value = [...nvArray.value] // trigger react signal for changes
       nv.createOnLocationChange() // TODO fix, still required?
@@ -139,7 +141,15 @@ async function waitForMetadata(nv: ExtendedNiivue, maxAttempts = 50, intervalMs 
       // Additional check to ensure the header contains meaningful data
       const hdr = nv.volumes[0].hdr
       if (hdr.dims && hdr.dims.length > 0) {
-        return // Metadata is ready
+        return // Volume metadata is ready
+      }
+    }
+    // Check if we have meshes with metadata available
+    if (nv.meshes.length > 0) {
+      const mesh = nv.meshes[0]
+      // Check if mesh has essential properties loaded
+      if (mesh.pts && mesh.pts.length > 0) {
+        return // Mesh metadata is ready
       }
     }
 
