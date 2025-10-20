@@ -48,6 +48,7 @@
   "sideEffects": false,
   "scripts": {
     "dev": "concurrently \"vite build --watch\" \"tsc --emitDeclarationOnly --declaration --outDir dist --watch\"",
+    "dev:vscode-sync": "concurrently \"BUILD_TARGET=vscode vite build --mode development --watch\" \"node scripts/watch-and-sync.mjs\"",
     "dev:types-only": "tsc --emitDeclarationOnly --declaration --outDir dist --watch",
     "build": "vite build && tsc --emitDeclarationOnly --declaration --outDir dist",
     "preview": "vite",

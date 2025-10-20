@@ -32,6 +32,7 @@
     "lint": "turbo lint",
     "type-check": "turbo type-check",
     "dev": "turbo dev --parallel",
+    "dev:vscode": "pnpm --filter niivue dev",
     "dev:source": "concurrently \"pnpm --filter @niivue/react dev:types-only\" \"pnpm --filter @niivue/pwa dev\"",
     "clean": "turbo clean && rm -rf node_modules packages/*/node_modules apps/*/node_modules",
     "format": "prettier --write .",

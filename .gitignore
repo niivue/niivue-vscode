@@ -10,6 +10,7 @@ data/
 *.mz3
 *.mnc*
 static/
+images/
 
 # Build artifacts
 *.timestamp-*.mjs

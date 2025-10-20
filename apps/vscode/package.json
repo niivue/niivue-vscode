@@ -41,8 +41,9 @@
   "main": "./dist/extension.js",
   "browser": "./dist/extension.js",
   "scripts": {
-    "dev": "pnpm run esbuild-watch",
+    "dev": "concurrently \"pnpm run esbuild-watch\" \"pnpm run watch:webview\"",
     "watch": "pnpm run esbuild-watch",
+    "watch:webview": "cd ../../packages/niivue-react && pnpm dev:vscode-sync",
     "build": "pnpm run build:css && pnpm run build:webview && pnpm run compile",
     "compile": "pnpm run esbuild-base --minify",
     "build:css": "tailwindcss -i ./src/styles.css -o ./vscode-styles.css --minify",
@@ -234,6 +235,11 @@
           "type": "string",
           "default": "redyell",
           "description": "Default colormap to use for overlay images."
+        },
+        "niivue.defaultMeshOverlayColormap": {
+          "type": "string",
+          "default": "hsv",
+          "description": "Default colormap to use for mesh overlays."
         }
       }
     }

@@ -6,7 +6,7 @@ import { defineConfig } from 'vite'
 import dts from 'vite-plugin-dts'
 import virtual from 'vite-plugin-virtual'
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   server: {
     host: '0.0.0.0', // Allow connections from any host
     port: 4000,
@@ -16,13 +16,23 @@ export default defineConfig({
       // Allow serving files from the monorepo
       allow: ['../..'],
     },
+    // Enable polling for dev containers and remote file systems
+    watch: {
+      usePolling: true,
+      interval: 1000,
+    },
   },
   plugins: [
     preact(),
-    dts({
-      insertTypesEntry: true,
-      copyDtsFiles: true,
-    }),
+    // Only generate .d.ts files in production builds (skip in development mode for speed)
+    ...(mode === 'development'
+      ? []
+      : [
+        dts({
+          insertTypesEntry: true,
+          copyDtsFiles: true,
+        }),
+      ]),
     virtual({
       'dcm2niix-worker': (() => {
         const workerPath = path.resolve(__dirname, 'node_modules/@niivue/dcm2niix/dist/worker.js')
@@ -66,6 +76,13 @@ export default defineConfig({
     }),
   ],
   build: {
+    watch: {
+      // Rollup watch options with polling for dev containers
+      chokidar: {
+        usePolling: true,
+        interval: 1000,
+      },
+    },
     lib: {
       entry:
         process.env.BUILD_TARGET === 'vscode'
@@ -87,7 +104,11 @@ export default defineConfig({
         },
       },
     },
+    // Optimize for faster development builds
+    minify: mode === 'development' ? false : 'esbuild',
     sourcemap: true,
+    // Use esbuild for faster transpilation
+    target: 'esnext',
   },
   base: './',
   resolve: {
@@ -103,4 +124,4 @@ export default defineConfig({
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
     exclude: ['node_modules/**', 'build/**', 'dist/**'],
   },
-})
+}))

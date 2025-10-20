@@ -30,26 +30,36 @@ Start development with live reload:
 
 ```bash
 # From repository root
-pnpm --filter @niivue/vscode watch
+pnpm dev:vscode
 ```
 
-This will:
-- Compile TypeScript in watch mode
-- Rebuild when `@niivue/react` changes
-- Automatically update the extension
+**What it does:**
+- Watches extension code (`apps/vscode/src/`) and React components (`packages/niivue-react/src/`)
+- Auto-rebuilds on file changes (2-5 seconds, optimized for dev)
+- Auto-syncs built files to `apps/vscode/niivue/`
+- Press `Ctrl+R` in Extension Development Host to reload changes
+
+**Optimizations:**
+- Skips `.d.ts` generation and minification in dev mode
+- Uses polling for file watching (reliable in dev containers/remote filesystems)
 
 ### Debugging in VS Code
 
-1. **Start watch mode** (see above)
+1. **Start watch mode**: Run `pnpm dev:vscode` (see above)
 2. **Press `F5`** to launch the Extension Development Host
 3. A new VS Code window opens with the extension loaded
 4. Open a neuroimaging file (e.g., `.nii`, `.nii.gz`) to test
-5. **Press `Ctrl+R`** (or `Cmd+R` on Mac) in the Extension Development Host to reload after code changes
+5. **See your changes:**
+   - Make changes to `.ts` or `.tsx` files
+   - Wait for the build to complete (watch console output)
+   - Press `Ctrl+R` (or `Cmd+R`) in the Extension Development Host window
+   - Your changes will be reflected!
 
 ### Debugging Tips
 
 - **Web-based development**: New features implemented in `packages/niivue-react` can be debugged with hot reload from the `apps/pwa` project.
 - **WebView debugging**: Run command (ctrl+shift+p): `Developer: Open Webview Developer Tools`
+- **Faster iteration**: For UI-heavy work, develop in the PWA app (`apps/pwa`) with instant HMR, then test in VS Code
 
 ## Project Structure
 
