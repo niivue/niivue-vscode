@@ -105,7 +105,9 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for detailed development instructions.
 
 If you find these tools useful, please consider supporting development:
 
-[![Donate](https://opencollective.com/webpack/donate/button@2x.png?color=blue)](https://opencollective.com/niivue/projects/niivue-vscode/donate)
+<a href="https://opencollective.com/niivue/projects/niivue-vscode/donate" target="_blank">
+  <img src="https://opencollective.com/niivue/donate/button@2x.png?color=blue" width="250" />
+</a>
 
 ## License
 
