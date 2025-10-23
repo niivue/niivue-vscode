@@ -112,25 +112,34 @@ export const Menu = (props: AppProps) => {
     else addMeshOverlay()
   }
 
+  const getTargetIndex = () => {
+    // If selectionMode is NONE or selection is empty, default to last canvas
+    if (selectionMode.value === SelectionMode.NONE || selection.value.length === 0) {
+      return nvArray.value.length - 1
+    }
+    // Otherwise use the last selected canvas
+    return selection.value[selection.value.length - 1]
+  }
+
   const addOverlay = () => {
-    addOverlayEvent(selection.value[0], 'overlay')
+    addOverlayEvent(getTargetIndex(), 'overlay')
   }
 
   const addMeshOverlay = () => {
-    addOverlayEvent(selection.value[0], 'addMeshOverlay')
+    addOverlayEvent(getTargetIndex(), 'addMeshOverlay')
   }
 
   const addCurvature = () => {
-    addOverlayEvent(selection.value[0], 'addMeshCurvature')
+    addOverlayEvent(getTargetIndex(), 'addMeshCurvature')
   }
 
   const replaceLastVolume = () => {
     if (isVolume.value) {
-      const nv = nvArraySelected.value[0]
+      const nv = nvArraySelected.value[nvArraySelected.value.length - 1]
       nv.removeVolumeByIndex(nv.volumes.length - 1)
-      addOverlayEvent(selection.value[0], 'overlay')
+      addOverlayEvent(getTargetIndex(), 'overlay')
     } else {
-      addOverlayEvent(selection.value[0], 'replaceMeshOverlay')
+      addOverlayEvent(getTargetIndex(), 'replaceMeshOverlay')
     }
   }
 
