@@ -1,8 +1,8 @@
-import { Niivue, SLICE_TYPE } from '@niivue/niivue'
+import { SLICE_TYPE } from '@niivue/niivue'
 import { computed, effect, useSignal } from '@preact/signals'
 import { useEffect, useRef } from 'preact/hooks'
 import { ExtendedNiivue } from '../events'
-import { differenceInNames } from '../utility'
+import { differenceInNames, getNames } from '../utility'
 import { AppProps } from './AppProps'
 import { Volume } from './Volume'
 
@@ -79,18 +79,6 @@ function remove(props: AppProps, i: number) {
       location.value = ''
     }
   }
-}
-
-function getNames(nvArray: Niivue[]) {
-  return nvArray.map((item) => {
-    if (item.volumes.length > 0) {
-      return decodeURIComponent(item.volumes[0].name)
-    }
-    if (item.meshes.length > 0) {
-      return decodeURIComponent(item.meshes[0].name)
-    }
-    return ''
-  })
 }
 
 function getAspectRatio(meta: any, sliceType: number) {

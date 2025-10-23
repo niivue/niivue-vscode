@@ -1,5 +1,58 @@
 import { Niivue } from '@niivue/niivue'
 
+// This function computes the display names for each Niivue instance in the array
+// It handles duplicate names by using overlay or layer names of the last item
+export function getNames(nvArray: Niivue[]) {
+  // Get base names (first volume or mesh)
+  const baseNames = nvArray.map((item) => {
+    if (item.volumes.length > 0) {
+      return decodeURIComponent(item.volumes[0].name)
+    }
+    if (item.meshes.length > 0) {
+      return decodeURIComponent(item.meshes[0].name)
+    }
+    return ''
+  })
+
+  // Check for duplicates
+  const nameCount = new Map<string, number>()
+  baseNames.forEach((name) => {
+    nameCount.set(name, (nameCount.get(name) || 0) + 1)
+  })
+
+  // Use last overlay only for items with duplicate base names
+  return nvArray.map((item, idx) => {
+    const baseName = baseNames[idx]
+    const hasDuplicate = nameCount.get(baseName)! > 1
+
+    if (!hasDuplicate) {
+      return baseName
+    }
+
+    // For volumes with duplicates: use last overlay if available
+    if (item.volumes.length > 1) {
+      return decodeURIComponent(item.volumes[item.volumes.length - 1].name)
+    }
+    if (item.volumes.length > 0) {
+      return baseName
+    }
+
+    // For meshes with duplicates: use last layer if available
+    if (item.meshes.length > 0) {
+      const mesh = item.meshes[0]
+      if (mesh.layers && mesh.layers.length > 0) {
+        const lastLayer = mesh.layers[mesh.layers.length - 1]
+        if (lastLayer.name) {
+          return decodeURIComponent(lastLayer.name)
+        }
+      }
+      return baseName
+    }
+
+    return ''
+  })
+}
+
 // This function finds common patterns in the names and only returns the parts of the names that are different
 export function differenceInNames(names: string[], rec = true) {
   if (names.length === 0) {

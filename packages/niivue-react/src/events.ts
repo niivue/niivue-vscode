@@ -166,6 +166,8 @@ async function addMeshOverlay(nv: Niivue, item: any, type: string, settings: Nii
   )
 
   if (newLayer) {
+    // Set the name property on the layer
+    newLayer.name = item.uri
     nv.meshes[0].layers.push(newLayer)
   } else {
     throw Error('Layer could not be loaded')
