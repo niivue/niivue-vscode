@@ -28,6 +28,7 @@ test.describe('Menu', () => {
 
     // load an image
     await loadTestImage(page)
+    await page.waitForSelector('text=/matrix size:.*voxelsize:/i', { timeout: 10000 })
     expect(
       await page.textContent('text=/matrix size: 207 x 256 x 215, voxelsize: 0.74 x 0.74 x 0.74/i'),
     ).toBeTruthy()
@@ -50,6 +51,7 @@ test.describe('Menu', () => {
     await page.goto(BASE_URL)
 
     await loadTestImage(page)
+    await page.waitForSelector('text=/matrix size:.*voxelsize:/i', { timeout: 10000 })
 
     expect(await page.$$('canvas')).toHaveLength(1)
     expect(
@@ -69,6 +71,7 @@ test.describe('Menu', () => {
     await page.click('text=/Example Image/i')
 
     expect(await page.waitForSelector('canvas', { timeout: 10000 })).toBeTruthy()
+    await page.waitForSelector('text=/matrix size:.*voxelsize:/i', { timeout: 10000 })
     expect(await page.$$('canvas')).toHaveLength(1)
     expect(
       await page.textContent('text=/matrix size: 207 x 256 x 215, voxelsize: 0.74 x 0.74 x 0.74/i'),

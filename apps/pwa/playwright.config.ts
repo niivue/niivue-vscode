@@ -19,7 +19,7 @@ export default defineConfig({
   timeout: 30 * 1000, // 30 seconds per test - should be enough for most tests
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [
-    ['html'],
+    ['html', { open: 'never' }], // Don't auto-open browser with report
     ['junit', { outputFile: 'test-results/junit.xml' }],
     ['json', { outputFile: 'test-results/results.json' }],
   ],
