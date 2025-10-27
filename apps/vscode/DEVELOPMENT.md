@@ -162,7 +162,7 @@ vsce package
 vsce publish --packagePath niivue-x.y.z.vsix
 
 # Publish to Open VSX Registry
-ovsx publish niivue-x.y.z.vsix --pat <your-token>
+pnpm ovsx publish niivue-x.y.z.vsix --pat <your-token>
 ```
 
 #### Pre-release Versions
