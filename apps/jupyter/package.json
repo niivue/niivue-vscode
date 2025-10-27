@@ -59,19 +59,19 @@
     "release:check": "pnpm run clean:all && pnpm run build:prod && python -m build --wheel && python -m twine check dist/*"
   },
   "dependencies": {
-    "@jupyterlab/application": "^4.4.9",
-    "@jupyterlab/apputils": "^4.5.9",
-    "@jupyterlab/docmanager": "^4.4.9",
-    "@jupyterlab/docregistry": "^4.4.9",
-    "@jupyterlab/filebrowser": "^4.4.9",
-    "@jupyterlab/fileeditor": "^4.4.9",
-    "@jupyterlab/services": "^7.4.9",
-    "@jupyterlab/translation": "^4.4.9",
+    "@jupyterlab/application": "^4.4.10",
+    "@jupyterlab/apputils": "^4.5.10",
+    "@jupyterlab/docmanager": "^4.4.10",
+    "@jupyterlab/docregistry": "^4.4.10",
+    "@jupyterlab/filebrowser": "^4.4.10",
+    "@jupyterlab/fileeditor": "^4.4.10",
+    "@jupyterlab/services": "^7.4.10",
+    "@jupyterlab/translation": "^4.4.10",
     "@lumino/widgets": "^2.7.1",
-    "@niivue/niivue": "^0.62.1"
+    "@niivue/niivue": "^0.64.0"
   },
   "devDependencies": {
-    "@jupyterlab/builder": "^4.4.9",
+    "@jupyterlab/builder": "^4.4.10",
     "@niivue/dicom-loader": "^1.0.0",
     "@niivue/react": "workspace:*",
     "@preact/signals": "^2.3.2",
@@ -89,7 +89,7 @@
     "stylelint-config-standard": "^39.0.1",
     "stylelint-csstree-validator": "^3.0.0",
     "stylelint-prettier": "^5.0.3",
-    "typescript-eslint": "^8.46.1",
+    "typescript-eslint": "^8.46.2",
     "yjs": "^13.6.27"
   },
   "sideEffects": [

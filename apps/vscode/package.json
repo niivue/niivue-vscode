@@ -60,12 +60,12 @@
     "publish": "pnpm run build && vsce publish"
   },
   "devDependencies": {
-    "@types/vscode": "^1.70.0",
+    "@types/vscode": "1.70.0",
     "@vscode/vsce": "^3.6.2",
     "autoprefixer": "^10.4.21",
     "concurrently": "^9.2.1",
     "esbuild": "^0.25.11",
-    "ovsx": "^0.10.2",
+    "ovsx": "^0.10.6",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.18"
   },

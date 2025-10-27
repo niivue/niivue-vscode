@@ -28,6 +28,8 @@ function getGitRepoUrl() {
 const gitHash = execSync('git rev-parse --short HEAD').toString().trim()
 const buildDate = new Date().toISOString()
 const gitRepoUrl = getGitRepoUrl()
+const isProd = process.env.NODE_ENV === 'production'
+const baseUrl = isProd ? '/niivue-vscode/' : '/'
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -135,7 +137,7 @@ export default defineConfig({
         name: 'NiiVue Medical Image Viewer',
         short_name: 'NiiVue',
         description: 'Advanced web-based medical image viewer for NIfTI and DICOM files',
-        start_url: '/niivue-vscode/',
+        start_url: baseUrl,
         display: 'standalone',
         background_color: '#ffffff',
         theme_color: '#2563eb',
@@ -159,13 +161,13 @@ export default defineConfig({
             name: 'Open Example Image',
             short_name: 'Example',
             description: 'Load MNI152 example image',
-            url: '/niivue-vscode/?example=mni152',
+            url: `${baseUrl}?example=mni152`,
             icons: [{ src: 'niivue_icon_transparent_contrast.png', sizes: '200x200' }],
           },
         ],
         file_handlers: [
           {
-            action: '/niivue-vscode/',
+            action: baseUrl,
             accept: {
               'image/*': [
                 '.nii',
@@ -217,5 +219,6 @@ export default defineConfig({
     target: 'esnext',
     minify: 'terser',
   },
-  base: '/niivue-vscode/', // this is the path for the github pages
+  // Use /niivue-vscode/ for production (GitHub Pages), but / for development/testing
+  base: baseUrl,
 })

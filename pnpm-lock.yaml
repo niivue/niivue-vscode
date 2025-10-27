@@ -15,20 +15,20 @@ importers:
         specifier: ^2.10.2
         version: 2.10.2(@babel/core@7.28.5)(preact@10.27.2)(vite@7.1.12(@types/node@24.9.1)(jiti@1.21.7)(less@4.4.2)(terser@5.44.0)(yaml@2.8.1))
       '@types/node':
-        specifier: ^24.8.1
+        specifier: ^24.9.1
         version: 24.9.1
       '@typescript-eslint/eslint-plugin':
-        specifier: ^8.46.1
+        specifier: ^8.46.2
         version: 8.46.2(@typescript-eslint/parser@8.46.2(eslint@9.38.0(jiti@1.21.7))(typescript@5.9.3))(eslint@9.38.0(jiti@1.21.7))(typescript@5.9.3)
       '@typescript-eslint/parser':
-        specifier: ^8.46.1
+        specifier: ^8.46.2
         version: 8.46.2(eslint@9.38.0(jiti@1.21.7))(typescript@5.9.3)
       '@vitejs/plugin-legacy':
         specifier: ^7.2.1
         version: 7.2.1(terser@5.44.0)(vite@7.1.12(@types/node@24.9.1)(jiti@1.21.7)(less@4.4.2)(terser@5.44.0)(yaml@2.8.1))
       concurrently:
-        specifier: 9.2.0
-        version: 9.2.0
+        specifier: ^9.2.1
+        version: 9.2.1
       eslint:
         specifier: ^9.38.0
         version: 9.38.0(jiti@1.21.7)
@@ -36,8 +36,8 @@ importers:
         specifier: ^10.1.8
         version: 10.1.8(eslint@9.38.0(jiti@1.21.7))
       globals:
-        specifier: ^15.15.0
-        version: 15.15.0
+        specifier: 16.4.0
+        version: 16.4.0
       prettier:
         specifier: ^3.6.2
         version: 3.6.2
@@ -51,10 +51,10 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
       typescript-eslint:
-        specifier: ^8.46.1
+        specifier: ^8.46.2
         version: 8.46.2(eslint@9.38.0(jiti@1.21.7))(typescript@5.9.3)
       vite:
-        specifier: ^7.1.11
+        specifier: ^7.1.12
         version: 7.1.12(@types/node@24.9.1)(jiti@1.21.7)(less@4.4.2)(terser@5.44.0)(yaml@2.8.1)
       vite-plugin-dts:
         specifier: ^4.5.4
@@ -63,38 +63,38 @@ importers:
   apps/jupyter:
     dependencies:
       '@jupyterlab/application':
-        specifier: ^4.4.9
+        specifier: ^4.4.10
         version: 4.4.10(react@18.3.1)
       '@jupyterlab/apputils':
-        specifier: ^4.5.9
+        specifier: ^4.5.10
         version: 4.5.10
       '@jupyterlab/docmanager':
-        specifier: ^4.4.9
+        specifier: ^4.4.10
         version: 4.4.10
       '@jupyterlab/docregistry':
-        specifier: ^4.4.9
+        specifier: ^4.4.10
         version: 4.4.10
       '@jupyterlab/filebrowser':
-        specifier: ^4.4.9
+        specifier: ^4.4.10
         version: 4.4.10
       '@jupyterlab/fileeditor':
-        specifier: ^4.4.9
+        specifier: ^4.4.10
         version: 4.4.10
       '@jupyterlab/services':
-        specifier: ^7.4.9
+        specifier: ^7.4.10
         version: 7.4.10(react@18.3.1)
       '@jupyterlab/translation':
-        specifier: ^4.4.9
+        specifier: ^4.4.10
         version: 4.4.10(react@18.3.1)
       '@lumino/widgets':
         specifier: ^2.7.1
         version: 2.7.1
       '@niivue/niivue':
-        specifier: ^0.62.1
-        version: 0.62.1
+        specifier: ^0.64.0
+        version: 0.64.0
     devDependencies:
       '@jupyterlab/builder':
-        specifier: ^4.4.9
+        specifier: ^4.4.10
         version: 4.4.10
       '@niivue/dicom-loader':
         specifier: ^1.0.0
@@ -148,7 +148,7 @@ importers:
         specifier: ^5.0.3
         version: 5.0.3(prettier@3.6.2)(stylelint@16.25.0(typescript@5.9.3))
       typescript-eslint:
-        specifier: ^8.46.1
+        specifier: ^8.46.2
         version: 8.46.2(eslint@9.38.0(jiti@1.21.7))(typescript@5.9.3)
       yjs:
         specifier: ^13.6.27
@@ -160,8 +160,8 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0
       '@niivue/niivue':
-        specifier: ^0.62.1
-        version: 0.62.1
+        specifier: ^0.64.0
+        version: 0.64.0
       '@niivue/react':
         specifier: workspace:*
         version: link:../../packages/niivue-react
@@ -176,7 +176,7 @@ importers:
         version: 7.9.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
     devDependencies:
       '@babel/core':
-        specifier: ^7.28.4
+        specifier: ^7.28.5
         version: 7.28.5
       '@niivue/dcm2niix':
         specifier: ^1.2.0
@@ -194,7 +194,7 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(preact@10.27.2)
       '@types/node':
-        specifier: ^24.8.1
+        specifier: ^24.9.1
         version: 24.9.1
       '@types/react':
         specifier: ^19.2.2
@@ -218,7 +218,7 @@ importers:
         specifier: ^4.4.2
         version: 4.4.2
       lint-staged:
-        specifier: ^16.2.4
+        specifier: ^16.2.6
         version: 16.2.6
       postcss:
         specifier: ^8.5.6
@@ -230,7 +230,7 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
       vite:
-        specifier: ^7.1.11
+        specifier: ^7.1.12
         version: 7.1.12(@types/node@24.9.1)(jiti@1.21.7)(less@4.4.2)(terser@5.44.0)(yaml@2.8.1)
       vite-plugin-pwa:
         specifier: ^1.1.0
@@ -251,8 +251,8 @@ importers:
   apps/vscode:
     devDependencies:
       '@types/vscode':
-        specifier: ^1.70.0
-        version: 1.105.0
+        specifier: 1.70.0
+        version: 1.70.0
       '@vscode/vsce':
         specifier: ^3.6.2
         version: 3.6.2
@@ -266,7 +266,7 @@ importers:
         specifier: ^0.25.11
         version: 0.25.11
       ovsx:
-        specifier: ^0.10.2
+        specifier: ^0.10.6
         version: 0.10.6
       postcss:
         specifier: ^8.5.6
@@ -287,8 +287,8 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0
       '@niivue/niivue':
-        specifier: 0.62.1
-        version: 0.62.1
+        specifier: ^0.64.0
+        version: 0.64.0
       '@preact/signals':
         specifier: ^2.0.1
         version: 2.3.2(preact@10.27.2)
@@ -315,8 +315,8 @@ importers:
         specifier: ^10.4.21
         version: 10.4.21(postcss@8.5.6)
       concurrently:
-        specifier: 9.2.0
-        version: 9.2.0
+        specifier: ^9.2.1
+        version: 9.2.1
       eslint-plugin-react-hooks:
         specifier: ^5.2.0
         version: 5.2.0(eslint@9.38.0(jiti@1.21.7))
@@ -1556,8 +1556,8 @@ packages:
   '@niivue/minc-loader@1.0.0':
     resolution: {integrity: sha512-wcrFHr+7F5aGg7cdxFoOYolJH6EHlW5xZNkh0+lAkDPnOneLAWlS8+RzPw383jcqIx5+xf+dgK4TVgU/OZ8KUQ==}
 
-  '@niivue/niivue@0.62.1':
-    resolution: {integrity: sha512-v/D91ICqROoVp+ByDs3JjzotLzC4nJ44181Gl882AaXR62BNsvT4SaDY7ob37Dgv70AScGWsapqiCkHI7gFFgQ==}
+  '@niivue/niivue@0.64.0':
+    resolution: {integrity: sha512-cj7QTlCHZpFiUjZ8DH0M5SzdvbM2VQAjVgvif7xLaRWraiv2MqWdRYcSvF6+KYA0eN9cNVWkEy01NcW4TT0x+w==}
 
   '@node-rs/crc32-android-arm-eabi@1.10.6':
     resolution: {integrity: sha512-vZAMuJXm3TpWPOkkhxdrofWDv+Q+I2oO7ucLRbXyAPmXFNDhHtBxbO1rk9Qzz+M3eep8ieS4/+jCL1Q0zacNMQ==}
@@ -2088,8 +2088,8 @@ packages:
   '@types/trusted-types@2.0.7':
     resolution: {integrity: sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw==}
 
-  '@types/vscode@1.105.0':
-    resolution: {integrity: sha512-Lotk3CTFlGZN8ray4VxJE7axIyLZZETQJVWi/lYoUVQuqfRxlQhVOfoejsD2V3dVXPSbS15ov5ZyowMAzgUqcw==}
+  '@types/vscode@1.70.0':
+    resolution: {integrity: sha512-3/9Fz0F2eBgwciazc94Ien+9u1elnjFg9YAhvAb3qDy/WeFWD9VrOPU7CIytryOVUdbxus8uzL4VZYONA0gDtA==}
 
   '@types/webpack-sources@0.1.12':
     resolution: {integrity: sha512-+vRVqE3LzMLLVPgZHUeI8k1YmvgEky+MOir5fQhKvFxpB8uZ0CFnGqxkRAmf8jvNhUBQzhuGZpIMNWZDeEyDIA==}
@@ -2834,11 +2834,6 @@ packages:
   concat-map@0.0.1:
     resolution: {integrity: sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg==}
 
-  concurrently@9.2.0:
-    resolution: {integrity: sha512-IsB/fiXTupmagMW4MNp2lx2cdSN2FfZq78vF90LBB+zZHArbIQZjQtzXCiXnvTxCZSvXanTqFLWBjw2UkLx1SQ==}
-    engines: {node: '>=18'}
-    hasBin: true
-
   concurrently@9.2.1:
     resolution: {integrity: sha512-fsfrO0MxV64Znoy8/l1vVIjjHa29SZyyqPgQBwhiDcaW8wJc2W3XWVOGx4M3oJBnv/zdUZIIp1gDeS98GzP8Ng==}
     engines: {node: '>=18'}
@@ -3572,8 +3567,8 @@ packages:
     resolution: {integrity: sha512-oahGvuMGQlPw/ivIYBjVSrWAfWLBeku5tpPE2fOPLi+WHffIWbuh2tCjhyQhTBPMf5E9jDEH4FOmTYgYwbKwtQ==}
     engines: {node: '>=18'}
 
-  globals@15.15.0:
-    resolution: {integrity: sha512-7ACyT3wmyp3I61S4fG682L0VA2RGD9otkqGJIwNUMF1SWUombIIk+af1unuDYgMm082aHYwD+mzJvv9Iu8dsgg==}
+  globals@16.4.0:
+    resolution: {integrity: sha512-ob/2LcVVaVGCYN+r14cnwnoDPUufjiYgSqRhiFD0Q1iI4Odora5RE8Iv1D24hAz5oMophRGkGz+yuvQmmUMnMw==}
     engines: {node: '>=18'}
 
   globalthis@1.0.4:
@@ -8258,7 +8253,7 @@ snapshots:
     dependencies:
       nifti-reader-js: 0.7.1
 
-  '@niivue/niivue@0.62.1':
+  '@niivue/niivue@0.64.0':
     dependencies:
       '@lukeed/uuid': 2.0.1
       '@ungap/structured-clone': 1.3.0
@@ -8813,7 +8808,7 @@ snapshots:
 
   '@types/trusted-types@2.0.7': {}
 
-  '@types/vscode@1.105.0': {}
+  '@types/vscode@1.70.0': {}
 
   '@types/webpack-sources@0.1.12':
     dependencies:
@@ -9703,16 +9698,6 @@ snapshots:
 
   concat-map@0.0.1: {}
 
-  concurrently@9.2.0:
-    dependencies:
-      chalk: 4.1.2
-      lodash: 4.17.21
-      rxjs: 7.8.2
-      shell-quote: 1.8.3
-      supports-color: 8.1.1
-      tree-kill: 1.2.2
-      yargs: 17.7.2
-
   concurrently@9.2.1:
     dependencies:
       chalk: 4.1.2
@@ -10565,7 +10550,7 @@ snapshots:
 
   globals@14.0.0: {}
 
-  globals@15.15.0: {}
+  globals@16.4.0: {}
 
   globalthis@1.0.4:
     dependencies:
