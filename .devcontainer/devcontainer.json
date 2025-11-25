@@ -43,9 +43,9 @@
   "remoteUser": "vscode",
   
   // Secure git configuration - only mount gitconfig, use SSH agent forwarding
-  "mounts": [
-    "source=${localEnv:HOME}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,consistency=cached"
-  ],
+  // "mounts": [
+  //   "source=${localEnv:HOME}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,consistency=cached"
+  // ],
   
   // Forward SSH agent instead of mounting SSH keys (more secure)
   "containerEnv": {
