@@ -63,12 +63,6 @@ export const NiiVueCanvas = ({
       nv.isLoaded = true
       nv.body = null
       render.value++ // required to update the names
-
-      // Wait for metadata to be available before proceeding
-      console.log('Waiting for metadata to be available...')
-      await waitForMetadata(nv)
-      console.log('Metadata is now available.')
-
       nvArray.value = [...nvArray.value] // trigger react signal for changes
       nv.createOnLocationChange() // TODO fix, still required?
     })
@@ -134,33 +128,6 @@ async function getUserInput() {
   return matrixSize
 }
 
-async function waitForMetadata(nv: ExtendedNiivue, maxAttempts = 50, intervalMs = 50) {
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    // Check if we have volumes with metadata available
-    if (nv.volumes.length > 0 && nv.volumes[0].hdr) {
-      // Additional check to ensure the header contains meaningful data
-      const hdr = nv.volumes[0].hdr
-      if (hdr.dims && hdr.dims.length > 0) {
-        return // Volume metadata is ready
-      }
-    }
-    // Check if we have meshes with metadata available
-    if (nv.meshes.length > 0) {
-      const mesh = nv.meshes[0]
-      // Check if mesh has essential properties loaded
-      if (mesh.pts && mesh.pts.length > 0) {
-        return // Mesh metadata is ready
-      }
-    }
-
-    // Wait before checking again
-    await new Promise((resolve) => setTimeout(resolve, intervalMs))
-  }
-
-  // If we've exhausted all attempts, log a warning but continue
-  console.warn('Metadata not available after maximum attempts, proceeding anyway')
-}
-
 async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSettings) {
   const isMincFile = (uri: string) => {
     const lowerUri = uri.toLowerCase()
@@ -174,7 +141,7 @@ async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSetting
         url: item.data,
         colormap: settings.defaultVolumeColormap,
       }
-      nv.loadImages([image])
+      await nv.loadImages([image])
       return
     }
   }
@@ -182,7 +149,7 @@ async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSetting
   if (isImageType(item.uri) && !item.data && !item.uri.endsWith('.dcm')) {
     // If the item is an image type but has no data, load it from the URL
     const image = { url: item.uri, colormap: settings.defaultVolumeColormap }
-    nv.loadImages([image])
+    await nv.loadImages([image])
     return
   }
 
