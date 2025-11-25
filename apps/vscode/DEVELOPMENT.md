@@ -122,16 +122,6 @@ This configures the React app for WebView embedding without PWA features.
 pnpm --filter @niivue/vscode test
 ```
 
-## Building for Production
-
-```bash
-# Build the extension and dependencies
-pnpm build
-
-# Or build just VS Code extension
-pnpm --filter @niivue/vscode build
-```
-
 ## Publishing
 
 ### Setup
