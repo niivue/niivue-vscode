@@ -1,7 +1,12 @@
+import { PageConfig } from '@jupyterlab/coreutils'
 import { IDocumentManager } from '@jupyterlab/docmanager'
 import { ABCWidgetFactory, DocumentRegistry, DocumentWidget } from '@jupyterlab/docregistry'
 import { FileDialog } from '@jupyterlab/filebrowser'
 import { Widget } from '@lumino/widgets'
+
+function getJupyterUrl(path: string): string {
+  return PageConfig.getBaseUrl() + path
+}
 
 export class NiivueWidget extends Widget {
   private _context: DocumentRegistry.IContext<DocumentRegistry.IModel>
@@ -61,8 +66,8 @@ export class NiivueWidget extends Widget {
 
   private _getHtmlForViewer(): string {
     // Use the static file handler we set up in handlers.py
-    const scriptPath = '/lab/extensions/@niivue/jupyter/static/niivue/index.js'
-    const cssPath = '/lab/extensions/@niivue/jupyter/static/niivue/index.css'
+    const scriptPath = getJupyterUrl('lab/extensions/@niivue/jupyter/static/niivue/index.js')
+    const cssPath = getJupyterUrl('lab/extensions/@niivue/jupyter/static/niivue/index.css')
 
     return `<!doctype html>
           <html lang="en">
@@ -125,7 +130,7 @@ export class NiivueWidget extends Widget {
         console.log('Reading file data for:', filePath)
 
         // Use fetch to read the file directly
-        const fileUrl = `/files/${filePath}`
+        const fileUrl = getJupyterUrl('files/' + filePath)
         console.log('Fetching file from URL:', fileUrl)
 
         const response = await fetch(fileUrl)
@@ -251,7 +256,7 @@ export class NiivueWidget extends Widget {
   ): Promise<void> {
     if (this._iframe.contentWindow) {
       try {
-        const fileUrl = `/files/${filePath}`
+        const fileUrl = getJupyterUrl('files/' + filePath)
         const response = await fetch(fileUrl)
         if (!response.ok) {
           throw new Error(`Failed to fetch file: ${response.statusText}`)
@@ -325,7 +330,7 @@ export class NiivueWidget extends Widget {
       const dirPath = result.value[0].path
       try {
         // List all files in the directory
-        const response = await fetch(`/api/contents/${dirPath}`)
+        const response = await fetch(getJupyterUrl('api/contents/' + dirPath))
         if (!response.ok) {
           throw new Error(`Failed to list directory: ${response.statusText}`)
         }
@@ -337,7 +342,7 @@ export class NiivueWidget extends Widget {
           // Load all files
           const fileBuffers = await Promise.all(
             files.map(async (file: any) => {
-              const fileUrl = `/files/${file.path}`
+              const fileUrl = getJupyterUrl('files/' + file.path)
               const fileResponse = await fetch(fileUrl)
               if (!fileResponse.ok) {
                 throw new Error(`Failed to fetch file: ${fileResponse.statusText}`)
