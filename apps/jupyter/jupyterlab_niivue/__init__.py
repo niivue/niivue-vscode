@@ -13,7 +13,7 @@ from .handlers import setup_handlers
 def _jupyter_labextension_paths():
     return [{
         "src": "labextension",
-        "dest": "jupyterlab-niivue"
+        "dest": "@niivue/jupyter"
     }]
 
 
@@ -27,7 +27,7 @@ def _load_jupyter_server_extension(server_app):
     """Registers the API handler to provide lab configuration data and serve a
     React-based interface for extensions in JupyterLab.
     """
-    url_pattern = "/lab/extensions/jupyterlab-niivue"
+    url_pattern = "/lab/extensions/@niivue/jupyter"
     setup_handlers(server_app.web_app, url_pattern)
     name = "jupyterlab_niivue"
     server_app.log.info(f"Registered {name} server extension")
