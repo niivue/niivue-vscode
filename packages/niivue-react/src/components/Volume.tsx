@@ -48,10 +48,14 @@ export const Volume = (props: AppProps & VolumeProps) => {
       if (!isEditingVol4D.value && is4D.value && selected.value) {
         if (e.key === 'ArrowUp' || e.key === 'ArrowRight') {
           e.preventDefault()
-          nextVolume()
+          const currentVol = nv.volumes[0].frame4D
+          nv.setFrame4D(nv.volumes[0].id, currentVol + 1)
+          vol4D.value = nv.volumes[0].frame4D
         } else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') {
           e.preventDefault()
-          prevVolume()
+          const currentVol = nv.volumes[0].frame4D
+          nv.setFrame4D(nv.volumes[0].id, currentVol - 1)
+          vol4D.value = nv.volumes[0].frame4D
         }
       }
     }
@@ -59,7 +63,18 @@ export const Volume = (props: AppProps & VolumeProps) => {
     return () => {
       window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [isEditingVol4D.value, is4D.value, selected.value])
+  }, [isEditingVol4D.value, is4D.value, selected.value, nv, vol4D])
+
+  // Stop playback when volume is deselected or editing begins
+  useEffect(() => {
+    if ((!selected.value || isEditingVol4D.value) && isPlaying.value) {
+      if (playIntervalRef.current) {
+        clearInterval(playIntervalRef.current)
+        playIntervalRef.current = null
+      }
+      isPlaying.value = false
+    }
+  }, [selected.value, isEditingVol4D.value, isPlaying])
 
   // Cleanup play interval on unmount
   useEffect(() => {
@@ -179,12 +194,22 @@ export const Volume = (props: AppProps & VolumeProps) => {
       // Start playing
       isPlaying.value = true
       playIntervalRef.current = window.setInterval(() => {
-        const nFrame4D = nv.volumes[0]?.nFrame4D
+        const volume = nv.volumes[0]
+        if (!volume) {
+          // Stop playing if volume no longer exists
+          if (playIntervalRef.current) {
+            clearInterval(playIntervalRef.current)
+            playIntervalRef.current = null
+          }
+          isPlaying.value = false
+          return
+        }
+        const nFrame4D = volume.nFrame4D
         if (!nFrame4D) return
-        const currentFrame = nv.volumes[0].frame4D
+        const currentFrame = volume.frame4D
         const nextFrame = (currentFrame + 1) % nFrame4D
-        nv.setFrame4D(nv.volumes[0].id, nextFrame)
-        vol4D.value = nv.volumes[0].frame4D
+        nv.setFrame4D(volume.id, nextFrame)
+        vol4D.value = volume.frame4D
       }, 200) // 200ms delay between frames (5 fps)
     }
   }
