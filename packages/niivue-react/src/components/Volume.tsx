@@ -19,6 +19,8 @@ export const Volume = (props: AppProps & VolumeProps) => {
   const intensity = useSignal('')
   const location_local = useSignal('')
   const vol4D = useSignal(0)
+  const vol4DInput = useSignal('')
+  const isEditingVol4D = useSignal(false)
   const dispName = name.length > 20 ? `...${name.slice(-20)}` : name
   const selected = computed(() => selection.value.includes(volumeIndex))
   const tooltipVisible = useSignal(false)
@@ -88,6 +90,50 @@ export const Volume = (props: AppProps & VolumeProps) => {
     vol4D.value = nv.volumes[0].frame4D
   }
 
+  const setVol4D = (value: number) => {
+    const nFrame4D = nv.volumes[0]?.nFrame4D
+    if (!nFrame4D) return
+    const maxFrame = nFrame4D - 1
+    const clampedValue = Math.max(0, Math.min(maxFrame, value))
+    nv.setFrame4D(nv.volumes[0].id, clampedValue)
+    vol4D.value = nv.volumes[0].frame4D
+  }
+
+  const handleVol4DClick = (e: MouseEvent) => {
+    e.stopPropagation()
+    isEditingVol4D.value = true
+    vol4DInput.value = vol4D.value.toString()
+  }
+
+  const handleVol4DChange = (e: Event) => {
+    const target = e.target as HTMLInputElement
+    vol4DInput.value = target.value
+  }
+
+  const handleVol4DKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      e.stopPropagation()
+      const value = parseInt(vol4DInput.value, 10)
+      if (!isNaN(value)) {
+        setVol4D(value)
+      }
+      isEditingVol4D.value = false
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      e.stopPropagation()
+      isEditingVol4D.value = false
+    }
+  }
+
+  const handleVol4DBlur = () => {
+    const value = parseInt(vol4DInput.value, 10)
+    if (!isNaN(value)) {
+      setVol4D(value)
+    }
+    isEditingVol4D.value = false
+  }
+
   const is4D = computed(() => nv.volumes[0]?.nFrame4D && nv.volumes[0]?.nFrame4D > 1)
 
   return (
@@ -121,12 +167,27 @@ export const Volume = (props: AppProps & VolumeProps) => {
       )}
       {hideUI.value > 2 && is4D.value && (
         <div className="absolute bottom-0 right-0">
-          <span
-            className="bg-gray-300 bg-opacity-50 rounded-md text-xl cursor-pointer border-none text-outline items-center w-5 h-6 flex justify-center m-1"
-            data-testid={`volume-${volumeIndex}`}
-          >
-            {vol4D.value}
-          </span>
+          {isEditingVol4D.value ? (
+            <input
+              type="text"
+              value={vol4DInput.value}
+              onInput={handleVol4DChange}
+              onKeyDown={handleVol4DKeyDown}
+              onBlur={handleVol4DBlur}
+              className="bg-gray-300 bg-opacity-50 rounded-md text-xl text-center border-none text-outline w-12 h-6 m-1"
+              data-testid={`volume-input-${volumeIndex}`}
+              autoFocus
+              onClick={(e) => e.stopPropagation()}
+            />
+          ) : (
+            <span
+              className="bg-gray-300 bg-opacity-50 rounded-md text-xl cursor-text border-none text-outline items-center w-12 h-6 flex justify-center m-1"
+              data-testid={`volume-${volumeIndex}`}
+              onClick={handleVol4DClick}
+            >
+              {vol4D.value}
+            </span>
+          )}
           <button
             className="bg-gray-300 bg-opacity-50 rounded-md text-2xl cursor-pointer border-none text-outline items-center w-5 h-6 flex justify-center m-1"
             onClick={nextVolume}
