@@ -21,11 +21,14 @@ export const Volume = (props: AppProps & VolumeProps) => {
   const vol4D = useSignal(0)
   const vol4DInput = useSignal('')
   const isEditingVol4D = useSignal(false)
+  const isPlaying = useSignal(false)
   const dispName = name.length > 20 ? `...${name.slice(-20)}` : name
   const selected = computed(() => selection.value.includes(volumeIndex))
+  const is4D = computed(() => nv.volumes[0]?.nFrame4D && nv.volumes[0]?.nFrame4D > 1)
   const tooltipVisible = useSignal(false)
   const tooltipPos = useSignal({ x: 0, y: 0 })
   const canvasRef = useRef<HTMLDivElement | null>(null)
+  const playIntervalRef = useRef<number | null>(null)
 
   useEffect(() => {
     nv.onLocationChange = (data: any) =>
@@ -37,6 +40,35 @@ export const Volume = (props: AppProps & VolumeProps) => {
         volumeIndex == selection.value[0],
       )
   }, [selection.value])
+
+  // Keyboard listener for arrow keys
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only handle arrow keys when not editing and this volume is selected
+      if (!isEditingVol4D.value && is4D.value && selected.value) {
+        if (e.key === 'ArrowUp' || e.key === 'ArrowRight') {
+          e.preventDefault()
+          nextVolume()
+        } else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') {
+          e.preventDefault()
+          prevVolume()
+        }
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isEditingVol4D.value, is4D.value, selected.value])
+
+  // Cleanup play interval on unmount
+  useEffect(() => {
+    return () => {
+      if (playIntervalRef.current) {
+        clearInterval(playIntervalRef.current)
+      }
+    }
+  }, [])
 
   // Mouse listeners for updating tooltip position and visibility
   useEffect(() => {
@@ -135,7 +167,27 @@ export const Volume = (props: AppProps & VolumeProps) => {
     isEditingVol4D.value = false
   }
 
-  const is4D = computed(() => nv.volumes[0]?.nFrame4D && nv.volumes[0]?.nFrame4D > 1)
+  const togglePlay = () => {
+    if (isPlaying.value) {
+      // Stop playing
+      if (playIntervalRef.current) {
+        clearInterval(playIntervalRef.current)
+        playIntervalRef.current = null
+      }
+      isPlaying.value = false
+    } else {
+      // Start playing
+      isPlaying.value = true
+      playIntervalRef.current = window.setInterval(() => {
+        const nFrame4D = nv.volumes[0]?.nFrame4D
+        if (!nFrame4D) return
+        const currentFrame = nv.volumes[0].frame4D
+        const nextFrame = (currentFrame + 1) % nFrame4D
+        nv.setFrame4D(nv.volumes[0].id, nextFrame)
+        vol4D.value = nv.volumes[0].frame4D
+      }, 200) // 200ms delay between frames (5 fps)
+    }
+  }
 
   return (
     <div
@@ -195,14 +247,24 @@ export const Volume = (props: AppProps & VolumeProps) => {
           <button
             className="bg-gray-300 bg-opacity-50 rounded-md text-2xl cursor-pointer border-none text-outline items-center w-5 h-6 flex justify-center m-1"
             onClick={nextVolume}
+            aria-label="Next frame"
           >
             +
           </button>
           <button
             className="bg-gray-300 bg-opacity-50 rounded-md text-3xl cursor-pointer border-none text-outline items-center w-5 h-6 flex justify-center m-1"
             onClick={prevVolume}
+            aria-label="Previous frame"
           >
             -
+          </button>
+          <button
+            className="bg-gray-300 bg-opacity-50 rounded-md text-xl cursor-pointer border-none text-outline items-center w-5 h-6 flex justify-center m-1"
+            onClick={togglePlay}
+            aria-label={isPlaying.value ? 'Pause' : 'Play'}
+            data-testid={`volume-play-${volumeIndex}`}
+          >
+            {isPlaying.value ? '⏸' : '▶'}
           </button>
         </div>
       )}
