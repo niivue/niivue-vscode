@@ -122,6 +122,7 @@ export const Volume = (props: AppProps & VolumeProps) => {
     } else if (e.key === 'Escape') {
       e.preventDefault()
       e.stopPropagation()
+      vol4DInput.value = vol4D.value.toString() // Reset to current value
       isEditingVol4D.value = false
     }
   }
@@ -170,12 +171,15 @@ export const Volume = (props: AppProps & VolumeProps) => {
           {isEditingVol4D.value ? (
             <input
               type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               value={vol4DInput.value}
               onInput={handleVol4DChange}
               onKeyDown={handleVol4DKeyDown}
               onBlur={handleVol4DBlur}
               className="bg-gray-300 bg-opacity-50 rounded-md text-xl text-center border-none text-outline w-12 h-6 m-1"
               data-testid={`volume-input-${volumeIndex}`}
+              aria-label="4D volume frame number"
               autoFocus
               onClick={(e) => e.stopPropagation()}
             />
