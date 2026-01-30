@@ -2,6 +2,7 @@ import { computed, Signal, useSignal } from '@preact/signals'
 import { useEffect, useRef } from 'preact/hooks'
 import { ExtendedNiivue } from '../events'
 import { AppProps, SelectionMode } from './AppProps'
+import { Nav4D } from './Nav4D'
 import { NiiVueCanvas } from './NiiVueCanvas'
 
 export interface VolumeProps {
@@ -19,6 +20,8 @@ export const Volume = (props: AppProps & VolumeProps) => {
   const intensity = useSignal('')
   const location_local = useSignal('')
   const vol4D = useSignal(0)
+  const isEditingVol4D = useSignal(false)
+  const isPlaying = useSignal(false)
   const dispName = name.length > 20 ? `...${name.slice(-20)}` : name
   const selected = computed(() => selection.value.includes(volumeIndex))
   const tooltipVisible = useSignal(false)
@@ -33,8 +36,17 @@ export const Volume = (props: AppProps & VolumeProps) => {
         location_local,
         location,
         volumeIndex == selection.value[0],
+        vol4D,
+        nv,
       )
   }, [selection.value])
+
+  // Stop playback when volume is deselected or editing begins
+  useEffect(() => {
+    if ((!selected.value || isEditingVol4D.value) && isPlaying.value) {
+      isPlaying.value = false
+    }
+  }, [selected.value, isEditingVol4D.value, isPlaying])
 
   // Mouse listeners for updating tooltip position and visibility
   useEffect(() => {
@@ -76,18 +88,6 @@ export const Volume = (props: AppProps & VolumeProps) => {
     }
   }
 
-  const nextVolume = () => {
-    const currentVol = nv.volumes[0].frame4D
-    nv.setFrame4D(nv.volumes[0].id, currentVol + 1)
-    vol4D.value = nv.volumes[0].frame4D
-  }
-
-  const prevVolume = () => {
-    const currentVol = nv.volumes[0].frame4D
-    nv.setFrame4D(nv.volumes[0].id, currentVol - 1)
-    vol4D.value = nv.volumes[0].frame4D
-  }
-
   const is4D = computed(() => nv.volumes[0]?.nFrame4D && nv.volumes[0]?.nFrame4D > 1)
 
   return (
@@ -120,26 +120,13 @@ export const Volume = (props: AppProps & VolumeProps) => {
         </button>
       )}
       {hideUI.value > 2 && is4D.value && (
-        <div className="absolute bottom-0 right-0">
-          <span
-            className="bg-gray-300 bg-opacity-50 rounded-md text-xl cursor-pointer border-none text-outline items-center w-5 h-6 flex justify-center m-1"
-            data-testid={`volume-${volumeIndex}`}
-          >
-            {vol4D.value}
-          </span>
-          <button
-            className="bg-gray-300 bg-opacity-50 rounded-md text-2xl cursor-pointer border-none text-outline items-center w-5 h-6 flex justify-center m-1"
-            onClick={nextVolume}
-          >
-            +
-          </button>
-          <button
-            className="bg-gray-300 bg-opacity-50 rounded-md text-3xl cursor-pointer border-none text-outline items-center w-5 h-6 flex justify-center m-1"
-            onClick={prevVolume}
-          >
-            -
-          </button>
-        </div>
+        <Nav4D
+          nv={nv}
+          volumeIndex={volumeIndex}
+          vol4D={vol4D}
+          isPlaying={isPlaying}
+          isEditingVol4D={isEditingVol4D}
+        />
       )}
       {tooltipVisible.value && (
         <div
@@ -167,11 +154,16 @@ function setIntensityAndLocation(
   location_local: Signal<string>,
   location: Signal<string>,
   setGlobalLocation: Boolean,
+  vol4D: Signal<number>,
+  nv: ExtendedNiivue,
 ) {
   intensity.value = arrayToStringFlexible(data.values.map((item: { value: number }) => item.value))
   location_local.value = arrayToStringFixed(data.vox, 0)
   if (setGlobalLocation) {
     location.value = `${arrayToStringFixed(data.mm)} mm`
+  }
+  if (nv.volumes.length > 0 && nv.volumes[0]?.nFrame4D && nv.volumes[0].nFrame4D > 1) {
+    vol4D.value = nv.volumes[0].frame4D
   }
 }
 

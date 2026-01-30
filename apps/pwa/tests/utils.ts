@@ -14,6 +14,20 @@ export async function loadTestImage(page) {
   await page.waitForSelector('canvas', { timeout: 10000 })
 }
 
+export async function load4DTestImage(page) {
+  const testLink = 'https://niivue.github.io/niivue-demo-images/pcasl.nii.gz'
+  // send a message to the app to load the test image
+  const message = {
+    type: 'addImage',
+    body: {
+      data: '',
+      uri: testLink,
+    },
+  }
+  await page.evaluate((m) => window.postMessage(m, '*'), message)
+  await page.waitForSelector('canvas', { timeout: 10000 })
+}
+
 export async function loadOverlay(page) {
   const testLink = 'https://niivue.github.io/niivue-demo-images/mni152.nii.gz'
   // send a message to the app to load the test image
