@@ -39,6 +39,9 @@ export const Volume = (props: AppProps & VolumeProps) => {
         vol4D,
         nv,
       )
+    nv.onFrameUpdate = (frame: number) => {
+      vol4D.value = frame
+    }
   }, [selection.value])
 
   // Stop playback when volume is deselected or editing begins
@@ -122,10 +125,12 @@ export const Volume = (props: AppProps & VolumeProps) => {
       {hideUI.value > 2 && is4D.value && (
         <Nav4D
           nv={nv}
+          nvArray={props.nvArray}
           volumeIndex={volumeIndex}
           vol4D={vol4D}
           isPlaying={isPlaying}
           isEditingVol4D={isEditingVol4D}
+          syncedIndices={props.syncedIndices}
         />
       )}
       {tooltipVisible.value && (

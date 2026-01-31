@@ -4,16 +4,19 @@ import { ExtendedNiivue } from '../events'
 
 interface Nav4DProps {
   nv: ExtendedNiivue
+  nvArray: Signal<ExtendedNiivue[]>
   volumeIndex: number
   vol4D: Signal<number>
   isPlaying: Signal<boolean>
   isEditingVol4D: Signal<boolean>
+  syncedIndices: Signal<Set<number>>
 }
 
-export const Nav4D = ({ nv, volumeIndex, vol4D, isPlaying, isEditingVol4D }: Nav4DProps) => {
+export const Nav4D = ({ nv, nvArray, volumeIndex, vol4D, isPlaying, isEditingVol4D, syncedIndices }: Nav4DProps) => {
   const vol4DInput = useSignal('')
   const vol4DInputRef = useRef<HTMLInputElement | null>(null)
   const playIntervalRef = useRef<number | null>(null)
+  const isSynced = syncedIndices.value.has(volumeIndex)
 
   // Required so 4D volume number can be edited directly (without requiring second click)
   useEffect(() => {
@@ -41,6 +44,32 @@ export const Nav4D = ({ nv, volumeIndex, vol4D, isPlaying, isEditingVol4D }: Nav
       startPlayback()
     }
   }, [isPlaying.value])
+
+  // Reactive synchronization
+  useEffect(() => {
+    if (isSynced) {
+      syncOtherVolumes(vol4D.value)
+    }
+  }, [vol4D.value, isSynced])
+
+  const syncOtherVolumes = (targetFrame: number) => {
+    if (!syncedIndices.value.has(volumeIndex)) return
+    for (const idx of syncedIndices.value) {
+      if (idx === volumeIndex) continue
+      const nvInstance = nvArray.value[idx]
+      if (!nvInstance) continue
+      const volume = nvInstance.volumes[0]
+      if (
+        volume &&
+        volume.nFrame4D &&
+        volume.nFrame4D > 1 &&
+        targetFrame < volume.nFrame4D &&
+        volume.frame4D !== targetFrame
+      ) {
+        nvInstance.setFrame4D(volume.id, targetFrame)
+      }
+    }
+  }
 
   const nextVolume = () => {
     const currentVol = nv.volumes[0].frame4D
@@ -124,6 +153,19 @@ export const Nav4D = ({ nv, volumeIndex, vol4D, isPlaying, isEditingVol4D }: Nav
     isPlaying.value = !isPlaying.value
   }
 
+  const toggleSync = () => {
+    const newSet = new Set(syncedIndices.value)
+    if (newSet.has(volumeIndex)) {
+      newSet.delete(volumeIndex)
+    } else {
+      newSet.add(volumeIndex)
+    }
+    syncedIndices.value = newSet
+  }
+
+  const num4DVolumes = nvArray.value.filter((nvInstance) => (nvInstance.volumes?.[0]?.nFrame4D ?? 0) > 1).length
+  const showSync = num4DVolumes > 1
+
   return (
     <div className="absolute bottom-1 right-1 flex items-center gap-1 bg-gray-900 bg-opacity-70 rounded-lg p-1 backdrop-blur-sm shadow-lg">
       <button
@@ -181,6 +223,25 @@ export const Nav4D = ({ nv, volumeIndex, vol4D, isPlaying, isEditingVol4D }: Nav
       >
         {isPlaying.value ? '⏸' : '▶'}
       </button>
+
+      {showSync && (
+        <>
+          <div className="w-px h-4 bg-gray-600 mx-1"></div>
+          <button
+            className={`${
+              isSynced ? 'bg-blue-500 bg-opacity-50' : 'bg-transparent'
+            } hover:bg-white hover:bg-opacity-20 text-white rounded px-2 py-1 transition-colors flex items-center justify-center min-w-[30px]`}
+            onClick={toggleSync}
+            onMouseDown={(e) => e.preventDefault()}
+            aria-label={isSynced ? 'Disable sync' : 'Enable sync'}
+            title={isSynced ? 'Click to disable sync' : 'Click to sync with other volumes'}
+            data-testid={`volume-sync-${volumeIndex}`}
+            tabIndex={-1}
+          >
+            🔗
+          </button>
+        </>
+      )}
     </div>
   )
 }
