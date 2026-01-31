@@ -59,13 +59,19 @@ export const NiiVueCanvas = ({
     if (!nv.body) {
       return
     }
-    loadVolume(nv, nv.body, settings.value).then(async () => {
-      nv.isLoaded = true
-      nv.body = null
-      render.value++ // required to update the names
-      nvArray.value = [...nvArray.value] // trigger react signal for changes
-      nv.createOnLocationChange() // TODO fix, still required?
-    })
+    loadVolume(nv, nv.body, settings.value)
+      .then(async () => {
+        nv.isLoaded = true
+        nv.body = null
+        render.value++ // required to update the names
+        nvArray.value = [...nvArray.value] // trigger react signal for changes
+        nv.createOnLocationChange() // TODO fix, still required?
+      })
+      .catch((error) => {
+        nv.loadError = error.message || 'Unknown error loading file'
+        nv.body = null
+        nvArray.value = [...nvArray.value] // trigger react signal for changes
+      })
   }, [nv.body])
 
   if (nv.isLoaded && nv.volumes.length > 0) {

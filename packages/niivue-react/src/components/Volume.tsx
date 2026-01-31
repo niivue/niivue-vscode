@@ -101,8 +101,24 @@ export const Volume = (props: AppProps & VolumeProps) => {
       onClick={selectClick}
       ref={canvasRef}
     >
-      <NiiVueCanvas {...props} render={props.render} />
-      {hideUI.value > 0 && (
+      {nv.loadError ? (
+        <div
+          className="flex flex-col items-center justify-center bg-gray-900 text-white p-4 overflow-hidden"
+          style={{ width: `${props.width}px`, height: `${props.height}px` }}
+        >
+          <div className="text-red-500 text-3xl mb-2">⚠</div>
+          <div className="text-lg font-bold mb-1">Failed to load image</div>
+          <div className="text-sm text-gray-300 break-all text-center max-w-full italic mb-4">
+            {name}
+          </div>
+          <div className="text-xs text-gray-400 bg-black/30 p-2 rounded max-w-full overflow-y-auto max-h-24">
+            {nv.loadError}
+          </div>
+        </div>
+      ) : (
+        <NiiVueCanvas {...props} render={props.render} />
+      )}
+      {hideUI.value > 0 && !nv.loadError && (
         <>
           <div className="absolute pointer-events-none text-xl text-outline left-1 top-0">
             {dispName}
