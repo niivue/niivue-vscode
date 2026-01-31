@@ -218,7 +218,6 @@ export class NiivueWidget extends Widget {
             ext.endsWith('.nrrd') ||
             ext.endsWith('.nhdr') ||
             ext.endsWith('.mnc') ||
-            ext.endsWith('.mnc.gz') ||
             ext.endsWith('.v') ||
             ext.endsWith('.v16')
           )
@@ -308,7 +307,6 @@ export class NiivueWidget extends Widget {
             ext.endsWith('.nrrd') ||
             ext.endsWith('.nhdr') ||
             ext.endsWith('.mnc') ||
-            ext.endsWith('.mnc.gz') ||
             ext.endsWith('.v') ||
             ext.endsWith('.v16')
           )
