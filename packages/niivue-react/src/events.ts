@@ -327,6 +327,7 @@ export class ExtendedNiivue extends Niivue {
   }
   isNew = true
   isLoaded = false
+  isLoading = false // Prevent duplicate loadVolume calls during re-renders
   loadError = ''
   uri = ''
   key = NaN

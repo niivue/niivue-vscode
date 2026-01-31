@@ -56,12 +56,14 @@ export const NiiVueCanvas = ({
   }, [canvasRef.current])
 
   useEffect(() => {
-    if (!nv.body) {
+    if (!nv.body || nv.isLoading) {
       return
     }
+    nv.isLoading = true
     loadVolume(nv, nv.body, settings.value)
       .then(async () => {
         nv.isLoaded = true
+        nv.isLoading = false
         nv.body = null
         render.value++ // required to update the names
         nvArray.value = [...nvArray.value] // trigger react signal for changes
@@ -69,6 +71,7 @@ export const NiiVueCanvas = ({
       })
       .catch((error) => {
         nv.loadError = error.message || 'Unknown error loading file'
+        nv.isLoading = false
         nv.body = null
         nvArray.value = [...nvArray.value] // trigger react signal for changes
       })
