@@ -29,17 +29,20 @@ pip install jupyterlab-niivue
 ## Keyboard Shortcuts
 
 ### Mouse Controls
+
 - **Right Mouse**: Drag to adjust contrast/brightness (windowing); when Zoom button is pressed, drag to zoom
 - **Middle Mouse**: Drag to pan
 - **Mouse Scroll**: Change slice in currently hovered image
 - **Shift + Mouse**: 2D dragging and 3D viewplane rotation
 
 ### Navigation
+
 - **← →**: Change volume in 4D image
 - **V**: Cycle through view modes
 - **C**: Cycle through clip plane orientations in 3D render
 
 ### Crosshair Movement
+
 - **H**: Move crosshair to R (Right)
 - **L**: Move crosshair to L (Left)
 - **J**: Move crosshair to P (Posterior)
@@ -64,6 +67,7 @@ NiiVue can open several formats popular with brain imaging:
 ## Troubleshooting
 
 ### Extension not appearing
+
 If the extension doesn't appear after installation, try:
 
 ```bash
@@ -77,7 +81,9 @@ jupyter lab build
 ```
 
 ### Files not opening
+
 If files don't open when double-clicked:
+
 1. Check that the file format is supported (see list above)
 2. Try right-clicking the file and selecting "Open With" → "NiiVue Viewer"
 3. Check the browser console for any error messages

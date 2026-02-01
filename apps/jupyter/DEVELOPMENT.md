@@ -5,11 +5,13 @@ This guide covers development setup specific to the JupyterLab extension. For ge
 ## Prerequisites
 
 See root DEVELOPMENT.md for:
+
 - Node.js and pnpm requirements
 - Dev container setup (recommended)
 - Monorepo tools (Turborepo, pnpm workspaces)
 
 Additional requirements for JupyterLab:
+
 - Python ≥3.8 (from pyproject.toml)
 - JupyterLab ≥4.0.0 (from pyproject.toml)
 
@@ -145,6 +147,7 @@ apps/jupyter/
 ### Runtime Dependencies
 
 From `package.json`:
+
 - `@jupyterlab/application` ^4.4.5
 - `@jupyterlab/docregistry` ^4.4.5
 - `@jupyterlab/filebrowser` ^4.4.9
