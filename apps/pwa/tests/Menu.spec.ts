@@ -8,6 +8,7 @@ test.describe('Menu', () => {
     expect(await page.textContent('text=/Home/i')).toBeTruthy()
     expect(await page.textContent('text=/Add Image/i')).toBeTruthy()
     expect(await page.textContent('text=/View/i')).toBeTruthy()
+    expect(await page.textContent('text=/Info/i')).toBeTruthy()
     expect(await page.textContent('text=/Bookmarklet/i')).toBeTruthy()
     expect(await page.textContent('text=/Drop Files to load images/i')).toBeTruthy()
   })
@@ -58,7 +59,7 @@ test.describe('Menu', () => {
       await page.textContent('text=/matrix size: 207 x 256 x 215, voxelsize: 0.74 x 0.74 x 0.74/i'),
     ).toBeTruthy()
 
-    const menuBar = ['Home', 'Add Image', 'View', 'ColorScale', 'Overlay', 'Header']
+    const menuBar = ['Home', 'Add Image', 'View', 'ColorScale', 'Overlay', 'Header', 'Info']
     for (const item of menuBar) {
       expect(await page.textContent(`text=/${item}/i`)).toBeTruthy()
     }
