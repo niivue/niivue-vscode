@@ -65,6 +65,7 @@ pnpm dev:source
 ```
 
 This runs:
+
 - TypeScript type generation in watch mode for `@niivue/react`
 - PWA dev server with Vite configured to use React source directly
 
@@ -132,6 +133,22 @@ pnpm versions:check
 # Fix dependency version mismatches
 pnpm versions:fix
 ```
+
+### Automatic Formatting on Commit
+
+This repository uses **Husky** and **lint-staged** to automatically format code before commits:
+
+- **What happens**: When you commit, prettier automatically formats all staged files
+- **Files affected**: `.js`, `.jsx`, `.ts`, `.tsx`, `.json`, `.css`, `.md`
+- **No action needed**: The formatting happens automatically - you don't need to run `pnpm format` manually
+
+If you need to bypass the hook (not recommended):
+
+```bash
+git commit --no-verify -m "your message"
+```
+
+The hooks are set up automatically when you run `pnpm install`.
 
 ## Contributing
 
