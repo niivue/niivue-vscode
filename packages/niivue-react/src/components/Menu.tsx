@@ -274,6 +274,7 @@ export const Menu = (props: AppProps) => {
           <ToggleEntry label="Multiple" state={selectMultiple} />
           <MenuEntry label="Select All" onClick={selectAll} />
         </ImageSelect>
+        {/* Empty onClick is required for MenuItem component - clicking label has no action */}
         <MenuItem label="Info" onClick={() => {}}>
           <MenuEntry label="Keyboard control" onClick={toggle(keyboardControlDialog)} />
         </MenuItem>

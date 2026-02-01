@@ -22,14 +22,16 @@ export const MenuItem = ({ label, onClick, children, visible }: any) => {
   setChildren(children, isOpen)
 
   useEffect(() => {
+    if (!isOpen.value) return // Only add listener when menu is open
+
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen.value) {
+      if (e.key === 'Escape') {
         isOpen.value = false
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [])
+  }, [isOpen.value])
 
   return (
     <div className="relative group">
@@ -222,14 +224,16 @@ export const ImageSelect = ({ label, state, children, visible }: any) => {
   setChildren(children, isOpen)
 
   useEffect(() => {
+    if (!isOpen.value) return // Only add listener when menu is open
+
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen.value) {
+      if (e.key === 'Escape') {
         isOpen.value = false
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [])
+  }, [isOpen.value])
 
   return (
     <div className="relative group">

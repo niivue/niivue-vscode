@@ -19,7 +19,7 @@ export const ScalingBox = (props: any) => {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+      if (e.key === 'Escape' && overlayMenu.value) {
         overlayMenu.value = false
       }
     }
