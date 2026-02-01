@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixtures'
 import { BASE_URL, loadTestImage } from './utils'
 
 test.describe('Menu', () => {

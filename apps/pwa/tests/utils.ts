@@ -67,15 +67,38 @@ export async function loadOverlay(page) {
 }
 
 export async function loadTestSurfImage(page) {
-  // TODO: Mesh tests require external URLs or local mesh files
-  // Skipping for now - need to add mesh test assets
-  throw new Error('Mesh test assets not yet available locally')
+  // Use external URL - will be intercepted by test fixture
+  const testLink = 'https://niivue.github.io/niivue/images/BrainMesh_ICBM152.lh.mz3'
+  const message = {
+    type: 'addImage',
+    body: {
+      data: '',
+      uri: testLink,
+    },
+  }
+  await page.evaluate((m) => window.postMessage(m, '*'), message)
+  await page.waitForSelector('canvas', { timeout: 10000 })
 }
 
 export async function loadTestSurfOverlay(page, file_type) {
-  // TODO: Mesh overlay tests require external URLs or local mesh files
-  // Skipping for now - need to add mesh test assets
-  throw new Error('Mesh overlay test assets not yet available locally')
+  // Use external URLs - will be intercepted by test fixture
+  let testLink
+
+  if (file_type === 'curv') {
+    testLink = 'https://niivue.github.io/niivue/images/BrainMesh_ICBM152.lh.curv'
+  } else if (file_type === 'other') {
+    testLink = 'https://niivue.github.io/niivue/images/BrainMesh_ICBM152.lh.motor.mz3'
+  }
+
+  const message = {
+    type: 'addMeshOverlay',
+    body: {
+      index: 0,
+      data: '',
+      uri: String(testLink),
+    },
+  }
+  await page.evaluate((m) => window.postMessage(m, '*'), message)
 }
 
 export function listenForDebugMessage(page) {

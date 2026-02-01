@@ -1,5 +1,5 @@
-import { expect, test } from '@playwright/test';
-import { BASE_URL, load4DTestImage } from './utils';
+import { expect, test } from './fixtures'
+import { BASE_URL, load4DTestImage } from './utils'
 
 test.beforeEach(async ({ page }) => {
   await page.goto(BASE_URL)
@@ -9,7 +9,9 @@ test.beforeEach(async ({ page }) => {
 })
 
 test.describe('4D Sync', () => {
-  test('should synchronize frame between two volumes when sync is enabled on both', async ({ page }) => {
+  test('should synchronize frame between two volumes when sync is enabled on both', async ({
+    page,
+  }) => {
     const vol0Indicator = page.getByTestId('volume-0')
     const vol1Indicator = page.getByTestId('volume-1')
     const sync0Button = page.getByTestId('volume-sync-0')
@@ -51,7 +53,9 @@ test.describe('4D Sync', () => {
     await expect(vol1Indicator).toHaveText('0')
   })
 
-  test('should synchronize frame when using keyboard arrows if sync is enabled', async ({ page }) => {
+  test('should synchronize frame when using keyboard arrows if sync is enabled', async ({
+    page,
+  }) => {
     const vol0Indicator = page.getByTestId('volume-0')
     const vol1Indicator = page.getByTestId('volume-1')
     const sync0Button = page.getByTestId('volume-sync-0')
