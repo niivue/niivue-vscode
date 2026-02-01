@@ -81,6 +81,18 @@ Visit the live demo and click "Install" when prompted by your browser to add Nii
 
 Want to contribute or run locally? See [DEVELOPMENT.md](DEVELOPMENT.md).
 
+### PR Preview Deployments
+
+When you open a pull request that modifies the PWA, a preview deployment is automatically created and deployed to GitHub Pages. This allows you to:
+
+- **Test Changes**: View and test your changes in a production-like environment
+- **Debug Issues**: Share a live URL with reviewers for debugging
+- **Validate UI**: See exactly how your changes will look when deployed
+
+**Preview URL format:** `https://niivue.github.io/niivue-vscode/pr-{NUMBER}/`
+
+A comment will be automatically posted on your PR with the preview URL once the deployment completes. The preview is updated automatically when you push new commits, and cleaned up when the PR is closed.
+
 ## Related Projects
 
 - **VS Code Extension**: [NiiVue for VS Code](https://marketplace.visualstudio.com/items?itemName=niivue.vscode)
