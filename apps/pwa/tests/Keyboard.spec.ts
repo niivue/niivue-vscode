@@ -1,14 +1,19 @@
 import { expect, test } from '@playwright/test'
-import { BASE_URL, loadTestImage } from './utils'
+import { BASE_URL } from './utils'
 
 test.describe('Keyboard Controls', () => {
   test('closes ColorScale dialog with ESC key', async ({ page }) => {
     await page.goto(BASE_URL)
-    await loadTestImage(page)
-    await page.waitForSelector('text=/matrix size:.*voxelsize:/i', { timeout: 10000 })
 
-    // Open ColorScale menu
-    await page.click('text=/ColorScale/i')
+    // Load example image via menu
+    await page.click('data-testid=menu-item-dropdown-Add Image')
+    await page.click('text=/Example Image/i')
+
+    // Wait for the image metadata to be displayed
+    await page.waitForSelector('text=/matrix size:.*voxelsize:/i', { timeout: 15000 })
+
+    // Open ColorScale menu (click the button directly)
+    await page.click('button:has-text("ColorScale")')
 
     // Verify ColorScale dialog is visible
     const colorScaleDialog = await page.locator('.absolute.left-8.top-8.bg-gray-500')
@@ -64,11 +69,11 @@ test.describe('Keyboard Controls', () => {
     // Click on Keyboard control entry
     await page.click('text=/Keyboard control/i')
 
-    // Wait for dialog to be visible
-    await page.waitForSelector('dialog:has-text("Keyboard Controls")', { timeout: 5000 })
+    // Wait for dialog to be visible - use a more specific selector
+    await page.waitForSelector('dialog[open]:has-text("Keyboard Controls")', { timeout: 5000 })
 
     // Verify dialog content
-    const dialog = await page.locator('dialog:has-text("Keyboard Controls")')
+    const dialog = await page.locator('dialog[open]:has-text("Keyboard Controls")')
     await expect(dialog).toBeVisible()
 
     // Verify some keyboard shortcuts are displayed
@@ -79,20 +84,31 @@ test.describe('Keyboard Controls', () => {
     await expect(dialog).toContainText('ESC')
     await expect(dialog).toContainText('Close menus and dialogs')
 
-    // Close dialog
-    await page.click('button:has-text("Close")')
+    // Close dialog using the visible button in the dialog
+    const closeButton = page.locator(
+      'dialog[open]:has-text("Keyboard Controls") button:has-text("Close")',
+    )
+    await closeButton.click()
 
-    // Verify dialog is closed
-    await expect(dialog).not.toBeVisible()
+    // Wait a moment for dialog to close
+    await page.waitForTimeout(200)
+
+    // Verify dialog is closed by checking for [open] attribute
+    await expect(page.locator('dialog[open]:has-text("Keyboard Controls")')).not.toBeVisible()
   })
 
   test('Enter key applies changes in ColorScale dialog', async ({ page }) => {
     await page.goto(BASE_URL)
-    await loadTestImage(page)
-    await page.waitForSelector('text=/matrix size:.*voxelsize:/i', { timeout: 10000 })
 
-    // Open ColorScale menu
-    await page.click('text=/ColorScale/i')
+    // Load example image via menu
+    await page.click('data-testid=menu-item-dropdown-Add Image')
+    await page.click('text=/Example Image/i')
+
+    // Wait for the image metadata to be displayed
+    await page.waitForSelector('text=/matrix size:.*voxelsize:/i', { timeout: 15000 })
+
+    // Open ColorScale menu (click the button directly)
+    await page.click('button:has-text("ColorScale")')
 
     // Verify ColorScale dialog is visible
     const colorScaleDialog = await page.locator('.absolute.left-8.top-8.bg-gray-500')
