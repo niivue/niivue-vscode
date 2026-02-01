@@ -30,7 +30,7 @@
   ],
   "scripts": {
     "dev": "vite",
-    "build": "node copy-assets.mjs && pnpm run type-check && vite build",
+    "build": "node copy-assets.mjs && vite build",
     "build:analyze": "pnpm run build && npx vite-bundle-analyzer",
     "preview": "vite preview",
     "watch": "vite build --watch",

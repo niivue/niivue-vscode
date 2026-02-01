@@ -13,7 +13,10 @@ export class NiivueWidget extends Widget {
   protected _iframe: HTMLIFrameElement
   protected _docManager: IDocumentManager
 
-  constructor(context: DocumentRegistry.IContext<DocumentRegistry.IModel>, docManager: IDocumentManager) {
+  constructor(
+    context: DocumentRegistry.IContext<DocumentRegistry.IModel>,
+    docManager: IDocumentManager,
+  ) {
     super()
     this._context = context
     this._docManager = docManager
@@ -326,7 +329,12 @@ export class NiivueWidget extends Widget {
       manager: this._docManager,
     })
 
-    if (result.button.accept && result.value && result.value.length > 0 && this._iframe.contentWindow) {
+    if (
+      result.button.accept &&
+      result.value &&
+      result.value.length > 0 &&
+      this._iframe.contentWindow
+    ) {
       const dirPath = result.value[0].path
       try {
         // List all files in the directory
@@ -407,7 +415,11 @@ export namespace NiivueViewer {
   /**
    * Create a compare view widget for multiple images
    */
-  export function createCompareView(app: any, docManager: IDocumentManager, selectedItems: any[]): void {
+  export function createCompareView(
+    app: any,
+    docManager: IDocumentManager,
+    selectedItems: any[],
+  ): void {
     const widget = new CompareWidget(selectedItems, docManager)
     widget.title.label = `Compare (${selectedItems.length} images)`
     widget.title.closable = true
@@ -429,7 +441,7 @@ class CompareWidget extends NiivueWidget {
     const dummyContext = {
       path: '',
       localPath: '',
-      pathChanged: { connect: () => { } },
+      pathChanged: { connect: () => {} },
     } as any
 
     super(dummyContext, docManager)

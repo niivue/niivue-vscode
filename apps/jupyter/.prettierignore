@@ -1,0 +1,14 @@
+# Build outputs
+lib/
+static/
+jupyterlab_niivue/
+*.egg-info/
+dist/
+build/
+
+# Dependencies
+node_modules/
+
+# Cache files
+.eslintcache
+.stylelintcache
