@@ -115,7 +115,7 @@ export default defineConfig({
     }),
     VitePWA({
       registerType: 'prompt',
-      includeAssets: ['favicon.ico', 'apple-touch-icon-180x180.png', '*.png'],
+      includeAssets: ['favicon.ico', '*.png'],
       workbox: {
         maximumFileSizeToCacheInBytes: 3000000,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,wasm}'],
