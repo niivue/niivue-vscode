@@ -27,6 +27,8 @@ export default defineConfig({
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
     baseURL: 'http://localhost:4000',
+    /* Bypass Content Security Policy */
+    bypassCSP: true,
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
     /* Take screenshot on failure */
@@ -43,13 +45,7 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: {
-        ...devices['Desktop Chrome'],
-        // Enable network access for external resources
-        launchOptions: {
-          args: ['--disable-web-security', '--disable-features=IsolateOrigins,site-per-process'],
-        },
-      },
+      use: { ...devices['Desktop Chrome'] },
     },
     // Temporarily disabled for faster CI runs - can be re-enabled as needed
     // {
