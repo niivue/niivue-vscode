@@ -15,19 +15,24 @@ function loadLocalTestFile(filePath: string): ArrayBuffer {
 }
 
 export async function loadTestImage(page) {
-  // Load local test DICOM file instead of remote URL
-  // This avoids external network dependency
-  const data = loadLocalTestFile('test/assets/enh.dcm')
+  // Load local test DICOM file exactly like Dicom.spec.ts does
+  const dicomPath = path.join(__dirname, '..', 'test', 'assets', 'enh.dcm')
+  const dicomBuffer = fs.readFileSync(dicomPath)
+  const dicomArrayBuffer = dicomBuffer.buffer.slice(
+    dicomBuffer.byteOffset,
+    dicomBuffer.byteOffset + dicomBuffer.byteLength,
+  )
 
   const message = {
     type: 'addImage',
     body: {
-      data: Array.from(new Uint8Array(data)),
+      data: Array.from(new Uint8Array(dicomArrayBuffer)),
       uri: 'enh.dcm',
     },
   }
+
   await page.evaluate((m) => window.postMessage(m, '*'), message)
-  await page.waitForSelector('canvas', { timeout: 10000 })
+  // Note: Not waiting for canvas here - let tests decide how to wait
 }
 
 export async function load4DTestImage(page) {

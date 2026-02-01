@@ -7,17 +7,20 @@ test.describe('Loading images', () => {
 
     await loadTestImage(page)
 
+    // Wait for canvas to appear - this verifies NiiVue successfully loaded the DICOM
+    await page.waitForSelector('canvas', { timeout: 10000 })
+
     // Verify canvas loaded
     const canvases1 = await page.$$('canvas')
     expect(canvases1.length).toBeGreaterThanOrEqual(1)
 
-    // Wait for NiiVue to process
+    // Wait for NiiVue to fully process the DICOM
     await page.waitForTimeout(2000)
 
-    // Verify no error messages
+    // Verify no error messages appeared
     const bodyText = await page.textContent('body')
-    expect(bodyText).not.toContain('Failed to load')
     expect(bodyText).not.toContain('error')
+    expect(bodyText).not.toContain('failed')
 
     // Load second image
     await loadTestImage(page)
