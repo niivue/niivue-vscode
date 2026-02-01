@@ -177,10 +177,14 @@ export const Volume = (props: AppProps & VolumeProps) => {
           <div
             className="absolute top-0 left-0 right-0 h-8 cursor-move bg-gradient-to-b from-black/30 to-transparent pointer-events-auto"
             title="Drag to reorder"
+            role="button"
+            tabIndex={0}
+            aria-label="Drag to reorder image"
           />
           <button
             className="absolute bg-transparent text-xl cursor-pointer opacity-80 border-none text-outline top-0 right-1 pointer-events-auto"
             onClick={props.remove}
+            aria-label="Remove image"
           >
             X
           </button>
