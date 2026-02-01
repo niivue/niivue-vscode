@@ -13,6 +13,7 @@ import { HeaderBox } from './HeaderBox'
 import {
   HeaderDialog,
   ImageSelect,
+  KeyboardControlDialog,
   MenuButton,
   MenuEntry,
   MenuItem,
@@ -38,6 +39,7 @@ export const Menu = (props: AppProps) => {
   const zoomDragMode = useSignal(settings.value.zoomDragMode)
   const selectionActive = useSignal(false)
   const selectMultiple = useSignal(false)
+  const keyboardControlDialog = useSignal(false)
 
   // Computed
   const isOverlay = computed(() => nvArraySelected.value[0]?.volumes?.length > 1)
@@ -272,6 +274,9 @@ export const Menu = (props: AppProps) => {
           <ToggleEntry label="Multiple" state={selectMultiple} />
           <MenuEntry label="Select All" onClick={selectAll} />
         </ImageSelect>
+        <MenuItem label="Info" onClick={() => {}}>
+          <MenuEntry label="Keyboard control" onClick={toggle(keyboardControlDialog)} />
+        </MenuItem>
       </div>
       <p className="pl-2">{displayInfo.value}</p>
       <ScalingBox
@@ -282,6 +287,7 @@ export const Menu = (props: AppProps) => {
       />
       <HeaderBox nvArraySelected={nvArraySelected} nvArray={nvArray} visible={setHeaderMenu} />
       <HeaderDialog nvArraySelected={nvArraySelected} isOpen={headerDialog} />
+      <KeyboardControlDialog isOpen={keyboardControlDialog} />
     </>
   )
 }
