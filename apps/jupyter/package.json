@@ -36,7 +36,7 @@
   "scripts": {
     "build": "pnpm run build:assets && pnpm run build:lib && pnpm run build:labextension:dev",
     "build:prod": "pnpm run clean && pnpm run build:assets && pnpm run build:lib:prod && pnpm run build:labextension",
-    "build:assets": "cd ../../packages/niivue-react && BUILD_TARGET=vscode pnpm build && mkdir -p ../../apps/jupyter/static/niivue && rm -rf ../../apps/jupyter/static/niivue/* && rsync -av --exclude='build' --exclude='*.html' --exclude='manifest.webmanifest' --exclude='registerSW.js' --exclude='sw.js' --exclude='workbox-*.js' dist/ ../../apps/jupyter/static/niivue/",
+    "build:assets": "cd ../../packages/niivue-react && BUILD_TARGET=vscode pnpm build && mkdir -p ../../apps/jupyter/static/niivue && rm -rf ../../apps/jupyter/static/niivue/* && rsync -rv --exclude='build' --exclude='*.html' --exclude='manifest.webmanifest' --exclude='registerSW.js' --exclude='sw.js' --exclude='workbox-*.js' dist/ ../../apps/jupyter/static/niivue/",
     "build:lib": "tsc --sourceMap",
     "build:lib:prod": "tsc",
     "build:labextension": "jupyter labextension build .",

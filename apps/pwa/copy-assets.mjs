@@ -23,6 +23,9 @@ async function copyAssets() {
   try {
     await fs.mkdir(pwaPublicDir, { recursive: true })
     for (const asset of assetsToCopy) {
+      try {
+        await fs.unlink(asset.dest)
+      } catch { }
       await fs.copyFile(asset.src, asset.dest)
       console.log(`Copied ${path.basename(asset.src)} to ${pwaPublicDir}`)
     }
