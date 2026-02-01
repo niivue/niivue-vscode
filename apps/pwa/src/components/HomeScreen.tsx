@@ -21,7 +21,7 @@ export const HomeScreen = () => (
       <i> This is currently only supported in chromium-based browsers.</i>
     </p>
 
-    <h2 className="text-2xl sm:text-3xl font-bold text-gray-200 p-2 px-4">Update App</h2>
+    <h2 className="text-2xl sm:text-3xl font-bold text-gray-200 py-2 px-4">Update App</h2>
     <p className="w-full sm:w-96 mb-4 text-m font-normal text-gray-300 px-4">
       The app will automatically check for updates and show a notification when a new version is
       available. You can also manually force an update by pressing{' '}
@@ -29,7 +29,7 @@ export const HomeScreen = () => (
       cache.
     </p>
 
-    <h2 className="text-2xl sm:text-3xl font-bold text-gray-200 p-2 px-4">Bookmarklet</h2>
+    <h2 className="text-2xl sm:text-3xl font-bold text-gray-200 py-2 px-4">Bookmarklet</h2>
     <p className="w-full sm:w-96 mb-4 text-m font-normal text-gray-300 px-4">
       Drag this link ⇨
       <a
@@ -52,7 +52,7 @@ export const HomeScreen = () => (
       </a>
     </p>
 
-    <h2 className="text-2xl sm:text-3xl font-bold text-gray-200 p-2 px-4">Data Privacy</h2>
+    <h2 className="text-2xl sm:text-3xl font-bold text-gray-200 py-2 px-4">Data Privacy</h2>
     <p className="w-full sm:w-96 mb-4 text-m font-normal text-gray-300 px-4">
       The vscode extension (or static webpage) runs locally and only accesses the images from your
       machine for displaying. No data is sent or stored remotely. The extension is a complete
@@ -71,7 +71,7 @@ export const HomeScreen = () => (
       </a>{' '}
       group.
     </p>
-    <footer className="text-xs p-2 px-4">
+    <footer className="text-xs py-2 px-4">
       <a
         href={__GIT_REPO_URL__ ? `${__GIT_REPO_URL__}/commit/${__GIT_HASH__}` : '#'}
         target="_blank"
