@@ -2,7 +2,7 @@ import imageUrl from '/resources/pwa_install.png'
 
 export const HomeScreen = () => (
   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-    <div className="max-w-2xl w-full h-full overflow-y-auto p-4 pointer-events-auto">
+    <div className="max-w-2xl w-full h-full overflow-y-auto p-4 pointer-events-auto" tabIndex={0}>
       <div className="max-w-xl mx-auto">
         <h2 className="text-3xl font-bold text-gray-200 mb-2">Drop Files to load images</h2>
         <p className="mb-6 text-m font-normal text-gray-300">
