@@ -174,6 +174,18 @@ async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSetting
       item.uri = [item.uri]
       item.data = [item.data]
     }
+
+    // Fetch remote DICOM files that don't have data
+    for (let i = 0; i < item.uri.length; i++) {
+      if (!item.data[i] || item.data[i] === '') {
+        const response = await fetch(item.uri[i])
+        if (!response.ok) {
+          throw new Error(`Failed to fetch DICOM file: ${response.status} ${response.statusText}`)
+        }
+        item.data[i] = await response.arrayBuffer()
+      }
+    }
+
     const dicomInput = item.uri.map((uri: any, i: number) => ({
       data: item.data[i],
       name: uri,

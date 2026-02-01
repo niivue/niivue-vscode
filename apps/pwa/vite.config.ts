@@ -115,6 +115,8 @@ export default defineConfig({
     }),
     VitePWA({
       registerType: 'prompt',
+      // Disable service worker in development to avoid fetch interference
+      injectRegister: isProd ? 'auto' : false,
       includeAssets: ['favicon.ico', '*.png'],
       workbox: {
         maximumFileSizeToCacheInBytes: 3000000,

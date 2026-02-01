@@ -43,7 +43,13 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: {
+        ...devices['Desktop Chrome'],
+        // Enable network access for external resources
+        launchOptions: {
+          args: ['--disable-web-security', '--disable-features=IsolateOrigins,site-per-process'],
+        },
+      },
     },
     // Temporarily disabled for faster CI runs - can be re-enabled as needed
     // {
