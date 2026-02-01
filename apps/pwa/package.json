@@ -30,11 +30,12 @@
   ],
   "scripts": {
     "dev": "vite",
-    "build": "node copy-assets.mjs && vite build",
+    "build": "node copy-assets.mjs && pnpm run generate:pwa-assets && vite build",
     "build:analyze": "pnpm run build && npx vite-bundle-analyzer",
     "preview": "vite preview",
     "watch": "vite build --watch",
     "clean": "rm -rf dist build",
+    "generate:pwa-assets": "pwa-assets-generator --preset minimal --root . --config pwa-assets.config.ts",
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "pnpm run lint -- --fix",
     "format": "prettier --write src/**/*.{ts,tsx,css,md}",
