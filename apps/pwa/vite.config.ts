@@ -29,7 +29,11 @@ const gitHash = execSync('git rev-parse --short HEAD').toString().trim()
 const buildDate = new Date().toISOString()
 const gitRepoUrl = getGitRepoUrl()
 const isProd = process.env.NODE_ENV === 'production'
-const baseUrl = isProd ? '/niivue-vscode/' : '/'
+// Support PR previews with PR_NUMBER environment variable
+const prNumber = process.env.PR_NUMBER
+const baseUrl = isProd 
+  ? (prNumber ? `/niivue-vscode/pr-${prNumber}/` : '/niivue-vscode/')
+  : '/'
 
 // https://vitejs.dev/config/
 export default defineConfig({
