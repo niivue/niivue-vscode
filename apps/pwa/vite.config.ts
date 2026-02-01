@@ -145,15 +145,25 @@ export default defineConfig({
         categories: ['medical', 'productivity', 'utilities'],
         icons: [
           {
-            src: 'niivue_icon_transparent_contrast.png',
-            sizes: '200x200',
+            src: 'pwa-64x64.png',
+            sizes: '64x64',
             type: 'image/png',
-            purpose: 'any maskable',
           },
           {
-            src: 'niivue_icon.png',
+            src: 'pwa-192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
+          },
+          {
+            src: 'pwa-512x512.png',
             sizes: '512x512',
             type: 'image/png',
+          },
+          {
+            src: 'maskable-icon-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable',
           },
         ],
         shortcuts: [
@@ -162,7 +172,7 @@ export default defineConfig({
             short_name: 'Example',
             description: 'Load MNI152 example image',
             url: `${baseUrl}?example=mni152`,
-            icons: [{ src: 'niivue_icon_transparent_contrast.png', sizes: '200x200' }],
+            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }],
           },
         ],
         file_handlers: [

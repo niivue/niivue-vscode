@@ -37,8 +37,9 @@ apps/vscode/niivue/
 # VS Code extension generated files
 apps/vscode/vscode-styles.css
 
-# PWA generated public assets (copied from niivue-react)
-apps/pwa/public/
+# PWA generated public assets
+apps/pwa/public/*
+!apps/pwa/public/logo.png
 
 # Python packaging
 *.egg-info/

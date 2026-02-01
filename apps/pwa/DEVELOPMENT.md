@@ -5,6 +5,7 @@ This guide covers development setup specific to the PWA application. For general
 ## Prerequisites
 
 See root DEVELOPMENT.md for:
+
 - Node.js and pnpm requirements (Node.js ≥18.0.0, pnpm ≥8.0.0)
 - Dev container setup (recommended)
 - Monorepo tools (Turborepo, pnpm workspaces)
@@ -52,9 +53,6 @@ pnpm dev:source
 ```
 
 This enables hot reload for changes in `packages/niivue-react/src/`.
-
-
-
 
 ## Project Structure
 
@@ -120,6 +118,31 @@ This runs: lint, type-check, test:coverage, test:e2e
 
 ## PWA Features
 
+### PWA Asset Generation
+
+The PWA uses [@vite-pwa/assets-generator](https://vite-pwa-org.netlify.app/assets-generator/) to automatically generate all required icons from a single source image according to modern best practices.
+
+**Source Image**: `public/logo.png` (transparent NiiVue icon)
+
+**Generated Icons**:
+
+- `favicon.ico` - Browser favicon (16x16, 32x32, 48x48)
+- `pwa-64x64.png` - PWA icon for small displays
+- `pwa-192x192.png` - Standard PWA icon
+- `pwa-512x512.png` - High-res PWA icon
+- `maskable-icon-512x512.png` - Maskable icon for Android adaptive icons
+- `apple-touch-icon-180x180.png` - iOS home screen icon
+
+**Regenerate Icons**:
+
+```bash
+pnpm run generate:pwa-assets
+```
+
+**Configuration**: `pwa-assets.config.ts`
+
+Icons are automatically generated during the build process. The generated icons in `public/` are excluded from git (except `logo.png`).
+
 ### Service Worker
 
 The app uses Workbox for service worker generation. Configuration in `vite.config.ts`:
@@ -127,18 +150,19 @@ The app uses Workbox for service worker generation. Configuration in `vite.confi
 ```typescript
 VitePWA({
   registerType: 'prompt',
-  includeAssets: ['favicon.ico', '*.png'],
+  includeAssets: ['favicon.ico', 'apple-touch-icon-180x180.png', '*.png'],
   workbox: {
     maximumFileSizeToCacheInBytes: 3000000,
     globPatterns: ['**/*.{js,css,html,ico,png,svg,wasm}'],
     // Runtime caching configuration...
-  }
+  },
 })
 ```
 
 ### Web App Manifest
 
 The PWA manifest defines app metadata, icons, and file associations:
+
 - Name: "NiiVue Medical Image Viewer"
 - Display mode: standalone
 - File handlers: `.nii`, `.dcm`, `.mha`, etc.
@@ -146,6 +170,7 @@ The PWA manifest defines app metadata, icons, and file associations:
 ### Offline Support
 
 The service worker caches:
+
 - Application shell (HTML, CSS, JS)
 - Static assets (images, icons)
 - External resources (with stale-while-revalidate strategy)
@@ -190,6 +215,7 @@ server: {
 ### GitHub Pages
 
 The app is automatically deployed to GitHub Pages:
+
 - URL: https://niivue.github.io/niivue-vscode/
 - Trigger: Push to main branch
 - Base path: `/niivue-vscode/` (configured in vite.config.ts)
@@ -212,7 +238,6 @@ Launch configurations available for debugging the dev server.
 2. Check registration status
 3. View cached resources in Cache Storage
 4. Test offline mode by checking "Offline"
-
 
 ## Code Style
 
@@ -242,4 +267,3 @@ Launch configurations available for debugging the dev server.
 - [Vitest Documentation](https://vitest.dev/)
 - [Playwright Documentation](https://playwright.dev/)
 - [Root Development Guide](../../DEVELOPMENT.md)
-
