@@ -83,7 +83,7 @@
   },
   "peerDependencies": {
     "@niivue/dicom-loader": "^1.0.0",
-    "@niivue/niivue": "^0.64.0",
+    "@niivue/niivue": "^0.67.0",
     "@preact/signals": "^2.0.1",
     "preact": "^10.24.1"
   }

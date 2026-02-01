@@ -151,7 +151,7 @@ From `package.json`:
 - `@jupyterlab/application` ^4.4.5
 - `@jupyterlab/docregistry` ^4.4.5
 - `@jupyterlab/filebrowser` ^4.4.9
-- `@niivue/niivue` ^0.62.1
+- `@niivue/niivue` ^0.67.0
 
 ### Development Dependencies
 
