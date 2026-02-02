@@ -70,6 +70,7 @@ export const NiiVueCanvas = ({
         nv.createOnLocationChange() // TODO fix, still required?
       })
       .catch((error) => {
+        console.error('Load Error:', error)
         nv.loadError = error.message || 'Unknown error loading file'
         nv.isLoading = false
         nv.body = null
@@ -137,6 +138,13 @@ async function getUserInput() {
   return matrixSize
 }
 
+const ensureArrayBuffer = (data: any) => {
+  if (Array.isArray(data) && data.length > 0 && typeof data[0] === 'number') {
+    return new Uint8Array(data).buffer
+  }
+  return data
+}
+
 async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSettings) {
   const isMincFile = (uri: string) => {
     const lowerUri = uri.toLowerCase()
@@ -174,8 +182,17 @@ async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSetting
       item.uri = [item.uri]
       item.data = [item.data]
     }
+    
+    // Fetch data if missing for any DICOM URL
+    for (let i = 0; i < item.uri.length; i++) {
+      if (!item.data[i] && typeof item.uri[i] === 'string' && item.uri[i].startsWith('http')) {
+        const response = await fetch(item.uri[i])
+        item.data[i] = await response.arrayBuffer()
+      }
+    }
+
     const dicomInput = item.uri.map((uri: any, i: number) => ({
-      data: item.data[i],
+      data: ensureArrayBuffer(item.data[i]),
       name: uri,
     }))
     const loadedFiles = await dicomLoader(dicomInput)
@@ -221,6 +238,6 @@ async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSetting
     nv.addMesh(mesh)
   } else {
     const meshList = [{ url: item.uri }]
-    nv.loadMeshes(meshList)
+    await nv.loadMeshes(meshList)
   }
 }

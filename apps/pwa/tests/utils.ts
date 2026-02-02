@@ -1,7 +1,7 @@
 export const BASE_URL = 'http://localhost:4000/'
 
 export async function loadTestImage(page) {
-  const testLink = 'https://niivue.github.io/niivue-demo-images/mni152.nii.gz'
+  const testLink = BASE_URL + 'lesion.nii.gz'
   // send a message to the app to load the test image
   const message = {
     type: 'addImage',
@@ -15,7 +15,7 @@ export async function loadTestImage(page) {
 }
 
 export async function load4DTestImage(page) {
-  const testLink = 'https://niivue.github.io/niivue-demo-images/pcasl.nii.gz'
+  const testLink = BASE_URL + 'pcasl.nii.gz'
   // send a message to the app to load the test image
   const message = {
     type: 'addImage',
@@ -29,7 +29,7 @@ export async function load4DTestImage(page) {
 }
 
 export async function loadOverlay(page) {
-  const testLink = 'https://niivue.github.io/niivue-demo-images/mni152.nii.gz'
+  const testLink = BASE_URL + 'pcasl.nii.gz'
   // send a message to the app to load the test image
   const message = {
     type: 'overlay',
@@ -43,7 +43,7 @@ export async function loadOverlay(page) {
 }
 
 export async function loadTestSurfImage(page) {
-  const testLink = 'https://niivue.github.io/niivue/images/BrainMesh_ICBM152.lh.mz3'
+  const testLink = BASE_URL + 'BrainMesh_ICBM152.lh.mz3'
   // send a message to the app to load the test image
   const message = {
     type: 'addImage',
@@ -60,9 +60,9 @@ export async function loadTestSurfOverlay(page, file_type) {
   let testLink
 
   if (file_type === 'curv') {
-    testLink = 'https://niivue.github.io/niivue/images/BrainMesh_ICBM152.lh.curv'
+    testLink = BASE_URL + 'BrainMesh_ICBM152.lh.curv'
   } else if (file_type === 'other') {
-    testLink = 'https://niivue.github.io/niivue/images/BrainMesh_ICBM152.lh.motor.mz3'
+    testLink = BASE_URL + 'BrainMesh_ICBM152.lh.motor.mz3'
   }
   // send a message to the app to load the test image
   const message = {

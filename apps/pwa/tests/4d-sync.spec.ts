@@ -67,13 +67,16 @@ test.describe('4D Sync', () => {
 
     // Press Right arrow to increment frame
     await page.keyboard.press('ArrowRight')
+    await page.waitForTimeout(100) // Wait for sync to propagate
 
     // Both should now be at frame 1
     await expect(vol0Indicator).toHaveText('1')
     await expect(vol1Indicator).toHaveText('1')
 
     // Press Left arrow to decrement frame
+    await canvas0.click() // Ensure focus is regained
     await page.keyboard.press('ArrowLeft')
+    await page.waitForTimeout(100) // Wait for sync to propagate
 
     // Both should now be back at frame 0
     await expect(vol0Indicator).toHaveText('0')

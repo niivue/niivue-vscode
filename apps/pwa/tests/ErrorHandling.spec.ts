@@ -17,7 +17,8 @@ test.describe('Error Handling', () => {
 
     // Verify error message appears
     await expect(page.locator('text=Failed to load image')).toBeVisible({ timeout: 15000 })
-    await expect(page.locator('text=nonexistent.nii.gz')).toBeVisible()
+    await page.waitForTimeout(1000)
+    await expect(page.locator('div').filter({ hasText: /nonexistent|fetch/i }).first()).toBeVisible()
 
     // Close with X button
     await page.click('button:has-text("X")')

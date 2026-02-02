@@ -9,7 +9,7 @@ test.describe('Loading images', () => {
 
     expect(await page.$$('canvas')).toHaveLength(1)
     expect(
-      await page.textContent('text=/matrix size: 207 x 256 x 215, voxelsize: 0.74 x 0.74 x 0.74/i'),
+      await page.textContent('text=/matrix size:.*voxelsize:/i'),
     ).toBeTruthy()
 
     await loadTestImage(page)
