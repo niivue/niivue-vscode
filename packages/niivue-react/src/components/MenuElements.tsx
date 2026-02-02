@@ -180,7 +180,7 @@ export const KeyboardControlDialog = ({ isOpen }: any) => {
       category: 'Menu & Dialog Controls',
       shortcuts: [
         { keys: 'ESC', description: 'Close menus and dialogs' },
-        { keys: 'Enter', description: 'Apply changes in ColorScale dialog' },
+        { keys: 'Enter', description: 'Apply scaling changes' },
       ],
     },
   ]
