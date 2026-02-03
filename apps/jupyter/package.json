@@ -1,6 +1,6 @@
 {
   "name": "@niivue/jupyter",
-  "version": "0.2.2",
+  "version": "0.2.4",
   "description": "A JupyterLab extension for viewing NIfTI files with Niivue",
   "keywords": [
     "jupyter",
