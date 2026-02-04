@@ -54,6 +54,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
         modelName: 'base64',
       },
       docManager,
+      app.serviceManager.serverSettings,
     )
 
     widgetFactory.widgetCreated.connect((_sender: any, widget: any) => {

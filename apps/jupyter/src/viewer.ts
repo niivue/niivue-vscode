@@ -1,25 +1,30 @@
-import { PageConfig } from '@jupyterlab/coreutils'
+import { PageConfig, URLExt } from '@jupyterlab/coreutils'
 import { IDocumentManager } from '@jupyterlab/docmanager'
 import { ABCWidgetFactory, DocumentRegistry, DocumentWidget } from '@jupyterlab/docregistry'
 import { FileDialog } from '@jupyterlab/filebrowser'
+import { ServerConnection } from '@jupyterlab/services'
 import { Widget } from '@lumino/widgets'
 
 function getJupyterUrl(path: string): string {
-  return PageConfig.getBaseUrl() + path
+  return URLExt.join(PageConfig.getBaseUrl(), path)
 }
 
 export class NiivueWidget extends Widget {
   private _context: DocumentRegistry.IContext<DocumentRegistry.IModel>
   protected _iframe: HTMLIFrameElement
   protected _docManager: IDocumentManager
+  private _serverSettings: ServerConnection.ISettings
+  private _onMessage: (event: MessageEvent) => void
 
   constructor(
     context: DocumentRegistry.IContext<DocumentRegistry.IModel>,
     docManager: IDocumentManager,
+    serverSettings: ServerConnection.ISettings,
   ) {
     super()
     this._context = context
     this._docManager = docManager
+    this._serverSettings = serverSettings
     this.addClass('jp-NiivueWidget')
 
     this._iframe = document.createElement('iframe')
@@ -28,7 +33,59 @@ export class NiivueWidget extends Widget {
     this._iframe.style.border = 'none'
     this.node.appendChild(this._iframe)
 
+    this._onMessage = this._handleIframeMessage.bind(this)
+
     this._initializeViewer()
+  }
+
+  private _fileUrl(filePath: string): string {
+    // Use serverSettings.baseUrl to respect JupyterHub prefixes like /user/<name>/
+    return URLExt.join(this._serverSettings.baseUrl, 'files', URLExt.encodeParts(filePath))
+  }
+
+  private _contentsUrl(path: string): string {
+    return URLExt.join(this._serverSettings.baseUrl, 'api/contents', URLExt.encodeParts(path))
+  }
+
+  private async _fetchArrayBuffer(url: string): Promise<ArrayBuffer> {
+    let response: Response
+    try {
+      response = await ServerConnection.makeRequest(url, { method: 'GET' }, this._serverSettings)
+    } catch (error) {
+      throw new Error(
+        `Request failed (${url}): ${error instanceof Error ? error.message : String(error)}`,
+      )
+    }
+
+    if (!response.ok) {
+      let detail = ''
+      try {
+        const text = await response.text()
+        if (text) {
+          detail = `; ${text.slice(0, 300)}`
+        }
+      } catch {
+        // ignore
+      }
+      throw new Error(`HTTP ${response.status} ${response.statusText}${detail}`)
+    }
+
+    const contentType = response.headers.get('content-type') ?? ''
+    if (contentType.includes('text/html')) {
+      throw new Error(
+        `Unexpected HTML response (likely auth redirect). Final URL: ${response.url || url}`,
+      )
+    }
+
+    return response.arrayBuffer()
+  }
+
+  private async _fetchJson<T>(url: string): Promise<T> {
+    const response = await ServerConnection.makeRequest(url, { method: 'GET' }, this._serverSettings)
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status} ${response.statusText}`)
+    }
+    return (await response.json()) as T
   }
 
   private _initializeViewer(): void {
@@ -42,7 +99,7 @@ export class NiivueWidget extends Widget {
       this._iframe.srcdoc = html
 
       // Set up message passing from iframe
-      window.addEventListener('message', this._handleIframeMessage.bind(this))
+      window.addEventListener('message', this._onMessage)
 
       // Set up message passing
       this._iframe.onload = () => {
@@ -132,16 +189,10 @@ export class NiivueWidget extends Widget {
       try {
         console.log('Reading file data for:', filePath)
 
-        // Use fetch to read the file directly
-        const fileUrl = getJupyterUrl('files/' + filePath)
+        const fileUrl = this._fileUrl(filePath)
         console.log('Fetching file from URL:', fileUrl)
 
-        const response = await fetch(fileUrl)
-        if (!response.ok) {
-          throw new Error(`Failed to fetch file: ${response.statusText}`)
-        }
-
-        const buffer = await response.arrayBuffer()
+        const buffer = await this._fetchArrayBuffer(fileUrl)
         console.log('Sending file data to iframe, size:', buffer.byteLength)
 
         // Send the file data directly to the iframe
@@ -157,7 +208,9 @@ export class NiivueWidget extends Widget {
         )
       } catch (error) {
         console.error('Error reading file:', error)
-        this._showError(`Could not load file: ${filePath}`)
+        this._showError(
+          `Could not load file: ${filePath}\n${error instanceof Error ? error.message : String(error)}`,
+        )
       }
     }
   }
@@ -260,13 +313,8 @@ export class NiivueWidget extends Widget {
   ): Promise<void> {
     if (this._iframe.contentWindow) {
       try {
-        const fileUrl = getJupyterUrl('files/' + filePath)
-        const response = await fetch(fileUrl)
-        if (!response.ok) {
-          throw new Error(`Failed to fetch file: ${response.statusText}`)
-        }
-
-        const buffer = await response.arrayBuffer()
+        const fileUrl = this._fileUrl(filePath)
+        const buffer = await this._fetchArrayBuffer(fileUrl)
 
         this._iframe.contentWindow.postMessage(
           {
@@ -281,7 +329,9 @@ export class NiivueWidget extends Widget {
         )
       } catch (error) {
         console.error('Error reading file:', error)
-        this._showError(`Could not load file: ${filePath}`)
+        this._showError(
+          `Could not load file: ${filePath}\n${error instanceof Error ? error.message : String(error)}`,
+        )
       }
     }
   }
@@ -340,24 +390,15 @@ export class NiivueWidget extends Widget {
       const dirPath = result.value[0].path
       try {
         // List all files in the directory
-        const response = await fetch(getJupyterUrl('api/contents/' + dirPath))
-        if (!response.ok) {
-          throw new Error(`Failed to list directory: ${response.statusText}`)
-        }
-
-        const dirData = await response.json()
+        const dirData = await this._fetchJson<any>(this._contentsUrl(dirPath))
         const files = dirData.content.filter((item: any) => item.type === 'file')
 
         if (files.length > 0) {
           // Load all files
           const fileBuffers = await Promise.all(
             files.map(async (file: any) => {
-              const fileUrl = getJupyterUrl('files/' + file.path)
-              const fileResponse = await fetch(fileUrl)
-              if (!fileResponse.ok) {
-                throw new Error(`Failed to fetch file: ${fileResponse.statusText}`)
-              }
-              return fileResponse.arrayBuffer()
+              const fileUrl = this._fileUrl(file.path)
+              return this._fetchArrayBuffer(fileUrl)
             }),
           )
 
@@ -374,7 +415,9 @@ export class NiivueWidget extends Widget {
         }
       } catch (error) {
         console.error('Error reading DICOM folder:', error)
-        this._showError(`Could not load DICOM folder: ${dirPath}`)
+        this._showError(
+          `Could not load DICOM folder: ${dirPath}\n${error instanceof Error ? error.message : String(error)}`,
+        )
       }
     }
   }
@@ -386,7 +429,7 @@ export class NiivueWidget extends Widget {
 
   dispose(): void {
     // Remove message listener
-    window.removeEventListener('message', this._handleIframeMessage.bind(this))
+    window.removeEventListener('message', this._onMessage)
     // Cleanup iframe
     if (this._iframe) {
       this._iframe.remove()
@@ -398,17 +441,23 @@ export class NiivueWidget extends Widget {
 export namespace NiivueViewer {
   export class Factory extends ABCWidgetFactory<DocumentWidget> {
     private _docManager: IDocumentManager
+    private _serverSettings: ServerConnection.ISettings
 
-    constructor(options: DocumentRegistry.IWidgetFactoryOptions, docManager: IDocumentManager) {
+    constructor(
+      options: DocumentRegistry.IWidgetFactoryOptions,
+      docManager: IDocumentManager,
+      serverSettings: ServerConnection.ISettings,
+    ) {
       super(options)
       this._docManager = docManager
+      this._serverSettings = serverSettings
     }
 
     protected createNewWidget(
       context: DocumentRegistry.IContext<DocumentRegistry.IModel>,
     ): DocumentWidget {
       console.log('Creating new Niivue widget for context:', context)
-      const content = new NiivueWidget(context, this._docManager)
+      const content = new NiivueWidget(context, this._docManager, this._serverSettings)
       const widget = new DocumentWidget({ content, context })
       return widget
     }
@@ -422,7 +471,7 @@ export namespace NiivueViewer {
     docManager: IDocumentManager,
     selectedItems: any[],
   ): void {
-    const widget = new CompareWidget(selectedItems, docManager)
+    const widget = new CompareWidget(selectedItems, docManager, app.serviceManager.serverSettings)
     widget.title.label = `Compare (${selectedItems.length} images)`
     widget.title.closable = true
 
@@ -438,7 +487,7 @@ export namespace NiivueViewer {
 class CompareWidget extends NiivueWidget {
   private _selectedItems: any[]
 
-  constructor(selectedItems: any[], docManager: IDocumentManager) {
+  constructor(selectedItems: any[], docManager: IDocumentManager, serverSettings: ServerConnection.ISettings) {
     // Create a dummy context - we won't use it for compare view
     const dummyContext = {
       path: '',
@@ -446,7 +495,7 @@ class CompareWidget extends NiivueWidget {
       pathChanged: { connect: () => {} },
     } as any
 
-    super(dummyContext, docManager)
+    super(dummyContext, docManager, serverSettings)
     this._selectedItems = selectedItems
     this.removeClass('jp-NiivueWidget')
     this.addClass('jp-NiivueCompareWidget')
