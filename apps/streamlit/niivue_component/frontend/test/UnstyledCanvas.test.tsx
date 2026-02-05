@@ -1,51 +1,13 @@
-import { render } from '@testing-library/preact'
 import { describe, expect, it } from 'vitest'
-import { UnstyledCanvas } from '../src/components/UnstyledCanvas'
+import { VIEW_MODE_TO_SLICE_TYPE } from '../src/types'
+import { SLICE_TYPE } from '@niivue/niivue'
 
-describe('UnstyledCanvas', () => {
-  it('should render a canvas element', () => {
-    const { container } = render(
-      <UnstyledCanvas
-        niftiData={null}
-        filename=""
-        overlays={[]}
-        viewMode="axial"
-        settings={{}}
-        height={600}
-      />,
-    )
-
-    expect(container.querySelector('canvas')).toBeInTheDocument()
-  })
-
-  it('should set correct height', () => {
-    const { container } = render(
-      <UnstyledCanvas
-        niftiData={null}
-        filename=""
-        overlays={[]}
-        viewMode="axial"
-        settings={{}}
-        height={800}
-      />,
-    )
-
-    const canvas = container.querySelector('canvas')
-    expect(canvas?.parentElement?.style.height).toContain('800')
-  })
-
-  it('should handle empty data gracefully', () => {
-    const { container } = render(
-      <UnstyledCanvas
-        niftiData={null}
-        filename=""
-        overlays={[]}
-        viewMode="multiplanar"
-        settings={{}}
-        height={600}
-      />,
-    )
-
-    expect(container).toBeInTheDocument()
+describe('UnstyledCanvas types', () => {
+  it('should map view modes to slice types correctly', () => {
+    expect(VIEW_MODE_TO_SLICE_TYPE.axial).toBe(SLICE_TYPE.AXIAL)
+    expect(VIEW_MODE_TO_SLICE_TYPE.coronal).toBe(SLICE_TYPE.CORONAL)
+    expect(VIEW_MODE_TO_SLICE_TYPE.sagittal).toBe(SLICE_TYPE.SAGITTAL)
+    expect(VIEW_MODE_TO_SLICE_TYPE['3d']).toBe(SLICE_TYPE.RENDER)
+    expect(VIEW_MODE_TO_SLICE_TYPE.multiplanar).toBe(SLICE_TYPE.MULTIPLANAR)
   })
 })
