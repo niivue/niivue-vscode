@@ -1,26 +1,49 @@
 import { render } from 'preact'
 import { useEffect, useState } from 'preact/hooks'
 import { App, useAppState } from '@niivue/react'
+import type { AppProps } from '@niivue/react'
 import { Niivue, SLICE_TYPE } from '@niivue/niivue'
 import './matlab.css'
 
 // Global state for communication with MATLAB
-let appPropsGlobal: any = null
-let htmlComponentRef: any = null
+let appPropsGlobal: AppProps | null = null
+let htmlComponentRef: MatlabHTMLComponent | null = null
+
+// MATLAB HTML component interface
+interface MatlabHTMLComponent {
+  Data: unknown
+  addEventListener: (event: string, handler: (event: Event) => void) => void
+}
+
+// MATLAB message types
+interface MatlabMessage {
+  type: string
+  payload?: {
+    data?: string
+    name?: string
+    colormap?: string
+    opacity?: number
+    index?: number
+    x?: number
+    y?: number
+    z?: number
+    sliceType?: number
+  }
+}
 
 // MATLAB bridge setup function - called by MATLAB's uihtml component
 declare global {
   interface Window {
-    setup: (htmlComponent: any) => void
+    setup: (htmlComponent: MatlabHTMLComponent) => void
   }
 }
 
-window.setup = (htmlComponent: any) => {
+window.setup = (htmlComponent: MatlabHTMLComponent) => {
   htmlComponentRef = htmlComponent
 
   // Listen for DataChanged event from MATLAB
-  htmlComponent.addEventListener('DataChanged', (event: any) => {
-    const data = htmlComponent.Data
+  htmlComponent.addEventListener('DataChanged', (_event: Event) => {
+    const data = htmlComponent.Data as MatlabMessage
     if (data && appPropsGlobal) {
       handleMatlabMessage(data, appPropsGlobal)
     }
@@ -31,30 +54,49 @@ window.setup = (htmlComponent: any) => {
 }
 
 // Handle messages from MATLAB
-function handleMatlabMessage(data: any, appProps: any) {
+function handleMatlabMessage(data: MatlabMessage, appProps: AppProps) {
   const { type, payload } = data
   const { nvArray } = appProps
+
+  if (!payload) {
+    return
+  }
 
   switch (type) {
     case 'loadVolume':
       loadVolumeFromBase64(payload, appProps)
       break
     case 'setOpacity':
-      if (nvArray.value.length > 0 && nvArray.value[0].volumes.length > payload.index) {
+      if (
+        typeof payload.index === 'number' &&
+        typeof payload.opacity === 'number' &&
+        nvArray.value.length > 0 &&
+        nvArray.value[0].volumes.length > payload.index
+      ) {
         nvArray.value[0].volumes[payload.index].opacity = payload.opacity
         nvArray.value[0].updateGLVolume()
         nvArray.value = [...nvArray.value]
       }
       break
     case 'setColormap':
-      if (nvArray.value.length > 0 && nvArray.value[0].volumes.length > payload.index) {
+      if (
+        typeof payload.index === 'number' &&
+        typeof payload.colormap === 'string' &&
+        nvArray.value.length > 0 &&
+        nvArray.value[0].volumes.length > payload.index
+      ) {
         nvArray.value[0].volumes[payload.index].colormap = payload.colormap
         nvArray.value[0].updateGLVolume()
         nvArray.value = [...nvArray.value]
       }
       break
     case 'updateCrosshairs':
-      if (nvArray.value.length > 0) {
+      if (
+        typeof payload.x === 'number' &&
+        typeof payload.y === 'number' &&
+        typeof payload.z === 'number' &&
+        nvArray.value.length > 0
+      ) {
         nvArray.value[0].scene.crosshairPos = [payload.x, payload.y, payload.z]
         nvArray.value[0].drawScene()
         nvArray.value = [...nvArray.value]
@@ -64,7 +106,7 @@ function handleMatlabMessage(data: any, appProps: any) {
       loadMeshFromBase64(payload, appProps)
       break
     case 'setSliceType':
-      appProps.sliceType.value = payload.sliceType || SLICE_TYPE.MULTIPLANAR
+      appProps.sliceType.value = payload.sliceType ?? SLICE_TYPE.MULTIPLANAR
       break
     case 'clearVolumes':
       if (nvArray.value.length > 0) {
@@ -79,7 +121,11 @@ function handleMatlabMessage(data: any, appProps: any) {
 }
 
 // Load volume from Base64 encoded data
-async function loadVolumeFromBase64(payload: any, appProps: any) {
+async function loadVolumeFromBase64(payload: MatlabMessage['payload'], appProps: AppProps) {
+  if (!payload || !payload.data) {
+    return
+  }
+
   const { nvArray } = appProps
 
   // Initialize canvas if needed
@@ -104,7 +150,7 @@ async function loadVolumeFromBase64(payload: any, appProps: any) {
       }
 
       const nv = nvArray.value[0]
-      const name = payload.name || 'volume.nii'
+      const name = payload.name ?? 'volume.nii'
 
       // Load the volume
       await nv.loadFromArrayBuffer(bytes.buffer, name)
@@ -135,7 +181,11 @@ async function loadVolumeFromBase64(payload: any, appProps: any) {
 }
 
 // Load mesh from Base64 encoded data
-async function loadMeshFromBase64(payload: any, appProps: any) {
+async function loadMeshFromBase64(payload: MatlabMessage['payload'], appProps: AppProps) {
+  if (!payload || !payload.data) {
+    return
+  }
+
   const { nvArray } = appProps
 
   if (nvArray.value.length > 0) {
@@ -150,7 +200,7 @@ async function loadMeshFromBase64(payload: any, appProps: any) {
       }
 
       const nv = nvArray.value[0]
-      const name = payload.name || 'mesh.obj'
+      const name = payload.name ?? 'mesh.obj'
 
       await nv.loadMeshFromBuffer(bytes.buffer, name)
       nvArray.value = [...nvArray.value]
@@ -165,7 +215,7 @@ async function loadMeshFromBase64(payload: any, appProps: any) {
 }
 
 // Send message to MATLAB
-function sendToMatlab(data: any) {
+function sendToMatlab(data: { type: string; position?: number[]; message?: string }) {
   if (htmlComponentRef) {
     try {
       htmlComponentRef.Data = data
@@ -178,7 +228,16 @@ function sendToMatlab(data: any) {
 // Main App component with MATLAB integration
 function MatlabApp() {
   const [isReady, setIsReady] = useState(false)
-  const appProps = useAppState({})
+  const appProps = useAppState({
+    showCrosshairs: true,
+    interpolation: true,
+    colorbar: false,
+    radiologicalConvention: false,
+    zoomDragMode: false,
+    defaultVolumeColormap: 'gray',
+    defaultOverlayColormap: 'redyell',
+    defaultMeshOverlayColormap: 'hsv',
+  })
 
   useEffect(() => {
     appPropsGlobal = appProps
