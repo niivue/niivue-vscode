@@ -26,6 +26,7 @@ jobs:
       jupyter: ${{ steps.filter.outputs.jupyter }}
       vscode: ${{ steps.filter.outputs.vscode }}
       streamlit: ${{ steps.filter.outputs.streamlit }}
+      matlab: ${{ steps.filter.outputs.matlab }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -46,6 +47,8 @@ jobs:
             streamlit:
               - 'apps/streamlit/**'
               - 'packages/**'
+            matlab:
+              - 'packages/niivue-matlab/**'
 
   lint-and-typecheck:
     runs-on: ubuntu-latest
@@ -234,3 +237,65 @@ jobs:
           name: playwright-report
           path: apps/pwa/playwright-report/
           retention-days: 30
+
+  test-matlab:
+    needs: [changes, build]
+    if: needs.changes.outputs.matlab == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        matlab-version: ['R2023b']
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Restore build artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            apps/*/dist
+            apps/*/build
+            apps/*/lib
+            packages/*/dist
+          key: build-artifacts-${{ github.sha }}
+
+      - name: Setup MATLAB
+        uses: matlab-actions/setup-matlab@v2
+        with:
+          release: ${{ matrix.matlab-version }}
+
+      - name: Create test results directory
+        run: mkdir -p test-results
+
+      - name: Run MATLAB tests
+        uses: matlab-actions/run-command@v2
+        with:
+          command: |
+            cd('packages/niivue-matlab/matlab/tests');
+            try
+              results = runTests();
+            catch e
+              disp(getReport(e));
+              exit(1);
+            end
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: matlab-test-results
+          path: test-results/
+          retention-days: 30
+

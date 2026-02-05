@@ -1,0 +1,87 @@
+name: MATLAB Tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/niivue-matlab/**'
+  pull_request:
+    branches: ['*']
+    paths:
+      - 'packages/niivue-matlab/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+env:
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+
+jobs:
+  matlab-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        matlab-version: ['R2023b', 'R2024a', 'R2024b']
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build niivue-matlab package
+        run: pnpm --filter @niivue/matlab build
+
+      - name: Setup MATLAB
+        uses: matlab-actions/setup-matlab@v2
+        with:
+          release: ${{ matrix.matlab-version }}
+          products: |
+            MATLAB
+
+      - name: Create test results directory
+        run: mkdir -p test-results
+
+      - name: Run MATLAB tests
+        uses: matlab-actions/run-command@v2
+        with:
+          command: |
+            cd('packages/niivue-matlab/matlab/tests');
+            results = runTests();
+            exit(0);
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: matlab-test-results-${{ matrix.matlab-version }}
+          path: test-results/
+          retention-days: 30
+
+  test-summary:
+    needs: matlab-tests
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check test results
+        run: |
+          if [ "${{ needs.matlab-tests.result }}" != "success" ]; then
+            echo "MATLAB tests failed or were cancelled"
+            exit 1
+          fi
+          echo "All MATLAB tests passed successfully"
