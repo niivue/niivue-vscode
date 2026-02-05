@@ -13,7 +13,7 @@ importers:
         version: 9.38.0
       '@preact/preset-vite':
         specifier: ^2.10.2
-        version: 2.10.2(@babel/core@7.28.5)(preact@10.27.2)(vite@7.1.12(@types/node@24.9.1)(jiti@1.21.7)(less@4.4.2)(terser@5.44.0)(yaml@2.8.1))
+        version: 2.10.2(@babel/core@7.28.5)(preact@10.28.3)(vite@7.1.12(@types/node@24.9.1)(jiti@1.21.7)(less@4.4.2)(terser@5.44.0)(yaml@2.8.1))
       '@types/node':
         specifier: ^24.9.1
         version: 24.9.1
@@ -283,6 +283,43 @@ importers:
       tailwindcss:
         specifier: ^3.4.18
         version: 3.4.18(yaml@2.8.1)
+
+  packages/niivue-matlab:
+    dependencies:
+      '@niivue/niivue':
+        specifier: ^0.67.0
+        version: 0.67.0
+      '@niivue/react':
+        specifier: workspace:*
+        version: link:../niivue-react
+      preact:
+        specifier: ^10.28.1
+        version: 10.28.3
+    devDependencies:
+      '@preact/preset-vite':
+        specifier: ^2.10.2
+        version: 2.10.2(@babel/core@7.28.5)(preact@10.28.3)(vite@7.1.12(@types/node@24.9.1)(jiti@1.21.7)(less@4.4.2)(terser@5.44.0)(yaml@2.8.1))
+      '@types/node':
+        specifier: ^24.9.1
+        version: 24.9.1
+      autoprefixer:
+        specifier: ^10.4.20
+        version: 10.4.21(postcss@8.5.6)
+      postcss:
+        specifier: ^8.4.49
+        version: 8.5.6
+      tailwindcss:
+        specifier: ^3.4.17
+        version: 3.4.18(yaml@2.8.1)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vite:
+        specifier: ^7.1.12
+        version: 7.1.12(@types/node@24.9.1)(jiti@1.21.7)(less@4.4.2)(terser@5.44.0)(yaml@2.8.1)
+      vite-plugin-singlefile:
+        specifier: ^2.0.2
+        version: 2.3.0(rollup@4.52.5)(vite@7.1.12(@types/node@24.9.1)(jiti@1.21.7)(less@4.4.2)(terser@5.44.0)(yaml@2.8.1))
 
   packages/niivue-react:
     dependencies:
@@ -1579,6 +1616,9 @@ packages:
 
   '@niivue/niivue@0.64.0':
     resolution: {integrity: sha512-cj7QTlCHZpFiUjZ8DH0M5SzdvbM2VQAjVgvif7xLaRWraiv2MqWdRYcSvF6+KYA0eN9cNVWkEy01NcW4TT0x+w==}
+
+  '@niivue/niivue@0.67.0':
+    resolution: {integrity: sha512-j08xdhKEkInUWpuIyJ5jborf++RmUa1TEOGzFh/fxTsXR+2fAlocY8guPaNzxh3N0XSTyDKcwKjbw8VZfV87Ew==}
 
   '@node-rs/crc32-android-arm-eabi@1.10.6':
     resolution: {integrity: sha512-vZAMuJXm3TpWPOkkhxdrofWDv+Q+I2oO7ucLRbXyAPmXFNDhHtBxbO1rk9Qzz+M3eep8ieS4/+jCL1Q0zacNMQ==}
@@ -4855,6 +4895,9 @@ packages:
   preact@10.27.2:
     resolution: {integrity: sha512-5SYSgFKSyhCbk6SrXyMpqjb5+MQBgfvEKE/OC+PujcY34sOpqtr+0AZQtPYx5IA6VxynQ7rUPCtKzyovpj9Bpg==}
 
+  preact@10.28.3:
+    resolution: {integrity: sha512-tCmoRkPQLpBeWzpmbhryairGnhW9tKV6c6gr/w+RhoRoKEJwsjzipwp//1oCpGPOchvSLaAPlpcJi9MwMmoPyA==}
+
   prebuild-install@7.1.3:
     resolution: {integrity: sha512-8Mf2cbV7x1cXPUILADGI3wuhfqWvtiLA1iclTDbFRZkgRQS0NqsPZphna9V+HyTEadheuPmjaJMsbzKQFOzLug==}
     engines: {node: '>=10'}
@@ -5946,6 +5989,13 @@ packages:
     peerDependenciesMeta:
       '@vite-pwa/assets-generator':
         optional: true
+
+  vite-plugin-singlefile@2.3.0:
+    resolution: {integrity: sha512-DAcHzYypM0CasNLSz/WG0VdKOCxGHErfrjOoyIPiNxTPTGmO6rRD/te93n1YL/s+miXq66ipF1brMBikf99c6A==}
+    engines: {node: '>18.0.0'}
+    peerDependencies:
+      rollup: ^4.44.1
+      vite: ^5.4.11 || ^6.0.0 || ^7.0.0
 
   vite-plugin-virtual@0.4.0:
     resolution: {integrity: sha512-4N/vrRynD+DV4Uy2XtYxKgtujc/GQy4R7OWiuvDkMLAzS/JMCyn/L35fnaHcMMNMpO2wuXBj/FzqmJeZvy5Jwg==}
@@ -8301,6 +8351,18 @@ snapshots:
     optionalDependencies:
       '@rollup/rollup-linux-x64-gnu': 4.52.5
 
+  '@niivue/niivue@0.67.0':
+    dependencies:
+      '@lukeed/uuid': 2.0.1
+      '@ungap/structured-clone': 1.3.0
+      array-equal: 1.0.2
+      fflate: 0.8.2
+      gl-matrix: 3.4.4
+      nifti-reader-js: 0.8.0
+      zarrita: 0.5.4
+    optionalDependencies:
+      '@rollup/rollup-linux-x64-gnu': 4.52.5
+
   '@node-rs/crc32-android-arm-eabi@1.10.6':
     optional: true
 
@@ -8401,6 +8463,22 @@ snapshots:
       - preact
       - supports-color
 
+  '@preact/preset-vite@2.10.2(@babel/core@7.28.5)(preact@10.28.3)(vite@7.1.12(@types/node@24.9.1)(jiti@1.21.7)(less@4.4.2)(terser@5.44.0)(yaml@2.8.1))':
+    dependencies:
+      '@babel/core': 7.28.5
+      '@babel/plugin-transform-react-jsx': 7.27.1(@babel/core@7.28.5)
+      '@babel/plugin-transform-react-jsx-development': 7.27.1(@babel/core@7.28.5)
+      '@prefresh/vite': 2.4.11(preact@10.28.3)(vite@7.1.12(@types/node@24.9.1)(jiti@1.21.7)(less@4.4.2)(terser@5.44.0)(yaml@2.8.1))
+      '@rollup/pluginutils': 4.2.1
+      babel-plugin-transform-hook-names: 1.0.2(@babel/core@7.28.5)
+      debug: 4.4.3
+      picocolors: 1.1.1
+      vite: 7.1.12(@types/node@24.9.1)(jiti@1.21.7)(less@4.4.2)(terser@5.44.0)(yaml@2.8.1)
+      vite-prerender-plugin: 0.5.12(vite@7.1.12(@types/node@24.9.1)(jiti@1.21.7)(less@4.4.2)(terser@5.44.0)(yaml@2.8.1))
+    transitivePeerDependencies:
+      - preact
+      - supports-color
+
   '@preact/signals-core@1.12.1': {}
 
   '@preact/signals@2.3.2(preact@10.27.2)':
@@ -8414,6 +8492,10 @@ snapshots:
     dependencies:
       preact: 10.27.2
 
+  '@prefresh/core@1.5.8(preact@10.28.3)':
+    dependencies:
+      preact: 10.28.3
+
   '@prefresh/utils@1.2.1': {}
 
   '@prefresh/vite@2.4.11(preact@10.27.2)(vite@7.1.12(@types/node@24.9.1)(jiti@1.21.7)(less@4.4.2)(terser@5.44.0)(yaml@2.8.1))':
@@ -8424,6 +8506,18 @@ snapshots:
       '@prefresh/utils': 1.2.1
       '@rollup/pluginutils': 4.2.1
       preact: 10.27.2
+      vite: 7.1.12(@types/node@24.9.1)(jiti@1.21.7)(less@4.4.2)(terser@5.44.0)(yaml@2.8.1)
+    transitivePeerDependencies:
+      - supports-color
+
+  '@prefresh/vite@2.4.11(preact@10.28.3)(vite@7.1.12(@types/node@24.9.1)(jiti@1.21.7)(less@4.4.2)(terser@5.44.0)(yaml@2.8.1))':
+    dependencies:
+      '@babel/core': 7.28.5
+      '@prefresh/babel-plugin': 0.5.2
+      '@prefresh/core': 1.5.8(preact@10.28.3)
+      '@prefresh/utils': 1.2.1
+      '@rollup/pluginutils': 4.2.1
+      preact: 10.28.3
       vite: 7.1.12(@types/node@24.9.1)(jiti@1.21.7)(less@4.4.2)(terser@5.44.0)(yaml@2.8.1)
     transitivePeerDependencies:
       - supports-color
@@ -11873,6 +11967,8 @@ snapshots:
 
   preact@10.27.2: {}
 
+  preact@10.28.3: {}
+
   prebuild-install@7.1.3:
     dependencies:
       detect-libc: 2.1.2
@@ -13130,6 +13226,12 @@ snapshots:
       workbox-window: 7.3.0
     transitivePeerDependencies:
       - supports-color
+
+  vite-plugin-singlefile@2.3.0(rollup@4.52.5)(vite@7.1.12(@types/node@24.9.1)(jiti@1.21.7)(less@4.4.2)(terser@5.44.0)(yaml@2.8.1)):
+    dependencies:
+      micromatch: 4.0.8
+      rollup: 4.52.5
+      vite: 7.1.12(@types/node@24.9.1)(jiti@1.21.7)(less@4.4.2)(terser@5.44.0)(yaml@2.8.1)
 
   vite-plugin-virtual@0.4.0(vite@7.1.12(@types/node@24.9.1)(jiti@1.21.7)(less@4.4.2)(terser@5.44.0)(yaml@2.8.1)):
     dependencies:
