@@ -17,7 +17,7 @@
     "@niivue/niivue": "^0.64.0",
     "@niivue/react": "workspace:*",
     "@preact/signals": "^2.3.2",
-    "preact": "^10.27.2",
+    "preact": "^10.28.2",
     "streamlit-component-lib": "^2.0.0"
   },
   "devDependencies": {
