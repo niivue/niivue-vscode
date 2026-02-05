@@ -47,8 +47,16 @@ classdef Controller < handle
             % Handle figure resize
             obj.Figure.SizeChangedFcn = @(~,~) obj.onResize();
             
-            % Wait for viewer to be ready
-            pause(0.5); % Give viewer time to initialize
+            % Wait for viewer to be ready (with timeout)
+            timeout = 5; % 5 second timeout
+            startTime = tic;
+            while ~obj.ViewerReady && toc(startTime) < timeout
+                pause(0.1);
+            end
+            
+            if ~obj.ViewerReady
+                warning('Viewer initialization timed out. Some operations may fail.');
+            end
         end
         
         function obj = addVolume(obj, filepath, varargin)

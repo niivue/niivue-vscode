@@ -19,6 +19,7 @@ classdef Component < matlab.ui.componentcontainer.ComponentContainer
         HTMLComponent        % uihtml component
         Controller          % Internal controller
         Grid                % Grid layout
+        ViewerReady = false % Flag indicating viewer is ready
     end
     
     events (HasCallbackProperty, NotifyAccess = protected)
@@ -47,8 +48,16 @@ classdef Component < matlab.ui.componentcontainer.ComponentContainer
             % Set up data change callback
             obj.HTMLComponent.DataChangedFcn = @obj.onDataChanged;
             
-            % Wait for initialization
-            pause(0.5);
+            % Wait for viewer to be ready (with timeout)
+            timeout = 5; % 5 second timeout
+            startTime = tic;
+            while ~obj.ViewerReady && toc(startTime) < timeout
+                pause(0.1);
+            end
+            
+            if ~obj.ViewerReady
+                warning('Viewer initialization timed out.');
+            end
         end
         
         function update(obj)
@@ -98,6 +107,9 @@ classdef Component < matlab.ui.componentcontainer.ComponentContainer
             
             if isfield(data, 'type')
                 switch data.type
+                    case 'viewerReady'
+                        obj.ViewerReady = true;
+                        
                     case 'crosshairUpdate'
                         if isfield(data, 'position')
                             obj.CrosshairPos = data.position;

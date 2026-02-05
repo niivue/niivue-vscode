@@ -2,7 +2,8 @@ import { render } from 'preact'
 import { useEffect, useState } from 'preact/hooks'
 import { App, useAppState } from '@niivue/react'
 import type { AppProps } from '@niivue/react'
-import { Niivue, SLICE_TYPE } from '@niivue/niivue'
+import { ExtendedNiivue } from '@niivue/react'
+import { NVMesh, SLICE_TYPE } from '@niivue/niivue'
 import './matlab.css'
 
 // Global state for communication with MATLAB
@@ -132,7 +133,7 @@ async function loadVolumeFromBase64(payload: MatlabMessage['payload'], appProps:
   if (nvArray.value.length === 0) {
     const container = document.getElementById('niivue-canvas-0')
     if (container) {
-      const nv = new Niivue()
+      const nv = new ExtendedNiivue({})
       nvArray.value = [nv]
       nv.attachToCanvas(container as HTMLCanvasElement)
     }
@@ -168,7 +169,7 @@ async function loadVolumeFromBase64(payload: MatlabMessage['payload'], appProps:
       // Send crosshair position back to MATLAB
       sendToMatlab({
         type: 'crosshairUpdate',
-        position: nv.scene.crosshairPos,
+        position: Array.from(nv.scene.crosshairPos) as [number, number, number],
       })
     } catch (error) {
       console.error('Error loading volume:', error)
@@ -202,7 +203,9 @@ async function loadMeshFromBase64(payload: MatlabMessage['payload'], appProps: A
       const nv = nvArray.value[0]
       const name = payload.name ?? 'mesh.obj'
 
-      await nv.loadMeshFromBuffer(bytes.buffer, name)
+      // Load mesh using NVMesh.readMesh
+      const mesh = await NVMesh.readMesh(bytes.buffer, name, nv.gl)
+      nv.addMesh(mesh)
       nvArray.value = [...nvArray.value]
     } catch (error) {
       console.error('Error loading mesh:', error)
@@ -243,18 +246,31 @@ function MatlabApp() {
     appPropsGlobal = appProps
     setIsReady(true)
 
+    // Track previous crosshair position to avoid sending duplicate updates
+    let lastCrosshairPos: number[] | null = null
+
     // Listen for crosshair changes in the NiiVue instance
     const interval = setInterval(() => {
       if (appProps.nvArray.value.length > 0) {
         const nv = appProps.nvArray.value[0]
         if (nv.scene && nv.scene.crosshairPos) {
-          sendToMatlab({
-            type: 'crosshairUpdate',
-            position: nv.scene.crosshairPos,
-          })
+          const currentPos = nv.scene.crosshairPos
+          // Only send if position has changed
+          if (
+            !lastCrosshairPos ||
+            lastCrosshairPos[0] !== currentPos[0] ||
+            lastCrosshairPos[1] !== currentPos[1] ||
+            lastCrosshairPos[2] !== currentPos[2]
+          ) {
+            lastCrosshairPos = [...currentPos]
+            sendToMatlab({
+              type: 'crosshairUpdate',
+              position: Array.from(currentPos) as [number, number, number],
+            })
+          }
         }
       }
-    }, 100) // Update every 100ms
+    }, 100) // Check every 100ms
 
     return () => clearInterval(interval)
   }, [appProps])
