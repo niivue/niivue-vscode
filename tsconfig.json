@@ -27,6 +27,9 @@
     },
     {
       "path": "./packages/niivue-react"
+    },
+    {
+      "path": "./packages/niivue-matlab"
     }
   ]
 }
