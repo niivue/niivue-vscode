@@ -1,4 +1,0 @@
-# Allow the build directory for this component
-# (it needs to be committed for distribution)
-!build/
-!build/**

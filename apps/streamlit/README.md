@@ -187,8 +187,20 @@ niivue_component/
 │   │   └── utils.ts
 │   ├── vite.config.ts
 │   └── package.json
-└── build/                      # Compiled assets
+└── build/                      # Compiled assets (generated, not in git)
 ```
+
+## 🔧 Building the Component
+
+The build files are **not committed to git**. To build the component locally:
+
+```bash
+cd niivue_component/frontend
+pnpm install
+pnpm build
+```
+
+This generates the `build/` directory with compiled assets that are included in the Python package during distribution.
 
 ## 📄 License
 

@@ -42,13 +42,15 @@ niivue_component/
 │   ├── tsconfig.json                  # TypeScript configuration
 │   ├── tailwind.config.js             # Tailwind configuration
 │   └── package.json                   # Modern dependencies
-└── build/                             # Production build output
+└── build/                             # Production build output (generated, not in git)
     ├── index.html
     └── assets/
         ├── index.js       (1.3MB optimized)
         ├── index.css      (5.2KB)
         └── *.wasm         (DICOM support)
 ```
+
+**Note:** The `build/` directory is generated during the build process and is not committed to git. It's created by running `pnpm build` in the frontend directory.
 
 ## New Features
 
@@ -106,6 +108,18 @@ niivue_viewer(
 - Virtual module for dcm2niix worker inlining
 - Workspace-aware alias resolution
 - Optimized production builds with terser
+
+**Build Artifacts:**
+
+The `build/` directory is **generated during the build process** and is **not committed to git**. It's created locally or during CI/CD for package distribution. To build:
+
+```bash
+cd apps/streamlit/niivue_component/frontend
+pnpm install
+pnpm build
+```
+
+The Python package (`pyproject.toml`) includes `frontend/build/**/*` as package data, so the built assets are bundled with the distributed package.
 
 **Key Challenge Solved:**
 pnpm workspace dependency resolution required explicit path aliases and build script adjustments to properly locate shared packages.
