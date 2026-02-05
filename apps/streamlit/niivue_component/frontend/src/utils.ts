@@ -2,7 +2,12 @@ import { NVImage } from '@niivue/niivue'
 import { AppProps } from '@niivue/react'
 import { StreamlitArgs } from './types'
 
-export async function loadImageData(args: StreamlitArgs, appProps: AppProps) {
+export async function loadImageData(
+  args: StreamlitArgs,
+  appProps: AppProps,
+  retryCount = 0,
+  maxRetries = 50,
+) {
   const { nvArray, settings } = appProps
 
   if (!args.nifti_data) {
@@ -19,11 +24,15 @@ export async function loadImageData(args: StreamlitArgs, appProps: AppProps) {
     }
     const niftiArrayBuffer = bytes.buffer
 
-    // Create or get the niivue instance
+    // Create or get the niivue instance with retry logic
     let nv = nvArray.value[0]
     if (!nv || !nv.gl) {
-      // Need to wait for canvas to be ready
-      setTimeout(() => loadImageData(args, appProps), 100)
+      if (retryCount >= maxRetries) {
+        console.error('Canvas not ready after maximum retries')
+        return
+      }
+      // Wait and retry with exponential backoff
+      setTimeout(() => loadImageData(args, appProps, retryCount + 1, maxRetries), 100)
       return
     }
 

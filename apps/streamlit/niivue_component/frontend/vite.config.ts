@@ -26,6 +26,10 @@ export default defineConfig({
             const wasmBase64 = wasmContent.toString('base64')
 
             // Create a modified dcm2niix module that uses inline WASM
+            // WORKAROUND: This approach uses string replacement on the dcm2niix module.
+            // It relies on exact matching of the function string. If dcm2niix updates
+            // change the output, this may need to be updated. Consider this a temporary
+            // solution until a more robust plugin-based approach can be implemented.
             const modifiedDcm2niix = dcm2niixContent.replace(
               'function findWasmBinary(){if(Module["locateFile"]){var f="dcm2niix.wasm";if(!isDataURI(f)){return locateFile(f)}return f}return new URL("dcm2niix.wasm",import.meta.url).href}',
               `function findWasmBinary(){return "data:application/wasm;base64,${wasmBase64}"}`,
