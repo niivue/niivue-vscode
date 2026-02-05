@@ -72,6 +72,27 @@ python3 -m pytest tests/ -v
 - **Configuration:** `pytest.ini`
 - **Dependencies:** streamlit, streamlit-component-lib
 
+### CI/CD Integration
+
+Tests run automatically in GitHub Actions on all pull requests and pushes to main:
+
+**Workflow:** `.github/workflows/ci.yml`
+
+**Test Job:** `test-streamlit`
+- Triggered when changes are detected in `apps/streamlit/**` or `packages/**`
+- Runs on: `ubuntu-latest` with Node.js 22 and Python 3.12
+- Steps:
+  1. Install pnpm and npm dependencies
+  2. Restore build artifacts from cache
+  3. Install Python test dependencies (pytest, streamlit, streamlit-component-lib)
+  4. Run frontend tests: `pnpm turbo test:frontend --filter=@niivue/streamlit`
+  5. Run Python tests: `pnpm turbo test:python --filter=@niivue/streamlit`
+
+**Turbo Configuration:** `turbo.json`
+- `test:frontend` - Runs vitest tests for TypeScript/React components
+- `test:python` - Runs pytest tests for Python API
+- `test` - Runs both frontend and Python tests
+
 ## Code Quality
 
 ### Code Review

@@ -20,6 +20,16 @@
       "outputs": ["coverage/**"],
       "inputs": ["src/**/*.tsx", "src/**/*.ts", "test/**/*.ts", "tests/**/*.ts"]
     },
+    "test:frontend": {
+      "dependsOn": ["build"],
+      "outputs": ["coverage/**"],
+      "inputs": ["src/**/*.tsx", "src/**/*.ts", "test/**/*.ts"]
+    },
+    "test:python": {
+      "dependsOn": [],
+      "outputs": [],
+      "inputs": ["tests/**/*.py", "**/__init__.py"]
+    },
     "lint": {
       "dependsOn": ["^build"],
       "outputs": []

@@ -188,6 +188,52 @@ jobs:
           jupyter labextension list
           python -m jupyterlab.browser_check
 
+  test-streamlit:
+    needs: [changes, build]
+    if: needs.changes.outputs.streamlit == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Restore build artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            apps/*/dist
+            apps/*/build
+            apps/*/lib
+            packages/*/dist
+          key: build-artifacts-${{ github.sha }}
+
+      - name: Install Python test dependencies
+        run: |
+          cd apps/streamlit
+          python -m pip install pytest streamlit streamlit-component-lib
+
+      - name: Run Streamlit frontend tests
+        run: pnpm turbo test:frontend --filter=@niivue/streamlit
+
+      - name: Run Streamlit Python tests
+        run: pnpm turbo test:python --filter=@niivue/streamlit
+
   e2e-tests:
     needs: [changes, build]
     if: needs.changes.outputs.pwa == 'true'
