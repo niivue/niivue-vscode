@@ -1,13 +1,9 @@
-import { PageConfig, URLExt } from '@jupyterlab/coreutils'
 import { IDocumentManager } from '@jupyterlab/docmanager'
 import { ABCWidgetFactory, DocumentRegistry, DocumentWidget } from '@jupyterlab/docregistry'
 import { FileDialog } from '@jupyterlab/filebrowser'
 import { ServerConnection } from '@jupyterlab/services'
 import { Widget } from '@lumino/widgets'
-
-function getJupyterUrl(path: string): string {
-  return URLExt.join(PageConfig.getBaseUrl(), path)
-}
+import { fetchArrayBuffer, fetchJson, getContentsUrl, getFileUrl, getJupyterUrl } from './url-utils'
 
 export class NiivueWidget extends Widget {
   private _context: DocumentRegistry.IContext<DocumentRegistry.IModel>
@@ -36,56 +32,6 @@ export class NiivueWidget extends Widget {
     this._onMessage = this._handleIframeMessage.bind(this)
 
     this._initializeViewer()
-  }
-
-  private _fileUrl(filePath: string): string {
-    // Use serverSettings.baseUrl to respect JupyterHub prefixes like /user/<name>/
-    return URLExt.join(this._serverSettings.baseUrl, 'files', URLExt.encodeParts(filePath))
-  }
-
-  private _contentsUrl(path: string): string {
-    return URLExt.join(this._serverSettings.baseUrl, 'api/contents', URLExt.encodeParts(path))
-  }
-
-  private async _fetchArrayBuffer(url: string): Promise<ArrayBuffer> {
-    let response: Response
-    try {
-      response = await ServerConnection.makeRequest(url, { method: 'GET' }, this._serverSettings)
-    } catch (error) {
-      throw new Error(
-        `Request failed (${url}): ${error instanceof Error ? error.message : String(error)}`,
-      )
-    }
-
-    if (!response.ok) {
-      let detail = ''
-      try {
-        const text = await response.text()
-        if (text) {
-          detail = `; ${text.slice(0, 300)}`
-        }
-      } catch {
-        // ignore
-      }
-      throw new Error(`HTTP ${response.status} ${response.statusText}${detail}`)
-    }
-
-    const contentType = response.headers.get('content-type') ?? ''
-    if (contentType.includes('text/html')) {
-      throw new Error(
-        `Unexpected HTML response (likely auth redirect). Final URL: ${response.url || url}`,
-      )
-    }
-
-    return response.arrayBuffer()
-  }
-
-  private async _fetchJson<T>(url: string): Promise<T> {
-    const response = await ServerConnection.makeRequest(url, { method: 'GET' }, this._serverSettings)
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status} ${response.statusText}`)
-    }
-    return (await response.json()) as T
   }
 
   private _initializeViewer(): void {
@@ -189,10 +135,10 @@ export class NiivueWidget extends Widget {
       try {
         console.log('Reading file data for:', filePath)
 
-        const fileUrl = this._fileUrl(filePath)
+        const fileUrl = getFileUrl(this._serverSettings.baseUrl, filePath)
         console.log('Fetching file from URL:', fileUrl)
 
-        const buffer = await this._fetchArrayBuffer(fileUrl)
+        const buffer = await fetchArrayBuffer(fileUrl, this._serverSettings)
         console.log('Sending file data to iframe, size:', buffer.byteLength)
 
         // Send the file data directly to the iframe
@@ -255,28 +201,34 @@ export class NiivueWidget extends Widget {
     try {
       const result = await FileDialog.getOpenFiles({
         manager: this._docManager,
-        filter: (model: any) => {
+        filter: (model) => {
           // Allow directories for navigation
           if (model.type === 'directory') {
-            return true
+            return { score: 1 }
           }
-
           // Allow common neuroimaging file extensions
-          const ext = model.name.toLowerCase()
-          return (
-            ext.endsWith('.nii') ||
-            ext.endsWith('.nii.gz') ||
-            ext.endsWith('.dcm') ||
-            ext.endsWith('.mgh') ||
-            ext.endsWith('.mgz') ||
-            ext.endsWith('.mha') ||
-            ext.endsWith('.mhd') ||
-            ext.endsWith('.nrrd') ||
-            ext.endsWith('.nhdr') ||
-            ext.endsWith('.mnc') ||
-            ext.endsWith('.v') ||
-            ext.endsWith('.v16')
-          )
+          if (model.type === 'file') {
+            const name = model.name.toLowerCase()
+            if (
+              name.endsWith('.nii') ||
+              name.endsWith('.nii.gz') ||
+              name.endsWith('.dcm') ||
+              name.endsWith('.mgh') ||
+              name.endsWith('.mgz') ||
+              name.endsWith('.mha') ||
+              name.endsWith('.mhd') ||
+              name.endsWith('.nrrd') ||
+              name.endsWith('.nhdr') ||
+              name.endsWith('.mnc') ||
+              name.endsWith('.v') ||
+              name.endsWith('.v16') ||
+              name.endsWith('.mz3') ||
+              name.endsWith('.gii')
+            ) {
+              return { score: 1 }
+            }
+          }
+          return null
         },
       })
 
@@ -313,8 +265,8 @@ export class NiivueWidget extends Widget {
   ): Promise<void> {
     if (this._iframe.contentWindow) {
       try {
-        const fileUrl = this._fileUrl(filePath)
-        const buffer = await this._fetchArrayBuffer(fileUrl)
+        const fileUrl = getFileUrl(this._serverSettings.baseUrl, filePath)
+        const buffer = await fetchArrayBuffer(fileUrl, this._serverSettings)
 
         this._iframe.contentWindow.postMessage(
           {
@@ -341,28 +293,34 @@ export class NiivueWidget extends Widget {
     try {
       const result = await FileDialog.getOpenFiles({
         manager: this._docManager,
-        filter: (model: any) => {
+        filter: (model) => {
           // Allow directories for navigation
           if (model.type === 'directory') {
-            return true
+            return { score: 1 }
           }
-
           // Allow common neuroimaging file extensions
-          const ext = model.name.toLowerCase()
-          return (
-            ext.endsWith('.nii') ||
-            ext.endsWith('.nii.gz') ||
-            ext.endsWith('.dcm') ||
-            ext.endsWith('.mgh') ||
-            ext.endsWith('.mgz') ||
-            ext.endsWith('.mha') ||
-            ext.endsWith('.mhd') ||
-            ext.endsWith('.nrrd') ||
-            ext.endsWith('.nhdr') ||
-            ext.endsWith('.mnc') ||
-            ext.endsWith('.v') ||
-            ext.endsWith('.v16')
-          )
+          if (model.type === 'file') {
+            const name = model.name.toLowerCase()
+            if (
+              name.endsWith('.nii') ||
+              name.endsWith('.nii.gz') ||
+              name.endsWith('.dcm') ||
+              name.endsWith('.mgh') ||
+              name.endsWith('.mgz') ||
+              name.endsWith('.mha') ||
+              name.endsWith('.mhd') ||
+              name.endsWith('.nrrd') ||
+              name.endsWith('.nhdr') ||
+              name.endsWith('.mnc') ||
+              name.endsWith('.v') ||
+              name.endsWith('.v16') ||
+              name.endsWith('.mz3') ||
+              name.endsWith('.gii')
+            ) {
+              return { score: 1 }
+            }
+          }
+          return null
         },
       })
 
@@ -390,15 +348,15 @@ export class NiivueWidget extends Widget {
       const dirPath = result.value[0].path
       try {
         // List all files in the directory
-        const dirData = await this._fetchJson<any>(this._contentsUrl(dirPath))
+        const dirData = await fetchJson<any>(getContentsUrl(this._serverSettings.baseUrl, dirPath), this._serverSettings)
         const files = dirData.content.filter((item: any) => item.type === 'file')
 
         if (files.length > 0) {
           // Load all files
           const fileBuffers = await Promise.all(
             files.map(async (file: any) => {
-              const fileUrl = this._fileUrl(file.path)
-              return this._fetchArrayBuffer(fileUrl)
+              const fileUrl = getFileUrl(this._serverSettings.baseUrl, file.path)
+              return fetchArrayBuffer(fileUrl, this._serverSettings)
             }),
           )
 

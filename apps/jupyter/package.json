@@ -1,6 +1,6 @@
 {
   "name": "@niivue/jupyter",
-  "version": "0.2.4",
+  "version": "0.2.6",
   "description": "A JupyterLab extension for viewing NIfTI files with Niivue",
   "keywords": [
     "jupyter",
@@ -53,7 +53,8 @@
     "lint:prettier": "prettier \"**/*.{ts,tsx,js,jsx,css,json,md}\" --check",
     "lint:style": "stylelint --cache \"style/**/*.css\"",
     "format": "prettier \"**/*.{ts,tsx,js,jsx,css,json,md}\" --write",
-    "test": "echo \"Error: no tests specified\" && exit 0",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "release:test": "pnpm run clean:all && pnpm run build:prod && python -m build --wheel && python -m twine upload --repository testpypi dist/*",
     "release:prod": "pnpm run clean:all && pnpm run build:prod && python -m build --wheel && python -m twine upload dist/*",
     "release:check": "pnpm run clean:all && pnpm run build:prod && python -m build --wheel && python -m twine check dist/*"
@@ -91,6 +92,7 @@
     "stylelint-csstree-validator": "^3.0.0",
     "stylelint-prettier": "^5.0.3",
     "typescript-eslint": "^8.46.2",
+    "vitest": "^3.2.4",
     "yjs": "^13.6.27"
   },
   "sideEffects": [
