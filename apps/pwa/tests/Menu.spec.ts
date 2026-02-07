@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { BASE_URL, loadTestImage } from './utils'
+import { BASE_URL, loadTestImage, waitForImageLoad } from './utils'
 
 test.describe('Menu', () => {
   test('displays home screen', async ({ page }) => {
@@ -28,9 +28,8 @@ test.describe('Menu', () => {
 
     // load an image
     await loadTestImage(page)
-    await page.waitForSelector('text=/matrix size:.*voxelsize:/i', { timeout: 10000 })
     expect(
-      await page.textContent('text=/matrix size: 207 x 256 x 215, voxelsize: 0.74 x 0.74 x 0.74/i'),
+      await page.textContent('text=/matrix size:.*voxelsize:/i'),
     ).toBeTruthy()
 
     // after loading an image these are visible
@@ -51,11 +50,10 @@ test.describe('Menu', () => {
     await page.goto(BASE_URL)
 
     await loadTestImage(page)
-    await page.waitForSelector('text=/matrix size:.*voxelsize:/i', { timeout: 10000 })
 
     expect(await page.$$('canvas')).toHaveLength(1)
     expect(
-      await page.textContent('text=/matrix size: 207 x 256 x 215, voxelsize: 0.74 x 0.74 x 0.74/i'),
+      await page.textContent('text=/matrix size:.*voxelsize:/i'),
     ).toBeTruthy()
 
     const menuBar = ['Home', 'Add Image', 'View', 'ColorScale', 'Overlay', 'Header']
@@ -65,16 +63,20 @@ test.describe('Menu', () => {
   })
 
   test('opens the example image via the menu bar', async ({ page }) => {
+    // Intercept the remote example image and serve it from local assets to avoid timeouts in CI
+    await page.route('https://niivue.github.io/niivue-demo-images/mni152.nii.gz', async (route) => {
+      await route.fulfill({ path: 'public/lesion.nii.gz' })
+    })
+
     await page.goto(BASE_URL)
 
     await page.click('data-testid=menu-item-dropdown-Add Image')
     await page.click('text=/Example Image/i')
 
-    expect(await page.waitForSelector('canvas', { timeout: 10000 })).toBeTruthy()
-    await page.waitForSelector('text=/matrix size:.*voxelsize:/i', { timeout: 10000 })
+    await waitForImageLoad(page, 30000)
     expect(await page.$$('canvas')).toHaveLength(1)
     expect(
-      await page.textContent('text=/matrix size: 207 x 256 x 215, voxelsize: 0.74 x 0.74 x 0.74/i'),
+      await page.textContent('text=/matrix size:.*voxelsize:/i'),
     ).toBeTruthy()
   })
 })

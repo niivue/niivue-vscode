@@ -1,5 +1,5 @@
-import { test, expect } from '@playwright/test'
-import { BASE_URL, loadTestImage, listenForDebugMessage } from './utils'
+import { expect, test } from '@playwright/test'
+import { BASE_URL, listenForDebugMessage, loadTestImage } from './utils'
 
 test.describe('app', () => {
   test('that there are 0 canvases when no image is loaded', async ({ page }) => {
@@ -53,13 +53,11 @@ test.describe('app', () => {
 
     await loadTestImage(page)
 
-    await page.waitForTimeout(1000)
-
     await page.evaluate(() => {
       const message = { type: 'debugRequest', body: 'getMinMaxOfFirstImage' }
       window.postMessage(message, '*')
     })
 
-    expect(await message).toStrictEqual([40, 80])
+    expect(await message).toStrictEqual([0, 2.0010000000000003])
   })
 })

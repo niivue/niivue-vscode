@@ -38,9 +38,6 @@ importers:
       globals:
         specifier: 16.4.0
         version: 16.4.0
-      husky:
-        specifier: ^9.1.7
-        version: 9.1.7
       lint-staged:
         specifier: ^16.2.6
         version: 16.2.6
@@ -159,6 +156,9 @@ importers:
       typescript-eslint:
         specifier: ^8.46.2
         version: 8.46.2(eslint@9.38.0(jiti@1.21.7))(typescript@5.9.3)
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/node@24.9.1)(@vitest/ui@3.2.4)(jiti@1.21.7)(jsdom@26.1.0)(less@4.4.2)(terser@5.44.0)(yaml@2.8.1)
       yjs:
         specifier: ^13.6.27
         version: 13.6.27

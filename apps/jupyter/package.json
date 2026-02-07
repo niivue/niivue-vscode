@@ -1,6 +1,6 @@
 {
   "name": "@niivue/jupyter",
-  "version": "0.2.2",
+  "version": "0.2.6",
   "description": "A JupyterLab extension for viewing NIfTI files with Niivue",
   "keywords": [
     "jupyter",
@@ -36,7 +36,7 @@
   "scripts": {
     "build": "pnpm run build:assets && pnpm run build:lib && pnpm run build:labextension:dev",
     "build:prod": "pnpm run clean && pnpm run build:assets && pnpm run build:lib:prod && pnpm run build:labextension",
-    "build:assets": "cd ../../packages/niivue-react && BUILD_TARGET=vscode pnpm build && mkdir -p ../../apps/jupyter/static/niivue && rm -rf ../../apps/jupyter/static/niivue/* && rsync -av --exclude='build' --exclude='*.html' --exclude='manifest.webmanifest' --exclude='registerSW.js' --exclude='sw.js' --exclude='workbox-*.js' dist/ ../../apps/jupyter/static/niivue/",
+    "build:assets": "cd ../../packages/niivue-react && BUILD_TARGET=vscode pnpm build && mkdir -p ../../apps/jupyter/static/niivue && rm -rf ../../apps/jupyter/static/niivue/* && rsync -rv --exclude='build' --exclude='*.html' --exclude='manifest.webmanifest' --exclude='registerSW.js' --exclude='sw.js' --exclude='workbox-*.js' dist/ ../../apps/jupyter/static/niivue/",
     "build:lib": "tsc --sourceMap",
     "build:lib:prod": "tsc",
     "build:labextension": "jupyter labextension build .",
@@ -53,7 +53,8 @@
     "lint:prettier": "prettier \"**/*.{ts,tsx,js,jsx,css,json,md}\" --check",
     "lint:style": "stylelint --cache \"style/**/*.css\"",
     "format": "prettier \"**/*.{ts,tsx,js,jsx,css,json,md}\" --write",
-    "test": "echo \"Error: no tests specified\" && exit 0",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "release:test": "pnpm run clean:all && pnpm run build:prod && python -m build --wheel && python -m twine upload --repository testpypi dist/*",
     "release:prod": "pnpm run clean:all && pnpm run build:prod && python -m build --wheel && python -m twine upload dist/*",
     "release:check": "pnpm run clean:all && pnpm run build:prod && python -m build --wheel && python -m twine check dist/*"
@@ -91,6 +92,7 @@
     "stylelint-csstree-validator": "^3.0.0",
     "stylelint-prettier": "^5.0.3",
     "typescript-eslint": "^8.46.2",
+    "vitest": "^3.2.4",
     "yjs": "^13.6.27"
   },
   "sideEffects": [

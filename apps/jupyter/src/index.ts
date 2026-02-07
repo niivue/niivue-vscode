@@ -42,7 +42,6 @@ const plugin: JupyterFrontEndPlugin<void> = {
       'mz3',
       'gii',
       'mnc',
-      'mnc.gz',
       'npy',
       'npz',
     ]
@@ -55,6 +54,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
         modelName: 'base64',
       },
       docManager,
+      app.serviceManager.serverSettings,
     )
 
     widgetFactory.widgetCreated.connect((_sender: any, widget: any) => {
@@ -221,12 +221,6 @@ const plugin: JupyterFrontEndPlugin<void> = {
         name: 'mnc',
         displayName: 'MINC File',
         extensions: ['.mnc'],
-        mimeTypes: ['application/octet-stream'],
-      },
-      {
-        name: 'mnc.gz',
-        displayName: 'Compressed MINC File',
-        extensions: ['.mnc.gz'],
         mimeTypes: ['application/octet-stream'],
       },
       {

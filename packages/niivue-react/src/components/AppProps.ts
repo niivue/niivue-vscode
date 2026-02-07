@@ -17,6 +17,7 @@ export interface AppProps {
   sliceType: Signal<number>
   location: Signal<string>
   settings: Signal<NiiVueSettings>
+  syncedIndices: Signal<Set<number>>
 }
 
 export interface ScalingOpts {
@@ -34,5 +35,6 @@ export function useAppState(initialSettings: NiiVueSettings): AppProps {
     sliceType: useSignal<number>(SLICE_TYPE.MULTIPLANAR), // all views
     location: useSignal(''),
     settings: useSignal<NiiVueSettings>(initialSettings),
+    syncedIndices: useSignal<Set<number>>(new Set()),
   }
 }

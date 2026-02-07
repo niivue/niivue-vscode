@@ -44,8 +44,7 @@
     "precommit": "pnpm versions:check && pnpm format:check",
     "update:safe": "pnpm update --recursive && pnpm versions:fix && turbo build",
     "update:all": "pnpm update --recursive --latest && pnpm versions:fix && turbo build",
-    "update:check": "pnpm dlx syncpack list && echo '\n📋 Run pnpm update:safe for safe updates or pnpm update:all for latest versions'",
-    "prepare": "husky"
+    "update:check": "pnpm dlx syncpack list && echo '\\n📋 Run pnpm update:safe for safe updates or pnpm update:all for latest versions'"
   },
   "devDependencies": {
     "@eslint/js": "^9.38.0",
@@ -58,7 +57,6 @@
     "eslint": "^9.38.0",
     "eslint-config-prettier": "^10.1.8",
     "globals": "16.4.0",
-    "husky": "^9.1.7",
     "lint-staged": "^16.2.6",
     "prettier": "^3.6.2",
     "syncpack": "^13.0.4",

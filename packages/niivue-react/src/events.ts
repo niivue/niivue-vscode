@@ -26,6 +26,7 @@ export async function handleMessage(message: any, appProps: AppProps) {
       {
         const nv = getUnitinializedNvInstance(nvArray)
         nv.body = body
+        nv.uri = body.uri
         nv.isNew = false
       }
       break
@@ -326,8 +327,18 @@ export class ExtendedNiivue extends Niivue {
   }
   isNew = true
   isLoaded = false
+  isLoading = false // Prevent duplicate loadVolume calls during re-renders
+  loadError = ''
+  uri = ''
   key = NaN
   body = null
+  onFrameUpdate = (frame: number) => { }
+  setFrame4D(id: string, frame: number) {
+    super.setFrame4D(id, frame)
+    if (this.volumes[0]) {
+      this.onFrameUpdate(this.volumes[0].frame4D)
+    }
+  }
   mouseMoveListener(e: MouseEvent) {
     super.mouseMoveListener(e)
     if (this.uiData.mouseButtonRightDown || this.uiData.mouseButtonCenterDown) {

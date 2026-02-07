@@ -11,6 +11,7 @@ data/
 *.mnc*
 static/
 images/
+.pnpm-store/
 
 # Build artifacts
 *.timestamp-*.mjs

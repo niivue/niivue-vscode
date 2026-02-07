@@ -11,6 +11,9 @@ export function getNames(nvArray: Niivue[]) {
     if (item.meshes.length > 0) {
       return decodeURIComponent(item.meshes[0].name)
     }
+    if ((item as any).uri) {
+      return decodeURIComponent((item as any).uri)
+    }
     return ''
   })
 

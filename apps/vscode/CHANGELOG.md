@@ -1,8 +1,14 @@
 # Change Log
 
-All notable changes to the "niivue" extension will be documented in this file.
+## [2.6.2] - 2026-02-02
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
+### Added
+- New 4D navigation panel.
+- Improved error handling in canvas with descriptive error messages.
+- Added support for `.mnc` files in JupyterLab extension.
+
+### Fixed
+- Fixed double loading issue for images where files would open twice.
 
 ## [Unreleased]
 

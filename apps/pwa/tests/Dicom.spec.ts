@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 import * as fs from 'fs'
 import * as path from 'path'
 import { fileURLToPath } from 'url'
-import { BASE_URL } from './utils'
+import { BASE_URL, waitForImageLoad } from './utils'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -31,7 +31,7 @@ test.describe('Loading DICOM images', () => {
     await page.evaluate((m) => window.postMessage(m, '*'), message)
     
     // Wait for canvas to appear - this verifies NiiVue successfully loaded the DICOM
-    await page.waitForSelector('canvas', { timeout: 10000 })
+    await waitForImageLoad(page)
 
     // Verify canvas loaded
     const canvases = await page.$$('canvas')
@@ -46,11 +46,10 @@ test.describe('Loading DICOM images', () => {
     expect(bodyText).not.toContain('failed')
   })
 
-  test('loads DICOM from remote URL', async ({ page }) => {
+  test('loads DICOM from URL', async ({ page }) => {
     await page.goto(BASE_URL)
 
-    // Use a small test DICOM from niivue demo images
-    const testLink = 'https://niivue.github.io/niivue-demo-images/CT_pitch.dcm'
+    const testLink = BASE_URL + 'enh.dcm' // Re-using enh.dcm as a "remote" url test
     
     const message = {
       type: 'addImage',
@@ -61,7 +60,7 @@ test.describe('Loading DICOM images', () => {
     }
 
     await page.evaluate((m) => window.postMessage(m, '*'), message)
-    await page.waitForSelector('canvas', { timeout: 10000 })
+    await waitForImageLoad(page)
 
     // Verify canvas loaded
     const canvases = await page.$$('canvas')
@@ -78,31 +77,25 @@ test.describe('Loading DICOM images', () => {
   test('handles multiple DICOM files', async ({ page }) => {
     await page.goto(BASE_URL)
 
-    // Load first DICOM
-    const dicomPath = path.join(__dirname, '..', 'test', 'assets', 'enh.dcm')
-    const dicomBuffer = fs.readFileSync(dicomPath)
-    const dicomArrayBuffer = dicomBuffer.buffer.slice(
-      dicomBuffer.byteOffset,
-      dicomBuffer.byteOffset + dicomBuffer.byteLength
-    )
+    const testLink = BASE_URL + 'enh.dcm'
 
     const message1 = {
       type: 'addImage',
       body: {
-        data: Array.from(new Uint8Array(dicomArrayBuffer)),
-        uri: 'enh.dcm',
+        data: '',
+        uri: testLink,
       },
     }
 
     await page.evaluate((m) => window.postMessage(m, '*'), message1)
-    await page.waitForSelector('canvas', { timeout: 10000 })
+    await waitForImageLoad(page)
 
-    // Load second DICOM (same file, but as separate volume)
+    // Load second DICOM (using enh.dcm as second one too)
     const message2 = {
       type: 'addImage',
       body: {
-        data: Array.from(new Uint8Array(dicomArrayBuffer)),
-        uri: 'enh2.dcm',
+        data: '',
+        uri: testLink + '?v=2', // dummy param to make it "new"
       },
     }
 

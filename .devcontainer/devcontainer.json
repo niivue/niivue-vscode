@@ -49,7 +49,8 @@
   
   // Forward SSH agent instead of mounting SSH keys (more secure)
   "containerEnv": {
-    "SSH_AUTH_SOCK": "${localEnv:SSH_AUTH_SOCK}"
+    "SSH_AUTH_SOCK": "${localEnv:SSH_AUTH_SOCK}",
+    "PATH": "/home/vscode/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
   },
   
   "forwardPorts": [
