@@ -154,6 +154,17 @@ The hooks are set up automatically when you run `pnpm install`.
 
 Issues and pull-requests are welcome.
 
+### PR Preview Deployments
+
+When you open a pull request that modifies the PWA (`apps/pwa/` or `packages/`), an automatic preview deployment is created:
+
+- **Automatic Deployment**: Preview is built and deployed to GitHub Pages
+- **Preview URL**: `https://niivue.github.io/niivue-vscode/pr-{NUMBER}/`
+- **Auto-Updated**: Rebuilds when you push new commits
+- **Auto-Cleaned**: Removed when the PR is closed
+
+A bot will comment on your PR with the preview URL once deployment completes. This allows reviewers to test your changes in a production-like environment without manually building locally.
+
 ## Resources
 
 - [Turborepo Documentation](https://turbo.build/repo/docs)

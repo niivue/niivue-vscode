@@ -2,31 +2,38 @@ import imageUrl from '/resources/pwa_install.png'
 
 export const HomeScreen = () => (
   <>
-    <h2 className="text-3xl font-bold text-gray-200 p-2">Drop Files to load images</h2>
-    <p className="w-96 mb-4 text-m font-normal text-gray-300 pl-2">
+    <h2 className="text-2xl sm:text-3xl font-bold text-gray-200 p-2 px-4">
+      Drop Files to load images
+    </h2>
+    <p className="w-full sm:w-96 mb-4 text-m font-normal text-gray-300 px-4">
       Drag and drop files to an empty space on this window. Many medical image and mesh formats are
       supported.
     </p>
 
-    <h2 className="text-3xl font-bold text-gray-200 p-2">Install as local App</h2>
-    <p className="w-96 mb-4 text-m font-normal text-gray-300 pl-2">
-      <img className="float-right" src={imageUrl} style={{ width: '150px', height: '90px' }} />
+    <h2 className="text-2xl sm:text-3xl font-bold text-gray-200 p-2 px-4">Install as local App</h2>
+    <p className="w-full sm:w-96 mb-4 text-m font-normal text-gray-300 px-4">
+      <img
+        className="float-right ml-2 w-32 sm:w-40 h-auto"
+        src={imageUrl}
+        alt="Install button example"
+      />
       To install niivue-vscode as a local app, click the install button in the address bar.
       <i> This is currently only supported in chromium-based browsers.</i>
     </p>
 
-    <h2 className="text-3xl font-bold text-gray-200 p-2">Update App</h2>
-    <p className="w-96 mb-4 text-m font-normal text-gray-300 pl-2">
+    <h2 className="text-2xl sm:text-3xl font-bold text-gray-200 py-2 px-4">Update App</h2>
+    <p className="w-full sm:w-96 mb-4 text-m font-normal text-gray-300 px-4">
       The app will automatically check for updates and show a notification when a new version is
       available. You can also manually force an update by pressing{' '}
       <kbd className="bg-gray-600 px-1 rounded">Ctrl+Shift+R</kbd> to force refresh and clear the
       cache.
     </p>
 
-    <h2 className="text-3xl font-bold text-gray-200 p-2">Bookmarklet</h2>
-    <p className="w-96 mb-4 text-m font-normal text-gray-300 pl-2">
+    <h2 className="text-2xl sm:text-3xl font-bold text-gray-200 py-2 px-4">Bookmarklet</h2>
+    <p className="w-full sm:w-96 mb-4 text-m font-normal text-gray-300 px-4">
       Drag this link ⇨
       <a
+        className="touch-manipulation"
         href="javascript: (() => {
               for (let link of document.links) {
                 if (link.href.endsWith('.nii.gz') || link.href.endsWith('.nii')) {
@@ -45,15 +52,15 @@ export const HomeScreen = () => (
       </a>
     </p>
 
-    <h2 className="text-3xl font-bold text-gray-200 p-2">Data Privacy</h2>
-    <p className="w-96 mb-4 text-m font-normal text-gray-300 pl-2">
+    <h2 className="text-2xl sm:text-3xl font-bold text-gray-200 py-2 px-4">Data Privacy</h2>
+    <p className="w-full sm:w-96 mb-4 text-m font-normal text-gray-300 px-4">
       The vscode extension (or static webpage) runs locally and only accesses the images from your
       machine for displaying. No data is sent or stored remotely. The extension is a complete
       offline solution and does not use any online cache, storage, or network connectivity. The
       extension does not track or log any user data. Local logging is minimal and only related to
       hardware events.
     </p>
-    <p className="w-96 mb-4 text-m font-normal text-gray-300 pl-2">
+    <p className="w-full sm:w-96 mb-4 text-m font-normal text-gray-300 px-4">
       The extension is an open source project depending on
       <a href="https://github.com/niivue/niivue/">
         <b> NiiVue</b>
@@ -64,7 +71,7 @@ export const HomeScreen = () => (
       </a>{' '}
       group.
     </p>
-    <footer className="text-xs p-2">
+    <footer className="text-xs py-2 px-4">
       <a
         href={__GIT_REPO_URL__ ? `${__GIT_REPO_URL__}/commit/${__GIT_HASH__}` : '#'}
         target="_blank"
