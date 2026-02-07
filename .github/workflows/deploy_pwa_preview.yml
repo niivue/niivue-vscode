@@ -1,0 +1,101 @@
+# Workflow for deploying PWA previews to GitHub Pages for PRs
+name: Deploy PWA Preview
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/pwa/**'
+      - 'packages/**'
+      - '.github/workflows/deploy_pwa_preview.yml'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+# Allow only one deployment per PR at a time
+concurrency:
+  group: pwa-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  deploy-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build PWA with PR-specific base URL
+        env:
+          NODE_ENV: production
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: pnpm turbo build --filter=@niivue/pwa
+
+      - name: Deploy to GitHub Pages (PR Preview)
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./apps/pwa/build
+          destination_dir: pr-${{ github.event.pull_request.number }}
+          keep_files: true
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+          commit_message: 'Deploy PR #${{ github.event.pull_request.number }} preview'
+
+      - name: Comment on PR with preview URL
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const previewUrl = `https://niivue.github.io/niivue-vscode/pr-${prNumber}/`;
+            
+            // Find existing preview comment
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+            });
+            
+            const previewComment = comments.data.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('PWA Preview Deployment')
+            );
+            
+            const body = `## 🚀 PWA Preview Deployment
+            
+            Your PWA preview has been deployed!
+            
+            **Preview URL:** ${previewUrl}
+            
+            ---
+            <sub>This preview will be updated automatically when you push new commits to this PR.</sub>`;
+            
+            if (previewComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: previewComment.id,
+                body: body
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: body
+              });
+            }
