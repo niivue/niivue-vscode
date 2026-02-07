@@ -17,6 +17,16 @@ export const ScalingBox = (props: any) => {
   )
   const invertState = useSignal(selectedOverlay.value.colormapInvert)
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && overlayMenu.value) {
+        overlayMenu.value = false
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
   const setScaling = (val: ScalingOpts) => {
     nvArraySelected.value.forEach((nv: ExtendedNiivue) => {
       handleOverlayScaling(nv, selectedOverlayNumber.value, val)
