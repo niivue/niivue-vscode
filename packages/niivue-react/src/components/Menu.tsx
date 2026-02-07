@@ -247,6 +247,9 @@ export const Menu = (props: AppProps) => {
     else hideUI.value = 3
   }
 
+  // No-op function for informational menu entries (shortcuts handled by niivue.js core)
+  const noOp = () => {}
+
   // Setup keyboard shortcuts
   useKeyboardShortcuts({
     onViewAxial: () => (sliceType.value = SLICE_TYPE.AXIAL),
@@ -261,7 +264,7 @@ export const Menu = (props: AppProps) => {
     onToggleCrosshair: toggle(crosshair),
     onToggleZoomMode: toggle(zoomDragMode),
     onAddImage: addImagesEvent,
-    onAddOverlay: isOverlay.value ? replaceLastVolume : overlayButtonOnClick,
+    onAddOverlay: overlayButtonOnClick,
     onColorscale: openColorScaleLastOverlay,
     onHideUI: cycleUIVisibility,
     onShowHeader: toggle(headerDialog),
@@ -328,12 +331,12 @@ export const Menu = (props: AppProps) => {
             <hr />
             <MenuEntry
               label="Cycle View Mode"
-              onClick={() => {}}
+              onClick={noOp}
               shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CYCLE_VIEW_MODE)}
             />
             <MenuEntry
               label="Cycle Clip Plane (3D)"
-              onClick={() => {}}
+              onClick={noOp}
               shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CYCLE_CLIP_PLANE)}
             />
             <hr />
@@ -424,43 +427,43 @@ export const Menu = (props: AppProps) => {
         <MenuItem label="Navigation" visible={isVolume}>
           <MenuEntry
             label="Next Volume (4D)"
-            onClick={() => {}}
+            onClick={noOp}
             shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.VOLUME_NEXT)}
           />
           <MenuEntry
             label="Previous Volume (4D)"
-            onClick={() => {}}
+            onClick={noOp}
             shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.VOLUME_PREV)}
           />
           <hr />
           <MenuEntry
             label="Crosshair: Right"
-            onClick={() => {}}
+            onClick={noOp}
             shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CROSSHAIR_RIGHT)}
           />
           <MenuEntry
             label="Crosshair: Left"
-            onClick={() => {}}
+            onClick={noOp}
             shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CROSSHAIR_LEFT)}
           />
           <MenuEntry
             label="Crosshair: Anterior"
-            onClick={() => {}}
+            onClick={noOp}
             shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CROSSHAIR_ANTERIOR)}
           />
           <MenuEntry
             label="Crosshair: Posterior"
-            onClick={() => {}}
+            onClick={noOp}
             shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CROSSHAIR_POSTERIOR)}
           />
           <MenuEntry
             label="Crosshair: Superior"
-            onClick={() => {}}
+            onClick={noOp}
             shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CROSSHAIR_SUPERIOR)}
           />
           <MenuEntry
             label="Crosshair: Inferior"
-            onClick={() => {}}
+            onClick={noOp}
             shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CROSSHAIR_INFERIOR)}
           />
         </MenuItem>
