@@ -118,11 +118,13 @@ export default defineConfig({
       })(),
     }),
     VitePWA({
+      disable: !!prNumber, // Disable service worker for PR previews (temporary, no offline needed)
       registerType: 'prompt',
       includeAssets: ['favicon.ico', '*.png'],
       workbox: {
         maximumFileSizeToCacheInBytes: 3000000,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,wasm}'],
+        navigateFallbackDenylist: [/\/pr-\d+\//], // Don't intercept PR preview navigations
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/niivue\.github\.io\//,
