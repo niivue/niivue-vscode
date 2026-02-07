@@ -1,8 +1,0 @@
-#!/usr/bin/env sh
-
-# Initialize fnm on Windows if present
-if [ -z "$NODE_VERSION" ] && command -v fnm >/dev/null 2>&1; then
-  eval "$(fnm env --shell bash)"
-fi
-
-pnpm exec lint-staged
