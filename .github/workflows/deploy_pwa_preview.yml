@@ -41,7 +41,7 @@ jobs:
         env:
           NODE_ENV: production
           PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: pnpm turbo build --filter=@niivue/pwa
+        run: pnpm turbo build --filter=@niivue/pwa --force
 
       - name: Deploy to GitHub Pages (PR Preview)
         uses: peaceiris/actions-gh-pages@v4
