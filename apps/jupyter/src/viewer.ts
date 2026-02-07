@@ -348,7 +348,10 @@ export class NiivueWidget extends Widget {
       const dirPath = result.value[0].path
       try {
         // List all files in the directory
-        const dirData = await fetchJson<any>(getContentsUrl(this._serverSettings.baseUrl, dirPath), this._serverSettings)
+        const dirData = await fetchJson<any>(
+          getContentsUrl(this._serverSettings.baseUrl, dirPath),
+          this._serverSettings,
+        )
         const files = dirData.content.filter((item: any) => item.type === 'file')
 
         if (files.length > 0) {
@@ -445,7 +448,11 @@ export namespace NiivueViewer {
 class CompareWidget extends NiivueWidget {
   private _selectedItems: any[]
 
-  constructor(selectedItems: any[], docManager: IDocumentManager, serverSettings: ServerConnection.ISettings) {
+  constructor(
+    selectedItems: any[],
+    docManager: IDocumentManager,
+    serverSettings: ServerConnection.ISettings,
+  ) {
     // Create a dummy context - we won't use it for compare view
     const dummyContext = {
       path: '',
