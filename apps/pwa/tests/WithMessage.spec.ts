@@ -53,8 +53,6 @@ test.describe('app', () => {
 
     await loadTestImage(page)
 
-    await page.waitForTimeout(1000)
-
     await page.evaluate(() => {
       const message = { type: 'debugRequest', body: 'getMinMaxOfFirstImage' }
       window.postMessage(message, '*')

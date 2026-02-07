@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 import * as fs from 'fs'
 import * as path from 'path'
 import { fileURLToPath } from 'url'
-import { BASE_URL } from './utils'
+import { BASE_URL, waitForImageLoad } from './utils'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -31,7 +31,7 @@ test.describe('Loading DICOM images', () => {
     await page.evaluate((m) => window.postMessage(m, '*'), message)
     
     // Wait for canvas to appear - this verifies NiiVue successfully loaded the DICOM
-    await page.waitForSelector('canvas', { timeout: 10000 })
+    await waitForImageLoad(page)
 
     // Verify canvas loaded
     const canvases = await page.$$('canvas')
@@ -60,7 +60,7 @@ test.describe('Loading DICOM images', () => {
     }
 
     await page.evaluate((m) => window.postMessage(m, '*'), message)
-    await page.waitForSelector('canvas', { timeout: 10000 })
+    await waitForImageLoad(page)
 
     // Verify canvas loaded
     const canvases = await page.$$('canvas')
@@ -88,7 +88,7 @@ test.describe('Loading DICOM images', () => {
     }
 
     await page.evaluate((m) => window.postMessage(m, '*'), message1)
-    await page.waitForSelector('canvas', { timeout: 10000 })
+    await waitForImageLoad(page)
 
     // Load second DICOM (using enh.dcm as second one too)
     const message2 = {
