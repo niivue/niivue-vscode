@@ -41,7 +41,7 @@ Browser-based viewer that works offline as an installable web app.
 - **Install**: Click "Install App" in Chrome/Edge
 - **Docs**: [apps/pwa/README.md](apps/pwa/README.md)
 
-### Streamlit Component (*experimental*)
+### Streamlit Component (_experimental_)
 
 Embed NiiVue viewer in Streamlit data apps.
 
@@ -65,21 +65,61 @@ niivue_component(images=["brain.nii.gz"])
 
 ## Keyboard Shortcuts
 
-### Mouse Controls
+NiiVue supports comprehensive keyboard shortcuts for efficient navigation and control. All shortcuts are shown in menus and button tooltips.
+
+### Core NiiVue Shortcuts (Built-in)
+
+These shortcuts are handled by the niivue.js core library and work across all platforms:
+
+**Mouse Controls:**
+
 - **Right Mouse**: Adjust contrast/brightness (windowing); with Zoom button pressed: drag to zoom
 - **Middle Mouse**: Drag to pan
 - **Mouse Scroll**: Change slice
 - **Shift + Mouse**: 2D dragging and 3D viewplane rotation
 
-### Navigation
+**Navigation:**
+
 - **← →**: Change volume in 4D images
 - **V**: Cycle through view modes
 - **C**: Cycle through clip plane orientations in 3D
 
-### Crosshair Movement
+**Crosshair Movement:**
+
 - **H/L**: Move crosshair Right/Left
 - **J/K**: Move crosshair Posterior/Anterior
 - **Ctrl+U/Ctrl+D**: Move crosshair Superior/Inferior
+
+### UI Shortcuts (Customizable in VSCode)
+
+These shortcuts control the viewer interface and can be customized in VSCode settings:
+
+**View Modes:**
+
+- **1**: Axial view
+- **2**: Sagittal view
+- **3**: Coronal view
+- **4**: Render view
+- **5**: Multiplanar + Render view
+- **R**: Reset view/zoom
+
+**Toggles:**
+
+- **I**: Toggle interpolation
+- **B**: Toggle colorbar
+- **X**: Toggle radiological convention
+- **M**: Toggle crosshair
+- **Z**: Toggle zoom drag mode
+- **U**: Cycle UI visibility (Show All → Hide UI → Hide All)
+
+**Actions:**
+
+- **Ctrl+O** (Cmd+O on Mac): Add image
+- **Ctrl+L** (Cmd+L on Mac): Add overlay
+- **S**: Open colorscale menu
+- **Ctrl+H** (Cmd+H on Mac): Show header information
+
+> **Note**: In VSCode, you can customize any of the UI shortcuts by opening the Keyboard Shortcuts editor (File → Preferences → Keyboard Shortcuts) and searching for "NiiVue".
 
 ## Development
 
