@@ -1,24 +1,26 @@
 import { SLICE_TYPE } from '@niivue/niivue'
 import { Signal, computed, effect, useSignal } from '@preact/signals'
+import { NIIVUE_CORE_SHORTCUTS, UI_SHORTCUTS, formatShortcut } from '../constants/keyboardShortcuts'
 import {
-  ExtendedNiivue,
-  addDcmFolderEvent,
-  addImagesEvent,
-  addOverlayEvent,
-  openImageFromURL,
+    ExtendedNiivue,
+    addDcmFolderEvent,
+    addImagesEvent,
+    addOverlayEvent,
+    openImageFromURL,
 } from '../events'
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
 import { getMetadataString, getNumberOfPoints } from '../utility'
 import { AppProps, SelectionMode } from './AppProps'
 import { HeaderBox } from './HeaderBox'
 import {
-  HeaderDialog,
-  ImageSelect,
-  MenuButton,
-  MenuEntry,
-  MenuItem,
-  MenuToggle,
-  ToggleEntry,
-  toggle,
+    HeaderDialog,
+    ImageSelect,
+    MenuButton,
+    MenuEntry,
+    MenuItem,
+    MenuToggle,
+    ToggleEntry,
+    toggle,
 } from './MenuElements'
 import { ScalingBox } from './ScalingBox'
 
@@ -239,6 +241,32 @@ export const Menu = (props: AppProps) => {
     alert('Settings saved!')
   }
 
+  const cycleUIVisibility = () => {
+    if (hideUI.value === 3) hideUI.value = 2
+    else if (hideUI.value === 2) hideUI.value = 0
+    else hideUI.value = 3
+  }
+
+  // Setup keyboard shortcuts
+  useKeyboardShortcuts({
+    onViewAxial: () => (sliceType.value = SLICE_TYPE.AXIAL),
+    onViewSagittal: () => (sliceType.value = SLICE_TYPE.SAGITTAL),
+    onViewCoronal: () => (sliceType.value = SLICE_TYPE.CORONAL),
+    onViewRender: () => (sliceType.value = SLICE_TYPE.RENDER),
+    onViewMultiplanar: setMultiplanar,
+    onResetView: resetZoom,
+    onToggleInterpolation: toggle(interpolation),
+    onToggleColorbar: toggle(colorbar),
+    onToggleRadiological: toggle(radiologicalConvention),
+    onToggleCrosshair: toggle(crosshair),
+    onToggleZoomMode: toggle(zoomDragMode),
+    onAddImage: addImagesEvent,
+    onAddOverlay: isOverlay.value ? replaceLastVolume : overlayButtonOnClick,
+    onColorscale: openColorScaleLastOverlay,
+    onHideUI: cycleUIVisibility,
+    onShowHeader: toggle(headerDialog),
+  })
+
   return (
     <>
       <div className="flex flex-wrap items-baseline gap-2">
@@ -246,7 +274,11 @@ export const Menu = (props: AppProps) => {
           <MenuButton label="Home" onClick={homeEvent} />
         )}
         {settings.value.menuItems?.addImage && (
-          <MenuItem label="Add Image" onClick={addImagesEvent}>
+          <MenuItem
+            label="Add Image"
+            onClick={addImagesEvent}
+            shortcut={formatShortcut(UI_SHORTCUTS.ADD_IMAGE)}
+          >
             <MenuEntry label="File(s)" onClick={addImagesEvent} />
             <MenuEntry label="DICOM Folder" onClick={addDcmFolderEvent} />
             <MenuEntry
@@ -258,35 +290,105 @@ export const Menu = (props: AppProps) => {
           </MenuItem>
         )}
         {settings.value.menuItems?.view && (
-          <MenuItem label="View" onClick={resetZoom}>
-            <MenuEntry label="Axial" onClick={() => (sliceType.value = SLICE_TYPE.AXIAL)} />
-            <MenuEntry label="Sagittal" onClick={() => (sliceType.value = SLICE_TYPE.SAGITTAL)} />
-            <MenuEntry label="Coronal" onClick={() => (sliceType.value = SLICE_TYPE.CORONAL)} />
-            <MenuEntry label="Render" onClick={() => (sliceType.value = SLICE_TYPE.RENDER)} />
-            <MenuEntry label="Multiplanar + Render" onClick={setMultiplanar} />
+          <MenuItem
+            label="View"
+            onClick={resetZoom}
+            shortcut={formatShortcut(UI_SHORTCUTS.RESET_VIEW)}
+          >
+            <MenuEntry
+              label="Axial"
+              onClick={() => (sliceType.value = SLICE_TYPE.AXIAL)}
+              shortcut={formatShortcut(UI_SHORTCUTS.VIEW_AXIAL)}
+            />
+            <MenuEntry
+              label="Sagittal"
+              onClick={() => (sliceType.value = SLICE_TYPE.SAGITTAL)}
+              shortcut={formatShortcut(UI_SHORTCUTS.VIEW_SAGITTAL)}
+            />
+            <MenuEntry
+              label="Coronal"
+              onClick={() => (sliceType.value = SLICE_TYPE.CORONAL)}
+              shortcut={formatShortcut(UI_SHORTCUTS.VIEW_CORONAL)}
+            />
+            <MenuEntry
+              label="Render"
+              onClick={() => (sliceType.value = SLICE_TYPE.RENDER)}
+              shortcut={formatShortcut(UI_SHORTCUTS.VIEW_RENDER)}
+            />
+            <MenuEntry
+              label="Multiplanar + Render"
+              onClick={setMultiplanar}
+              shortcut={formatShortcut(UI_SHORTCUTS.VIEW_MULTIPLANAR)}
+            />
             <MenuEntry
               label="Multiplanar + Timeseries"
               onClick={setTimeSeries}
               visible={isMultiEcho}
             />
             <hr />
+            <MenuEntry
+              label="Cycle View Mode"
+              onClick={() => {}}
+              shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CYCLE_VIEW_MODE)}
+            />
+            <MenuEntry
+              label="Cycle Clip Plane (3D)"
+              onClick={() => {}}
+              shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CYCLE_CLIP_PLANE)}
+            />
+            <hr />
             <MenuEntry label="Show All" onClick={() => (hideUI.value = 3)} />
-            <MenuEntry label="Hide UI" onClick={() => (hideUI.value = 2)} />
+            <MenuEntry
+              label="Hide UI"
+              onClick={() => (hideUI.value = 2)}
+              shortcut={formatShortcut(UI_SHORTCUTS.HIDE_UI)}
+            />
             <MenuEntry label="Hide All" onClick={() => (hideUI.value = 0)} />
             <hr />
-            <MenuEntry label="Reset View" onClick={resetZoom} />
+            <MenuEntry
+              label="Reset View"
+              onClick={resetZoom}
+              shortcut={formatShortcut(UI_SHORTCUTS.RESET_VIEW)}
+            />
             <hr />
-            <ToggleEntry label="Interpolation" state={interpolation} />
-            <ToggleEntry label="Colorbar" state={colorbar} />
-            <ToggleEntry label="Radiological" state={radiologicalConvention} />
-            <ToggleEntry label="Crosshair" state={crosshair} />
+            <ToggleEntry
+              label="Interpolation"
+              state={interpolation}
+              shortcut={formatShortcut(UI_SHORTCUTS.TOGGLE_INTERPOLATION)}
+            />
+            <ToggleEntry
+              label="Colorbar"
+              state={colorbar}
+              shortcut={formatShortcut(UI_SHORTCUTS.TOGGLE_COLORBAR)}
+            />
+            <ToggleEntry
+              label="Radiological"
+              state={radiologicalConvention}
+              shortcut={formatShortcut(UI_SHORTCUTS.TOGGLE_RADIOLOGICAL)}
+            />
+            <ToggleEntry
+              label="Crosshair"
+              state={crosshair}
+              shortcut={formatShortcut(UI_SHORTCUTS.TOGGLE_CROSSHAIR)}
+            />
             <hr />
             {!isVscode && <MenuEntry label="Save Settings" onClick={saveSettings} />}
           </MenuItem>
         )}
-        {settings.value.menuItems?.zoom && <MenuToggle label="Zoom" state={zoomDragMode} />}
+        {settings.value.menuItems?.zoom && (
+          <MenuToggle
+            label="Zoom"
+            state={zoomDragMode}
+            shortcut={formatShortcut(UI_SHORTCUTS.TOGGLE_ZOOM_MODE)}
+          />
+        )}
         {settings.value.menuItems?.colorScale && (
-          <MenuItem label="ColorScale" visible={isVolumeOrMesh} onClick={openColorScaleLastOverlay}>
+          <MenuItem
+            label="ColorScale"
+            visible={isVolumeOrMesh}
+            onClick={openColorScaleLastOverlay}
+            shortcut={formatShortcut(UI_SHORTCUTS.COLORSCALE)}
+          >
             <MenuEntry label="Volume" onClick={openColorScale(0)} visible={isVolume} />
             {Array.from({ length: nOverlays.value }, (_, i) => (
               <MenuEntry key={i} label={`Overlay ${i + 1}`} onClick={openColorScale(i + 1)} />
@@ -294,7 +396,12 @@ export const Menu = (props: AppProps) => {
           </MenuItem>
         )}
         {settings.value.menuItems?.overlay && (
-          <MenuItem label="Overlay" onClick={overlayButtonOnClick} visible={isVolumeOrMesh}>
+          <MenuItem
+            label="Overlay"
+            onClick={overlayButtonOnClick}
+            visible={isVolumeOrMesh}
+            shortcut={formatShortcut(UI_SHORTCUTS.ADD_OVERLAY)}
+          >
             <MenuEntry label="Add" onClick={addOverlay} visible={isVolume} />
             <MenuEntry label="MeshOverlay" onClick={addMeshOverlay} visible={isMesh} />
             <MenuEntry label="Curvature" onClick={addCurvature} visible={isMesh} />
@@ -304,11 +411,59 @@ export const Menu = (props: AppProps) => {
           </MenuItem>
         )}
         {settings.value.menuItems?.header && (
-          <MenuItem label="Header" onClick={toggle(headerDialog)} visible={isVolume}>
+          <MenuItem
+            label="Header"
+            onClick={toggle(headerDialog)}
+            visible={isVolume}
+            shortcut={formatShortcut(UI_SHORTCUTS.SHOW_HEADER)}
+          >
             <MenuEntry label="Set Headers to 1" onClick={setVoxelSize1AndOrigin0} />
             <MenuEntry label="Set Header" onClick={toggle(setHeaderMenu)} />
           </MenuItem>
         )}
+        <MenuItem label="Navigation" visible={isVolume}>
+          <MenuEntry
+            label="Next Volume (4D)"
+            onClick={() => {}}
+            shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.VOLUME_NEXT)}
+          />
+          <MenuEntry
+            label="Previous Volume (4D)"
+            onClick={() => {}}
+            shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.VOLUME_PREV)}
+          />
+          <hr />
+          <MenuEntry
+            label="Crosshair: Right"
+            onClick={() => {}}
+            shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CROSSHAIR_RIGHT)}
+          />
+          <MenuEntry
+            label="Crosshair: Left"
+            onClick={() => {}}
+            shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CROSSHAIR_LEFT)}
+          />
+          <MenuEntry
+            label="Crosshair: Anterior"
+            onClick={() => {}}
+            shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CROSSHAIR_ANTERIOR)}
+          />
+          <MenuEntry
+            label="Crosshair: Posterior"
+            onClick={() => {}}
+            shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CROSSHAIR_POSTERIOR)}
+          />
+          <MenuEntry
+            label="Crosshair: Superior"
+            onClick={() => {}}
+            shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CROSSHAIR_SUPERIOR)}
+          />
+          <MenuEntry
+            label="Crosshair: Inferior"
+            onClick={() => {}}
+            shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CROSSHAIR_INFERIOR)}
+          />
+        </MenuItem>
         <ImageSelect label="Select" state={selectionActive} visible={multipleVolumes}>
           <ToggleEntry label="Multiple" state={selectMultiple} />
           <MenuEntry label="Select All" onClick={selectAll} />

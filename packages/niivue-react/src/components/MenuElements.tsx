@@ -1,22 +1,24 @@
 import { Signal, effect, useSignal } from '@preact/signals'
 import { useRef } from 'preact/hooks'
 
-export const MenuEntry = ({ label, onClick, isOpen, visible }: any) => {
+export const MenuEntry = ({ label, onClick, isOpen, visible, shortcut }: any) => {
   if (visible && !visible.value) return null
   return (
     <button
-      className="w-full px-2 py-1 text-left bg-gray-900 hover:bg-gray-700"
+      className="w-full px-2 py-1 text-left bg-gray-900 hover:bg-gray-700 flex justify-between items-center"
       onClick={() => {
         onClick()
         isOpen.value = false
       }}
+      title={shortcut ? `Keyboard shortcut: ${shortcut}` : undefined}
     >
-      {label}
+      <span>{label}</span>
+      {shortcut && <span className="text-xs text-gray-400 ml-4">{shortcut}</span>}
     </button>
   )
 }
 
-export const MenuItem = ({ label, onClick, children, visible }: any) => {
+export const MenuItem = ({ label, onClick, children, visible, shortcut }: any) => {
   if (visible && !visible.value) return null
   const isOpen = useSignal(false)
   setChildren(children, isOpen)
@@ -29,6 +31,7 @@ export const MenuItem = ({ label, onClick, children, visible }: any) => {
           onClick()
           isOpen.value = false
         }}
+        title={shortcut ? `Keyboard shortcut: ${shortcut}` : undefined}
       >
         {label}
       </button>
@@ -46,14 +49,38 @@ export const MenuItem = ({ label, onClick, children, visible }: any) => {
   )
 }
 
-export const ToggleEntry = ({ label, state }: any) => {
+export const ToggleEntry = ({ label, state, shortcut }: any) => {
   return (
     <div className="relative group">
       <button
-        className={`w-full px-2 py-1 text-left hover:bg-gray-700 ${
+        className={`w-full px-2 py-1 text-left hover:bg-gray-700 flex justify-between items-center ${
           state.value ? 'bg-gray-600' : 'bg-gray-900'
         }`}
         onClick={toggle(state)}
+        title={shortcut ? `Keyboard shortcut: ${shortcut}` : undefined}
+      >
+        <span>{label}</span>
+        {shortcut && <span className="text-xs text-gray-400 ml-4">{shortcut}</span>}
+      </button>
+    </div>
+  )
+}
+
+export const MenuButton = ({
+  label,
+  onClick,
+  shortcut,
+}: {
+  label: string
+  onClick: () => void
+  shortcut?: string
+}) => {
+  return (
+    <div className="relative">
+      <button
+        className="hover:bg-gray-700 px-2 rounded-md h-6 align-middle"
+        onClick={onClick}
+        title={shortcut ? `Keyboard shortcut: ${shortcut}` : undefined}
       >
         {label}
       </button>
@@ -61,17 +88,7 @@ export const ToggleEntry = ({ label, state }: any) => {
   )
 }
 
-export const MenuButton = ({ label, onClick }: { label: string; onClick: () => void }) => {
-  return (
-    <div className="relative">
-      <button className="hover:bg-gray-700 px-2 rounded-md h-6 align-middle" onClick={onClick}>
-        {label}
-      </button>
-    </div>
-  )
-}
-
-export const MenuToggle = ({ label, state }: any) => {
+export const MenuToggle = ({ label, state, shortcut }: any) => {
   return (
     <div className="relative">
       <button
@@ -79,6 +96,7 @@ export const MenuToggle = ({ label, state }: any) => {
           state.value && 'bg-gray-500'
         }`}
         onClick={toggle(state)}
+        title={shortcut ? `Keyboard shortcut: ${shortcut}` : undefined}
       >
         {label}
       </button>

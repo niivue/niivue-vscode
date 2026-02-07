@@ -5,6 +5,40 @@ import { LinkHoverProvider } from './HoverProvider'
 export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(NiiVueEditorProvider.register(context))
   context.subscriptions.push(vscode.languages.registerHoverProvider('*', new LinkHoverProvider()))
+
+  // Register keyboard shortcut commands
+  const shortcutCommands = [
+    'niivue.viewAxial',
+    'niivue.viewSagittal',
+    'niivue.viewCoronal',
+    'niivue.viewRender',
+    'niivue.viewMultiplanar',
+    'niivue.resetView',
+    'niivue.toggleInterpolation',
+    'niivue.toggleColorbar',
+    'niivue.toggleRadiological',
+    'niivue.toggleCrosshair',
+    'niivue.toggleZoomMode',
+    'niivue.addImage',
+    'niivue.addOverlay',
+    'niivue.colorscale',
+    'niivue.hideUI',
+    'niivue.showHeader',
+  ]
+
+  // Register all shortcut commands
+  // The webview handles these commands via its own keyboard shortcuts
+  // This registration makes them appear in VSCode command palette
+  // and allows users to customize keybindings
+  shortcutCommands.forEach((command) => {
+    context.subscriptions.push(
+      vscode.commands.registerCommand(command, () => {
+        // Commands are handled by the webview's keyboard shortcuts
+        // This is just for VSCode's command palette and keybinding customization
+      }),
+    )
+  })
+
   context.subscriptions.push(
     vscode.commands.registerCommand('niivue.openWebLink', async () => {
       vscode.window
