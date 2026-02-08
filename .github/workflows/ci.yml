@@ -244,7 +244,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        matlab-version: ['R2023b']
+        matlab-version: ['R2020b']
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -275,9 +275,6 @@ jobs:
         uses: matlab-actions/setup-matlab@v2
         with:
           release: ${{ matrix.matlab-version }}
-
-      - name: Create test results directory
-        run: mkdir -p test-results
 
       - name: Run MATLAB tests
         uses: matlab-actions/run-command@v2

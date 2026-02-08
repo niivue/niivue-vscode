@@ -42,9 +42,8 @@ Tests run automatically on GitHub Actions when:
 - Pull requests are created affecting `packages/niivue-matlab/`
 
 The workflow tests against multiple MATLAB versions:
-- R2023b
-- R2024a
-- R2024b
+- R2020b (oldest supported)
+- R2024b (newest release)
 
 ## Adding New Tests
 
