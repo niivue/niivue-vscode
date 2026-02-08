@@ -21,11 +21,17 @@ function results = runTests()
     % Create test runner
     runner = TestRunner.withTextOutput;
     
-    % Add XML plugin for CI/CD integration if output directory exists
-    if exist('test-results', 'dir')
-        xmlFile = fullfile('test-results', 'matlab-test-results.xml');
-        runner.addPlugin(XMLPlugin.producingJUnitFormat(xmlFile));
+    % Add XML plugin for CI/CD integration
+    % Find the repo root (go up 4 levels from tests dir)
+    repoRoot = fileparts(fileparts(fileparts(fileparts(scriptDir))));
+    testResultsDir = fullfile(repoRoot, 'test-results');
+    
+    if ~exist(testResultsDir, 'dir')
+        mkdir(testResultsDir);
     end
+    
+    xmlFile = fullfile(testResultsDir, 'matlab-test-results.xml');
+    runner.addPlugin(XMLPlugin.producingJUnitFormat(xmlFile));
     
     % Run tests
     results = runner.run(suite);
