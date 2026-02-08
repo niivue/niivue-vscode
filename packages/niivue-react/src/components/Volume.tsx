@@ -10,13 +10,14 @@ export interface VolumeProps {
   volumeIndex: number
   nv: ExtendedNiivue
   remove: () => void
+  reorder: (fromIndex: number, toIndex: number) => void
   width: number
   height: number
   render: Signal<number>
 }
 
 export const Volume = (props: AppProps & VolumeProps) => {
-  const { name, volumeIndex, hideUI, selection, selectionMode, nv, location } = props
+  const { name, volumeIndex, hideUI, selection, selectionMode, nv, location, reorder } = props
   const intensity = useSignal('')
   const location_local = useSignal('')
   const vol4D = useSignal(0)
@@ -27,6 +28,8 @@ export const Volume = (props: AppProps & VolumeProps) => {
   const tooltipVisible = useSignal(false)
   const tooltipPos = useSignal({ x: 0, y: 0 })
   const canvasRef = useRef<HTMLDivElement | null>(null)
+  const isDragging = useSignal(false)
+  const dragOver = useSignal(false)
 
   useEffect(() => {
     nv.onLocationChange = (data: any) =>
@@ -79,6 +82,39 @@ export const Volume = (props: AppProps & VolumeProps) => {
     }
   }, [canvasRef.current])
 
+  const handleDragStart = (e: DragEvent) => {
+    isDragging.value = true
+    e.dataTransfer!.effectAllowed = 'move'
+    e.dataTransfer!.setData('text/plain', volumeIndex.toString())
+  }
+
+  const handleDragEnd = () => {
+    isDragging.value = false
+    dragOver.value = false
+  }
+
+  const handleDragOver = (e: DragEvent) => {
+    e.preventDefault()
+    e.dataTransfer!.dropEffect = 'move'
+    dragOver.value = true
+  }
+
+  const handleDragLeave = () => {
+    dragOver.value = false
+  }
+
+  const handleDrop = (e: DragEvent) => {
+    e.preventDefault()
+    dragOver.value = false
+
+    const fromIndex = parseInt(e.dataTransfer!.getData('text/plain'))
+    const toIndex = volumeIndex
+
+    if (fromIndex !== toIndex) {
+      reorder(fromIndex, toIndex)
+    }
+  }
+
   const selectClick = () => {
     if (selectionMode.value == SelectionMode.SINGLE) {
       selection.value = [volumeIndex]
@@ -97,9 +133,15 @@ export const Volume = (props: AppProps & VolumeProps) => {
     <div
       className={`relative ${
         selectionMode.value && selected.value ? 'outline outline-blue-500' : ''
-      }`}
+      } ${dragOver.value ? 'outline outline-green-500 outline-2' : ''}`}
       onClick={selectClick}
       ref={canvasRef}
+      draggable={hideUI.value > 2}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
     >
       {nv.loadError ? (
         <div
@@ -131,12 +173,22 @@ export const Volume = (props: AppProps & VolumeProps) => {
         </>
       )}
       {hideUI.value > 2 && (
-        <button
-          className="absolute bg-transparent text-xl cursor-pointer opacity-80 border-none text-outline top-0 right-1"
-          onClick={props.remove}
-        >
-          X
-        </button>
+        <>
+          <div
+            className="absolute top-0 left-0 right-0 h-8 cursor-move bg-gradient-to-b from-black/30 to-transparent pointer-events-auto"
+            title="Drag to reorder"
+            role="button"
+            tabIndex={0}
+            aria-label="Drag to reorder image"
+          />
+          <button
+            className="absolute bg-transparent text-xl cursor-pointer opacity-80 border-none text-outline top-0 right-1 pointer-events-auto"
+            onClick={props.remove}
+            aria-label="Remove image"
+          >
+            X
+          </button>
+        </>
       )}
       {hideUI.value > 2 && is4D.value && (
         <Nav4D

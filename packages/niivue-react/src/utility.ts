@@ -181,3 +181,15 @@ export function getNumberOfPoints(nv: Niivue) {
   const matrixString = 'Number of Points: ' + mesh.pts.length / 3
   return matrixString
 }
+
+// Reorder an array by moving an item from one index to another
+export function reorderImages<T>(array: T[], fromIndex: number, toIndex: number): T[] {
+  if (fromIndex === toIndex) {
+    return array
+  }
+
+  const result = [...array]
+  const [movedItem] = result.splice(fromIndex, 1)
+  result.splice(toIndex, 0, movedItem)
+  return result
+}
