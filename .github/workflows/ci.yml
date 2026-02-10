@@ -226,7 +226,7 @@ jobs:
       - name: Install Python test dependencies
         run: |
           cd apps/streamlit
-          python -m pip install pytest streamlit streamlit-component-lib
+          python -m pip install pytest streamlit
 
       - name: Run Streamlit frontend tests
         run: pnpm turbo test:frontend --filter=@niivue/streamlit
