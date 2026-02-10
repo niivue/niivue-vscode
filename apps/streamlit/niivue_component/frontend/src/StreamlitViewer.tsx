@@ -22,4 +22,4 @@ const StreamlitViewer = ({ args }: ComponentProps) => {
   }
 }
 
-export default withStreamlitConnection(StreamlitViewer)
+export default withStreamlitConnection(StreamlitViewer as any)

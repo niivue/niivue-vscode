@@ -1,4 +1,5 @@
 import { Container, ImageDrop, Menu, useAppState } from '@niivue/react'
+import { Niivue } from '@niivue/niivue'
 import { Streamlit } from 'streamlit-component-lib'
 import { useEffect } from 'preact/hooks'
 import { StreamlitArgs, VIEW_MODE_TO_SLICE_TYPE } from '../types'
@@ -15,7 +16,10 @@ export const StyledViewer = ({ args }: StyledViewerProps) => {
     colorbar: args.settings?.colorbar ?? false,
     interpolation: args.settings?.interpolation ?? true,
     defaultVolumeColormap: 'gray',
-  })
+    zoomDragMode: 'both',
+    defaultOverlayColormap: 'red',
+    defaultMeshOverlayColormap: 'redyell',
+  } as any)
 
   const { sliceType, settings, location } = appProps
 
@@ -48,7 +52,7 @@ export const StyledViewer = ({ args }: StyledViewerProps) => {
   useEffect(() => {
     const handleLocationChange = () => {
       if (appProps.nvArray.value.length > 0 && appProps.nvArray.value[0]?.isLoaded) {
-        const nv = appProps.nvArray.value[0]
+        const nv = appProps.nvArray.value[0] as any
         const mm = nv.scene.crosshairPos
         const voxel = nv.mm2vox(mm)
         const value =
@@ -69,16 +73,16 @@ export const StyledViewer = ({ args }: StyledViewerProps) => {
     }
 
     // Attach event listeners to all niivue instances
-    appProps.nvArray.value.forEach((nv) => {
+    appProps.nvArray.value.forEach((nv: Niivue) => {
       if (nv.canvas) {
-        nv.onLocationChange = handleLocationChange
+        ;(nv as any).onLocationChange = handleLocationChange
       }
     })
 
     return () => {
-      appProps.nvArray.value.forEach((nv) => {
+      appProps.nvArray.value.forEach((nv: Niivue) => {
         if (nv.canvas) {
-          nv.onLocationChange = undefined
+          ;(nv as any).onLocationChange = null
         }
       })
     }
