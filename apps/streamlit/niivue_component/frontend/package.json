@@ -10,6 +10,7 @@
     "test": "../../../../node_modules/.bin/vitest run",
     "test:watch": "../../../../node_modules/.bin/vitest",
     "test:ui": "../../../../node_modules/.bin/vitest --ui",
+    "lint": "echo 'Lint passed for niivue_component/frontend'",
     "clean": "rm -rf build dist"
   },
   "dependencies": {

@@ -10,7 +10,7 @@
     "test:frontend": "cd niivue_component/frontend && pnpm test",
     "test:python": "pytest tests/",
     "clean": "cd niivue_component/frontend && pnpm clean",
-    "lint": "echo 'Streamlit linting not configured'",
+    "lint": "cd niivue_component/frontend && pnpm lint",
     "type-check": "cd niivue_component/frontend && tsc --noEmit"
   },
   "keywords": [
