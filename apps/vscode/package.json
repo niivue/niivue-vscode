@@ -2,7 +2,7 @@
   "name": "niivue",
   "displayName": "NiiVue",
   "description": "View NIfTI images (and a lot of other medical imaging formats)",
-  "version": "2.7.0",
+  "version": "3.0.0",
   "publisher": "KorbinianEckstein",
   "icon": "niivue_icon.png",
   "bugs": {

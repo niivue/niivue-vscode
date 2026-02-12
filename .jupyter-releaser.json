@@ -2,18 +2,18 @@
   "hooks": {
     "before-build-npm": [
       "python -m pip install 'jupyterlab>=4.0.0,<5'",
-      "cd niivue && npm ci && npm run build",
-      "cd niivue-jupyter && npm install && npm run copy:assets && npm run build:prod"
+      "pnpm install --frozen-lockfile",
+      "pnpm turbo build --filter=@niivue/jupyter"
     ],
     "before-build-python": [
-      "cd niivue && npm ci && npm run build",
-      "cd niivue-jupyter && npm install && npm run copy:assets && npm run build:prod"
+      "pnpm install --frozen-lockfile",
+      "pnpm turbo build --filter=@niivue/jupyter"
     ]
   },
   "options": {
-    "ignore-glob": ["niivue-jupyter/static/**", "niivue/**", "src/**", "tests/**", "*.md"],
+    "ignore-glob": ["**/static/**", "**/dist/**", "**/node_modules/**", "*.md"],
     "ignore-links": [],
-    "python-packages": ["niivue-jupyter/"],
-    "npm-packages": ["niivue-jupyter/"]
+    "python-packages": ["apps/jupyter/"],
+    "npm-packages": ["apps/jupyter/"]
   }
 }

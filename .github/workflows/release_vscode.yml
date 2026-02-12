@@ -3,12 +3,6 @@ name: Release VS Code Extension
 on:
   push:
     tags: ['vscode-v*']
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version to release (e.g., 2.4.0)'
-        required: true
-        type: string
 
 permissions:
   contents: write
@@ -20,22 +14,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'pnpm'
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: latest
-
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build dependencies
-        run: pnpm turbo build --filter=@niivue/vscode^...
+      - name: Build extension
+        run: pnpm turbo build --filter=niivue
 
       - name: Package extension
         run: pnpm vsce package
@@ -48,28 +40,16 @@ jobs:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
 
       - name: Publish to Open VSX Registry
-        run: pnpm ovsx publish
+        run: pnpm ovsx publish *.vsix
         working-directory: ./apps/vscode
         env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
 
       - name: Create GitHub Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref }}
-          release_name: VS Code Extension ${{ github.ref }}
-          body: |
-            ## Changes
-
-            - VS Code extension release
-
-            ## Installation
-
-            Install from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=KorbinianEckstein.niivue)
-          draft: false
-          prerelease: false
+          files: apps/vscode/*.vsix
+          generate_release_notes: true
 
       - name: Upload extension artifact
         uses: actions/upload-artifact@v4
