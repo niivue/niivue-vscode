@@ -8,7 +8,6 @@ export const MenuEntry = ({ label, onClick, isOpen, visible, shortcut }: any) =>
       className="w-full px-2 py-1 text-left bg-gray-900 hover:bg-gray-700 flex justify-between items-center"
       onClick={() => {
         onClick()
-        isOpen.value = false
       }}
       title={shortcut ? `Keyboard shortcut: ${shortcut}` : undefined}
     >
@@ -29,7 +28,6 @@ export const MenuItem = ({ label, onClick, children, visible, shortcut }: any) =
         className="group-hover:bg-gray-700 px-2 rounded-l-md h-6 align-middle"
         onClick={() => {
           onClick()
-          isOpen.value = false
         }}
         title={shortcut ? `Keyboard shortcut: ${shortcut}` : undefined}
       >

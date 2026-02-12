@@ -1,4 +1,4 @@
-import { Container, ImageDrop, listenToMessages, Menu, type AppProps } from '@niivue/react'
+import { Container, ImageDrop, Menu, listenToMessages, type AppProps } from '@niivue/react'
 import { computed } from '@preact/signals'
 import { useEffect } from 'preact/hooks'
 import { HomeScreen } from './components/HomeScreen'
@@ -9,6 +9,10 @@ export const Pwa = ({ appProps }: { appProps: AppProps }) => {
 
   useEffect(() => {
     listenToMessages(appProps)
+    // Expose appProps to window for E2E testing
+    if (import.meta.env.DEV || (window as any).PLAYWRIGHT_TEST) {
+      ;(window as any).appProps = appProps
+    }
 
     if ('launchQueue' in window) {
       const launchQueue = (window as any).launchQueue
@@ -42,7 +46,9 @@ export const Pwa = ({ appProps }: { appProps: AppProps }) => {
       <Menu {...appProps} />
       {showHomeScreen.value && <HomeScreen />}
       <Container {...appProps} />
-      <div className="pl-2">{appProps.location?.value || '\u00A0'}</div>
+      {appProps.hideUI.value > 0 && (
+        <div className="pl-2">{appProps.location?.value || '\u00A0'}</div>
+      )}
     </ImageDrop>
   )
 }

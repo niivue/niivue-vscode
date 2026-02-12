@@ -1,5 +1,5 @@
 import { useEffect } from 'preact/hooks'
-import { matchesShortcut, UI_SHORTCUTS } from '../constants/keyboardShortcuts'
+import { NIIVUE_CORE_SHORTCUTS, UI_SHORTCUTS, matchesShortcut } from '../constants/keyboardShortcuts'
 
 export interface KeyboardShortcutHandlers {
   onViewAxial?: () => void
@@ -7,6 +7,10 @@ export interface KeyboardShortcutHandlers {
   onViewCoronal?: () => void
   onViewRender?: () => void
   onViewMultiplanar?: () => void
+  onCycleViewMode?: () => void
+  onCycleClipPlane?: () => void
+  onVolumeNext?: () => void
+  onVolumePrev?: () => void
   onResetView?: () => void
   onToggleInterpolation?: () => void
   onToggleColorbar?: () => void
@@ -18,6 +22,8 @@ export interface KeyboardShortcutHandlers {
   onColorscale?: () => void
   onHideUI?: () => void
   onShowHeader?: () => void
+  onCrosshairSuperior?: () => void
+  onCrosshairInferior?: () => void
 }
 
 /**
@@ -57,6 +63,27 @@ export function useKeyboardShortcuts(handlers: KeyboardShortcutHandlers, enabled
       ) {
         event.preventDefault()
         handlers.onViewMultiplanar()
+      } else if (
+        matchesShortcut(event, NIIVUE_CORE_SHORTCUTS.CYCLE_VIEW_MODE) &&
+        handlers.onCycleViewMode
+      ) {
+        // We don't necessarily want to preventDefault here if we want Niivue Core to also handle it,
+        // but since we want to sync our signal, we might handle it entirely in UI or just sync after.
+        // If we handle it in UI, we SHOULD preventDefault to avoid double-cycling.
+        event.preventDefault()
+        handlers.onCycleViewMode()
+      } else if (
+        matchesShortcut(event, NIIVUE_CORE_SHORTCUTS.CYCLE_CLIP_PLANE) &&
+        handlers.onCycleClipPlane
+      ) {
+        event.preventDefault()
+        handlers.onCycleClipPlane()
+      } else if (matchesShortcut(event, NIIVUE_CORE_SHORTCUTS.VOLUME_NEXT) && handlers.onVolumeNext) {
+        event.preventDefault()
+        handlers.onVolumeNext()
+      } else if (matchesShortcut(event, NIIVUE_CORE_SHORTCUTS.VOLUME_PREV) && handlers.onVolumePrev) {
+        event.preventDefault()
+        handlers.onVolumePrev()
       } else if (matchesShortcut(event, UI_SHORTCUTS.RESET_VIEW) && handlers.onResetView) {
         event.preventDefault()
         handlers.onResetView()
@@ -105,6 +132,18 @@ export function useKeyboardShortcuts(handlers: KeyboardShortcutHandlers, enabled
       } else if (matchesShortcut(event, UI_SHORTCUTS.SHOW_HEADER) && handlers.onShowHeader) {
         event.preventDefault()
         handlers.onShowHeader()
+      } else if (
+        matchesShortcut(event, UI_SHORTCUTS.CROSSHAIR_SUPERIOR) &&
+        handlers.onCrosshairSuperior
+      ) {
+        event.preventDefault()
+        handlers.onCrosshairSuperior()
+      } else if (
+        matchesShortcut(event, UI_SHORTCUTS.CROSSHAIR_INFERIOR) &&
+        handlers.onCrosshairInferior
+      ) {
+        event.preventDefault()
+        handlers.onCrosshairInferior()
       }
     }
 

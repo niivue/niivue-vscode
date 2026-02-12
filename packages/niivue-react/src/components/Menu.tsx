@@ -247,32 +247,154 @@ export const Menu = (props: AppProps) => {
     else hideUI.value = 3
   }
 
-  // No-op function for informational menu entries (shortcuts handled by niivue.js core)
+  const cycleViewMode = () => {
+    sliceType.value = (sliceType.value + 1) % 5
+  }
+
+  const volumeNext = () => {
+    nvArraySelected.value.forEach((nv) => {
+      const volume = nv.volumes[0]
+      if (volume && volume.nFrame4D && volume.nFrame4D > 1) {
+        const nextFrame = Math.min(volume.nFrame4D - 1, volume.frame4D + 1)
+        if (nextFrame !== volume.frame4D) {
+          // cast to any because ExtendedNiivue/Niivue signature might vary across versions
+          ;(nv as any).setFrame4D(volume, nextFrame)
+        }
+      } else if (nv.volumes.length > 1) {
+        const currentVolIdx = (nv as any).volIdx ?? 0
+        const nextVolIdx = Math.min(nv.volumes.length - 1, currentVolIdx + 1)
+        if (nextVolIdx !== currentVolIdx) {
+          nv.setVolume(nv.volumes[nextVolIdx])
+        }
+      }
+    })
+  }
+
+  const volumePrev = () => {
+    nvArraySelected.value.forEach((nv) => {
+      const volume = nv.volumes[0]
+      if (volume && volume.nFrame4D && volume.nFrame4D > 1) {
+        const prevFrame = Math.max(0, volume.frame4D - 1)
+        if (prevFrame !== volume.frame4D) {
+          ;(nv as any).setFrame4D(volume, prevFrame)
+        }
+      } else if (nv.volumes.length > 1) {
+        const currentVolIdx = (nv as any).volIdx ?? 0
+        const prevVolIdx = Math.max(0, currentVolIdx - 1)
+        if (prevVolIdx !== currentVolIdx) {
+          nv.setVolume(nv.volumes[prevVolIdx])
+        }
+      }
+    })
+  }
+  
+  const crosshairSuperior = () => {
+    nvArraySelected.value.forEach((nv) => {
+      nv.moveCrosshairInVox(0, 0, 1)
+      nv.drawScene()
+    })
+  }
+
+  const crosshairInferior = () => {
+    nvArraySelected.value.forEach((nv) => {
+      nv.moveCrosshairInVox(0, 0, -1)
+      nv.drawScene()
+    })
+  }
+
+  const crosshairRight = () => {
+    nvArraySelected.value.forEach((nv) => {
+      nv.moveCrosshairInVox(1, 0, 0)
+      nv.drawScene()
+    })
+  }
+
+  const crosshairLeft = () => {
+    nvArraySelected.value.forEach((nv) => {
+      nv.moveCrosshairInVox(-1, 0, 0)
+      nv.drawScene()
+    })
+  }
+
+  const crosshairAnterior = () => {
+    nvArraySelected.value.forEach((nv) => {
+      nv.moveCrosshairInVox(0, 1, 0)
+      nv.drawScene()
+    })
+  }
+
+  const crosshairPosterior = () => {
+    nvArraySelected.value.forEach((nv) => {
+      nv.moveCrosshairInVox(0, -1, 0)
+      nv.drawScene()
+    })
+  }
+
+  // Signal sync handlers
+  const toggleInterpolation = () => {
+    interpolation.value = !interpolation.value
+    settings.value = { ...settings.value, interpolation: interpolation.value }
+  }
+
+  const toggleColorbar = () => {
+    colorbar.value = !colorbar.value
+    settings.value = { ...settings.value, colorbar: colorbar.value }
+  }
+
+  const toggleRadiological = () => {
+    radiologicalConvention.value = !radiologicalConvention.value
+    settings.value = {
+      ...settings.value,
+      radiologicalConvention: radiologicalConvention.value,
+    }
+  }
+
+  const toggleCrosshair = () => {
+    crosshair.value = !crosshair.value
+    settings.value = { ...settings.value, showCrosshairs: crosshair.value }
+  }
+
+  const toggleZoomDragMode = () => {
+    zoomDragMode.value = !zoomDragMode.value
+    settings.value = { ...settings.value, zoomDragMode: zoomDragMode.value }
+  }
+
+  // No-op function for informational menu entries
   const noOp = () => {}
 
-  // Setup keyboard shortcuts
-  useKeyboardShortcuts({
+  // Setup keyboard shortcuts handlers
+  const handlers = {
     onViewAxial: () => (sliceType.value = SLICE_TYPE.AXIAL),
     onViewSagittal: () => (sliceType.value = SLICE_TYPE.SAGITTAL),
     onViewCoronal: () => (sliceType.value = SLICE_TYPE.CORONAL),
     onViewRender: () => (sliceType.value = SLICE_TYPE.RENDER),
     onViewMultiplanar: setMultiplanar,
+    onCycleViewMode: cycleViewMode,
+    onVolumeNext: volumeNext,
+    onVolumePrev: volumePrev,
     onResetView: resetZoom,
-    onToggleInterpolation: toggle(interpolation),
-    onToggleColorbar: toggle(colorbar),
-    onToggleRadiological: toggle(radiologicalConvention),
-    onToggleCrosshair: toggle(crosshair),
-    onToggleZoomMode: toggle(zoomDragMode),
+    onToggleInterpolation: toggleInterpolation,
+    onToggleColorbar: toggleColorbar,
+    onToggleRadiological: toggleRadiological,
+    onToggleCrosshair: toggleCrosshair,
+    onToggleZoomMode: toggleZoomDragMode,
     onAddImage: addImagesEvent,
     onAddOverlay: overlayButtonOnClick,
     onColorscale: openColorScaleLastOverlay,
     onHideUI: cycleUIVisibility,
     onShowHeader: toggle(headerDialog),
-  })
+    onCrosshairSuperior: crosshairSuperior,
+    onCrosshairInferior: crosshairInferior,
+  }
+
+  useKeyboardShortcuts(handlers)
 
   return (
     <>
-      <div className="flex flex-wrap items-baseline gap-2">
+      <div
+        className="flex flex-wrap items-baseline gap-2"
+        style={{ display: hideUI.value > 0 ? 'flex' : 'none' }}
+      >
         {!isVscode && settings.value.menuItems?.home && (
           <MenuButton label="Home" onClick={homeEvent} />
         )}
@@ -427,44 +549,44 @@ export const Menu = (props: AppProps) => {
         <MenuItem label="Navigation" visible={isVolume}>
           <MenuEntry
             label="Next Volume (4D)"
-            onClick={noOp}
+            onClick={volumeNext}
             shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.VOLUME_NEXT)}
           />
           <MenuEntry
             label="Previous Volume (4D)"
-            onClick={noOp}
+            onClick={volumePrev}
             shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.VOLUME_PREV)}
           />
           <hr />
           <MenuEntry
             label="Crosshair: Right"
-            onClick={noOp}
+            onClick={crosshairRight}
             shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CROSSHAIR_RIGHT)}
           />
           <MenuEntry
             label="Crosshair: Left"
-            onClick={noOp}
+            onClick={crosshairLeft}
             shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CROSSHAIR_LEFT)}
           />
           <MenuEntry
             label="Crosshair: Anterior"
-            onClick={noOp}
+            onClick={crosshairAnterior}
             shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CROSSHAIR_ANTERIOR)}
           />
           <MenuEntry
             label="Crosshair: Posterior"
-            onClick={noOp}
+            onClick={crosshairPosterior}
             shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CROSSHAIR_POSTERIOR)}
           />
           <MenuEntry
             label="Crosshair: Superior"
-            onClick={noOp}
-            shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CROSSHAIR_SUPERIOR)}
+            onClick={crosshairSuperior}
+            shortcut={formatShortcut(UI_SHORTCUTS.CROSSHAIR_SUPERIOR)}
           />
           <MenuEntry
             label="Crosshair: Inferior"
-            onClick={noOp}
-            shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CROSSHAIR_INFERIOR)}
+            onClick={crosshairInferior}
+            shortcut={formatShortcut(UI_SHORTCUTS.CROSSHAIR_INFERIOR)}
           />
         </MenuItem>
         <ImageSelect label="Select" state={selectionActive} visible={multipleVolumes}>
@@ -526,7 +648,7 @@ function applyCrosshairWidth(nvArray: Signal<ExtendedNiivue[]>, crosshair: Signa
       try {
         nv.setCrosshairWidth(Number(crosshair.value))
       } catch (e) {
-        console.log(e)
+        // ignore
       }
       nv.drawScene()
     }
