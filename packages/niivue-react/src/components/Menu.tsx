@@ -291,7 +291,7 @@ export const Menu = (props: AppProps) => {
     // Apply overlay defaults (e.g., for phase data)
     if (preset.overlayDefaults) {
       nvArraySelected.value.forEach((nv) => {
-        nv.volumes.forEach((vol: any) => {
+        nv.volumes.forEach((vol) => {
           if (preset.overlayDefaults!.cal_min !== undefined) {
             // Only apply if not already set
             if (vol.cal_min === vol.global_min || vol.cal_min === 0) {
@@ -467,7 +467,10 @@ export const Menu = (props: AppProps) => {
               className="bg-gray-600 w-full border-2 border-gray-600 rounded-md px-2 py-1"
               type="text"
               value={presetNameInput.value}
-              onInput={(e: any) => (presetNameInput.value = e.target.value)}
+              onInput={(e: Event) => {
+                const target = e.target as HTMLInputElement
+                presetNameInput.value = target.value
+              }}
               placeholder="Enter preset name"
             />
           </div>
@@ -477,7 +480,10 @@ export const Menu = (props: AppProps) => {
               className="bg-gray-600 w-full border-2 border-gray-600 rounded-md px-2 py-1"
               type="text"
               value={presetDescInput.value}
-              onInput={(e: any) => (presetDescInput.value = e.target.value)}
+              onInput={(e: Event) => {
+                const target = e.target as HTMLInputElement
+                presetDescInput.value = target.value
+              }}
               placeholder="Enter description"
             />
           </div>

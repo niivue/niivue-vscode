@@ -84,22 +84,6 @@
         "command": "niiVue.openFromExplorer",
         "title": "NiiVue: Open",
         "enablement": "!listMultiSelection"
-      },
-      {
-        "command": "niivue.applyPreset.fmri",
-        "title": "NiiVue: Apply fMRI Preset"
-      },
-      {
-        "command": "niivue.applyPreset.phase",
-        "title": "NiiVue: Apply Phase Data Preset"
-      },
-      {
-        "command": "niivue.applyPreset.anatomical",
-        "title": "NiiVue: Apply Anatomical Preset"
-      },
-      {
-        "command": "niivue.applyPreset.dti",
-        "title": "NiiVue: Apply DTI/Diffusion Preset"
       }
     ],
     "customEditors": [
