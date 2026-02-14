@@ -25,6 +25,25 @@ code --install-extension KorbinianEckstein.niivue
 2. **Compare Multiple Files**: Select multiple files in Explorer, right-click → "NiiVue: Compare"
 4. **Add Overlays**: Click the Overlay menu
 
+### View Presets
+
+NiiVue includes optimized viewing presets for different types of neuroimaging data:
+
+- **fMRI**: Optimized for functional MRI with 4D timeseries visualization, including multiplanar view with automatic timeseries display
+- **Phase Data**: Configured for phase images with interpolation disabled and full phase range scaling (-π to π)
+- **Anatomical**: Standard settings for anatomical T1/T2 images with gray colormap
+- **DTI/Diffusion**: Optimized for diffusion tensor imaging overlays with jet colormap
+
+**Using Presets:**
+1. Open an image file in NiiVue
+2. Click the **Presets** menu in the viewer
+3. Select a preset to apply
+
+**Custom Presets:**
+- Save your current view settings as a custom preset using "Save Current as Preset"
+- Custom presets are stored in VSCode settings and persist across sessions
+- Delete custom presets by clicking the ✕ button next to their name
+
 ### Remote Development
 
 NiiVue works with VS Code's remote development features:

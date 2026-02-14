@@ -7,6 +7,14 @@ import {
   addOverlayEvent,
   openImageFromURL,
 } from '../events'
+import {
+  BUILTIN_PRESETS,
+  ViewPreset,
+  createUserPreset,
+  deleteUserPreset,
+  loadUserPresets,
+  saveUserPresets,
+} from '../presets'
 import { getMetadataString, getNumberOfPoints } from '../utility'
 import { AppProps, SelectionMode } from './AppProps'
 import { HeaderBox } from './HeaderBox'
@@ -38,6 +46,10 @@ export const Menu = (props: AppProps) => {
   const zoomDragMode = useSignal(settings.value.zoomDragMode)
   const selectionActive = useSignal(false)
   const selectMultiple = useSignal(false)
+  const userPresets = useSignal(loadUserPresets())
+  const showSavePresetDialog = useSignal(false)
+  const presetNameInput = useSignal('')
+  const presetDescInput = useSignal('')
 
   // Computed
   const isOverlay = computed(() => nvArraySelected.value[0]?.volumes?.length > 1)
@@ -210,6 +222,146 @@ export const Menu = (props: AppProps) => {
     alert('Settings saved!')
   }
 
+  // Preset functions
+  const applyPreset = (preset: ViewPreset) => {
+    // Apply settings
+    if (preset.settings.interpolation !== undefined) {
+      interpolation.value = preset.settings.interpolation
+    }
+    if (preset.settings.showCrosshairs !== undefined) {
+      crosshair.value = preset.settings.showCrosshairs
+    }
+    if (preset.settings.radiologicalConvention !== undefined) {
+      radiologicalConvention.value = preset.settings.radiologicalConvention
+    }
+    if (preset.settings.colorbar !== undefined) {
+      colorbar.value = preset.settings.colorbar
+    }
+    if (preset.settings.zoomDragMode !== undefined) {
+      zoomDragMode.value = preset.settings.zoomDragMode
+    }
+
+    // Apply colormap defaults
+    if (preset.settings.defaultVolumeColormap) {
+      nvArraySelected.value.forEach((nv) => {
+        if (nv.volumes.length > 0) {
+          nv.volumes[0].colormap = preset.settings.defaultVolumeColormap!
+        }
+      })
+    }
+    if (preset.settings.defaultOverlayColormap) {
+      nvArraySelected.value.forEach((nv) => {
+        if (nv.volumes.length > 1) {
+          nv.volumes[1].colormap = preset.settings.defaultOverlayColormap!
+        }
+      })
+    }
+
+    // Apply view options
+    if (preset.viewOptions) {
+      if (preset.viewOptions.sliceType !== undefined) {
+        sliceType.value = preset.viewOptions.sliceType
+      }
+      if (preset.viewOptions.hideUI !== undefined) {
+        hideUI.value = preset.viewOptions.hideUI
+      }
+
+      // Apply special view settings for fMRI-like presets
+      if (
+        preset.viewOptions.autoSizeMultiplanar !== undefined ||
+        preset.viewOptions.multiplanarForceRender !== undefined
+      ) {
+        nvArraySelected.value.forEach((nv) => {
+          if (preset.viewOptions!.autoSizeMultiplanar !== undefined) {
+            nv.graph.autoSizeMultiplanar = preset.viewOptions!.autoSizeMultiplanar
+          }
+          if (preset.viewOptions!.multiplanarForceRender !== undefined) {
+            nv.opts.multiplanarForceRender = preset.viewOptions!.multiplanarForceRender
+          }
+          if (preset.viewOptions!.normalizeValues !== undefined) {
+            nv.graph.normalizeValues = preset.viewOptions!.normalizeValues
+          }
+          if (preset.viewOptions!.graphOpacity !== undefined) {
+            nv.graph.opacity = preset.viewOptions!.graphOpacity
+          }
+        })
+      }
+    }
+
+    // Apply overlay defaults (e.g., for phase data)
+    if (preset.overlayDefaults) {
+      nvArraySelected.value.forEach((nv) => {
+        nv.volumes.forEach((vol) => {
+          if (preset.overlayDefaults!.cal_min !== undefined) {
+            // Only apply if not already set
+            if (vol.cal_min === vol.global_min || vol.cal_min === 0) {
+              vol.cal_min = preset.overlayDefaults!.cal_min
+            }
+          }
+          if (preset.overlayDefaults!.cal_max !== undefined) {
+            if (vol.cal_max === vol.global_max || vol.cal_max === 0) {
+              vol.cal_max = preset.overlayDefaults!.cal_max
+            }
+          }
+          if (preset.overlayDefaults!.colormap) {
+            vol.colormap = preset.overlayDefaults!.colormap
+          }
+          if (preset.overlayDefaults!.opacity !== undefined) {
+            vol.opacity = preset.overlayDefaults!.opacity
+          }
+        })
+      })
+    }
+
+    // Update the display
+    nvArraySelected.value.forEach((nv) => {
+      nv.updateGLVolume()
+    })
+    nvArray.value = [...nvArray.value]
+  }
+
+  const saveCurrentAsPreset = () => {
+    if (!presetNameInput.value.trim()) {
+      alert('Please enter a name for the preset')
+      return
+    }
+
+    const currentSettings = {
+      interpolation: interpolation.value,
+      showCrosshairs: crosshair.value,
+      radiologicalConvention: radiologicalConvention.value,
+      colorbar: colorbar.value,
+      zoomDragMode: zoomDragMode.value,
+    }
+
+    const viewOptions = {
+      sliceType: sliceType.value,
+      hideUI: hideUI.value,
+    }
+
+    const newPreset = createUserPreset(
+      presetNameInput.value,
+      presetDescInput.value || 'Custom user preset',
+      currentSettings,
+      viewOptions,
+    )
+
+    const presets = [...userPresets.value, newPreset]
+    saveUserPresets(presets)
+    userPresets.value = presets
+
+    presetNameInput.value = ''
+    presetDescInput.value = ''
+    showSavePresetDialog.value = false
+
+    alert(`Preset "${newPreset.name}" saved!`)
+  }
+
+  const deletePreset = (id: string) => {
+    deleteUserPreset(id)
+    userPresets.value = loadUserPresets()
+  }
+
   return (
     <>
       <div className="flex flex-wrap items-baseline gap-2">
@@ -249,6 +401,30 @@ export const Menu = (props: AppProps) => {
           <hr />
           {!isVscode && <MenuEntry label="Save Settings" onClick={saveSettings} />}
         </MenuItem>
+        <MenuItem label="Presets">
+          {Object.values(BUILTIN_PRESETS).map((preset) => (
+            <MenuEntry
+              key={preset.name}
+              label={preset.name}
+              onClick={() => applyPreset(preset)}
+            />
+          ))}
+          {userPresets.value.length > 0 && <hr />}
+          {userPresets.value.map((preset) => (
+            <div key={preset.id} className="flex items-center justify-between">
+              <MenuEntry label={preset.name} onClick={() => applyPreset(preset)} />
+              <button
+                className="text-xs px-1 hover:text-red-500"
+                onClick={() => deletePreset(preset.id)}
+                title="Delete preset"
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+          <hr />
+          <MenuEntry label="Save Current as Preset" onClick={toggle(showSavePresetDialog)} />
+        </MenuItem>
         <MenuToggle label="Zoom" state={zoomDragMode} />
         <MenuItem label="ColorScale" visible={isVolumeOrMesh} onClick={openColorScaleLastOverlay}>
           <MenuEntry label="Volume" onClick={openColorScale(0)} visible={isVolume} />
@@ -282,6 +458,51 @@ export const Menu = (props: AppProps) => {
       />
       <HeaderBox nvArraySelected={nvArraySelected} nvArray={nvArray} visible={setHeaderMenu} />
       <HeaderDialog nvArraySelected={nvArraySelected} isOpen={headerDialog} />
+      {showSavePresetDialog.value && (
+        <div className="absolute left-8 top-8 bg-gray-700 rounded-md z-50 p-4 space-y-2 min-w-64">
+          <h3 className="text-lg font-bold">Save Preset</h3>
+          <div>
+            <label className="block text-sm">Name:</label>
+            <input
+              className="bg-gray-600 w-full border-2 border-gray-600 rounded-md px-2 py-1"
+              type="text"
+              value={presetNameInput.value}
+              onInput={(e: Event) => {
+                const target = e.target as HTMLInputElement
+                presetNameInput.value = target.value
+              }}
+              placeholder="Enter preset name"
+            />
+          </div>
+          <div>
+            <label className="block text-sm">Description (optional):</label>
+            <input
+              className="bg-gray-600 w-full border-2 border-gray-600 rounded-md px-2 py-1"
+              type="text"
+              value={presetDescInput.value}
+              onInput={(e: Event) => {
+                const target = e.target as HTMLInputElement
+                presetDescInput.value = target.value
+              }}
+              placeholder="Enter description"
+            />
+          </div>
+          <div className="flex gap-2 justify-end">
+            <button
+              className="bg-gray-600 border-2 border-gray-600 rounded-md px-3 py-1"
+              onClick={() => (showSavePresetDialog.value = false)}
+            >
+              Cancel
+            </button>
+            <button
+              className="bg-blue-600 border-2 border-blue-600 rounded-md px-3 py-1"
+              onClick={saveCurrentAsPreset}
+            >
+              Save
+            </button>
+          </div>
+        </div>
+      )}
     </>
   )
 }
