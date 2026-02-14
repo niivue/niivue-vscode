@@ -2,6 +2,9 @@ import * as vscode from 'vscode'
 import { LinkHoverProvider } from './HoverProvider'
 import { NiiVueEditorProvider } from './editorProvider'
 
+// Built-in preset names matching presets.ts
+const PRESET_NAMES = ['fmri', 'phase', 'anatomical', 'dti']
+
 export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(NiiVueEditorProvider.register(context))
   context.subscriptions.push(vscode.languages.registerHoverProvider('*', new LinkHoverProvider()))
@@ -40,6 +43,24 @@ export function activate(context: vscode.ExtensionContext) {
       }),
     )
   })
+
+  // Register preset commands
+  PRESET_NAMES.forEach((presetName) => {
+    context.subscriptions.push(
+      vscode.commands.registerCommand(`niivue.applyPreset.${presetName}`, () => {
+        // Send message to active webview panel
+        const panel = vscode.window.activeTextEditor
+        if (panel) {
+          vscode.commands.executeCommand('workbench.action.focusActiveEditorGroup')
+        }
+        // The preset will be applied from the menu in the webview
+        vscode.window.showInformationMessage(
+          `To apply ${presetName} preset, use the Presets menu in the NiiVue viewer`,
+        )
+      }),
+    )
+  })
+
 
   context.subscriptions.push(
     vscode.commands.registerCommand('niivue.openWebLink', async () => {
