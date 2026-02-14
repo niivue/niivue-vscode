@@ -3,6 +3,7 @@ import { App } from './components/App'
 import { useAppState } from './components/AppProps'
 import { addImageFromURLParams, handleMessage } from './events'
 import './index.css'
+import { setVSCodeUserPresets } from './presets'
 import { readyStateManager } from './readyState'
 import { defaultSettings } from './settings'
 
@@ -18,6 +19,10 @@ function setupMessageListener() {
 
     if (type === 'initSettings') {
       const settings = body
+      // Store VSCode user presets if provided
+      if (settings.userPresets) {
+        setVSCodeUserPresets(settings.userPresets)
+      }
       localStorage.setItem('userSettings', JSON.stringify(settings)) // Save settings to localStorage
       const app = document.getElementById('app')
       if (app) {

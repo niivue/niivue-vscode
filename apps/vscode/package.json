@@ -84,6 +84,22 @@
         "command": "niiVue.openFromExplorer",
         "title": "NiiVue: Open",
         "enablement": "!listMultiSelection"
+      },
+      {
+        "command": "niivue.applyPreset.fmri",
+        "title": "NiiVue: Apply fMRI Preset"
+      },
+      {
+        "command": "niivue.applyPreset.phase",
+        "title": "NiiVue: Apply Phase Data Preset"
+      },
+      {
+        "command": "niivue.applyPreset.anatomical",
+        "title": "NiiVue: Apply Anatomical Preset"
+      },
+      {
+        "command": "niivue.applyPreset.dti",
+        "title": "NiiVue: Apply DTI/Diffusion Preset"
       }
     ],
     "customEditors": [
@@ -244,6 +260,37 @@
           "type": "string",
           "default": "hsv",
           "description": "Default colormap to use for mesh overlays."
+        },
+        "niivue.userPresets": {
+          "type": "array",
+          "default": [],
+          "description": "User-defined view presets. Each preset can include settings, view options, and overlay defaults.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "settings": {
+                "type": "object"
+              },
+              "viewOptions": {
+                "type": "object"
+              },
+              "overlayDefaults": {
+                "type": "object"
+              },
+              "createdAt": {
+                "type": "string"
+              }
+            }
+          }
         }
       }
     }
