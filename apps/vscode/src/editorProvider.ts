@@ -60,7 +60,17 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     const defaultVolumeColormap = config.get<string>('defaultVolumeColormap', 'gray')
     const defaultOverlayColormap = config.get<string>('defaultOverlayColormap', 'redyell')
     const defaultMeshOverlayColormap = config.get<string>('defaultMeshOverlayColormap', 'hsv')
-    const userPresets = config.get<any[]>('userPresets', [])
+    const userPresets = config.get<
+      Array<{
+        id: string
+        name: string
+        description: string
+        settings: Record<string, unknown>
+        viewOptions?: Record<string, unknown>
+        overlayDefaults?: Record<string, unknown>
+        createdAt: string
+      }>
+    >('userPresets', [])
 
     panel.webview.postMessage({
       type: 'initSettings',

@@ -97,7 +97,7 @@ export interface UserPreset extends ViewPreset {
 export function loadUserPresets(): UserPreset[] {
   try {
     // Check if we're in VSCode environment
-    const vscode = (globalThis as any).vscode
+    const vscode = (globalThis as { vscode?: unknown }).vscode
     if (vscode) {
       // VSCode presets are passed via initSettings message
       // They will be loaded separately through the settings flow
@@ -120,7 +120,7 @@ export function loadUserPresets(): UserPreset[] {
  */
 export function saveUserPresets(presets: UserPreset[]): void {
   try {
-    const vscode = (globalThis as any).vscode
+    const vscode = (globalThis as { vscode?: unknown }).vscode
     if (vscode) {
       // For VSCode, store temporarily and notify user to save in settings
       localStorage.setItem('niivue_vscode_user_presets', JSON.stringify(presets))
