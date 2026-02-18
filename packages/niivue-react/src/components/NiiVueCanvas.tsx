@@ -214,13 +214,23 @@ async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSetting
       opacity: 1.0,
     })
     nv.addVolume(volume)
-  } else if (item?.data?.length > 0) {
-    const volume = await NVImage.loadFromUrl({
-      url: item.data,
-      name: item.uri,
-      colormap: settings.defaultVolumeColormap,
-    })
-    nv.addVolume(volume)
+  } else if ((item?.data?.length ?? item?.data?.byteLength) > 0) {
+    const isBuffer = typeof item.data.byteLength === 'number'
+
+    if (isBuffer && isImageType(item.uri)) {
+      // If it's a view (e.g. Uint8Array), get the underlying buffer. If it's an ArrayBuffer, use it directly.
+      const buffer = item.data.buffer || item.data
+      await nv.loadFromArrayBuffer(buffer, item.uri)
+    } else if (typeof item.data === 'string') {
+      const volume = await NVImage.loadFromUrl({
+        url: item.data,
+        name: item.uri,
+        colormap: settings.defaultVolumeColormap,
+      })
+      nv.addVolume(volume)
+    } else {
+        console.warn('Unknown data type for loadVolume:', item.data)
+    }
   } else if (isImageType(item.uri)) {
     if (item.data) {
       const volume = await NVImage.loadFromUrl({

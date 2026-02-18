@@ -32,10 +32,7 @@ export async function handleMessage(message: any, appProps: AppProps) {
       break
     case 'initCanvas':
       {
-        if (nvArray.value.length === 0 && body.n > 1) {
-          sliceType.value = SLICE_TYPE.AXIAL
-        }
-        growNvArrayBy(nvArray, body.n)
+        initCanvas(appProps, body.n)
       }
       break
     case 'debugRequest':
@@ -210,12 +207,12 @@ function getLayerDefaults(type: string, settings: NiiVueSettings) {
 
 async function addOverlay(nv: Niivue, item: any, settings: NiiVueSettings) {
   if (isImageType(item.uri)) {
-    const overlayColormap = settings?.defaultOverlayColormap || 'redyell'
+    const overlayColormap = item.colormap || settings?.defaultOverlayColormap || 'redyell'
     const image = await NVImage.loadFromUrl({
       url: item.data || item.uri,
       name: item.uri,
       colormap: overlayColormap,
-      opacity: 0.5
+      opacity: item.opacity ?? 0.5
     })
     nv.addVolume(image)
   } else {
@@ -310,6 +307,14 @@ export function addDcmFolderEvent() {
 
     input.click()
   }
+}
+
+export function initCanvas(props: AppProps, n = 1) {
+  const { nvArray, sliceType } = props
+  if (nvArray.value.length === 0 && n > 1) {
+    sliceType.value = SLICE_TYPE.AXIAL
+  }
+  growNvArrayBy(nvArray, n)
 }
 
 function getUnitinializedNvInstance(nvArray: Signal<ExtendedNiivue[]>) {
