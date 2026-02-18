@@ -1,6 +1,6 @@
 {
   "name": "@niivue/streamlit",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "description": "NiiVue Streamlit component with Python and TypeScript integration",
   "scripts": {
