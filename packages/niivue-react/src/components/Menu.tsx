@@ -1,24 +1,24 @@
 import { SLICE_TYPE } from '@niivue/niivue'
 import { Signal, computed, effect, useSignal } from '@preact/signals'
 import {
-  ExtendedNiivue,
-  addDcmFolderEvent,
-  addImagesEvent,
-  addOverlayEvent,
-  openImageFromURL,
+    ExtendedNiivue,
+    addDcmFolderEvent,
+    addImagesEvent,
+    addOverlayEvent,
+    openImageFromURL,
 } from '../events'
 import { getMetadataString, getNumberOfPoints } from '../utility'
 import { AppProps, SelectionMode } from './AppProps'
 import { HeaderBox } from './HeaderBox'
 import {
-  HeaderDialog,
-  ImageSelect,
-  MenuButton,
-  MenuEntry,
-  MenuItem,
-  MenuToggle,
-  ToggleEntry,
-  toggle,
+    HeaderDialog,
+    ImageSelect,
+    MenuButton,
+    MenuEntry,
+    MenuItem,
+    MenuToggle,
+    ToggleEntry,
+    toggle,
 } from './MenuElements'
 import { ScalingBox } from './ScalingBox'
 
@@ -213,61 +213,73 @@ export const Menu = (props: AppProps) => {
   return (
     <>
       <div className="flex flex-wrap items-baseline gap-2">
-        {!isVscode && <MenuButton label="Home" onClick={homeEvent} />}
-        <MenuItem label="Add Image" onClick={addImagesEvent}>
-          <MenuEntry label="File(s)" onClick={addImagesEvent} />
-          <MenuEntry label="DICOM Folder" onClick={addDcmFolderEvent} />
-          <MenuEntry
-            label="Example Image"
-            onClick={() =>
-              openImageFromURL('https://niivue.github.io/niivue-demo-images/mni152.nii.gz')
-            }
-          />
-        </MenuItem>
-        <MenuItem label="View" onClick={resetZoom}>
-          <MenuEntry label="Axial" onClick={() => (sliceType.value = SLICE_TYPE.AXIAL)} />
-          <MenuEntry label="Sagittal" onClick={() => (sliceType.value = SLICE_TYPE.SAGITTAL)} />
-          <MenuEntry label="Coronal" onClick={() => (sliceType.value = SLICE_TYPE.CORONAL)} />
-          <MenuEntry label="Render" onClick={() => (sliceType.value = SLICE_TYPE.RENDER)} />
-          <MenuEntry label="Multiplanar + Render" onClick={setMultiplanar} />
-          <MenuEntry
-            label="Multiplanar + Timeseries"
-            onClick={setTimeSeries}
-            visible={isMultiEcho}
-          />
-          <hr />
-          <MenuEntry label="Show All" onClick={() => (hideUI.value = 3)} />
-          <MenuEntry label="Hide UI" onClick={() => (hideUI.value = 2)} />
-          <MenuEntry label="Hide All" onClick={() => (hideUI.value = 0)} />
-          <hr />
-          <MenuEntry label="Reset View" onClick={resetZoom} />
-          <hr />
-          <ToggleEntry label="Interpolation" state={interpolation} />
-          <ToggleEntry label="Colorbar" state={colorbar} />
-          <ToggleEntry label="Radiological" state={radiologicalConvention} />
-          <ToggleEntry label="Crosshair" state={crosshair} />
-          <hr />
-          {!isVscode && <MenuEntry label="Save Settings" onClick={saveSettings} />}
-        </MenuItem>
-        <MenuToggle label="Zoom" state={zoomDragMode} />
-        <MenuItem label="ColorScale" visible={isVolumeOrMesh} onClick={openColorScaleLastOverlay}>
-          <MenuEntry label="Volume" onClick={openColorScale(0)} visible={isVolume} />
-          {Array.from({ length: nOverlays.value }, (_, i) => (
-            <MenuEntry key={i} label={`Overlay ${i + 1}`} onClick={openColorScale(i + 1)} />
-          ))}
-        </MenuItem>
-        <MenuItem label="Overlay" onClick={overlayButtonOnClick} visible={isVolumeOrMesh}>
-          <MenuEntry label="Add" onClick={addOverlay} visible={isVolume} />
-          <MenuEntry label="MeshOverlay" onClick={addMeshOverlay} visible={isMesh} />
-          <MenuEntry label="Curvature" onClick={addCurvature} visible={isMesh} />
-          <MenuEntry label="ImageOverlay" onClick={addOverlay} visible={isMesh} />
-          <MenuEntry label="Replace" onClick={replaceLastVolume} visible={isOverlay} />
-          <MenuEntry label="Remove" onClick={removeLastVolume} visible={isOverlay} />
-        </MenuItem>
-        <MenuItem label="Header" onClick={toggle(headerDialog)} visible={isVolume}>
-          <MenuEntry label="Set Headers to 1" onClick={setVoxelSize1AndOrigin0} />
-          <MenuEntry label="Set Header" onClick={toggle(setHeaderMenu)} />
-        </MenuItem>
+        {!isVscode && settings.value.menuItems.home && (
+          <MenuButton label="Home" onClick={homeEvent} />
+        )}
+        {settings.value.menuItems.addImage && (
+          <MenuItem label="Add Image" onClick={addImagesEvent}>
+            <MenuEntry label="File(s)" onClick={addImagesEvent} />
+            <MenuEntry label="DICOM Folder" onClick={addDcmFolderEvent} />
+            <MenuEntry
+              label="Example Image"
+              onClick={() =>
+                openImageFromURL('https://niivue.github.io/niivue-demo-images/mni152.nii.gz')
+              }
+            />
+          </MenuItem>
+        )}
+        {settings.value.menuItems.view && (
+          <MenuItem label="View" onClick={resetZoom}>
+            <MenuEntry label="Axial" onClick={() => (sliceType.value = SLICE_TYPE.AXIAL)} />
+            <MenuEntry label="Sagittal" onClick={() => (sliceType.value = SLICE_TYPE.SAGITTAL)} />
+            <MenuEntry label="Coronal" onClick={() => (sliceType.value = SLICE_TYPE.CORONAL)} />
+            <MenuEntry label="Render" onClick={() => (sliceType.value = SLICE_TYPE.RENDER)} />
+            <MenuEntry label="Multiplanar + Render" onClick={setMultiplanar} />
+            <MenuEntry
+              label="Multiplanar + Timeseries"
+              onClick={setTimeSeries}
+              visible={isMultiEcho}
+            />
+            <hr />
+            <MenuEntry label="Show All" onClick={() => (hideUI.value = 3)} />
+            <MenuEntry label="Hide UI" onClick={() => (hideUI.value = 2)} />
+            <MenuEntry label="Hide All" onClick={() => (hideUI.value = 0)} />
+            <hr />
+            <MenuEntry label="Reset View" onClick={resetZoom} />
+            <hr />
+            <ToggleEntry label="Interpolation" state={interpolation} />
+            <ToggleEntry label="Colorbar" state={colorbar} />
+            <ToggleEntry label="Radiological" state={radiologicalConvention} />
+            <ToggleEntry label="Crosshair" state={crosshair} />
+            <hr />
+            {!isVscode && <MenuEntry label="Save Settings" onClick={saveSettings} />}
+          </MenuItem>
+        )}
+        {settings.value.menuItems.zoom && <MenuToggle label="Zoom" state={zoomDragMode} />}
+        {settings.value.menuItems.colorScale && (
+          <MenuItem label="ColorScale" visible={isVolumeOrMesh} onClick={openColorScaleLastOverlay}>
+            <MenuEntry label="Volume" onClick={openColorScale(0)} visible={isVolume} />
+            {Array.from({ length: nOverlays.value }, (_, i) => (
+              <MenuEntry key={i} label={`Overlay ${i + 1}`} onClick={openColorScale(i + 1)} />
+            ))}
+          </MenuItem>
+        )}
+        {settings.value.menuItems.overlay && (
+          <MenuItem label="Overlay" onClick={overlayButtonOnClick} visible={isVolumeOrMesh}>
+            <MenuEntry label="Add" onClick={addOverlay} visible={isVolume} />
+            <MenuEntry label="MeshOverlay" onClick={addMeshOverlay} visible={isMesh} />
+            <MenuEntry label="Curvature" onClick={addCurvature} visible={isMesh} />
+            <MenuEntry label="ImageOverlay" onClick={addOverlay} visible={isMesh} />
+            <MenuEntry label="Replace" onClick={replaceLastVolume} visible={isOverlay} />
+            <MenuEntry label="Remove" onClick={removeLastVolume} visible={isOverlay} />
+          </MenuItem>
+        )}
+        {settings.value.menuItems.header && (
+          <MenuItem label="Header" onClick={toggle(headerDialog)} visible={isVolume}>
+            <MenuEntry label="Set Headers to 1" onClick={setVoxelSize1AndOrigin0} />
+            <MenuEntry label="Set Header" onClick={toggle(setHeaderMenu)} />
+          </MenuItem>
+        )}
         <ImageSelect label="Select" state={selectionActive} visible={multipleVolumes}>
           <ToggleEntry label="Multiple" state={selectMultiple} />
           <MenuEntry label="Select All" onClick={selectAll} />
