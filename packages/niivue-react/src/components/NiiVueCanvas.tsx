@@ -86,6 +86,22 @@ export const NiiVueCanvas = ({
     nv.drawScene()
   }, [height, width]) // avoids black images
 
+  useEffect(() => {
+    if (!nv.canvas) {
+      return
+    }
+    // Apply settings reactively
+    nv.setInterpolation(!settings.value.interpolation)
+    try {
+      nv.setCrosshairWidth(Number(settings.value.showCrosshairs))
+    } catch (e) {
+      console.warn('Failed to set crosshair width', e)
+    }
+    nv.setRadiologicalConvention(settings.value.radiologicalConvention)
+    nv.opts.isColorbar = settings.value.colorbar
+    nv.drawScene()
+  }, [settings.value, nv.canvas])
+
   return (
     <div
       className="relative"

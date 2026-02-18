@@ -92,14 +92,21 @@ else
 fi
 
 
-# Install Python development dependencies for Jupyter if missing
-if ! python3 -c "import jupyterlab" &> /dev/null; then
+# Install Python development dependencies for Jupyter and Streamlit if missing
+if ! python3 -c "import jupyterlab, streamlit" &> /dev/null 2>/dev/null; then
     echo "🐍 Setting up Python environment..."
     pip install --upgrade pip
     pip install "jupyterlab>=4.0.0" jupyter-packaging build hatch twine
     pip install coverage pytest pytest-asyncio pytest-cov pytest-jupyter pytest-xvfb
+    pip install streamlit pandas
+    # Install streamlit component in editable mode
+    if [ -d "apps/streamlit" ]; then
+        cd apps/streamlit
+        pip install -e .
+        cd ../..
+    fi
 else
-    echo "✅ Python dependencies already installed."
+    echo "✅ Python dependencies (JupyterLab, Streamlit) already installed."
 fi
 
 

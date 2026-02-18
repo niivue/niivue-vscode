@@ -1,24 +1,24 @@
 import { SLICE_TYPE } from '@niivue/niivue'
 import { Signal, computed, effect, useSignal } from '@preact/signals'
 import {
-    ExtendedNiivue,
-    addDcmFolderEvent,
-    addImagesEvent,
-    addOverlayEvent,
-    openImageFromURL,
+  ExtendedNiivue,
+  addDcmFolderEvent,
+  addImagesEvent,
+  addOverlayEvent,
+  openImageFromURL,
 } from '../events'
 import { getMetadataString, getNumberOfPoints } from '../utility'
 import { AppProps, SelectionMode } from './AppProps'
 import { HeaderBox } from './HeaderBox'
 import {
-    HeaderDialog,
-    ImageSelect,
-    MenuButton,
-    MenuEntry,
-    MenuItem,
-    MenuToggle,
-    ToggleEntry,
-    toggle,
+  HeaderDialog,
+  ImageSelect,
+  MenuButton,
+  MenuEntry,
+  MenuItem,
+  MenuToggle,
+  ToggleEntry,
+  toggle,
 } from './MenuElements'
 import { ScalingBox } from './ScalingBox'
 
@@ -82,6 +82,32 @@ export const Menu = (props: AppProps) => {
   effect(() => applyRadiologicalConvention(nvArray, radiologicalConvention))
   effect(() => applyColorbar(nvArray, colorbar))
   effect(() => applyDragMode(nvArray, zoomDragMode))
+
+  // Sync settings global value to local signals (e.g. for Streamlit)
+  effect(() => {
+    interpolation.value = settings.value.interpolation
+    crosshair.value = settings.value.showCrosshairs
+    radiologicalConvention.value = settings.value.radiologicalConvention
+    colorbar.value = settings.value.colorbar
+  })
+
+  // Sync local signal changes back to global settings
+  effect(() => {
+    if (
+      settings.value.interpolation !== interpolation.value ||
+      settings.value.showCrosshairs !== crosshair.value ||
+      settings.value.radiologicalConvention !== radiologicalConvention.value ||
+      settings.value.colorbar !== colorbar.value
+    ) {
+      settings.value = {
+        ...settings.value,
+        interpolation: interpolation.value,
+        showCrosshairs: crosshair.value,
+        radiologicalConvention: radiologicalConvention.value,
+        colorbar: colorbar.value,
+      }
+    }
+  })
 
   // Menu Click events
   const homeEvent = () => {
