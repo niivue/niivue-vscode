@@ -1,6 +1,6 @@
 {
   "name": "@niivue/streamlit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "NiiVue Streamlit component with Python and TypeScript integration",
   "scripts": {
@@ -9,9 +9,11 @@
     "test": "pnpm test:python",
     "test:frontend": "cd niivue_component/frontend && pnpm test",
     "test:python": "python3 -m pytest tests/",
-    "clean": "cd niivue_component/frontend && pnpm clean",
+    "clean": "cd niivue_component/frontend && pnpm clean && cd ../.. && rimraf dist build *.egg-info",
     "lint": "cd niivue_component/frontend && pnpm lint",
-    "type-check": "cd niivue_component/frontend && tsc --noEmit"
+    "type-check": "cd niivue_component/frontend && tsc --noEmit",
+    "release:test": "pnpm run clean && pnpm run build && python -m build && python -m twine upload --repository testpypi dist/*",
+    "release:prod": "pnpm run clean && pnpm run build && python -m build && python -m twine upload dist/*"
   },
   "keywords": [
     "streamlit",
