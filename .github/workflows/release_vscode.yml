@@ -2,13 +2,9 @@ name: Release VS Code Extension
 
 on:
   push:
-    tags: ['vscode-v*']
+    tags:
+      - 'niivue-vscode@*'
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version to release (e.g., 2.4.0)'
-        required: true
-        type: string
 
 permissions:
   contents: write
@@ -35,41 +31,41 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build dependencies
-        run: pnpm turbo build --filter=@niivue/vscode^...
+        run: pnpm turbo build --filter=niivue
+
+      - name: Check Pre-release
+        id: prerelease
+        run: |
+          if [[ "${{ github.ref }}" == *"-beta."* ]] || [[ "${{ github.ref }}" == *"-rc."* ]] || [[ "${{ github.ref }}" == *"-alpha."* ]]; then
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+            echo "VSCE_FLAGS=--pre-release" >> $GITHUB_ENV
+          else
+             echo "is_prerelease=false" >> $GITHUB_OUTPUT
+             echo "VSCE_FLAGS=" >> $GITHUB_ENV
+          fi
 
       - name: Package extension
-        run: pnpm vsce package
+        run: pnpm vsce package ${{ env.VSCE_FLAGS }}
         working-directory: ./apps/vscode
 
       - name: Publish to VS Code Marketplace
-        run: pnpm vsce publish
+        run: pnpm vsce publish ${{ env.VSCE_FLAGS }}
         working-directory: ./apps/vscode
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
 
       - name: Publish to Open VSX Registry
-        run: pnpm ovsx publish
+        run: pnpm ovsx publish *.vsix
         working-directory: ./apps/vscode
         env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
 
       - name: Create GitHub Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref }}
-          release_name: VS Code Extension ${{ github.ref }}
-          body: |
-            ## Changes
-
-            - VS Code extension release
-
-            ## Installation
-
-            Install from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=KorbinianEckstein.niivue)
-          draft: false
-          prerelease: false
+          files: apps/vscode/*.vsix
+          generate_release_notes: true
+          prerelease: ${{ steps.prerelease.outputs.is_prerelease == 'true' }}
 
       - name: Upload extension artifact
         uses: actions/upload-artifact@v4

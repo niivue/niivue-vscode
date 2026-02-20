@@ -167,6 +167,7 @@ A bot will comment on your PR with the preview URL once deployment completes. Th
 
 ## Resources
 
+- [Release Process](RELEASE.md)
 - [Turborepo Documentation](https://turbo.build/repo/docs)
 - [pnpm Workspaces](https://pnpm.io/workspaces)
 - [NiiVue Core Library](https://github.com/niivue/niivue)

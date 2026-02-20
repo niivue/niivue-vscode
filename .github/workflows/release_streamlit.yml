@@ -1,9 +1,9 @@
-name: Release JupyterLab Extension
+name: Release Streamlit Component
 
 on:
   push:
     tags:
-      - '@niivue/jupyter@*'
+      - '@niivue/streamlit@*'
   workflow_dispatch:
 
 permissions:
@@ -46,22 +46,22 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build extension
-        run: pnpm turbo build --filter=@niivue/jupyter
+      - name: Build frontend
+        run: pnpm turbo build --filter=@niivue/streamlit
 
       - name: Install Python build tools
-        run: python -m pip install "jupyterlab>=4.0.0,<5" build twine
+        run: python -m pip install build twine
 
       - name: Build Python package
-        working-directory: ./apps/jupyter
+        working-directory: ./apps/streamlit
         run: python -m build
 
       - name: Check Python package
-        working-directory: ./apps/jupyter
+        working-directory: ./apps/streamlit
         run: python -m twine check dist/*
 
       - name: Publish to PyPI/TestPyPI
-        working-directory: ./apps/jupyter
+        working-directory: ./apps/streamlit
         run: python -m twine upload ${{ env.TWINE_ARGS }} dist/*
         env:
           TWINE_USERNAME: __token__
@@ -70,13 +70,12 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: apps/jupyter/dist/*
+          files: apps/streamlit/dist/*
           generate_release_notes: true
           prerelease: ${{ steps.prerelease.outputs.is_prerelease == 'true' }}
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: jupyter-extension
-          path: apps/jupyter/dist/*
-
+          name: streamlit-component
+          path: apps/streamlit/dist/*
