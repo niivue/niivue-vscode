@@ -1,0 +1,39 @@
+{
+  "name": "@niivue/matlab",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "NiiVue integration for MATLAB via uihtml component",
+  "author": "NiiVue Team",
+  "license": "BSD-2-Clause",
+  "main": "./dist/index.html",
+  "exports": {
+    ".": "./dist/index.html",
+    "./matlab": "./matlab"
+  },
+  "files": [
+    "dist",
+    "matlab"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "dev:types-only": "tsc --emitDeclarationOnly --watch",
+    "build": "vite build",
+    "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@niivue/niivue": "^0.67.0",
+    "@niivue/react": "workspace:*",
+    "preact": "^10.28.2"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "^2.10.2",
+    "@types/node": "^24.9.1",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.12",
+    "vite-plugin-singlefile": "^2.0.2"
+  }
+}
