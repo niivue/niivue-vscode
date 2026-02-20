@@ -5,6 +5,18 @@ import { readyStateManager } from './readyState'
 import { NiiVueSettings } from './settings'
 import { isImageType } from './utility'
 
+/**
+ * Increments a global counter used by E2E tests to know when an image or
+ * overlay has finished loading. Both NiiVueCanvas (addImage path) and the
+ * overlay message handlers (overlay / addMeshOverlay paths) call this so that
+ * `waitForImageLoad` in tests works for all load types.
+ */
+export function notifyImageLoaded() {
+  const w = window as any
+  w.__niivue = w.__niivue || {}
+  w.__niivue.loadedCount = (w.__niivue.loadedCount ?? 0) + 1
+}
+
 export async function handleMessage(message: any, appProps: AppProps) {
   const { nvArray, sliceType, settings } = appProps
   const { type, body } = message
@@ -15,11 +27,13 @@ export async function handleMessage(message: any, appProps: AppProps) {
     case 'replaceMeshOverlay':
       {
         await addMeshOverlay(nvArray.value[body.index], body, type, settings.value)
+        notifyImageLoaded()
       }
       break
     case 'overlay':
       {
         await addOverlay(nvArray.value[body.index], body, settings.value)
+        notifyImageLoaded()
       }
       break
     case 'addImage':

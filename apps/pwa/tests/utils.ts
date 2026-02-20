@@ -3,7 +3,21 @@ import { Page } from '@playwright/test'
 export const BASE_URL = 'http://localhost:4000/'
 
 export async function waitForImageLoad(page: Page, timeout = 10000) {
-  const successCheck = page.waitForSelector('canvas', { timeout })
+  // Snapshot the current loaded count before we start waiting.
+  // NiiVueCanvas increments window.__niivue.loadedCount after each successful
+  // volume load. This is more reliable than waiting for <canvas> to appear,
+  // because the canvas element is inserted as soon as addImage is processed
+  // (before the async loadVolume call completes).
+  const prevCount = await page.evaluate<number>(
+    () => (window as any).__niivue?.loadedCount ?? 0,
+  )
+
+  const successCheck = page.waitForFunction(
+    (prev: number) => ((window as any).__niivue?.loadedCount ?? 0) > prev,
+    prevCount,
+    { timeout },
+  )
+
   const failureCheck = page
     .waitForSelector('text=Failed to load image', { timeout })
     .then(() => {

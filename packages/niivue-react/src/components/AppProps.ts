@@ -1,7 +1,7 @@
 import { SLICE_TYPE } from '@niivue/niivue'
 import { Signal, useSignal } from '@preact/signals'
 import { ExtendedNiivue } from '../events'
-import { NiiVueSettings } from '../settings'
+import { MenuItems, NiiVueSettings, defaultSettings } from '../settings'
 
 export const enum SelectionMode {
   NONE,
@@ -29,12 +29,12 @@ export interface ScalingOpts {
 export function useAppState(initialSettings: NiiVueSettings): AppProps {
   // Merge initialSettings with defaultSettings to ensure all required fields are present
   const mergedSettings: NiiVueSettings = {
-    ...require('../settings').defaultSettings,
+    ...defaultSettings,
     ...initialSettings,
     menuItems: {
-      ...require('../settings').defaultSettings.menuItems,
+      ...defaultSettings.menuItems,
       ...initialSettings.menuItems,
-    },
+    } as MenuItems,
   }
   
   return {

@@ -28,7 +28,7 @@ import { mnc2nii } from '@niivue/minc-loader'
 import { NVImage, NVMesh } from '@niivue/niivue'
 import { Signal } from '@preact/signals'
 import { useEffect, useRef } from 'preact/hooks'
-import { ExtendedNiivue } from '../events'
+import { ExtendedNiivue, notifyImageLoaded } from '../events'
 import { NiiVueSettings } from '../settings'
 import { isImageType } from '../utility'
 import { AppProps } from './AppProps'
@@ -68,6 +68,7 @@ export const NiiVueCanvas = ({
         render.value++ // required to update the names
         nvArray.value = [...nvArray.value] // trigger react signal for changes
         nv.createOnLocationChange() // TODO fix, still required?
+        notifyImageLoaded()
       })
       .catch((error) => {
         console.error('Load Error:', error)
