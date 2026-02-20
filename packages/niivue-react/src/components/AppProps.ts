@@ -1,7 +1,7 @@
 import { SLICE_TYPE } from '@niivue/niivue'
 import { Signal, useSignal } from '@preact/signals'
 import { ExtendedNiivue } from '../events'
-import { NiiVueSettings } from '../settings'
+import { MenuItems, NiiVueSettings, defaultSettings } from '../settings'
 
 export const enum SelectionMode {
   NONE,
@@ -27,6 +27,16 @@ export interface ScalingOpts {
 }
 
 export function useAppState(initialSettings: NiiVueSettings): AppProps {
+  // Merge initialSettings with defaultSettings to ensure all required fields are present
+  const mergedSettings: NiiVueSettings = {
+    ...defaultSettings,
+    ...initialSettings,
+    menuItems: {
+      ...defaultSettings.menuItems,
+      ...initialSettings.menuItems,
+    } as MenuItems,
+  }
+  
   return {
     nvArray: useSignal<ExtendedNiivue[]>([]),
     selection: useSignal<Array<number>>([]),
@@ -34,7 +44,7 @@ export function useAppState(initialSettings: NiiVueSettings): AppProps {
     hideUI: useSignal(3), // 0: hide all, 1: show name, 2: hide overlay, 3: show-all
     sliceType: useSignal<number>(SLICE_TYPE.MULTIPLANAR), // all views
     location: useSignal(''),
-    settings: useSignal<NiiVueSettings>(initialSettings),
+    settings: useSignal<NiiVueSettings>(mergedSettings),
     syncedIndices: useSignal<Set<number>>(new Set()),
   }
 }

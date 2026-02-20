@@ -20,6 +20,16 @@
       "outputs": ["coverage/**"],
       "inputs": ["src/**/*.tsx", "src/**/*.ts", "test/**/*.ts", "tests/**/*.ts"]
     },
+    "test:frontend": {
+      "dependsOn": ["build"],
+      "outputs": ["coverage/**"],
+      "inputs": ["src/**/*.tsx", "src/**/*.ts", "test/**/*.ts", "test/**/*.tsx", "niivue_component/frontend/src/**/*.tsx", "niivue_component/frontend/src/**/*.ts", "niivue_component/frontend/test/**/*.ts", "niivue_component/frontend/test/**/*.tsx"]
+    },
+    "test:python": {
+      "dependsOn": [],
+      "outputs": [],
+      "inputs": ["tests/**/*.py", "**/__init__.py"]
+    },
     "lint": {
       "dependsOn": ["^build"],
       "outputs": []

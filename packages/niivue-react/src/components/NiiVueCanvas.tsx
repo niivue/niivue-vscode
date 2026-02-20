@@ -28,7 +28,7 @@ import { mnc2nii } from '@niivue/minc-loader'
 import { NVImage, NVMesh } from '@niivue/niivue'
 import { Signal } from '@preact/signals'
 import { useEffect, useRef } from 'preact/hooks'
-import { ExtendedNiivue } from '../events'
+import { ExtendedNiivue, notifyImageLoaded } from '../events'
 import { NiiVueSettings } from '../settings'
 import { isImageType } from '../utility'
 import { AppProps } from './AppProps'
@@ -68,6 +68,7 @@ export const NiiVueCanvas = ({
         render.value++ // required to update the names
         nvArray.value = [...nvArray.value] // trigger react signal for changes
         nv.createOnLocationChange() // TODO fix, still required?
+        notifyImageLoaded()
       })
       .catch((error) => {
         console.error('Load Error:', error)
@@ -85,6 +86,22 @@ export const NiiVueCanvas = ({
   useEffect(() => {
     nv.drawScene()
   }, [height, width]) // avoids black images
+
+  useEffect(() => {
+    if (!nv.canvas) {
+      return
+    }
+    // Apply settings reactively
+    nv.setInterpolation(!settings.value.interpolation)
+    try {
+      nv.setCrosshairWidth(Number(settings.value.showCrosshairs))
+    } catch (e) {
+      console.warn('Failed to set crosshair width', e)
+    }
+    nv.setRadiologicalConvention(settings.value.radiologicalConvention)
+    nv.opts.isColorbar = settings.value.colorbar
+    nv.drawScene()
+  }, [settings.value, nv.canvas])
 
   return (
     <div
@@ -214,13 +231,31 @@ async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSetting
       opacity: 1.0,
     })
     nv.addVolume(volume)
-  } else if (item?.data?.length > 0) {
-    const volume = await NVImage.loadFromUrl({
-      url: item.data,
-      name: item.uri,
-      colormap: settings.defaultVolumeColormap,
-    })
-    nv.addVolume(volume)
+  } else if ((item?.data?.length ?? item?.data?.byteLength) > 0) {
+    const isBuffer = typeof item.data.byteLength === 'number'
+
+    if (isBuffer && isImageType(item.uri)) {
+      // Handle TypedArray views (e.g. Uint8Array with byteOffset) vs raw ArrayBuffer
+      let buffer: ArrayBuffer
+      if (item.data instanceof ArrayBuffer) {
+        buffer = item.data
+      } else if (item.data.buffer instanceof ArrayBuffer) {
+        // TypedArray view - extract the relevant slice
+        buffer = item.data.buffer.slice(item.data.byteOffset, item.data.byteOffset + item.data.byteLength)
+      } else {
+        buffer = item.data.buffer
+      }
+      await nv.loadFromArrayBuffer(buffer, item.uri)
+    } else if (typeof item.data === 'string') {
+      const volume = await NVImage.loadFromUrl({
+        url: item.data,
+        name: item.uri,
+        colormap: settings.defaultVolumeColormap,
+      })
+      nv.addVolume(volume)
+    } else {
+      console.warn('Unknown data type for loadVolume:', item.data)
+    }
   } else if (isImageType(item.uri)) {
     if (item.data) {
       const volume = await NVImage.loadFromUrl({
