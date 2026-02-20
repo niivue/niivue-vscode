@@ -148,6 +148,14 @@
       {
         "command": "niivue.showHeader",
         "title": "NiiVue: Show Header"
+      },
+      {
+        "command": "niivue.crosshairSuperior",
+        "title": "NiiVue: Crosshair Superior"
+      },
+      {
+        "command": "niivue.crosshairInferior",
+        "title": "NiiVue: Crosshair Inferior"
       }
     ],
     "keybindings": [
@@ -232,6 +240,16 @@
         "command": "niivue.showHeader",
         "key": "ctrl+h",
         "mac": "cmd+h",
+        "when": "activeCustomEditorId == niiVue.default"
+      },
+      {
+        "command": "niivue.crosshairSuperior",
+        "key": "shift+u",
+        "when": "activeCustomEditorId == niiVue.default"
+      },
+      {
+        "command": "niivue.crosshairInferior",
+        "key": "shift+d",
         "when": "activeCustomEditorId == niiVue.default"
       }
     ],
