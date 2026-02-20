@@ -234,8 +234,16 @@ async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSetting
     const isBuffer = typeof item.data.byteLength === 'number'
 
     if (isBuffer && isImageType(item.uri)) {
-      // If it's a view (e.g. Uint8Array), get the underlying buffer. If it's an ArrayBuffer, use it directly.
-      const buffer = item.data.buffer || item.data
+      // Handle TypedArray views (e.g. Uint8Array with byteOffset) vs raw ArrayBuffer
+      let buffer: ArrayBuffer
+      if (item.data instanceof ArrayBuffer) {
+        buffer = item.data
+      } else if (item.data.buffer instanceof ArrayBuffer) {
+        // TypedArray view - extract the relevant slice
+        buffer = item.data.buffer.slice(item.data.byteOffset, item.data.byteOffset + item.data.byteLength)
+      } else {
+        buffer = item.data.buffer
+      }
       await nv.loadFromArrayBuffer(buffer, item.uri)
     } else if (typeof item.data === 'string') {
       const volume = await NVImage.loadFromUrl({
@@ -245,7 +253,7 @@ async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSetting
       })
       nv.addVolume(volume)
     } else {
-        console.warn('Unknown data type for loadVolume:', item.data)
+      console.warn('Unknown data type for loadVolume:', item.data)
     }
   } else if (isImageType(item.uri)) {
     if (item.data) {

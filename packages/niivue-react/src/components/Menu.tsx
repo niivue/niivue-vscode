@@ -89,6 +89,7 @@ export const Menu = (props: AppProps) => {
     crosshair.value = settings.value.showCrosshairs
     radiologicalConvention.value = settings.value.radiologicalConvention
     colorbar.value = settings.value.colorbar
+    zoomDragMode.value = settings.value.zoomDragMode
   })
 
   // Sync local signal changes back to global settings
@@ -97,7 +98,8 @@ export const Menu = (props: AppProps) => {
       settings.value.interpolation !== interpolation.value ||
       settings.value.showCrosshairs !== crosshair.value ||
       settings.value.radiologicalConvention !== radiologicalConvention.value ||
-      settings.value.colorbar !== colorbar.value
+      settings.value.colorbar !== colorbar.value ||
+      settings.value.zoomDragMode !== zoomDragMode.value
     ) {
       settings.value = {
         ...settings.value,
@@ -105,6 +107,7 @@ export const Menu = (props: AppProps) => {
         showCrosshairs: crosshair.value,
         radiologicalConvention: radiologicalConvention.value,
         colorbar: colorbar.value,
+        zoomDragMode: zoomDragMode.value,
       }
     }
   })
@@ -239,10 +242,10 @@ export const Menu = (props: AppProps) => {
   return (
     <>
       <div className="flex flex-wrap items-baseline gap-2">
-        {!isVscode && settings.value.menuItems.home && (
+        {!isVscode && settings.value.menuItems?.home && (
           <MenuButton label="Home" onClick={homeEvent} />
         )}
-        {settings.value.menuItems.addImage && (
+        {settings.value.menuItems?.addImage && (
           <MenuItem label="Add Image" onClick={addImagesEvent}>
             <MenuEntry label="File(s)" onClick={addImagesEvent} />
             <MenuEntry label="DICOM Folder" onClick={addDcmFolderEvent} />
@@ -254,7 +257,7 @@ export const Menu = (props: AppProps) => {
             />
           </MenuItem>
         )}
-        {settings.value.menuItems.view && (
+        {settings.value.menuItems?.view && (
           <MenuItem label="View" onClick={resetZoom}>
             <MenuEntry label="Axial" onClick={() => (sliceType.value = SLICE_TYPE.AXIAL)} />
             <MenuEntry label="Sagittal" onClick={() => (sliceType.value = SLICE_TYPE.SAGITTAL)} />
@@ -281,8 +284,8 @@ export const Menu = (props: AppProps) => {
             {!isVscode && <MenuEntry label="Save Settings" onClick={saveSettings} />}
           </MenuItem>
         )}
-        {settings.value.menuItems.zoom && <MenuToggle label="Zoom" state={zoomDragMode} />}
-        {settings.value.menuItems.colorScale && (
+        {settings.value.menuItems?.zoom && <MenuToggle label="Zoom" state={zoomDragMode} />}
+        {settings.value.menuItems?.colorScale && (
           <MenuItem label="ColorScale" visible={isVolumeOrMesh} onClick={openColorScaleLastOverlay}>
             <MenuEntry label="Volume" onClick={openColorScale(0)} visible={isVolume} />
             {Array.from({ length: nOverlays.value }, (_, i) => (
@@ -290,7 +293,7 @@ export const Menu = (props: AppProps) => {
             ))}
           </MenuItem>
         )}
-        {settings.value.menuItems.overlay && (
+        {settings.value.menuItems?.overlay && (
           <MenuItem label="Overlay" onClick={overlayButtonOnClick} visible={isVolumeOrMesh}>
             <MenuEntry label="Add" onClick={addOverlay} visible={isVolume} />
             <MenuEntry label="MeshOverlay" onClick={addMeshOverlay} visible={isMesh} />
@@ -300,7 +303,7 @@ export const Menu = (props: AppProps) => {
             <MenuEntry label="Remove" onClick={removeLastVolume} visible={isOverlay} />
           </MenuItem>
         )}
-        {settings.value.menuItems.header && (
+        {settings.value.menuItems?.header && (
           <MenuItem label="Header" onClick={toggle(headerDialog)} visible={isVolume}>
             <MenuEntry label="Set Headers to 1" onClick={setVoxelSize1AndOrigin0} />
             <MenuEntry label="Set Header" onClick={toggle(setHeaderMenu)} />

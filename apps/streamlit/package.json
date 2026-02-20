@@ -8,7 +8,7 @@
     "build": "cd niivue_component/frontend && pnpm build",
     "test": "pnpm test:python",
     "test:frontend": "cd niivue_component/frontend && pnpm test",
-    "test:python": "python3 -m pytest tests/",
+    "test:python": "python -m pytest tests/",
     "clean": "cd niivue_component/frontend && pnpm clean && cd ../.. && rimraf dist build *.egg-info",
     "lint": "cd niivue_component/frontend && pnpm lint",
     "type-check": "cd niivue_component/frontend && tsc --noEmit",

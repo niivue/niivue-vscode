@@ -27,6 +27,16 @@ export interface ScalingOpts {
 }
 
 export function useAppState(initialSettings: NiiVueSettings): AppProps {
+  // Merge initialSettings with defaultSettings to ensure all required fields are present
+  const mergedSettings: NiiVueSettings = {
+    ...require('../settings').defaultSettings,
+    ...initialSettings,
+    menuItems: {
+      ...require('../settings').defaultSettings.menuItems,
+      ...initialSettings.menuItems,
+    },
+  }
+  
   return {
     nvArray: useSignal<ExtendedNiivue[]>([]),
     selection: useSignal<Array<number>>([]),
@@ -34,7 +44,7 @@ export function useAppState(initialSettings: NiiVueSettings): AppProps {
     hideUI: useSignal(3), // 0: hide all, 1: show name, 2: hide overlay, 3: show-all
     sliceType: useSignal<number>(SLICE_TYPE.MULTIPLANAR), // all views
     location: useSignal(''),
-    settings: useSignal<NiiVueSettings>(initialSettings),
+    settings: useSignal<NiiVueSettings>(mergedSettings),
     syncedIndices: useSignal<Set<number>>(new Set()),
   }
 }

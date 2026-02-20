@@ -17,7 +17,7 @@ export interface NiiVueSettings {
   defaultVolumeColormap: string
   defaultOverlayColormap: string
   defaultMeshOverlayColormap: string
-  menuItems: MenuItems
+  menuItems?: MenuItems
 }
 
 export const defaultSettings: NiiVueSettings = {

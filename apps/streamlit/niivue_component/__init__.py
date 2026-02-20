@@ -78,10 +78,18 @@ def niivue_viewer(
     # Convert overlays to base64
     overlays_data = []
     if overlays:
-        for overlay in overlays:
+        for i, overlay in enumerate(overlays):
+            # Validate overlay structure
+            if 'data' not in overlay:
+                raise ValueError(f"Overlay {i}: 'data' field is required")
+            if not isinstance(overlay['data'], bytes):
+                raise ValueError(f"Overlay {i}: 'data' must be bytes")
+            if 'name' not in overlay and 'filename' not in overlay:
+                raise ValueError(f"Overlay {i}: either 'name' or 'filename' field is required")
+            
             overlay_dict = {
-                "data": base64.b64encode(overlay["data"]).decode() if "data" in overlay else "",
-                "name": overlay.get("name", "overlay"),
+                "data": base64.b64encode(overlay["data"]).decode(),
+                "name": overlay.get("name") or overlay.get("filename", "overlay"),
                 "colormap": overlay.get("colormap", "red"),
                 "opacity": overlay.get("opacity", 0.5),
             }

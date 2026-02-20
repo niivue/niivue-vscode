@@ -13,7 +13,7 @@ export const useStreamlitNiivue = (args: StreamlitArgs) => {
     colorbar: args.settings?.colorbar ?? false,
     interpolation: args.settings?.interpolation ?? true,
     defaultVolumeColormap: 'gray',
-    zoomDragMode: 'both',
+    zoomDragMode: false,
     defaultOverlayColormap: 'red',
     defaultMeshOverlayColormap: 'redyell',
     menuItems: {
@@ -25,7 +25,7 @@ export const useStreamlitNiivue = (args: StreamlitArgs) => {
       overlay: false,
       header: true,
     },
-  } as any)
+  })
 
   const { sliceType, settings } = appProps
   const prevDataRef = useRef<string | null>(null)
@@ -79,17 +79,19 @@ export const useStreamlitNiivue = (args: StreamlitArgs) => {
       return
     }
 
-    // Check if overlays have changed
-    const overlayIds = args.overlays.map(o => `${o.name}-${o.colormap}-${o.opacity}`)
+    // Include data length in overlay ID for change detection
+    const overlayIds = args.overlays.map(o => `${o.name}-${o.colormap}-${o.opacity}-${o.data?.length || 0}`)
     const currentIds = loadedOverlaysRef.current
-    if (JSON.stringify(overlayIds) === JSON.stringify(currentIds)) {
-      return
-    }
-
-    // Load overlays sequentially
-    for (const overlay of args.overlays) {
-      const id = `${overlay.name}-${overlay.colormap}-${overlay.opacity}`
-      if (!currentIds.includes(id)) {
+    
+    // If overlay list changed, clear and reload all overlays
+    if (JSON.stringify(overlayIds) !== JSON.stringify(currentIds)) {
+      // Remove all overlays except base volume (index 0)
+      while (nv.volumes.length > 1) {
+        nv.removeVolume(nv.volumes[nv.volumes.length - 1])
+      }
+      
+      // Load all overlays sequentially
+      for (const overlay of args.overlays) {
         handleMessage({
           type: 'overlay',
           body: {
@@ -101,8 +103,8 @@ export const useStreamlitNiivue = (args: StreamlitArgs) => {
           },
         }, appProps)
       }
+      loadedOverlaysRef.current = overlayIds
     }
-    loadedOverlaysRef.current = overlayIds
   }, [appProps.nvArray.value, appProps.nvArray.value[0]?.isLoaded, args.overlays])
 
   // Sync click events back to Streamlit

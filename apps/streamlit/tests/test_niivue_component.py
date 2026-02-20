@@ -39,7 +39,7 @@ def test_niivue_viewer_with_overlays():
     
     overlays = [{
         'data': overlay_data,
-        'filename': 'overlay.nii',
+        'name': 'overlay.nii',
         'colormap': 'red',
         'opacity': 0.5
     }]
@@ -134,13 +134,13 @@ def test_niivue_viewer_multiple_overlays():
     overlays = [
         {
             'data': b'\xFF' * 500,
-            'filename': 'overlay1.nii',
+            'name': 'overlay1.nii',
             'colormap': 'red',
             'opacity': 0.5
         },
         {
             'data': b'\xAA' * 500,
-            'filename': 'overlay2.nii',
+            'name': 'overlay2.nii',
             'colormap': 'blue',
             'opacity': 0.3
         }
