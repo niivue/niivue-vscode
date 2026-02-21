@@ -2,25 +2,25 @@ import { SLICE_TYPE } from '@niivue/niivue'
 import { Signal, computed, effect, useSignal } from '@preact/signals'
 import { NIIVUE_CORE_SHORTCUTS, UI_SHORTCUTS, formatShortcut } from '../constants/keyboardShortcuts'
 import {
-  ExtendedNiivue,
-  addDcmFolderEvent,
-  addImagesEvent,
-  addOverlayEvent,
-  openImageFromURL,
+    ExtendedNiivue,
+    addDcmFolderEvent,
+    addImagesEvent,
+    addOverlayEvent,
+    openImageFromURL,
 } from '../events'
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
 import { getMetadataString, getNumberOfPoints } from '../utility'
 import { AppProps, SelectionMode } from './AppProps'
 import { HeaderBox } from './HeaderBox'
 import {
-  HeaderDialog,
-  ImageSelect,
-  MenuButton,
-  MenuEntry,
-  MenuItem,
-  MenuToggle,
-  ToggleEntry,
-  toggle,
+    HeaderDialog,
+    ImageSelect,
+    MenuButton,
+    MenuEntry,
+    MenuItem,
+    MenuToggle,
+    ToggleEntry,
+    toggle,
 } from './MenuElements'
 import { ScalingBox } from './ScalingBox'
 
@@ -67,7 +67,7 @@ export const Menu = (props: AppProps) => {
   })
 
   const has4D = computed(() =>
-    nvArraySelected.value.some((nv) => nv.volumes?.[0]?.nFrame4D > 1)
+    nvArraySelected.value.some((nv) => (nv.volumes?.[0]?.nFrame4D ?? 0) > 1)
   )
 
   const displayInfo = computed(() => {

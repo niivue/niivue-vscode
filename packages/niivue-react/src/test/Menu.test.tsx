@@ -25,7 +25,7 @@ describe('Menu', () => {
       },
       setClipPlane: vi.fn((newPlane) => {
         currentClipPlane = newPlane
-        mockNiivue.scene.clipPlane = newPlane
+        mockNiivue.scene.clipPlaneDepthAziElev = newPlane
       }),
       drawScene: vi.fn(),
       getRadiologicalConvention: vi.fn(() => false),
