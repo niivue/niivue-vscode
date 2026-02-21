@@ -7,6 +7,7 @@ export interface KeyboardShortcutHandlers {
   onViewCoronal?: () => void
   onViewRender?: () => void
   onViewMultiplanar?: () => void
+  onViewMultiplanarTimeseries?: () => void
   onCycleViewMode?: () => void
   onCycleClipPlane?: () => void
   onVolumeNext?: () => void
@@ -63,6 +64,12 @@ export function useKeyboardShortcuts(handlers: KeyboardShortcutHandlers, enabled
       ) {
         event.preventDefault()
         handlers.onViewMultiplanar()
+      } else if (
+        matchesShortcut(event, UI_SHORTCUTS.VIEW_MULTIPLANAR_TIMESERIES) &&
+        handlers.onViewMultiplanarTimeseries
+      ) {
+        event.preventDefault()
+        handlers.onViewMultiplanarTimeseries()
       } else if (
         matchesShortcut(event, NIIVUE_CORE_SHORTCUTS.CYCLE_VIEW_MODE) &&
         handlers.onCycleViewMode

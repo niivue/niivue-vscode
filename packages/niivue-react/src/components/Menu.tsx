@@ -407,6 +407,7 @@ export const Menu = (props: AppProps) => {
     onViewCoronal: () => (sliceType.value = SLICE_TYPE.CORONAL),
     onViewRender: () => (sliceType.value = SLICE_TYPE.RENDER),
     onViewMultiplanar: setMultiplanar,
+    onViewMultiplanarTimeseries: setTimeSeries,
     onCycleViewMode: cycleViewMode,
     onCycleClipPlane: cycleClipPlane,
     onVolumeNext: volumeNext,
@@ -486,6 +487,7 @@ export const Menu = (props: AppProps) => {
             <MenuEntry
               label="Multiplanar + Timeseries"
               onClick={setTimeSeries}
+              shortcut={formatShortcut(UI_SHORTCUTS.VIEW_MULTIPLANAR_TIMESERIES)}
               visible={isMultiEcho}
             />
             <hr />

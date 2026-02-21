@@ -96,6 +96,10 @@ export const UI_SHORTCUTS: Record<string, KeyboardShortcut> = {
     key: '5',
     description: 'Multiplanar + Render view',
   },
+  VIEW_MULTIPLANAR_TIMESERIES: {
+    key: '6',
+    description: 'Multiplanar + Timeseries view',
+  },
   RESET_VIEW: {
     key: 'r',
     description: 'Reset view/zoom',
