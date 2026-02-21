@@ -2,25 +2,25 @@ import { SLICE_TYPE } from '@niivue/niivue'
 import { Signal, computed, effect, useSignal } from '@preact/signals'
 import { NIIVUE_CORE_SHORTCUTS, UI_SHORTCUTS, formatShortcut } from '../constants/keyboardShortcuts'
 import {
-    ExtendedNiivue,
-    addDcmFolderEvent,
-    addImagesEvent,
-    addOverlayEvent,
-    openImageFromURL,
+  ExtendedNiivue,
+  addDcmFolderEvent,
+  addImagesEvent,
+  addOverlayEvent,
+  openImageFromURL,
 } from '../events'
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
 import { getMetadataString, getNumberOfPoints } from '../utility'
 import { AppProps, SelectionMode } from './AppProps'
 import { HeaderBox } from './HeaderBox'
 import {
-    HeaderDialog,
-    ImageSelect,
-    MenuButton,
-    MenuEntry,
-    MenuItem,
-    MenuToggle,
-    ToggleEntry,
-    toggle,
+  HeaderDialog,
+  ImageSelect,
+  MenuButton,
+  MenuEntry,
+  MenuItem,
+  MenuToggle,
+  ToggleEntry,
+  toggle,
 } from './MenuElements'
 import { ScalingBox } from './ScalingBox'
 
@@ -65,6 +65,10 @@ export const Menu = (props: AppProps) => {
       return 0
     }
   })
+
+  const has4D = computed(() =>
+    nvArraySelected.value.some((nv) => nv.volumes?.[0]?.nFrame4D > 1)
+  )
 
   const displayInfo = computed(() => {
     if (isVolume.value) {
@@ -251,6 +255,40 @@ export const Menu = (props: AppProps) => {
     sliceType.value = (sliceType.value + 1) % 5
   }
 
+  // temporary fix to allow cycling via menu
+  const cycleClipPlane = () => {
+    nvArraySelected.value.forEach((nv: any) => {
+      nv.currentClipPlaneIndex = ((nv.currentClipPlaneIndex || 0) + 1) % 7
+      let p = [2, 0, 0]
+      switch (nv.currentClipPlaneIndex) {
+        case 0:
+          p = [2, 0, 0]
+          break
+        case 1:
+          p = [0, 270, 0]
+          break
+        case 2:
+          p = [0, 90, 0]
+          break
+        case 3:
+          p = [0, 0, 0]
+          break
+        case 4:
+          p = [0, 180, 0]
+          break
+        case 5:
+          p = [0, 0, -90]
+          break
+        case 6:
+          p = [0, 0, 90]
+          break
+      }
+      nv.scene.clipPlaneDepthAziElev = p
+      nv.setClipPlane(p)
+      nv.drawScene()
+    })
+  }
+
   const volumeNext = () => {
     nvArraySelected.value.forEach((nv) => {
       const volume = nv.volumes[0]
@@ -370,6 +408,7 @@ export const Menu = (props: AppProps) => {
     onViewRender: () => (sliceType.value = SLICE_TYPE.RENDER),
     onViewMultiplanar: setMultiplanar,
     onCycleViewMode: cycleViewMode,
+    onCycleClipPlane: cycleClipPlane,
     onVolumeNext: volumeNext,
     onVolumePrev: volumePrev,
     onResetView: resetZoom,
@@ -393,7 +432,6 @@ export const Menu = (props: AppProps) => {
     <>
       <div
         className="flex flex-wrap items-baseline gap-2"
-        style={{ display: hideUI.value > 0 ? 'flex' : 'none' }}
       >
         {!isVscode && settings.value.menuItems?.home && (
           <MenuButton label="Home" onClick={homeEvent} />
@@ -453,22 +491,25 @@ export const Menu = (props: AppProps) => {
             <hr />
             <MenuEntry
               label="Cycle View Mode"
-              onClick={noOp}
+              onClick={cycleViewMode}
               shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CYCLE_VIEW_MODE)}
+              keepOpen={true}
             />
             <MenuEntry
               label="Cycle Clip Plane (3D)"
-              onClick={noOp}
+              onClick={cycleClipPlane}
               shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CYCLE_CLIP_PLANE)}
+              keepOpen={true}
             />
             <hr />
-            <MenuEntry label="Show All" onClick={() => (hideUI.value = 3)} />
+            <MenuEntry label="Show All" onClick={() => (hideUI.value = 3)} keepOpen={true} />
             <MenuEntry
               label="Hide UI"
               onClick={() => (hideUI.value = 2)}
               shortcut={formatShortcut(UI_SHORTCUTS.HIDE_UI)}
+              keepOpen={true}
             />
-            <MenuEntry label="Hide All" onClick={() => (hideUI.value = 0)} />
+            <MenuEntry label="Hide All" onClick={() => (hideUI.value = 0)} keepOpen={true} />
             <hr />
             <MenuEntry
               label="Reset View"
@@ -551,42 +592,52 @@ export const Menu = (props: AppProps) => {
             label="Next Volume (4D)"
             onClick={volumeNext}
             shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.VOLUME_NEXT)}
+            keepOpen={true}
+            visible={has4D}
           />
           <MenuEntry
             label="Previous Volume (4D)"
             onClick={volumePrev}
             shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.VOLUME_PREV)}
+            keepOpen={true}
+            visible={has4D}
           />
           <hr />
           <MenuEntry
             label="Crosshair: Right"
             onClick={crosshairRight}
             shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CROSSHAIR_RIGHT)}
+            keepOpen={true}
           />
           <MenuEntry
             label="Crosshair: Left"
             onClick={crosshairLeft}
             shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CROSSHAIR_LEFT)}
+            keepOpen={true}
           />
           <MenuEntry
             label="Crosshair: Anterior"
             onClick={crosshairAnterior}
             shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CROSSHAIR_ANTERIOR)}
+            keepOpen={true}
           />
           <MenuEntry
             label="Crosshair: Posterior"
             onClick={crosshairPosterior}
             shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CROSSHAIR_POSTERIOR)}
+            keepOpen={true}
           />
           <MenuEntry
             label="Crosshair: Superior"
             onClick={crosshairSuperior}
             shortcut={formatShortcut(UI_SHORTCUTS.CROSSHAIR_SUPERIOR)}
+            keepOpen={true}
           />
           <MenuEntry
             label="Crosshair: Inferior"
             onClick={crosshairInferior}
             shortcut={formatShortcut(UI_SHORTCUTS.CROSSHAIR_INFERIOR)}
+            keepOpen={true}
           />
         </MenuItem>
         <ImageSelect label="Select" state={selectionActive} visible={multipleVolumes}>
