@@ -47,3 +47,5 @@ export const EXTERNAL_URLS = {
   DOCUMENTATION: 'https://niivue.github.io/niivue/',
   GITHUB: 'https://github.com/niivue/niivue',
 } as const
+
+export * from './keyboardShortcuts'

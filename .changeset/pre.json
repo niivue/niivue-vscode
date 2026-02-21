@@ -1,0 +1,13 @@
+{
+  "mode": "pre",
+  "tag": "beta",
+  "initialVersions": {
+    "@niivue/jupyter": "0.2.6",
+    "@niivue/pwa": "0.0.1",
+    "@niivue/streamlit": "0.2.1",
+    "niivue_viewer_frontend": "0.2.1",
+    "niivue": "2.7.0",
+    "@niivue/react": "0.1.0"
+  },
+  "changesets": []
+}
