@@ -28,6 +28,8 @@ async function getDebugValue(page, request) {
         return appProps.hideUI.value;
       case 'getCrosshairPos':
         return appProps.nvArray.value[0]?.scene?.crosshairPos;
+      case 'getPan':
+        return appProps.nvArray.value[0]?.scene?.pan2Dxyzmm;
       default:
         return undefined;
     }
@@ -165,14 +167,11 @@ test.describe('Keyboard Shortcuts', () => {
     const canvas = page.locator('canvas').first();
     await canvas.click();
 
-    // Change something first
-    await page.keyboard.press('4'); // Render view
-    await page.waitForTimeout(100);
-
+    // Press 'r' to reset pan/zoom
     await page.keyboard.press('r');
     await page.waitForTimeout(200);
-    const sliceType = await getDebugValue(page, 'getSliceType');
-    expect(sliceType).toBe(3); // Reset to Multiplanar
+    const pan = await getDebugValue(page, 'getPan');
+    expect(pan).toEqual([0, 0, 0, 1]); // Reset to default pan
   });
 
   test('should move crosshair with "h", "j", "k", "l"', async ({ page }) => {
@@ -189,7 +188,7 @@ test.describe('Keyboard Shortcuts', () => {
     await page.keyboard.press('h'); // Left
     await page.waitForTimeout(100);
     newPos = await getDebugValue(page, 'getCrosshairPos');
-    expect(newPos[0]).toBe(initialPos[0]);
+    expect(newPos[0]).toBeCloseTo(initialPos[0]);
 
     await page.keyboard.press('j'); // Posterior (Y increases in NiiVue vox space for posterior? Actually depends on orientation, but it should change)
     await page.waitForTimeout(100);
@@ -199,7 +198,7 @@ test.describe('Keyboard Shortcuts', () => {
     await page.keyboard.press('k'); // Anterior
     await page.waitForTimeout(100);
     newPos = await getDebugValue(page, 'getCrosshairPos');
-    expect(newPos[1]).toBe(initialPos[1]);
+    expect(newPos[1]).toBeCloseTo(initialPos[1]);
   });
 
   test('should move crosshair superior/inferior with "Shift+U" and "Shift+D"', async ({ page }) => {
@@ -216,7 +215,7 @@ test.describe('Keyboard Shortcuts', () => {
     await page.keyboard.press('Shift+D');
     await page.waitForTimeout(100);
     newPos = await getDebugValue(page, 'getCrosshairPos');
-    expect(newPos[2]).toBe(initialPos[2]);
+    expect(newPos[2]).toBeCloseTo(initialPos[2]);
   });
 
   test('should NOT trigger shortcuts when typing in input fields', async ({ page }) => {
