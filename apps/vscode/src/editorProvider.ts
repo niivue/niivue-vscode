@@ -143,8 +143,6 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
   }
 
   private static addCommonListeners(panel: vscode.WebviewPanel) {
-    const editor = new NiiVueEditorProvider(null as any) // Temporary instance for createFileUrl method
-
     panel.webview.onDidReceiveMessage(async (e) => {
       switch (e.type) {
         case 'addOverlay':
@@ -156,15 +154,13 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
               openLabel: 'Open Overlay',
               // filters: fileTypes // doesn't work properly in remote
             })
-            .then((uris) => {
+            .then(async (uris) => {
               if (uris && uris.length > 0) {
-                const fileUrl = editor.createFileUrl(uris[0], panel.webview)
+                const uri = uris[0]
+                const body = await NiiVueEditorProvider.uriToImageBody(uri, panel.webview)
                 panel.webview.postMessage({
                   type: e.body.type,
-                  body: {
-                    uri: fileUrl,
-                    index: e.body.index,
-                  },
+                  body: { ...body, index: e.body.index },
                 })
               }
             })
@@ -185,25 +181,8 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
                   body: { n: uris.length },
                 })
                 for (const uri of uris) {
-                  // Handle DICOM files differently - send data instead of URL
-                  if (uri.path.toLowerCase().endsWith('.dcm')) {
-                    const data = await vscode.workspace.fs.readFile(uri)
-                    panel.webview.postMessage({
-                      type: 'addImage',
-                      body: {
-                        data: data.buffer,
-                        uri: uri.toString(),
-                      },
-                    })
-                  } else {
-                    const fileUrl = editor.createFileUrl(uri, panel.webview)
-                    panel.webview.postMessage({
-                      type: 'addImage',
-                      body: {
-                        uri: fileUrl,
-                      },
-                    })
-                  }
+                  const body = await NiiVueEditorProvider.uriToImageBody(uri, panel.webview)
+                  panel.webview.postMessage({ type: 'addImage', body })
                 }
               }
             })
@@ -272,7 +251,7 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
         if (
           lowerCasePath.endsWith('.dcm') ||
           lowerCasePath.endsWith('.mnc') ||
-          !this.isUriAccessible(document.uri)
+          !NiiVueEditorProvider.isUriAccessible(document.uri)
         ) {
           const data = await vscode.workspace.fs.readFile(document.uri)
           webviewPanel.webview.postMessage({
@@ -301,7 +280,31 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     return webview.asWebviewUri(uri).toString()
   }
 
-  private isUriAccessible(uri: vscode.Uri): boolean {
+  /**
+   * Returns a message body for loading a file. Prefers a webview URI (URL) so
+   * that large files can be streamed / partially loaded by NiiVue. Falls back
+   * to reading the full file as binary when the URI is outside the workspace
+   * (not covered by localResourceRoots) or for formats that require it (.dcm, .mnc).
+   */
+  private static async uriToImageBody(uri: vscode.Uri, webview: vscode.Webview) {
+    const lowerCasePath = uri.path.toLowerCase()
+    if (
+      lowerCasePath.endsWith('.dcm') ||
+      lowerCasePath.endsWith('.mnc') ||
+      !NiiVueEditorProvider.isUriAccessible(uri)
+    ) {
+      const data = await vscode.workspace.fs.readFile(uri)
+      return { data: data.buffer, uri: uri.toString() }
+    }
+    return { uri: webview.asWebviewUri(uri).toString() }
+  }
+
+  private static isUriAccessible(uri: vscode.Uri): boolean {
+    // Check if the file is within a workspace folder. Files within workspace
+    // folders are covered by localResourceRoots and can be served via
+    // webview.asWebviewUri() — this works in both local and remote (SSH,
+    // devContainer) environments, enabling NiiVue to stream / partially load
+    // large files instead of reading them entirely into memory.
     const workspaceFolders = vscode.workspace.workspaceFolders
     if (!workspaceFolders) {
       return false
