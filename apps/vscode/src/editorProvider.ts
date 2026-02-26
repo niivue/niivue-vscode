@@ -283,8 +283,8 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
   /**
    * Returns a message body for loading a file. Prefers a webview URI (URL) so
    * that large files can be streamed / partially loaded by NiiVue. Falls back
-   * to reading the full file as binary when the URI is not reachable via the
-   * webview resource system (remote environments or files outside localResourceRoots).
+   * to reading the full file as binary when the URI is outside the workspace
+   * (not covered by localResourceRoots) or for formats that require it (.dcm, .mnc).
    */
   private static async uriToImageBody(uri: vscode.Uri, webview: vscode.Webview) {
     const lowerCasePath = uri.path.toLowerCase()
@@ -300,11 +300,11 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
   }
 
   private static isUriAccessible(uri: vscode.Uri): boolean {
-    // In remote environments (SSH, devContainer, …) the webview resource
-    // protocol cannot reliably serve files from the remote filesystem.
-    if (vscode.env.remoteName) {
-      return false
-    }
+    // Check if the file is within a workspace folder. Files within workspace
+    // folders are covered by localResourceRoots and can be served via
+    // webview.asWebviewUri() — this works in both local and remote (SSH,
+    // devContainer) environments, enabling NiiVue to stream / partially load
+    // large files instead of reading them entirely into memory.
     const workspaceFolders = vscode.workspace.workspaceFolders
     if (!workspaceFolders) {
       return false
