@@ -157,14 +157,10 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
             .then(async (uris) => {
               if (uris && uris.length > 0) {
                 const uri = uris[0]
-                const data = await vscode.workspace.fs.readFile(uri)
+                const body = await NiiVueEditorProvider.uriToImageBody(uri, panel.webview)
                 panel.webview.postMessage({
                   type: e.body.type,
-                  body: {
-                    data: data.buffer,
-                    uri: uri.toString(),
-                    index: e.body.index,
-                  },
+                  body: { ...body, index: e.body.index },
                 })
               }
             })
@@ -185,14 +181,8 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
                   body: { n: uris.length },
                 })
                 for (const uri of uris) {
-                  const data = await vscode.workspace.fs.readFile(uri)
-                  panel.webview.postMessage({
-                    type: 'addImage',
-                    body: {
-                      data: data.buffer,
-                      uri: uri.toString(),
-                    },
-                  })
+                  const body = await NiiVueEditorProvider.uriToImageBody(uri, panel.webview)
+                  panel.webview.postMessage({ type: 'addImage', body })
                 }
               }
             })
@@ -261,7 +251,7 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
         if (
           lowerCasePath.endsWith('.dcm') ||
           lowerCasePath.endsWith('.mnc') ||
-          !this.isUriAccessible(document.uri)
+          !NiiVueEditorProvider.isUriAccessible(document.uri)
         ) {
           const data = await vscode.workspace.fs.readFile(document.uri)
           webviewPanel.webview.postMessage({
@@ -290,7 +280,31 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     return webview.asWebviewUri(uri).toString()
   }
 
-  private isUriAccessible(uri: vscode.Uri): boolean {
+  /**
+   * Returns a message body for loading a file. Prefers a webview URI (URL) so
+   * that large files can be streamed / partially loaded by NiiVue. Falls back
+   * to reading the full file as binary when the URI is not reachable via the
+   * webview resource system (remote environments or files outside localResourceRoots).
+   */
+  private static async uriToImageBody(uri: vscode.Uri, webview: vscode.Webview) {
+    const lowerCasePath = uri.path.toLowerCase()
+    if (
+      lowerCasePath.endsWith('.dcm') ||
+      lowerCasePath.endsWith('.mnc') ||
+      !NiiVueEditorProvider.isUriAccessible(uri)
+    ) {
+      const data = await vscode.workspace.fs.readFile(uri)
+      return { data: data.buffer, uri: uri.toString() }
+    }
+    return { uri: webview.asWebviewUri(uri).toString() }
+  }
+
+  private static isUriAccessible(uri: vscode.Uri): boolean {
+    // In remote environments (SSH, devContainer, …) the webview resource
+    // protocol cannot reliably serve files from the remote filesystem.
+    if (vscode.env.remoteName) {
+      return false
+    }
     const workspaceFolders = vscode.workspace.workspaceFolders
     if (!workspaceFolders) {
       return false
