@@ -143,8 +143,6 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
   }
 
   private static addCommonListeners(panel: vscode.WebviewPanel) {
-    const editor = new NiiVueEditorProvider(null as any) // Temporary instance for createFileUrl method
-
     panel.webview.onDidReceiveMessage(async (e) => {
       switch (e.type) {
         case 'addOverlay':
@@ -156,13 +154,15 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
               openLabel: 'Open Overlay',
               // filters: fileTypes // doesn't work properly in remote
             })
-            .then((uris) => {
+            .then(async (uris) => {
               if (uris && uris.length > 0) {
-                const fileUrl = editor.createFileUrl(uris[0], panel.webview)
+                const uri = uris[0]
+                const data = await vscode.workspace.fs.readFile(uri)
                 panel.webview.postMessage({
                   type: e.body.type,
                   body: {
-                    uri: fileUrl,
+                    data: data.buffer,
+                    uri: uri.toString(),
                     index: e.body.index,
                   },
                 })
@@ -185,25 +185,14 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
                   body: { n: uris.length },
                 })
                 for (const uri of uris) {
-                  // Handle DICOM files differently - send data instead of URL
-                  if (uri.path.toLowerCase().endsWith('.dcm')) {
-                    const data = await vscode.workspace.fs.readFile(uri)
-                    panel.webview.postMessage({
-                      type: 'addImage',
-                      body: {
-                        data: data.buffer,
-                        uri: uri.toString(),
-                      },
-                    })
-                  } else {
-                    const fileUrl = editor.createFileUrl(uri, panel.webview)
-                    panel.webview.postMessage({
-                      type: 'addImage',
-                      body: {
-                        uri: fileUrl,
-                      },
-                    })
-                  }
+                  const data = await vscode.workspace.fs.readFile(uri)
+                  panel.webview.postMessage({
+                    type: 'addImage',
+                    body: {
+                      data: data.buffer,
+                      uri: uri.toString(),
+                    },
+                  })
                 }
               }
             })
