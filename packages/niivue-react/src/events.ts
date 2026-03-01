@@ -64,9 +64,9 @@ export async function handleMessage(message: any, appProps: AppProps) {
 
 export function listenToMessages(appProps: AppProps) {
   const { nvArray, sliceType, settings } = appProps
-  window.onmessage = (e: any) => {
+  window.addEventListener('message', (e: any) => {
     handleMessage(e.data, appProps)
-  }
+  })
   readyStateManager.setEventListenerReady()
   addImageFromURLParams()
 }
@@ -97,6 +97,22 @@ function handleDebugMessage(body: any, appProps: AppProps) {
         window.postMessage({
           type: 'debugAnswer',
           body: nvArray.value[0].volumes.length,
+        })
+      }
+      break
+    case 'getSliceType':
+      {
+        window.postMessage({
+          type: 'debugAnswer',
+          body: appProps.sliceType.value,
+        })
+      }
+      break
+    case 'getInterpolation':
+      {
+        window.postMessage({
+          type: 'debugAnswer',
+          body: appProps.settings.value.interpolation,
         })
       }
       break
@@ -352,8 +368,8 @@ export class ExtendedNiivue extends Niivue {
   key = NaN
   body = null
   onFrameUpdate = (frame: number) => { }
-  setFrame4D(id: string, frame: number) {
-    super.setFrame4D(id, frame)
+  setFrame4D(volumeOrId: any, frame: number) {
+    super.setFrame4D(volumeOrId, frame)
     if (this.volumes[0]) {
       this.onFrameUpdate(this.volumes[0].frame4D)
     }

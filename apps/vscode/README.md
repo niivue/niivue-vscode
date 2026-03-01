@@ -23,17 +23,17 @@ code --install-extension KorbinianEckstein.niivue
 
 1. **Explorer**: Simply click any supported neuroimaging file in the VS Code Explorer
 2. **Compare Multiple Files**: Select multiple files in Explorer, right-click → "NiiVue: Compare"
-4. **Add Overlays**: Click the Overlay menu
+3. **Add Overlays**: Click the Overlay menu
 
 ### Remote Development
 
 NiiVue works with VS Code's remote development features:
+
 - **SSH**: View images on remote servers without downloading
 - **WSL**: Access Windows Subsystem for Linux files
 - **Containers**: Work with images inside Docker containers
 - **Codespaces**: Use in GitHub Codespaces environments
 - **Web Version**: Works in [vscode.dev](https://vscode.dev) and [github.dev](https://github.dev)
-
 
 ## Screenshots
 
@@ -45,24 +45,66 @@ NiiVue works with VS Code's remote development features:
 
 ## Keyboard Shortcuts
 
+All keyboard shortcuts are displayed in menus and button tooltips throughout the interface. Hover over any button or menu item to see its shortcut.
+
 ### Mouse Controls
+
 - **Right Mouse**: Adjust contrast/brightness (windowing); with Zoom button pressed: drag to zoom
 - **Middle Mouse**: Drag to pan
 - **Mouse Scroll**: Change slice in currently hovered image
 - **Shift + Mouse**: 2D dragging and 3D viewplane rotation
 
-### Navigation
+### Core NiiVue Shortcuts (Built-in)
+
+These shortcuts are handled by the niivue.js library and cannot be customized:
+
+**Navigation:**
+
 - **← →**: Change volume in 4D images
 - **V**: Cycle through view modes
 - **C**: Cycle through clip plane orientations in 3D render
 
-### Crosshair Movement
+**Crosshair Movement:**
+
 - **H**: Move crosshair to R (Right)
 - **L**: Move crosshair to L (Left)
 - **J**: Move crosshair to P (Posterior)
 - **K**: Move crosshair to A (Anterior)
 - **Ctrl+U**: Move crosshair to S (Superior)
 - **Ctrl+D**: Move crosshair to I (Inferior)
+- **Shift+U**: Alternative shortcut to move crosshair Superior
+- **Shift+D**: Alternative shortcut to move crosshair Inferior
+
+### UI Shortcuts (Customizable)
+
+These shortcuts can be customized in VS Code's Keyboard Shortcuts editor (File → Preferences → Keyboard Shortcuts, search for "NiiVue"):
+
+**View Modes:**
+
+- **1**: Axial view
+- **2**: Sagittal view
+- **3**: Coronal view
+- **4**: Render view
+- **5**: Multiplanar + Render view
+- **R**: Reset view/zoom
+
+**Display Toggles:**
+
+- **I**: Toggle interpolation
+- **B**: Toggle colorbar
+- **X**: Toggle radiological convention
+- **M**: Toggle crosshair visibility
+- **Z**: Toggle zoom drag mode
+- **U**: Cycle UI visibility (Show All → Hide UI → Hide All)
+
+**Actions:**
+
+- **Ctrl+Shift+O** (Cmd+Shift+O on Mac): Add image
+- **Ctrl+L** (Cmd+L on Mac): Add overlay
+- **S**: Open colorscale menu
+- **Ctrl+Shift+H** (Cmd+Shift+H on Mac): Show header information
+
+> **Tip**: You can view all available shortcuts in the NiiVue menu bar at the top of the viewer, or by opening the VS Code Command Palette (Ctrl+Shift+P / Cmd+Shift+P) and typing "NiiVue".
 
 ## Supported Formats
 

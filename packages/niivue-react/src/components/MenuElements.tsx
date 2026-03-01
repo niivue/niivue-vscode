@@ -1,24 +1,39 @@
-import { Signal, effect, useSignal } from '@preact/signals'
+import { Signal, computed, effect, signal, useSignal } from '@preact/signals'
 import { useRef } from 'preact/hooks'
 
-export const MenuEntry = ({ label, onClick, isOpen, visible }: any) => {
+export const activeMenu = signal<string | null>(null)
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement
+    if (!target.closest('.group') && !target.closest('dialog') && !target.closest('button[data-testid^="menu-item-dropdown-"]')) {
+      activeMenu.value = null
+    }
+  })
+}
+
+export const MenuEntry = ({ label, onClick, isOpen, visible, shortcut, keepOpen }: any) => {
   if (visible && !visible.value) return null
+  const ariaLabel = shortcut ? `${label} (Keyboard shortcut: ${shortcut})` : label
   return (
     <button
-      className="w-full px-2 py-1 text-left bg-gray-900 hover:bg-gray-700"
+      className="w-full px-2 py-1 text-left bg-gray-900 hover:bg-gray-700 flex justify-between items-center"
       onClick={() => {
         onClick()
-        isOpen.value = false
+        if (!keepOpen) activeMenu.value = null
       }}
+      title={shortcut ? `Keyboard shortcut: ${shortcut}` : undefined}
+      aria-label={ariaLabel}
     >
-      {label}
+      <span>{label}</span>
+      {shortcut && <span className="text-xs text-gray-400 ml-4">{shortcut}</span>}
     </button>
   )
 }
 
-export const MenuItem = ({ label, onClick, children, visible }: any) => {
+export const MenuItem = ({ label, onClick, children, visible, shortcut }: any) => {
   if (visible && !visible.value) return null
-  const isOpen = useSignal(false)
+  const isOpen = computed(() => activeMenu.value === label)
   setChildren(children, isOpen)
 
   return (
@@ -26,15 +41,19 @@ export const MenuItem = ({ label, onClick, children, visible }: any) => {
       <button
         className="group-hover:bg-gray-700 px-2 rounded-l-md h-6 align-middle"
         onClick={() => {
-          onClick()
-          isOpen.value = false
+          activeMenu.value = null
+          if (onClick) onClick()
         }}
+        title={shortcut ? `Keyboard shortcut: ${shortcut}` : undefined}
       >
         {label}
       </button>
       <button
         className="hover:bg-gray-700 pr-2 rounded-r-md h-6 align-middle"
-        onClick={toggle(isOpen)}
+        onClick={(e) => {
+          e.stopPropagation()
+          activeMenu.value = activeMenu.value === label ? null : label
+        }}
         data-testid={`menu-item-dropdown-${label}`}
       >
         <DownArrow />
@@ -46,14 +65,38 @@ export const MenuItem = ({ label, onClick, children, visible }: any) => {
   )
 }
 
-export const ToggleEntry = ({ label, state }: any) => {
+export const ToggleEntry = ({ label, state, shortcut }: any) => {
   return (
     <div className="relative group">
       <button
-        className={`w-full px-2 py-1 text-left hover:bg-gray-700 ${
+        className={`w-full px-2 py-1 text-left hover:bg-gray-700 flex justify-between items-center ${
           state.value ? 'bg-gray-600' : 'bg-gray-900'
         }`}
         onClick={toggle(state)}
+        title={shortcut ? `Keyboard shortcut: ${shortcut}` : undefined}
+      >
+        <span>{label}</span>
+        {shortcut && <span className="text-xs text-gray-400 ml-4">{shortcut}</span>}
+      </button>
+    </div>
+  )
+}
+
+export const MenuButton = ({
+  label,
+  onClick,
+  shortcut,
+}: {
+  label: string
+  onClick: () => void
+  shortcut?: string
+}) => {
+  return (
+    <div className="relative">
+      <button
+        className="hover:bg-gray-700 px-2 rounded-md h-6 align-middle"
+        onClick={onClick}
+        title={shortcut ? `Keyboard shortcut: ${shortcut}` : undefined}
       >
         {label}
       </button>
@@ -61,17 +104,7 @@ export const ToggleEntry = ({ label, state }: any) => {
   )
 }
 
-export const MenuButton = ({ label, onClick }: { label: string; onClick: () => void }) => {
-  return (
-    <div className="relative">
-      <button className="hover:bg-gray-700 px-2 rounded-md h-6 align-middle" onClick={onClick}>
-        {label}
-      </button>
-    </div>
-  )
-}
-
-export const MenuToggle = ({ label, state }: any) => {
+export const MenuToggle = ({ label, state, shortcut }: any) => {
   return (
     <div className="relative">
       <button
@@ -79,6 +112,7 @@ export const MenuToggle = ({ label, state }: any) => {
           state.value && 'bg-gray-500'
         }`}
         onClick={toggle(state)}
+        title={shortcut ? `Keyboard shortcut: ${shortcut}` : undefined}
       >
         {label}
       </button>
@@ -124,7 +158,7 @@ export const HeaderDialog = ({ nvArraySelected, isOpen }: any) => {
 
 export const ImageSelect = ({ label, state, children, visible }: any) => {
   if (visible && !visible.value) return null
-  const isOpen = useSignal(false)
+  const isOpen = computed(() => activeMenu.value === label)
   setChildren(children, isOpen)
 
   return (
@@ -133,14 +167,18 @@ export const ImageSelect = ({ label, state, children, visible }: any) => {
         className={`group-hover:bg-gray-700 px-2 rounded-l-md h-6 align-middle ${
           state.value && 'bg-gray-500'
         }`}
-        onClick={toggle(state)}
+        onClick={() => {
+          activeMenu.value = null
+          state.value = !state.value
+        }}
       >
         {label}
       </button>
       <button
         className="hover:bg-gray-700 pr-2 rounded-r-md h-6 align-middle"
-        onClick={() => {
-          toggle(isOpen)()
+        onClick={(e) => {
+          e.stopPropagation()
+          activeMenu.value = activeMenu.value === label ? null : label
           state.value = true
         }}
       >
