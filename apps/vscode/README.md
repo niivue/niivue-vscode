@@ -72,6 +72,8 @@ These shortcuts are handled by the niivue.js library and cannot be customized:
 - **K**: Move crosshair to A (Anterior)
 - **Ctrl+U**: Move crosshair to S (Superior)
 - **Ctrl+D**: Move crosshair to I (Inferior)
+- **Shift+U**: Alternative shortcut to move crosshair Superior
+- **Shift+D**: Alternative shortcut to move crosshair Inferior
 
 ### UI Shortcuts (Customizable)
 
@@ -97,10 +99,10 @@ These shortcuts can be customized in VS Code's Keyboard Shortcuts editor (File â
 
 **Actions:**
 
-- **Ctrl+O** (Cmd+O on Mac): Add image
+- **Ctrl+Shift+O** (Cmd+Shift+O on Mac): Add image
 - **Ctrl+L** (Cmd+L on Mac): Add overlay
 - **S**: Open colorscale menu
-- **Ctrl+H** (Cmd+H on Mac): Show header information
+- **Ctrl+Shift+H** (Cmd+Shift+H on Mac): Show header information
 
 > **Tip**: You can view all available shortcuts in the NiiVue menu bar at the top of the viewer, or by opening the VS Code Command Palette (Ctrl+Shift+P / Cmd+Shift+P) and typing "NiiVue".
 

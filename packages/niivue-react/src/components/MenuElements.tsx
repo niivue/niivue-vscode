@@ -14,6 +14,7 @@ if (typeof window !== 'undefined') {
 
 export const MenuEntry = ({ label, onClick, isOpen, visible, shortcut, keepOpen }: any) => {
   if (visible && !visible.value) return null
+  const ariaLabel = shortcut ? `${label} (Keyboard shortcut: ${shortcut})` : label
   return (
     <button
       className="w-full px-2 py-1 text-left bg-gray-900 hover:bg-gray-700 flex justify-between items-center"
@@ -22,6 +23,7 @@ export const MenuEntry = ({ label, onClick, isOpen, visible, shortcut, keepOpen 
         if (!keepOpen) activeMenu.value = null
       }}
       title={shortcut ? `Keyboard shortcut: ${shortcut}` : undefined}
+      aria-label={ariaLabel}
     >
       <span>{label}</span>
       {shortcut && <span className="text-xs text-gray-400 ml-4">{shortcut}</span>}

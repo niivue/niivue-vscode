@@ -159,7 +159,7 @@ test.describe('Keyboard Shortcuts', () => {
     await page.keyboard.press('u');
     await page.waitForTimeout(200);
     const newVal = await getDebugValue(page, 'getHideUI');
-    // hideUI cycles: 3 -> 2 -> 1 -> 0 -> 3
+    // hideUI cycles: 3 -> 2 -> 0 -> 3
     expect(newVal).not.toBe(initial);
   });
 

@@ -127,6 +127,7 @@ export const UI_SHORTCUTS: Record<string, KeyboardShortcut> = {
   ADD_IMAGE: {
     key: 'o',
     ctrl: true,
+    shift: true,
     description: 'Add image',
   },
   ADD_OVERLAY: {
@@ -145,6 +146,7 @@ export const UI_SHORTCUTS: Record<string, KeyboardShortcut> = {
   SHOW_HEADER: {
     key: 'h',
     ctrl: true,
+    shift: true,
     description: 'Show header information',
   },
   CROSSHAIR_SUPERIOR: {

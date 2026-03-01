@@ -1,5 +1,6 @@
 import { SLICE_TYPE } from '@niivue/niivue'
 import { Signal, computed, effect, useSignal } from '@preact/signals'
+import { useMemo } from 'preact/hooks'
 import { NIIVUE_CORE_SHORTCUTS, UI_SHORTCUTS, formatShortcut } from '../constants/keyboardShortcuts'
 import {
     ExtendedNiivue,
@@ -400,8 +401,8 @@ export const Menu = (props: AppProps) => {
   // No-op function for informational menu entries
   const noOp = () => {}
 
-  // Setup keyboard shortcuts handlers
-  const handlers = {
+  // Setup keyboard shortcuts handlers - wrapped in useMemo to prevent re-creating on every render
+  const handlers = useMemo(() => ({
     onViewAxial: () => (sliceType.value = SLICE_TYPE.AXIAL),
     onViewSagittal: () => (sliceType.value = SLICE_TYPE.SAGITTAL),
     onViewCoronal: () => (sliceType.value = SLICE_TYPE.CORONAL),
@@ -425,7 +426,28 @@ export const Menu = (props: AppProps) => {
     onShowHeader: toggle(headerDialog),
     onCrosshairSuperior: crosshairSuperior,
     onCrosshairInferior: crosshairInferior,
-  }
+  }), [
+    sliceType,
+    setMultiplanar,
+    setTimeSeries,
+    cycleViewMode,
+    cycleClipPlane,
+    volumeNext,
+    volumePrev,
+    resetZoom,
+    toggleInterpolation,
+    toggleColorbar,
+    toggleRadiological,
+    toggleCrosshair,
+    toggleZoomDragMode,
+    addImagesEvent,
+    overlayButtonOnClick,
+    openColorScaleLastOverlay,
+    cycleUIVisibility,
+    headerDialog,
+    crosshairSuperior,
+    crosshairInferior,
+  ])
 
   useKeyboardShortcuts(handlers)
 
@@ -589,59 +611,61 @@ export const Menu = (props: AppProps) => {
             <MenuEntry label="Set Header" onClick={toggle(setHeaderMenu)} />
           </MenuItem>
         )}
-        <MenuItem label="Navigation" visible={isVolume}>
-          <MenuEntry
-            label="Next Volume (4D)"
-            onClick={volumeNext}
-            shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.VOLUME_NEXT)}
-            keepOpen={true}
-            visible={has4D}
-          />
-          <MenuEntry
-            label="Previous Volume (4D)"
-            onClick={volumePrev}
-            shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.VOLUME_PREV)}
-            keepOpen={true}
-            visible={has4D}
-          />
-          <hr />
-          <MenuEntry
-            label="Crosshair: Right"
-            onClick={crosshairRight}
-            shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CROSSHAIR_RIGHT)}
-            keepOpen={true}
-          />
-          <MenuEntry
-            label="Crosshair: Left"
-            onClick={crosshairLeft}
-            shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CROSSHAIR_LEFT)}
-            keepOpen={true}
-          />
-          <MenuEntry
-            label="Crosshair: Anterior"
-            onClick={crosshairAnterior}
-            shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CROSSHAIR_ANTERIOR)}
-            keepOpen={true}
-          />
-          <MenuEntry
-            label="Crosshair: Posterior"
-            onClick={crosshairPosterior}
-            shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CROSSHAIR_POSTERIOR)}
-            keepOpen={true}
-          />
-          <MenuEntry
-            label="Crosshair: Superior"
-            onClick={crosshairSuperior}
-            shortcut={formatShortcut(UI_SHORTCUTS.CROSSHAIR_SUPERIOR)}
-            keepOpen={true}
-          />
-          <MenuEntry
-            label="Crosshair: Inferior"
-            onClick={crosshairInferior}
-            shortcut={formatShortcut(UI_SHORTCUTS.CROSSHAIR_INFERIOR)}
-            keepOpen={true}
-          />
-        </MenuItem>
+        {settings.value.menuItems?.navigation && (
+          <MenuItem label="Navigation" visible={isVolume}>
+            <MenuEntry
+              label="Next Volume (4D)"
+              onClick={volumeNext}
+              shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.VOLUME_NEXT)}
+              keepOpen={true}
+              visible={has4D}
+            />
+            <MenuEntry
+              label="Previous Volume (4D)"
+              onClick={volumePrev}
+              shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.VOLUME_PREV)}
+              keepOpen={true}
+              visible={has4D}
+            />
+            <hr />
+            <MenuEntry
+              label="Crosshair: Right"
+              onClick={crosshairRight}
+              shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CROSSHAIR_RIGHT)}
+              keepOpen={true}
+            />
+            <MenuEntry
+              label="Crosshair: Left"
+              onClick={crosshairLeft}
+              shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CROSSHAIR_LEFT)}
+              keepOpen={true}
+            />
+            <MenuEntry
+              label="Crosshair: Anterior"
+              onClick={crosshairAnterior}
+              shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CROSSHAIR_ANTERIOR)}
+              keepOpen={true}
+            />
+            <MenuEntry
+              label="Crosshair: Posterior"
+              onClick={crosshairPosterior}
+              shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CROSSHAIR_POSTERIOR)}
+              keepOpen={true}
+            />
+            <MenuEntry
+              label="Crosshair: Superior"
+              onClick={crosshairSuperior}
+              shortcut={formatShortcut(UI_SHORTCUTS.CROSSHAIR_SUPERIOR)}
+              keepOpen={true}
+            />
+            <MenuEntry
+              label="Crosshair: Inferior"
+              onClick={crosshairInferior}
+              shortcut={formatShortcut(UI_SHORTCUTS.CROSSHAIR_INFERIOR)}
+              keepOpen={true}
+            />
+          </MenuItem>
+        )}
         <ImageSelect label="Select" state={selectionActive} visible={multipleVolumes}>
           <ToggleEntry label="Multiple" state={selectMultiple} />
           <MenuEntry label="Select All" onClick={selectAll} />

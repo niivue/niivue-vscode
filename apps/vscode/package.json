@@ -216,8 +216,8 @@
       },
       {
         "command": "niivue.addImage",
-        "key": "ctrl+o",
-        "mac": "cmd+o",
+        "key": "ctrl+shift+o",
+        "mac": "cmd+shift+o",
         "when": "activeCustomEditorId == niiVue.default"
       },
       {
@@ -239,7 +239,7 @@
       {
         "command": "niivue.showHeader",
         "key": "ctrl+h",
-        "mac": "cmd+h",
+        "mac": "cmd+shift+h",
         "when": "activeCustomEditorId == niiVue.default"
       },
       {
