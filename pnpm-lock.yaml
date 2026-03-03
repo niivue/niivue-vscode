@@ -99,8 +99,8 @@ importers:
         specifier: ^2.7.1
         version: 2.7.1
       '@niivue/niivue':
-        specifier: ^0.64.0
-        version: 0.64.0
+        specifier: ^0.68.0
+        version: 0.68.1
     devDependencies:
       '@jupyterlab/builder':
         specifier: ^4.4.10
@@ -172,8 +172,8 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0
       '@niivue/niivue':
-        specifier: ^0.64.0
-        version: 0.64.0
+        specifier: ^0.68.0
+        version: 0.68.1
       '@niivue/react':
         specifier: workspace:*
         version: link:../../packages/niivue-react
@@ -268,8 +268,8 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0
       '@niivue/niivue':
-        specifier: ^0.64.0
-        version: 0.64.0
+        specifier: ^0.68.0
+        version: 0.68.1
       '@niivue/react':
         specifier: workspace:*
         version: link:../../../../packages/niivue-react
@@ -368,8 +368,8 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0
       '@niivue/niivue':
-        specifier: ^0.64.0
-        version: 0.64.0
+        specifier: ^0.68.0
+        version: 0.68.1
       '@preact/signals':
         specifier: ^2.0.1
         version: 2.3.2(preact@10.28.3)
@@ -1719,8 +1719,8 @@ packages:
   '@niivue/minc-loader@1.0.0':
     resolution: {integrity: sha512-wcrFHr+7F5aGg7cdxFoOYolJH6EHlW5xZNkh0+lAkDPnOneLAWlS8+RzPw383jcqIx5+xf+dgK4TVgU/OZ8KUQ==}
 
-  '@niivue/niivue@0.64.0':
-    resolution: {integrity: sha512-cj7QTlCHZpFiUjZ8DH0M5SzdvbM2VQAjVgvif7xLaRWraiv2MqWdRYcSvF6+KYA0eN9cNVWkEy01NcW4TT0x+w==}
+  '@niivue/niivue@0.68.1':
+    resolution: {integrity: sha512-uZ/4pJ6mGk8UY8DWOu+/cC/AOpPQW7W6kEhyOrEhuUDZW5+lPmmcnqU6ilipiR4iAcSA8r9KTXJm+p55iTyUgw==}
 
   '@node-rs/crc32-android-arm-eabi@1.10.6':
     resolution: {integrity: sha512-vZAMuJXm3TpWPOkkhxdrofWDv+Q+I2oO7ucLRbXyAPmXFNDhHtBxbO1rk9Qzz+M3eep8ieS4/+jCL1Q0zacNMQ==}
@@ -8792,7 +8792,7 @@ snapshots:
     dependencies:
       nifti-reader-js: 0.7.1
 
-  '@niivue/niivue@0.64.0':
+  '@niivue/niivue@0.68.1':
     dependencies:
       '@lukeed/uuid': 2.0.1
       '@ungap/structured-clone': 1.3.0
