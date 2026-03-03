@@ -116,6 +116,44 @@ export default defineConfig({
           export default null;
         `
       })(),
+      'niimath-worker': (() => {
+        const reactPkgDir = path.resolve(__dirname, '../../packages/niivue-react')
+        const workerPath = path.resolve(reactPkgDir, 'node_modules/@niivue/niimath/dist/worker.js')
+        const niimathJsPath = path.resolve(path.dirname(workerPath), 'niimath.js')
+        const wasmPath = path.resolve(path.dirname(workerPath), 'niimath.wasm')
+
+        if (fs.existsSync(workerPath) && fs.existsSync(niimathJsPath) && fs.existsSync(wasmPath)) {
+          try {
+            const workerContent = fs.readFileSync(workerPath, 'utf8')
+            const niimathJsContent = fs.readFileSync(niimathJsPath, 'utf8')
+            const wasmContent = fs.readFileSync(wasmPath)
+            const wasmBase64 = wasmContent.toString('base64')
+
+            const modifiedNiimath = niimathJsContent.replace(
+              'function findWasmBinary(){if(Module["locateFile"]){return locateFile("niimath.wasm")}return new URL("niimath.wasm",import.meta.url).href}',
+              `function findWasmBinary(){return "data:application/wasm;base64,${wasmBase64}"}`,
+            )
+
+            const selfContainedWorker = workerContent.replace(
+              `import Module from './niimath.js';`,
+              `// Inlined niimath module\n${modifiedNiimath}\n// Use the inlined Module`,
+            )
+
+            return `
+              const workerCode = ${JSON.stringify(selfContainedWorker)};
+              const blob = new Blob([workerCode], { type: 'application/javascript' });
+              export default URL.createObjectURL(blob);
+            `
+          } catch (error) {
+            console.warn('Failed to create self-contained niimath worker, using fallback:', error)
+          }
+        }
+
+        return `
+          console.warn('niimath worker not available in this build');
+          export default null;
+        `
+      })(),
     }),
     VitePWA({
       disable: !!prNumber, // Disable service worker for PR previews (temporary, no offline needed)
@@ -216,7 +254,7 @@ export default defineConfig({
       // Ensure virtual modules are properly handled
       onwarn: (warning, warn) => {
         // Suppress warnings about virtual modules
-        if (warning.code === 'UNRESOLVED_IMPORT' && warning.message?.includes('dcm2niix-worker')) {
+        if (warning.code === 'UNRESOLVED_IMPORT' && (warning.message?.includes('dcm2niix-worker') || warning.message?.includes('niimath-worker'))) {
           return
         }
         warn(warning)

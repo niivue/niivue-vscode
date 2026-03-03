@@ -73,6 +73,40 @@ export default defineConfig(({ mode }) => ({
         // Fallback to Vite's worker import
         return `import workerUrl from '${workerPath.replace(/\\/g, '/')}?worker&url'; export default workerUrl;`
       })(),
+      'niimath-worker': (() => {
+        const workerPath = path.resolve(__dirname, 'node_modules/@niivue/niimath/dist/worker.js')
+        const niimathJsPath = path.resolve(path.dirname(workerPath), 'niimath.js')
+        const wasmPath = path.resolve(path.dirname(workerPath), 'niimath.wasm')
+
+        if (fs.existsSync(workerPath) && fs.existsSync(niimathJsPath) && fs.existsSync(wasmPath)) {
+          try {
+            const workerContent = fs.readFileSync(workerPath, 'utf8')
+            const niimathJsContent = fs.readFileSync(niimathJsPath, 'utf8')
+            const wasmContent = fs.readFileSync(wasmPath)
+            const wasmBase64 = wasmContent.toString('base64')
+
+            const modifiedNiimath = niimathJsContent.replace(
+              'function findWasmBinary(){if(Module["locateFile"]){return locateFile("niimath.wasm")}return new URL("niimath.wasm",import.meta.url).href}',
+              `function findWasmBinary(){return "data:application/wasm;base64,${wasmBase64}"}`,
+            )
+
+            const selfContainedWorker = workerContent.replace(
+              `import Module from './niimath.js';`,
+              `// Inlined niimath module\n${modifiedNiimath}\n// Use the inlined Module`,
+            )
+
+            return `
+              const workerCode = ${JSON.stringify(selfContainedWorker)};
+              const blob = new Blob([workerCode], { type: 'application/javascript' });
+              export default URL.createObjectURL(blob);
+            `
+          } catch (error) {
+            console.error('Failed to create self-contained niimath worker:', error)
+          }
+        }
+
+        return `import workerUrl from '${workerPath.replace(/\\/g, '/')}?worker&url'; export default workerUrl;`
+      })(),
     }),
   ],
   build: {
