@@ -6,7 +6,7 @@ export interface MenuItems {
   colorScale: boolean
   overlay: boolean
   header: boolean
-  navigation: boolean
+  navigation?: boolean
 }
 
 export interface NiiVueSettings {
