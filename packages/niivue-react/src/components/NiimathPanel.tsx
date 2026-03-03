@@ -43,7 +43,7 @@ export const NiimathPanel = ({ nvArray, visible }: NiimathPanelProps) => {
       const volume = nv.volumes[0]
       const uint8 = await volume.saveToUint8Array(inputName)
       const fileName = inputName.endsWith('.nii') || inputName.endsWith('.nii.gz') ? inputName : 'input.nii'
-      const file = new File([uint8.buffer.slice(uint8.byteOffset, uint8.byteOffset + uint8.byteLength) as ArrayBuffer], fileName)
+      const file = new File([new Uint8Array(uint8)], fileName)
       const blob = await runNiimath(file, cmd)
       resultBlob.value = blob
       status.value = 'done'
