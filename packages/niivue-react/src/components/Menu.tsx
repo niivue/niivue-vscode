@@ -22,6 +22,8 @@ import {
 } from './MenuElements'
 import { ScalingBox } from './ScalingBox'
 
+const MAX_MOSAIC_4D_FRAMES = 16
+
 export const Menu = (props: AppProps) => {
   const { selection, selectionMode, nvArray, sliceType, hideUI, settings } = props
   const isVscode = typeof (globalThis as any).vscode === 'object'
@@ -54,6 +56,9 @@ export const Menu = (props: AppProps) => {
   )
   const isSingleVolume = computed(
     () => nvArray.value.length === 1 && nvArray.value[0]?.volumes?.length > 0,
+  )
+  const canMosaic4D = computed(
+    () => isSingleVolume.value && isMultiEcho.value && !mosaic4DActive.value,
   )
   const isVolume = computed(() => nvArraySelected.value[0]?.volumes?.length > 0)
   const isMesh = computed(() => nvArraySelected.value[0]?.meshes?.length > 0)
@@ -263,7 +268,7 @@ export const Menu = (props: AppProps) => {
     if (!sourceNv?.volumes?.[0]) return
     const nt = sourceNv.volumes[0].getImageMetadata().nt
     if (nt <= 1) return
-    const nFrames = Math.min(nt, 16)
+    const nFrames = Math.min(nt, MAX_MOSAIC_4D_FRAMES)
     // Set the first canvas to frame 0
     sourceNv.setFrame4D(sourceNv.volumes[0].id, 0)
     // Create separate canvases for remaining frames
@@ -352,11 +357,9 @@ export const Menu = (props: AppProps) => {
               visible={isSingleVolume}
             />
             <MenuEntry
-              label={mosaic4DActive.value ? '✓ Mosaic 4D' : 'Mosaic 4D'}
+              label="Mosaic 4D"
               onClick={toggleMosaic4D}
-              visible={computed(
-                () => isSingleVolume.value && isMultiEcho.value && !mosaic4DActive.value,
-              )}
+              visible={canMosaic4D}
             />
             <MenuEntry
               label="✓ Mosaic 4D"

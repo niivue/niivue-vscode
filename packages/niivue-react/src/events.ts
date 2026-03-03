@@ -351,7 +351,7 @@ export class ExtendedNiivue extends Niivue {
   uri = ''
   key = NaN
   body = null
-  pendingVolume: any = null // NVImage to add after canvas attachment (for 4D mosaic)
+  pendingVolume: NVImage | null = null // NVImage to add after canvas attachment (for 4D mosaic)
   pendingFrame = 0 // Frame to set after adding pending volume
   isMosaicFrame = false // Flag for mosaic-created instances
   onFrameUpdate = (frame: number) => { }
