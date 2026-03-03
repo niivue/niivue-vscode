@@ -52,7 +52,22 @@ export const NiiVueCanvas = ({
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
   useEffect(() => {
-    canvasRef.current && !nv.canvas && nv.attachToCanvas(canvasRef.current)
+    if (canvasRef.current && !nv.canvas) {
+      nv.attachToCanvas(canvasRef.current)
+      // Handle pending volume for 4D mosaic
+      if (nv.pendingVolume) {
+        const vol = nv.pendingVolume
+        const frame = nv.pendingFrame
+        nv.addVolume(vol)
+        nv.setFrame4D(vol.id, frame)
+        nv.isLoaded = true
+        nv.isNew = false
+        nv.pendingVolume = null
+        render.value++
+        nvArray.value = [...nvArray.value]
+        notifyImageLoaded()
+      }
+    }
   }, [canvasRef.current])
 
   useEffect(() => {
