@@ -72,8 +72,6 @@ These shortcuts are handled by the niivue.js library and cannot be customized:
 - **K**: Move crosshair to A (Anterior)
 - **Ctrl+U**: Move crosshair to S (Superior)
 - **Ctrl+D**: Move crosshair to I (Inferior)
-- **Shift+U**: Alternative shortcut to move crosshair Superior
-- **Shift+D**: Alternative shortcut to move crosshair Inferior
 
 ### UI Shortcuts (Customizable)
 

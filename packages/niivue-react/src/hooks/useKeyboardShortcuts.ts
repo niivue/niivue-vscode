@@ -23,8 +23,6 @@ export interface KeyboardShortcutHandlers {
   onColorscale?: () => void
   onHideUI?: () => void
   onShowHeader?: () => void
-  onCrosshairSuperior?: () => void
-  onCrosshairInferior?: () => void
 }
 
 /**
@@ -139,18 +137,6 @@ export function useKeyboardShortcuts(handlers: KeyboardShortcutHandlers, enabled
       } else if (matchesShortcut(event, UI_SHORTCUTS.SHOW_HEADER) && handlers.onShowHeader) {
         event.preventDefault()
         handlers.onShowHeader()
-      } else if (
-        matchesShortcut(event, UI_SHORTCUTS.CROSSHAIR_SUPERIOR) &&
-        handlers.onCrosshairSuperior
-      ) {
-        event.preventDefault()
-        handlers.onCrosshairSuperior()
-      } else if (
-        matchesShortcut(event, UI_SHORTCUTS.CROSSHAIR_INFERIOR) &&
-        handlers.onCrosshairInferior
-      ) {
-        event.preventDefault()
-        handlers.onCrosshairInferior()
       }
     }
 

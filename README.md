@@ -89,7 +89,6 @@ These shortcuts are handled by the niivue.js core library and work across all pl
 - **H/L**: Move crosshair Right/Left
 - **J/K**: Move crosshair Posterior/Anterior
 - **Ctrl+U/Ctrl+D**: Move crosshair Superior/Inferior
-- **Shift+U/Shift+D**: Alternative shortcuts for crosshair Superior/Inferior
 
 ### UI Shortcuts (Customizable in VSCode)
 
