@@ -38,6 +38,8 @@ export const Menu = (props: AppProps) => {
   const zoomDragMode = useSignal(settings.value.zoomDragMode)
   const selectionActive = useSignal(false)
   const selectMultiple = useSignal(false)
+  const mosaicActive = useSignal(false)
+  const mosaic4DActive = useSignal(false)
 
   // Computed
   const isOverlay = computed(() => nvArraySelected.value[0]?.volumes?.length > 1)
@@ -49,6 +51,9 @@ export const Menu = (props: AppProps) => {
   )
   const isMultiEcho = computed(() =>
     nvArraySelected.value.some((nv) => nv.volumes?.[0]?.getImageMetadata().nt > 1),
+  )
+  const isSingleVolume = computed(
+    () => nvArray.value.length === 1 && nvArray.value[0]?.volumes?.length > 0,
   )
   const isVolume = computed(() => nvArraySelected.value[0]?.volumes?.length > 0)
   const isMesh = computed(() => nvArraySelected.value[0]?.meshes?.length > 0)
@@ -187,6 +192,10 @@ export const Menu = (props: AppProps) => {
   }
 
   const setMultiplanar = () => {
+    if (mosaicActive.value) {
+      mosaicActive.value = false
+      nvArraySelected.value.forEach((nv) => nv.setSliceMosaicString(''))
+    }
     sliceType.value = SLICE_TYPE.MULTIPLANAR
     nvArraySelected.value.forEach((nv) => {
       nv.graph.autoSizeMultiplanar = false
@@ -195,6 +204,10 @@ export const Menu = (props: AppProps) => {
   }
 
   const setTimeSeries = () => {
+    if (mosaicActive.value) {
+      mosaicActive.value = false
+      nvArraySelected.value.forEach((nv) => nv.setSliceMosaicString(''))
+    }
     crosshair.value = true
     sliceType.value = SLICE_TYPE.MULTIPLANAR
     nvArraySelected.value.forEach((nv) => {
@@ -204,6 +217,69 @@ export const Menu = (props: AppProps) => {
       nv.graph.opacity = 1.0
       nv.updateGLVolume()
     })
+  }
+
+  const setView = (type: number) => {
+    if (mosaicActive.value) {
+      mosaicActive.value = false
+      nvArraySelected.value.forEach((nv) => nv.setSliceMosaicString(''))
+    }
+    sliceType.value = type
+  }
+
+  const toggleMosaic = () => {
+    if (mosaicActive.value) {
+      mosaicActive.value = false
+      nvArraySelected.value.forEach((nv) => nv.setSliceMosaicString(''))
+      return
+    }
+    const nv = nvArraySelected.value[0]
+    if (!nv?.volumes?.[0]) return
+    // Use current sliceType orientation, default to Axial if multiplanar/render
+    let orientation: 'A' | 'C' | 'S' = 'A'
+    if (sliceType.value === SLICE_TYPE.CORONAL) orientation = 'C'
+    else if (sliceType.value === SLICE_TYPE.SAGITTAL) orientation = 'S'
+    sliceType.value =
+      orientation === 'A'
+        ? SLICE_TYPE.AXIAL
+        : orientation === 'C'
+          ? SLICE_TYPE.CORONAL
+          : SLICE_TYPE.SAGITTAL
+    const mosaicStr = generateMosaicString(nv, orientation)
+    mosaicActive.value = true
+    nvArraySelected.value.forEach((nvInst) => {
+      nvInst.setSliceMosaicString(mosaicStr)
+    })
+  }
+
+  const toggleMosaic4D = () => {
+    if (mosaic4DActive.value) {
+      // Revert: remove mosaic-created canvases
+      nvArray.value = nvArray.value.filter((nv) => !nv.isMosaicFrame)
+      mosaic4DActive.value = false
+      return
+    }
+    const sourceNv = nvArraySelected.value[0]
+    if (!sourceNv?.volumes?.[0]) return
+    const nt = sourceNv.volumes[0].getImageMetadata().nt
+    if (nt <= 1) return
+    const nFrames = Math.min(nt, 16)
+    // Set the first canvas to frame 0
+    sourceNv.setFrame4D(sourceNv.volumes[0].id, 0)
+    // Create separate canvases for remaining frames
+    const newInstances: ExtendedNiivue[] = []
+    for (let i = 1; i < nFrames; i++) {
+      const nv = new ExtendedNiivue({ isResizeCanvas: true, dragMode: 1 })
+      nv.key = Math.random()
+      nv.isNew = false
+      nv.uri = sourceNv.uri
+      nv.pendingVolume = sourceNv.volumes[0].clone()
+      nv.pendingFrame = i
+      nv.isMosaicFrame = true
+      newInstances.push(nv)
+    }
+    nvArray.value = [...nvArray.value, ...newInstances]
+    mosaic4DActive.value = true
   }
 
   const openColorScale = (overlayNumber: number) => () => {
@@ -259,15 +335,33 @@ export const Menu = (props: AppProps) => {
         )}
         {settings.value.menuItems?.view && (
           <MenuItem label="View" onClick={resetZoom}>
-            <MenuEntry label="Axial" onClick={() => (sliceType.value = SLICE_TYPE.AXIAL)} />
-            <MenuEntry label="Sagittal" onClick={() => (sliceType.value = SLICE_TYPE.SAGITTAL)} />
-            <MenuEntry label="Coronal" onClick={() => (sliceType.value = SLICE_TYPE.CORONAL)} />
-            <MenuEntry label="Render" onClick={() => (sliceType.value = SLICE_TYPE.RENDER)} />
+            <MenuEntry label="Axial" onClick={() => setView(SLICE_TYPE.AXIAL)} />
+            <MenuEntry label="Sagittal" onClick={() => setView(SLICE_TYPE.SAGITTAL)} />
+            <MenuEntry label="Coronal" onClick={() => setView(SLICE_TYPE.CORONAL)} />
+            <MenuEntry label="Render" onClick={() => setView(SLICE_TYPE.RENDER)} />
             <MenuEntry label="Multiplanar + Render" onClick={setMultiplanar} />
             <MenuEntry
               label="Multiplanar + Timeseries"
               onClick={setTimeSeries}
               visible={isMultiEcho}
+            />
+            <hr />
+            <MenuEntry
+              label={mosaicActive.value ? '✓ Mosaic' : 'Mosaic'}
+              onClick={toggleMosaic}
+              visible={isSingleVolume}
+            />
+            <MenuEntry
+              label={mosaic4DActive.value ? '✓ Mosaic 4D' : 'Mosaic 4D'}
+              onClick={toggleMosaic4D}
+              visible={computed(
+                () => isSingleVolume.value && isMultiEcho.value && !mosaic4DActive.value,
+              )}
+            />
+            <MenuEntry
+              label="✓ Mosaic 4D"
+              onClick={toggleMosaic4D}
+              visible={mosaic4DActive}
             />
             <hr />
             <MenuEntry label="Show All" onClick={() => (hideUI.value = 3)} />
@@ -401,4 +495,41 @@ function applyDragMode(nvArray: Signal<ExtendedNiivue[]>, zoomDragMode: Signal<b
     if (zoomDragMode.value) nv.opts.dragMode = nv.dragModes.slicer3D
     else nv.opts.dragMode = nv.dragModes.contrast
   })
+}
+
+function generateMosaicString(nv: ExtendedNiivue, orientation: 'A' | 'C' | 'S'): string {
+  const meta = nv.volumes[0].getImageMetadata()
+  // Determine axis dimensions based on orientation
+  let nVoxels: number
+  let axisIndex: number
+  if (orientation === 'A') {
+    nVoxels = meta.nz
+    axisIndex = 2
+  } else if (orientation === 'C') {
+    nVoxels = meta.ny
+    axisIndex = 1
+  } else {
+    nVoxels = meta.nx
+    axisIndex = 0
+  }
+  // Use frac2mm to get the mm extent along the chosen axis
+  const startFrac = [0, 0, 0] as [number, number, number]
+  const endFrac = [1, 1, 1] as [number, number, number]
+  const startMM = nv.frac2mm(startFrac)
+  const endMM = nv.frac2mm(endFrac)
+  const mmStart = Math.min(startMM[axisIndex], endMM[axisIndex])
+  const mmEnd = Math.max(startMM[axisIndex], endMM[axisIndex])
+  // Show up to 20 evenly spaced slices
+  const nSlices = Math.min(nVoxels, 20)
+  if (nSlices <= 1) {
+    const mid = Math.round((mmStart + mmEnd) / 2)
+    return `${orientation} ${mid}`
+  }
+  const margin = (mmEnd - mmStart) * 0.05
+  const step = (mmEnd - mmStart - 2 * margin) / (nSlices - 1)
+  const positions: number[] = []
+  for (let i = 0; i < nSlices; i++) {
+    positions.push(Math.round(mmStart + margin + i * step))
+  }
+  return `${orientation} ${positions.join(' ')}`
 }
