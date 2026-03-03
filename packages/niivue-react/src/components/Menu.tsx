@@ -20,6 +20,7 @@ import {
   ToggleEntry,
   toggle,
 } from './MenuElements'
+import { NiimathPanel } from './NiimathPanel'
 import { ScalingBox } from './ScalingBox'
 
 export const Menu = (props: AppProps) => {
@@ -31,6 +32,7 @@ export const Menu = (props: AppProps) => {
   const selectedOverlayNumber = useSignal(0)
   const overlayMenu = useSignal(false)
   const setHeaderMenu = useSignal(false)
+  const niimathMenu = useSignal(false)
   const interpolation = useSignal(settings.value.interpolation)
   const crosshair = useSignal(settings.value.showCrosshairs)
   const radiologicalConvention = useSignal(settings.value.radiologicalConvention)
@@ -309,6 +311,9 @@ export const Menu = (props: AppProps) => {
             <MenuEntry label="Set Header" onClick={toggle(setHeaderMenu)} />
           </MenuItem>
         )}
+        {settings.value.menuItems?.niimath && (
+          <MenuButton label="Niimath" onClick={toggle(niimathMenu)} />
+        )}
         <ImageSelect label="Select" state={selectionActive} visible={multipleVolumes}>
           <ToggleEntry label="Multiple" state={selectMultiple} />
           <MenuEntry label="Select All" onClick={selectAll} />
@@ -323,6 +328,7 @@ export const Menu = (props: AppProps) => {
       />
       <HeaderBox nvArraySelected={nvArraySelected} nvArray={nvArray} visible={setHeaderMenu} />
       <HeaderDialog nvArraySelected={nvArraySelected} isOpen={headerDialog} />
+      <NiimathPanel nvArray={nvArray} visible={niimathMenu} />
     </>
   )
 }

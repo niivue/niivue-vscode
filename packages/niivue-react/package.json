@@ -62,7 +62,8 @@
   },
   "dependencies": {
     "@niivue/dcm2niix": "^1.2.0",
-    "@niivue/minc-loader": "^1.0.0"
+    "@niivue/minc-loader": "^1.0.0",
+    "@niivue/niimath": "^1.2.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
