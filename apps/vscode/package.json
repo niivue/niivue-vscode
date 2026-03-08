@@ -2,7 +2,7 @@
   "name": "niivue",
   "displayName": "NiiVue",
   "description": "View NIfTI images (and a lot of other medical imaging formats)",
-  "version": "2.7.0",
+  "version": "2.8.0",
   "publisher": "KorbinianEckstein",
   "icon": "niivue_icon.png",
   "bugs": {
@@ -84,6 +84,173 @@
         "command": "niiVue.openFromExplorer",
         "title": "NiiVue: Open",
         "enablement": "!listMultiSelection"
+      },
+      {
+        "command": "niivue.viewAxial",
+        "title": "NiiVue: Axial View"
+      },
+      {
+        "command": "niivue.viewSagittal",
+        "title": "NiiVue: Sagittal View"
+      },
+      {
+        "command": "niivue.viewCoronal",
+        "title": "NiiVue: Coronal View"
+      },
+      {
+        "command": "niivue.viewRender",
+        "title": "NiiVue: Render View"
+      },
+      {
+        "command": "niivue.viewMultiplanar",
+        "title": "NiiVue: Multiplanar View"
+      },
+      {
+        "command": "niivue.resetView",
+        "title": "NiiVue: Reset View"
+      },
+      {
+        "command": "niivue.toggleInterpolation",
+        "title": "NiiVue: Toggle Interpolation"
+      },
+      {
+        "command": "niivue.toggleColorbar",
+        "title": "NiiVue: Toggle Colorbar"
+      },
+      {
+        "command": "niivue.toggleRadiological",
+        "title": "NiiVue: Toggle Radiological Convention"
+      },
+      {
+        "command": "niivue.toggleCrosshair",
+        "title": "NiiVue: Toggle Crosshair"
+      },
+      {
+        "command": "niivue.toggleZoomMode",
+        "title": "NiiVue: Toggle Zoom Mode"
+      },
+      {
+        "command": "niivue.addImage",
+        "title": "NiiVue: Add Image"
+      },
+      {
+        "command": "niivue.addOverlay",
+        "title": "NiiVue: Add Overlay"
+      },
+      {
+        "command": "niivue.colorscale",
+        "title": "NiiVue: Open Colorscale"
+      },
+      {
+        "command": "niivue.hideUI",
+        "title": "NiiVue: Toggle UI Visibility"
+      },
+      {
+        "command": "niivue.showHeader",
+        "title": "NiiVue: Show Header"
+      },
+      {
+        "command": "niivue.crosshairSuperior",
+        "title": "NiiVue: Crosshair Superior"
+      },
+      {
+        "command": "niivue.crosshairInferior",
+        "title": "NiiVue: Crosshair Inferior"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "niivue.viewAxial",
+        "key": "1",
+        "when": "activeCustomEditorId == niiVue.default"
+      },
+      {
+        "command": "niivue.viewSagittal",
+        "key": "2",
+        "when": "activeCustomEditorId == niiVue.default"
+      },
+      {
+        "command": "niivue.viewCoronal",
+        "key": "3",
+        "when": "activeCustomEditorId == niiVue.default"
+      },
+      {
+        "command": "niivue.viewRender",
+        "key": "4",
+        "when": "activeCustomEditorId == niiVue.default"
+      },
+      {
+        "command": "niivue.viewMultiplanar",
+        "key": "5",
+        "when": "activeCustomEditorId == niiVue.default"
+      },
+      {
+        "command": "niivue.resetView",
+        "key": "r",
+        "when": "activeCustomEditorId == niiVue.default"
+      },
+      {
+        "command": "niivue.toggleInterpolation",
+        "key": "i",
+        "when": "activeCustomEditorId == niiVue.default"
+      },
+      {
+        "command": "niivue.toggleColorbar",
+        "key": "b",
+        "when": "activeCustomEditorId == niiVue.default"
+      },
+      {
+        "command": "niivue.toggleRadiological",
+        "key": "x",
+        "when": "activeCustomEditorId == niiVue.default"
+      },
+      {
+        "command": "niivue.toggleCrosshair",
+        "key": "m",
+        "when": "activeCustomEditorId == niiVue.default"
+      },
+      {
+        "command": "niivue.toggleZoomMode",
+        "key": "z",
+        "when": "activeCustomEditorId == niiVue.default"
+      },
+      {
+        "command": "niivue.addImage",
+        "key": "ctrl+shift+o",
+        "mac": "cmd+shift+o",
+        "when": "activeCustomEditorId == niiVue.default"
+      },
+      {
+        "command": "niivue.addOverlay",
+        "key": "ctrl+l",
+        "mac": "cmd+l",
+        "when": "activeCustomEditorId == niiVue.default"
+      },
+      {
+        "command": "niivue.colorscale",
+        "key": "s",
+        "when": "activeCustomEditorId == niiVue.default"
+      },
+      {
+        "command": "niivue.hideUI",
+        "key": "u",
+        "when": "activeCustomEditorId == niiVue.default"
+      },
+      {
+        "command": "niivue.showHeader",
+        "key": "ctrl+h",
+        "mac": "cmd+shift+h",
+        "when": "activeCustomEditorId == niiVue.default"
+      },
+      {
+        "command": "niivue.crosshairSuperior",
+        "key": "shift+u",
+        "when": "activeCustomEditorId == niiVue.default"
+      },
+      {
+        "command": "niivue.crosshairInferior",
+        "key": "shift+d",
+        "when": "activeCustomEditorId == niiVue.default"
       }
     ],
     "customEditors": [
