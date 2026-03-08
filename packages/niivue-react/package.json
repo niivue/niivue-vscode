@@ -1,6 +1,7 @@
 {
   "name": "@niivue/react",
   "version": "0.1.0",
+  "private": true,
   "type": "module",
   "description": "React components and utilities for NiiVue neuroimaging viewer",
   "license": "BSD-2-Clause",
