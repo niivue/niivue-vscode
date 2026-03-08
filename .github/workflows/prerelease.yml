@@ -1,0 +1,131 @@
+name: Pre-release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  prerelease:
+    name: Build and publish pre-releases
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install JS dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Python build tools
+        run: python -m pip install "jupyterlab>=4.0.0,<5" build twine
+
+      # ── VS Code ────────────────────────────────────────────────────────────
+      # VSCode requires major.minor.patch (no semver pre-release tags).
+      # Convention: odd minor = pre-release. Stable 2.8.0 → pre-release 2.9.<run>.
+      - name: Build VS Code extension
+        run: pnpm turbo build --filter=niivue
+
+      - name: Set VS Code pre-release version
+        run: |
+          node -e "
+            const fs = require('fs'), p = 'apps/vscode/package.json';
+            const pkg = JSON.parse(fs.readFileSync(p));
+            pkg.version = '2.9.${{ github.run_number }}';
+            fs.writeFileSync(p, JSON.stringify(pkg, null, 2) + '\n');
+          "
+
+      - name: Package VS Code extension
+        run: pnpm vsce package --pre-release
+        working-directory: ./apps/vscode
+
+      - name: Publish to VS Code Marketplace
+        run: pnpm vsce publish --pre-release
+        working-directory: ./apps/vscode
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+
+      - name: Publish to Open VSX
+        run: pnpm ovsx publish *.vsix --pre-release
+        working-directory: ./apps/vscode
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+
+      # ── JupyterLab ─────────────────────────────────────────────────────────
+      # hatch-nodejs-version reads package.json and converts npm semver to PEP 440:
+      # 0.2.7-beta.<run> → 0.2.7b<run>  (valid PEP 440 beta)
+      - name: Build JupyterLab extension
+        run: pnpm turbo build --filter=@niivue/jupyter
+
+      - name: Set JupyterLab pre-release version
+        run: |
+          node -e "
+            const fs = require('fs'), p = 'apps/jupyter/package.json';
+            const pkg = JSON.parse(fs.readFileSync(p));
+            pkg.version = '0.2.7-beta.${{ github.run_number }}';
+            fs.writeFileSync(p, JSON.stringify(pkg, null, 2) + '\n');
+          "
+
+      - name: Build JupyterLab Python package
+        run: python -m build
+        working-directory: ./apps/jupyter
+
+      - name: Publish JupyterLab to PyPI
+        run: python -m twine upload dist/*
+        working-directory: ./apps/jupyter
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+
+      # ── Streamlit ──────────────────────────────────────────────────────────
+      # Version is hardcoded in pyproject.toml, so patch it directly with PEP 440.
+      - name: Build Streamlit frontend
+        run: pnpm turbo build --filter=@niivue/streamlit
+
+      - name: Set Streamlit pre-release version
+        run: |
+          sed -i 's/^version = .*/version = "0.2.2b${{ github.run_number }}"/' apps/streamlit/pyproject.toml
+
+      - name: Build Streamlit Python package
+        run: python -m build
+        working-directory: ./apps/streamlit
+
+      - name: Publish Streamlit to PyPI
+        run: python -m twine upload dist/*
+        working-directory: ./apps/streamlit
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+
+      # ── GitHub Release ─────────────────────────────────────────────────────
+      - name: Create GitHub pre-release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: prerelease-${{ github.sha }}
+          prerelease: true
+          make_latest: false
+          name: "Pre-release ${{ github.run_number }}"
+          body: |
+            Automated pre-release from commit ${{ github.sha }}.
+
+            - **VS Code**: `2.9.${{ github.run_number }}` — install via Marketplace (pre-release channel) or download `.vsix` below
+            - **JupyterLab**: `0.2.7b${{ github.run_number }}` — `pip install --pre jupyterlab_niivue`
+            - **Streamlit**: `0.2.2b${{ github.run_number }}` — `pip install --pre niivue-streamlit`
+          files: |
+            apps/vscode/*.vsix
+            apps/jupyter/dist/*
+            apps/streamlit/dist/*
