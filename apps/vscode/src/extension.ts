@@ -24,6 +24,8 @@ export function activate(context: vscode.ExtensionContext) {
     'niivue.colorscale',
     'niivue.hideUI',
     'niivue.showHeader',
+    'niivue.crosshairSuperior',
+    'niivue.crosshairInferior',
   ]
 
   // Register all shortcut commands

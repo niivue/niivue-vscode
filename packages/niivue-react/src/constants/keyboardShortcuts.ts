@@ -149,6 +149,16 @@ export const UI_SHORTCUTS: Record<string, KeyboardShortcut> = {
     shift: true,
     description: 'Show header information',
   },
+  CROSSHAIR_SUPERIOR: {
+    key: 'u',
+    shift: true,
+    description: 'Move crosshair superior (Ctrl+U is intercepted by browsers)',
+  },
+  CROSSHAIR_INFERIOR: {
+    key: 'd',
+    shift: true,
+    description: 'Move crosshair inferior (Ctrl+D is intercepted by browsers)',
+  },
 }
 
 /**

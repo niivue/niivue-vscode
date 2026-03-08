@@ -424,6 +424,8 @@ export const Menu = (props: AppProps) => {
     onColorscale: openColorScaleLastOverlay,
     onHideUI: cycleUIVisibility,
     onShowHeader: toggle(headerDialog),
+    onCrosshairSuperior: crosshairSuperior,
+    onCrosshairInferior: crosshairInferior,
   }), [
     sliceType,
     setMultiplanar,
@@ -443,6 +445,8 @@ export const Menu = (props: AppProps) => {
     openColorScaleLastOverlay,
     cycleUIVisibility,
     headerDialog,
+    crosshairSuperior,
+    crosshairInferior,
   ])
 
   useKeyboardShortcuts(handlers)
@@ -651,13 +655,13 @@ export const Menu = (props: AppProps) => {
             <MenuEntry
               label="Crosshair: Superior"
               onClick={crosshairSuperior}
-              shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CROSSHAIR_SUPERIOR)}
+              shortcut={formatShortcut(UI_SHORTCUTS.CROSSHAIR_SUPERIOR)}
               keepOpen={true}
             />
             <MenuEntry
               label="Crosshair: Inferior"
               onClick={crosshairInferior}
-              shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CROSSHAIR_INFERIOR)}
+              shortcut={formatShortcut(UI_SHORTCUTS.CROSSHAIR_INFERIOR)}
               keepOpen={true}
             />
           </MenuItem>
