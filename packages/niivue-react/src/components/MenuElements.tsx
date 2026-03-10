@@ -10,6 +10,9 @@ if (typeof window !== 'undefined') {
       activeMenu.value = null
     }
   })
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') activeMenu.value = null
+  })
 }
 
 export const MenuEntry = ({ label, onClick, isOpen, visible, shortcut, keepOpen }: any) => {
