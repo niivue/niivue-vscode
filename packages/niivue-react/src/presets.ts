@@ -10,7 +10,7 @@ export interface ViewOptions {
   graphOpacity?: number
 }
 
-export interface OverlayDefaults {
+export interface ColorScalingDefaults {
   colormap?: string
   opacity?: number
   cal_min?: number
@@ -22,7 +22,8 @@ export interface ViewPreset {
   description: string
   settings: Partial<NiiVueSettings>
   viewOptions?: ViewOptions
-  overlayDefaults?: OverlayDefaults
+  baseImageDefaults?: ColorScalingDefaults
+  overlayDefaults?: ColorScalingDefaults
 }
 
 // Built-in presets with optimal viewing settings for different data types
@@ -52,7 +53,7 @@ export const BUILTIN_PRESETS: Record<string, ViewPreset> = {
       colorbar: true,
       defaultVolumeColormap: 'hsv',
     },
-    overlayDefaults: {
+    baseImageDefaults: {
       // Phase data typically ranges from -π to π or 0 to 2π
       // These will be applied if the data doesn't have explicit cal_min/cal_max
       cal_min: -Math.PI,
@@ -153,7 +154,8 @@ export function createUserPreset(
   description: string,
   settings: Partial<NiiVueSettings>,
   viewOptions?: ViewOptions,
-  overlayDefaults?: OverlayDefaults,
+  baseImageDefaults?: ColorScalingDefaults,
+  overlayDefaults?: ColorScalingDefaults,
 ): UserPreset {
   return {
     id: `user_${Date.now()}`,
@@ -161,6 +163,7 @@ export function createUserPreset(
     description,
     settings,
     viewOptions,
+    baseImageDefaults,
     overlayDefaults,
     createdAt: new Date().toISOString(),
   }

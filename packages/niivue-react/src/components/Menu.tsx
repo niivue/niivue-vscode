@@ -529,10 +529,38 @@ export const Menu = (props: AppProps) => {
       }
     }
 
-    // Apply overlay defaults (e.g., for phase data)
+    // Apply base image defaults (volume index 0)
+    if (preset.baseImageDefaults) {
+      nvArraySelected.value.forEach((nv) => {
+        if (nv.volumes.length > 0) {
+          const vol = nv.volumes[0]
+          if (preset.baseImageDefaults!.cal_min !== undefined) {
+            // Only apply if not already set
+            if (vol.cal_min === vol.global_min || vol.cal_min === 0) {
+              vol.cal_min = preset.baseImageDefaults!.cal_min
+            }
+          }
+          if (preset.baseImageDefaults!.cal_max !== undefined) {
+            if (vol.cal_max === vol.global_max || vol.cal_max === 0) {
+              vol.cal_max = preset.baseImageDefaults!.cal_max
+            }
+          }
+          if (preset.baseImageDefaults!.colormap) {
+            vol.colormap = preset.baseImageDefaults!.colormap
+          }
+          if (preset.baseImageDefaults!.opacity !== undefined) {
+            vol.opacity = preset.baseImageDefaults!.opacity
+          }
+        }
+      })
+    }
+
+    // Apply overlay defaults (volume index > 0)
     if (preset.overlayDefaults) {
       nvArraySelected.value.forEach((nv) => {
-        nv.volumes.forEach((vol) => {
+        // Apply to all overlay volumes (index > 0)
+        for (let i = 1; i < nv.volumes.length; i++) {
+          const vol = nv.volumes[i]
           if (preset.overlayDefaults!.cal_min !== undefined) {
             // Only apply if not already set
             if (vol.cal_min === vol.global_min || vol.cal_min === 0) {
@@ -550,7 +578,7 @@ export const Menu = (props: AppProps) => {
           if (preset.overlayDefaults!.opacity !== undefined) {
             vol.opacity = preset.overlayDefaults!.opacity
           }
-        })
+        }
       })
     }
 

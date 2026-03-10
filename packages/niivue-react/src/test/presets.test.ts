@@ -31,8 +31,8 @@ test('phase preset should have correct settings', () => {
   expect(phasePreset.settings.interpolation).toBe(false)
   expect(phasePreset.settings.colorbar).toBe(true)
   expect(phasePreset.settings.defaultVolumeColormap).toBe('hsv')
-  expect(phasePreset.overlayDefaults?.cal_min).toBe(-Math.PI)
-  expect(phasePreset.overlayDefaults?.cal_max).toBe(Math.PI)
+  expect(phasePreset.baseImageDefaults?.cal_min).toBe(-Math.PI)
+  expect(phasePreset.baseImageDefaults?.cal_max).toBe(Math.PI)
 })
 
 test('create user preset', () => {
