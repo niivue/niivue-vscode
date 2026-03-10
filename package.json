@@ -44,9 +44,13 @@
     "precommit": "pnpm versions:check && pnpm format:check",
     "update:safe": "pnpm update --recursive && pnpm versions:fix && turbo build",
     "update:all": "pnpm update --recursive --latest && pnpm versions:fix && turbo build",
-    "update:check": "pnpm dlx syncpack list && echo '\\n📋 Run pnpm update:safe for safe updates or pnpm update:all for latest versions'"
+    "update:check": "pnpm dlx syncpack list && echo '\\n📋 Run pnpm update:safe for safe updates or pnpm update:all for latest versions'",
+    "changeset": "changeset",
+    "version": "changeset version && pnpm install --no-frozen-lockfile",
+    "release": "changeset publish"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.29.8",
     "@eslint/js": "^9.38.0",
     "@preact/preset-vite": "^2.10.2",
     "@types/node": "^24.9.1",

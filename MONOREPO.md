@@ -61,11 +61,15 @@ The monorepo uses:
 - **TypeScript project references** for type checking
 - **Shared ESLint/Prettier configs** for consistent code style
 
-## Deployment
+## Deployment & Releases
 
-Each app has its own deployment strategy:
+We use **Changesets** for independent versioning and automated releases. Read the full guide here:
+- **[Release Process Details](RELEASE.md)**
 
-- **VSCode**: Published to VS Code Marketplace
-- **PWA**: Deployed as static site
-- **Jupyter**: Published to PyPI
-- **Streamlit**: Published to PyPI
+High-level overview:
+- Developers run `pnpm changeset` to document changes.
+- Merging the generated "Version Packages" PR automatically tags versions.
+- GitHub Actions automatically publish upon tag creation:
+  - **VSCode**: Published to VS Code Marketplace & Open VSX.
+  - **Jupyter & Streamlit**: Published to PyPI (and TestPyPI for pre-releases).
+  - **PWA**: Deployed to GitHub Pages.

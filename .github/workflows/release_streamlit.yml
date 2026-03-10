@@ -1,0 +1,81 @@
+name: Release Streamlit Component
+
+on:
+  push:
+    tags:
+      - '@niivue/streamlit@*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Check Pre-release
+        id: prerelease
+        run: |
+          if [[ "${{ github.ref }}" == *"-beta."* ]] || [[ "${{ github.ref }}" == *"-rc."* ]] || [[ "${{ github.ref }}" == *"-alpha."* ]]; then
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+            echo "TWINE_ARGS=--repository testpypi" >> $GITHUB_ENV
+          else
+             echo "is_prerelease=false" >> $GITHUB_OUTPUT
+             echo "TWINE_ARGS=" >> $GITHUB_ENV
+          fi
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend
+        run: pnpm turbo build --filter=@niivue/streamlit
+
+      - name: Install Python build tools
+        run: python -m pip install build twine
+
+      - name: Build Python package
+        working-directory: ./apps/streamlit
+        run: python -m build
+
+      - name: Check Python package
+        working-directory: ./apps/streamlit
+        run: python -m twine check dist/*
+
+      - name: Publish to PyPI/TestPyPI
+        working-directory: ./apps/streamlit
+        run: python -m twine upload ${{ env.TWINE_ARGS }} dist/*
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: apps/streamlit/dist/*
+          generate_release_notes: true
+          prerelease: ${{ steps.prerelease.outputs.is_prerelease == 'true' }}
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: streamlit-component
+          path: apps/streamlit/dist/*

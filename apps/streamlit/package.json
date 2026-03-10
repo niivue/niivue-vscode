@@ -1,0 +1,26 @@
+{
+  "name": "@niivue/streamlit",
+  "version": "0.2.1",
+  "private": true,
+  "description": "NiiVue Streamlit component with Python and TypeScript integration",
+  "scripts": {
+    "dev": "cd niivue_component/frontend && pnpm dev",
+    "build": "cd niivue_component/frontend && pnpm build",
+    "test": "pnpm test:python",
+    "test:frontend": "cd niivue_component/frontend && pnpm test",
+    "test:python": "python -m pytest tests/",
+    "clean": "cd niivue_component/frontend && pnpm clean && cd ../.. && rimraf dist build *.egg-info",
+    "lint": "cd niivue_component/frontend && pnpm lint",
+    "type-check": "cd niivue_component/frontend && tsc --noEmit",
+    "release:test": "pnpm run clean && pnpm run build && python -m build && python -m twine upload --repository testpypi dist/*",
+    "release:prod": "pnpm run clean && pnpm run build && python -m build && python -m twine upload dist/*"
+  },
+  "keywords": [
+    "streamlit",
+    "niivue",
+    "neuroimaging",
+    "nifti",
+    "visualization",
+    "component"
+  ]
+}

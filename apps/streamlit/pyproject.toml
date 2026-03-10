@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "niivue-streamlit"
-version = "0.1.0"
+version = "0.2.1"
 description = "A Streamlit component for NiiVue neuroimaging viewer"
 readme = "README.md"
 license = "MIT"
@@ -27,8 +27,6 @@ classifiers = [
 requires-python = ">=3.7"
 dependencies = [
     "streamlit>=1.28.0",
-    "streamlit-component-lib>=2.0.0",
-    "importlib_resources>=1.3; python_version<'3.9'",
 ]
 
 [project.optional-dependencies]

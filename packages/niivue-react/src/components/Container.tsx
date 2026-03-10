@@ -2,7 +2,7 @@ import { SLICE_TYPE } from '@niivue/niivue'
 import { computed, effect, useSignal } from '@preact/signals'
 import { useEffect, useRef } from 'preact/hooks'
 import { ExtendedNiivue } from '../events'
-import { differenceInNames, getNames } from '../utility'
+import { differenceInNames, getNames, reorderImages } from '../utility'
 import { AppProps } from './AppProps'
 import { Volume } from './Volume'
 
@@ -49,6 +49,10 @@ export const Container = (props: AppProps) => {
   const fullNames = computed(() => getNames(nvArray.value))
   const names = computed(() => differenceInNames(fullNames.value))
 
+  const reorder = (fromIndex: number, toIndex: number) => {
+    nvArray.value = reorderImages(nvArray.value, fromIndex, toIndex)
+  }
+
   return (
     <div className="flex-grow h-full overflow-hidden" ref={sizeRef}>
       <div className="flex flex-wrap w-full gap-1 m-1">
@@ -62,6 +66,7 @@ export const Container = (props: AppProps) => {
             key={nv.key}
             render={render}
             remove={remove(props, i)}
+            reorder={reorder}
             {...props}
           />
         ))}
