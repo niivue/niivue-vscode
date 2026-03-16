@@ -42,7 +42,7 @@ Add a changeset whenever your changes affect package logic, public APIs, bug fix
 
 ### How to create a changeset
 
-The `npx changeset add` command is interactive and requires a terminal UI — it cannot be used non-interactively by AI agents. Instead, **manually create a changeset file** in `.changeset/`.
+**Manually create a changeset file** in `.changeset/`.
 
 **File location:** `.changeset/<unique-kebab-case-name>.md` (e.g. `.changeset/fix-slice-navigation.md`)
 
@@ -52,6 +52,9 @@ The `npx changeset add` command is interactive and requires a terminal UI — it
 ---
 "@niivue/react": minor
 "niivue": patch
+"@niivue/jupyter": patch
+"@niivue/streamlit": patch
+"@niivue/pwa": patch
 ---
 
 Short, user-facing description of what changed.
