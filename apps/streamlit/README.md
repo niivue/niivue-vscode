@@ -125,34 +125,34 @@ dict or None with click event data:
 
 ## 🛠️ Development
 
-### Frontend Development
+### Dev mode (live reload)
 
-Built with modern web technologies:
+In dev mode, the Python package points to a local Vite dev server instead of built files.
 
-- **Vite**: Fast build tool
-- **TypeScript**: Type safety
-- **Preact**: Lightweight React
-- **Tailwind CSS**: Styling
-- **niivue-react**: Shared components
+Terminal 1 — start the frontend dev server (port 3001):
 
 ```bash
-cd niivue_component/frontend
-
-# Start dev server (requires backend running)
 pnpm dev
+```
 
-# Build for production
+Terminal 2 — run the example app with the dev flag:
+
+```bash
+NIIVUE_DEV=1 streamlit run app.py
+```
+
+The frontend hot-reloads on changes.
+
+### Production mode (built files)
+
+Build the frontend first, then run Streamlit normally:
+
+```bash
 pnpm build
+streamlit run app.py
 ```
 
-### Backend Development
-
-Toggle dev/production in `__init__.py`:
-
-```python
-_RELEASE = False  # Dev mode: localhost:3001
-_RELEASE = True   # Prod mode: built files
-```
+`_RELEASE = True` (the default) serves from `niivue_component/frontend/build/`.
 
 ### Running Examples
 
@@ -190,17 +190,16 @@ niivue_component/
 └── build/                      # Compiled assets (generated, not in git)
 ```
 
-## 🔧 Building the Component
+## 🔧 Building for Distribution
 
-The build files are **not committed to git**. To build the component locally:
+Build files are not committed to git. To prepare the Python package for release:
 
 ```bash
-cd niivue_component/frontend
-pnpm install
 pnpm build
+python -m build
 ```
 
-This generates the `build/` directory with compiled assets that are included in the Python package during distribution.
+This compiles frontend assets into `niivue_component/frontend/build/`, which is then bundled into the Python package.
 
 ## 📄 License
 

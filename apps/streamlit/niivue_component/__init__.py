@@ -2,9 +2,7 @@ import os
 import streamlit.components.v1 as components
 import base64
 
-# Create a _RELEASE constant. We'll set this to False while we're developing
-# the component, and True when we're ready to package and distribute it.
-_RELEASE = True
+_RELEASE = os.environ.get("NIIVUE_DEV") != "1"
 
 # Declare a Streamlit component
 if not _RELEASE:
