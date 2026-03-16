@@ -42,31 +42,22 @@ Add a changeset whenever your changes affect package logic, public APIs, bug fix
 
 ### How to create a changeset
 
-Use the Changeset CLI to create the changeset file. Do **not** run `npx changeset add` by itself — it launches an interactive terminal UI. Instead, use the non-interactive form:
+The `npx changeset add` command is interactive and requires a terminal UI — it cannot be used non-interactively by AI agents. Instead, **manually create a changeset file** in `.changeset/`.
 
-```sh
-npx changeset add --package <package-name> --type <bump-type>
-```
+**File location:** `.changeset/<unique-kebab-case-name>.md` (e.g. `.changeset/fix-slice-navigation.md`)
 
-For example:
-
-```sh
-npx changeset add --package @niivue/react --type minor
-```
-
-The CLI will create a `.changeset/<random-id>.md` file. Open it and write a clear, **user-facing** summary of what changed (this becomes the CHANGELOG entry). Avoid internal jargon; write for someone consuming the package.
-
-If you need to include **multiple packages** in one changeset, or if the CLI flags are unavailable, write the file directly in `.changeset/` (choose a short, unique filename like `fix-slice-navigation.md`):
+**Template:**
 
 ```markdown
 ---
-'<package-name>': patch
+"@niivue/react": minor
+"niivue": patch
 ---
 
 Short, user-facing description of what changed.
 ```
 
-Replace `patch` with `minor` or `major` as appropriate. List **every** package affected by the change. Use the `name` field from each package's `package.json`:
+List **every** package affected by the change. Use the `name` field from each package's `package.json`:
 
 | Directory | Package name |
 |---|---|
@@ -82,12 +73,22 @@ Replace `patch` with `minor` or `major` as appropriate. List **every** package a
 - **minor** — new features, non-breaking additions
 - **major** — breaking changes
 
+### Verification
+
+After writing the changeset file, run:
+
+```sh
+npx changeset status
+```
+
+This confirms the changeset is valid and lists the pending version bumps.
+
 ### Example
 
 ```markdown
 ---
-'@niivue/react': minor
-'niivue': minor
+"@niivue/react": minor
+"niivue": minor
 ---
 
 Add keyboard shortcuts for slice navigation.
@@ -95,4 +96,4 @@ Add keyboard shortcuts for slice navigation.
 
 When changes touch `packages/niivue-react/`, also bump every app that depends on it.
 
-Make sure the `.changeset/*.md` file is included (staged and committed) as part of the PR.
+Make sure the `.changeset/*.md` file is staged and committed as part of the PR.
