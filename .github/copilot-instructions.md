@@ -42,17 +42,31 @@ Add a changeset whenever your changes affect package logic, public APIs, bug fix
 
 ### How to create a changeset
 
-The Changeset CLI (`npx changeset add`) is interactive and requires a terminal UI — AI agents cannot run it directly. Instead, **write the changeset file directly** in `.changeset/` using the format below. Choose a short, unique filename (e.g. `fix-slice-navigation.md`).
+Use the Changeset CLI to create the changeset file. Do **not** run `npx changeset add` by itself — it launches an interactive terminal UI. Instead, use the non-interactive form:
+
+```sh
+npx changeset add --package <package-name> --type <bump-type>
+```
+
+For example:
+
+```sh
+npx changeset add --package @niivue/react --type minor
+```
+
+The CLI will create a `.changeset/<random-id>.md` file. Open it and write a clear, **user-facing** summary of what changed (this becomes the CHANGELOG entry). Avoid internal jargon; write for someone consuming the package.
+
+If you need to include **multiple packages** in one changeset, or if the CLI flags are unavailable, write the file directly in `.changeset/` (choose a short, unique filename like `fix-slice-navigation.md`):
 
 ```markdown
 ---
 '<package-name>': patch
 ---
 
-Short, user-facing description of what changed (this becomes the CHANGELOG entry). Avoid internal jargon; write for someone consuming the package.
+Short, user-facing description of what changed.
 ```
 
-Replace `patch` with `minor` (new feature) or `major` (breaking change) as appropriate. List **every** package affected by the change. Use the `name` field from each package's `package.json`:
+Replace `patch` with `minor` or `major` as appropriate. List **every** package affected by the change. Use the `name` field from each package's `package.json`:
 
 | Directory | Package name |
 |---|---|
