@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "predev": "fuser -k 3001/tcp 2>/dev/null || true",
     "dev": "vite --port 3001",
     "build": "vite build",
     "preview": "vite preview --port 3001",
