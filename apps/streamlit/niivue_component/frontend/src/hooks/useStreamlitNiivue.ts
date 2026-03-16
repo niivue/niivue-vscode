@@ -109,11 +109,12 @@ export const useStreamlitNiivue = (args: StreamlitArgs) => {
 
   // Throttled wrapper for Streamlit.setComponentValue to avoid overwhelming
   // Python with updates during mouse drag (fires at most once per 100ms)
-  const throttledSetValue = useRef(
-    throttle((data: { type: string; voxel: number[]; mm: number[]; value: number; filename: string }) => {
+  const throttledSetValue = useRef<ReturnType<typeof throttle<(data: { type: string; voxel: number[]; mm: number[]; value: number; filename: string }) => void>> | null>(null)
+  if (!throttledSetValue.current) {
+    throttledSetValue.current = throttle((data: { type: string; voxel: number[]; mm: number[]; value: number; filename: string }) => {
       Streamlit.setComponentValue(data)
-    }, 100),
-  )
+    }, 100)
+  }
 
   // Sync click events back to Streamlit
   useEffect(() => {
@@ -123,7 +124,7 @@ export const useStreamlitNiivue = (args: StreamlitArgs) => {
         const mm = data.mm
         const value = data.values[0]?.value ?? 0
 
-        throttledSetValue.current({
+        throttledSetValue.current?.({
           type: 'voxel_click',
           voxel: [Math.round(voxel[0]), Math.round(voxel[1]), Math.round(voxel[2])],
           mm: [mm[0], mm[1], mm[2]],
@@ -141,7 +142,7 @@ export const useStreamlitNiivue = (args: StreamlitArgs) => {
     })
 
     return () => {
-      throttledSetValue.current.cancel()
+      throttledSetValue.current?.cancel()
       appProps.nvArray.value.forEach((nv: Niivue) => {
         if (nv.canvas) {
           ; (nv as any).onLocationChange = null

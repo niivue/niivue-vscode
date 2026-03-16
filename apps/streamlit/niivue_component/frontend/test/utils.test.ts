@@ -115,5 +115,24 @@ describe('utils', () => {
 
       vi.useRealTimers()
     })
+
+    it('should fire immediately after cancel (fresh leading edge)', () => {
+      vi.useFakeTimers()
+      const fn = vi.fn()
+      const throttled = throttle(fn, 100)
+
+      throttled('a') // fires immediately (leading)
+      throttled('b') // queued for trailing edge
+
+      throttled.cancel()
+
+      // Next call should fire immediately as if it were a fresh invocation
+      throttled('c')
+      expect(fn).toHaveBeenCalledTimes(2)
+      expect(fn).toHaveBeenLastCalledWith('c')
+
+      throttled.cancel()
+      vi.useRealTimers()
+    })
   })
 })

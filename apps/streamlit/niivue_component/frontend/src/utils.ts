@@ -20,7 +20,7 @@ export function throttle<T extends (...args: any[]) => void>(
   fn: T,
   interval: number,
 ): T & { cancel: () => void } {
-  let lastCallTime = 0
+  let lastCallTime = -Infinity
   let timeoutId: ReturnType<typeof setTimeout> | null = null
   let lastArgs: Parameters<T> | null = null
 
@@ -56,6 +56,7 @@ export function throttle<T extends (...args: any[]) => void>(
       timeoutId = null
     }
     lastArgs = null
+    lastCallTime = -Infinity
   }
 
   return throttled
