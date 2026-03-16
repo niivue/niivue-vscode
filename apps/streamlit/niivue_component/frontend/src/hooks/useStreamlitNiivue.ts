@@ -3,7 +3,7 @@ import { handleMessage, initCanvas, isImageType, useAppState } from '@niivue/rea
 import { useEffect, useRef } from 'preact/hooks'
 import { Streamlit } from 'streamlit-component-lib'
 import { StreamlitArgs, VIEW_MODE_TO_SLICE_TYPE } from '../types'
-import { base64ToArrayBuffer } from '../utils'
+import { base64ToArrayBuffer, throttle } from '../utils'
 
 /** Shared hook for Streamlit NiiVue components */
 export const useStreamlitNiivue = (args: StreamlitArgs) => {
@@ -107,6 +107,15 @@ export const useStreamlitNiivue = (args: StreamlitArgs) => {
     }
   }, [appProps.nvArray.value, appProps.nvArray.value[0]?.isLoaded, args.overlays])
 
+  // Throttled wrapper for Streamlit.setComponentValue to avoid overwhelming
+  // Python with updates during mouse drag (fires at most once per 100ms)
+  const throttledSetValue = useRef<ReturnType<typeof throttle<(data: { type: string; voxel: number[]; mm: number[]; value: number; filename: string }) => void>> | null>(null)
+  if (!throttledSetValue.current) {
+    throttledSetValue.current = throttle((data: { type: string; voxel: number[]; mm: number[]; value: number; filename: string }) => {
+      Streamlit.setComponentValue(data)
+    }, 100)
+  }
+
   // Sync click events back to Streamlit
   useEffect(() => {
     const handleLocationChange = (data: any) => {
@@ -115,7 +124,7 @@ export const useStreamlitNiivue = (args: StreamlitArgs) => {
         const mm = data.mm
         const value = data.values[0]?.value ?? 0
 
-        Streamlit.setComponentValue({
+        throttledSetValue.current?.({
           type: 'voxel_click',
           voxel: [Math.round(voxel[0]), Math.round(voxel[1]), Math.round(voxel[2])],
           mm: [mm[0], mm[1], mm[2]],
@@ -133,6 +142,7 @@ export const useStreamlitNiivue = (args: StreamlitArgs) => {
     })
 
     return () => {
+      throttledSetValue.current?.cancel()
       appProps.nvArray.value.forEach((nv: Niivue) => {
         if (nv.canvas) {
           ; (nv as any).onLocationChange = null
