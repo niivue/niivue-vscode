@@ -2,7 +2,7 @@ import { Niivue } from '@niivue/niivue'
 import { handleMessage, initCanvas, isImageType, useAppState } from '@niivue/react'
 import { useEffect, useRef } from 'preact/hooks'
 import { Streamlit } from 'streamlit-component-lib'
-import { StreamlitArgs, VIEW_MODE_TO_SLICE_TYPE } from '../types'
+import { MeshData, StreamlitArgs, VIEW_MODE_TO_SLICE_TYPE } from '../types'
 import { base64ToArrayBuffer, throttle } from '../utils'
 
 /** Shared hook for Streamlit NiiVue components */
@@ -29,7 +29,9 @@ export const useStreamlitNiivue = (args: StreamlitArgs) => {
 
   const { sliceType, settings } = appProps
   const prevDataRef = useRef<string | null>(null)
+  const prevMeshRef = useRef<string | null>(null)
   const loadedOverlaysRef = useRef<string[]>([])
+  const loadedMeshOverlaysRef = useRef<string[]>([])
 
   // Sync view mode (axial, coronal, etc)
   useEffect(() => {
@@ -51,26 +53,49 @@ export const useStreamlitNiivue = (args: StreamlitArgs) => {
     }
   }, [args.settings])
 
-  // Load base image via the standard message system
+  // Compute a stable ID for the mesh list (for change detection)
+  const meshId = args.meshes
+    ? JSON.stringify(args.meshes.map(m => `${m.name}-${m.data?.length || 0}`))
+    : null
+
+  // Load base image or first mesh via the standard message system
   useEffect(() => {
-    if (!args.nifti_data || args.nifti_data === prevDataRef.current) {
+    const hasVolume = args.nifti_data && args.nifti_data !== prevDataRef.current
+    const hasMeshOnly = !args.nifti_data && args.meshes && args.meshes.length > 0 && meshId !== prevMeshRef.current
+
+    if (!hasVolume && !hasMeshOnly) {
       return
     }
-    prevDataRef.current = args.nifti_data
-    loadedOverlaysRef.current = [] // Reset overlays when base image changes
+
+    prevDataRef.current = args.nifti_data || null
+    prevMeshRef.current = meshId
+    loadedOverlaysRef.current = [] // Reset overlays when base changes
+    loadedMeshOverlaysRef.current = [] // Reset mesh overlays
 
     // Initialize canvas for 1 base image
     initCanvas(appProps, 1)
 
-    // Load base image
-    handleMessage({
-      type: 'addImage',
-      body: {
-        data: base64ToArrayBuffer(args.nifti_data),
-        uri: args.filename || 'image.nii',
-      },
-    }, appProps)
-  }, [args.nifti_data])
+    if (args.nifti_data) {
+      // Load volume as base image
+      handleMessage({
+        type: 'addImage',
+        body: {
+          data: base64ToArrayBuffer(args.nifti_data),
+          uri: args.filename || 'image.nii',
+        },
+      }, appProps)
+    } else if (args.meshes && args.meshes.length > 0) {
+      // Load first mesh as base image (mesh-only mode)
+      const firstMesh = args.meshes[0]
+      handleMessage({
+        type: 'addImage',
+        body: {
+          data: base64ToArrayBuffer(firstMesh.data),
+          uri: firstMesh.name,
+        },
+      }, appProps)
+    }
+  }, [args.nifti_data, meshId])
 
   // Load overlays after base image is loaded
   useEffect(() => {
@@ -106,6 +131,76 @@ export const useStreamlitNiivue = (args: StreamlitArgs) => {
       loadedOverlaysRef.current = overlayIds
     }
   }, [appProps.nvArray.value, appProps.nvArray.value[0]?.isLoaded, args.overlays])
+
+  // Load meshes after base volume is loaded (volume + meshes mode)
+  // In mesh-only mode, the first mesh is loaded as base, additional meshes loaded here
+  useEffect(() => {
+    const nv = appProps.nvArray.value[0]
+    if (!nv || !nv.isLoaded || !args.meshes || args.meshes.length === 0) {
+      return
+    }
+
+    // In mesh-only mode, first mesh is already loaded as base
+    const startIndex = args.nifti_data ? 0 : 1
+
+    for (let i = startIndex; i < args.meshes.length; i++) {
+      const mesh = args.meshes[i]
+      handleMessage({
+        type: 'overlay',
+        body: {
+          data: base64ToArrayBuffer(mesh.data),
+          uri: mesh.name,
+          index: 0,
+        },
+      }, appProps)
+    }
+  }, [appProps.nvArray.value, appProps.nvArray.value[0]?.isLoaded, args.meshes])
+
+  // Load mesh overlays after meshes are loaded
+  useEffect(() => {
+    const nv = appProps.nvArray.value[0]
+    if (!nv || !nv.isLoaded || !args.meshes || args.meshes.length === 0) {
+      return
+    }
+
+    // Check if meshes are loaded
+    if (nv.meshes.length === 0) {
+      return
+    }
+
+    // Collect all mesh overlays for change detection
+    const allMeshOverlayIds: string[] = []
+    const meshOverlays: { data: string; name: string; colormap?: string; opacity?: number }[] = []
+
+    for (const mesh of args.meshes) {
+      if (mesh.overlays) {
+        for (const overlay of mesh.overlays) {
+          allMeshOverlayIds.push(`${overlay.name}-${overlay.colormap}-${overlay.opacity}-${overlay.data?.length || 0}`)
+          meshOverlays.push(overlay)
+        }
+      }
+    }
+
+    if (meshOverlays.length === 0) {
+      return
+    }
+
+    if (JSON.stringify(allMeshOverlayIds) !== JSON.stringify(loadedMeshOverlaysRef.current)) {
+      for (const overlay of meshOverlays) {
+        handleMessage({
+          type: 'addMeshOverlay',
+          body: {
+            data: base64ToArrayBuffer(overlay.data),
+            uri: overlay.name,
+            colormap: overlay.colormap || 'redyell',
+            opacity: overlay.opacity ?? 0.7,
+            index: 0,
+          },
+        }, appProps)
+      }
+      loadedMeshOverlaysRef.current = allMeshOverlayIds
+    }
+  }, [appProps.nvArray.value, appProps.nvArray.value[0]?.isLoaded, args.meshes])
 
   // Throttled wrapper for Streamlit.setComponentValue to avoid overwhelming
   // Python with updates during mouse drag (fires at most once per 100ms)

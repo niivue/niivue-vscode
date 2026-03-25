@@ -43,6 +43,9 @@ A modern Streamlit component for visualizing neuroimaging data using NiiVue, bui
   - Multiplanar view with render
 - 📊 **Advanced Capabilities**:
   - Multiple overlay images with custom colormaps
+  - Surface mesh rendering (FreeSurfer pial, white, inflated, GIfTI, STL, OBJ, etc.)
+  - Mesh overlays (curvature, thickness, annotations)
+  - Combined volume + mesh visualization
   - Configurable display settings (crosshair, radiological convention, colorbar, interpolation)
   - Bidirectional communication (click events from viewer to Python)
   - DICOM support
@@ -77,6 +80,65 @@ result = niivue_viewer(
 )
 ```
 
+### With Mesh Surfaces
+
+```python
+from niivue_component import niivue_viewer
+
+# Load a FreeSurfer surface mesh
+mesh_data = open("lh.pial", "rb").read()
+
+result = niivue_viewer(
+    meshes=[{
+        "data": mesh_data,
+        "name": "lh.pial",
+    }],
+    view_mode="3d",
+    height=700
+)
+```
+
+### Mesh with Overlays (Curvature, Thickness)
+
+```python
+mesh_data = open("lh.pial", "rb").read()
+thickness_data = open("lh.thickness", "rb").read()
+
+result = niivue_viewer(
+    meshes=[{
+        "data": mesh_data,
+        "name": "lh.pial",
+        "overlays": [{
+            "data": thickness_data,
+            "name": "lh.thickness",
+            "colormap": "redyell",
+            "opacity": 0.7
+        }]
+    }],
+    view_mode="3d",
+    height=700
+)
+```
+
+### Volume with Mesh
+
+```python
+# Display a volume image alongside a surface mesh
+volume_data = open("brain.nii.gz", "rb").read()
+mesh_data = open("lh.pial", "rb").read()
+
+result = niivue_viewer(
+    nifti_data=volume_data,
+    filename="brain.nii.gz",
+    meshes=[{
+        "data": mesh_data,
+        "name": "lh.pial",
+    }],
+    view_mode="3d",
+    height=700
+)
+```
+
 ### Minimal Viewer (No Menu)
 
 ```python
@@ -103,6 +165,14 @@ result = niivue_viewer(
   - `name` (str): Overlay name
   - `colormap` (str): Colormap (default: 'red')
   - `opacity` (float): 0-1 (default: 0.5)
+- `meshes` (list[dict], optional): Mesh surfaces list
+  - `data` (bytes): Mesh file data
+  - `name` (str): Mesh filename (must include extension, e.g. 'lh.pial', 'brain.gii')
+  - `overlays` (list[dict], optional): Mesh overlays (curvature, thickness, etc.)
+    - `data` (bytes): Overlay data
+    - `name` (str): Overlay filename
+    - `colormap` (str): Colormap (default: 'redyell')
+    - `opacity` (float): 0-1 (default: 0.7)
 - `height` (int): Height in pixels (default: 600)
 - `view_mode` (str): 'axial', 'coronal', 'sagittal', '3d', 'multiplanar' (default)
 - `styled` (bool): Show menu (default: True)
@@ -166,12 +236,10 @@ streamlit run app_advanced.py
 
 ## 📁 Supported Formats
 
-- NIFTI (.nii, .nii.gz)
-- DICOM (.dcm)
-- MINC (.mnc, .mnc.gz)
-- MHA/MHD
-- NRRD
-- MGH/MGZ
+- **Volume-based**: NIFTI (.nii, .nii.gz), DICOM (.dcm), MINC (.mnc, .mnc.gz), MHA/MHD, NRRD, MGH/MGZ
+- **Mesh-based**: [GIfTI](https://www.nitrc.org/projects/gifti/) (.gii), [FreeSurfer](http://www.grahamwideman.com/gw/brain/fs/surfacefileformats.htm) (pial, white, inflated), [MZ3](https://github.com/neurolabusc/surf-ice/tree/master/mz3) (.mz3), [STL](https://medium.com/3d-printing-stories/why-stl-format-is-bad-fea9ecf5e45) (.stl), [Wavefront OBJ](https://brainder.org/tag/obj/) (.obj), [PLY](<https://en.wikipedia.org/wiki/PLY_(file_format)>) (.ply), [BrainSuite DFS](http://brainsuite.org/formats/dfs/) (.dfs), [Legacy VTK](https://vtk.org/wp-content/uploads/2015/04/file-formats.pdf) (.vtk)
+- **Mesh Overlays**: [GIfTI](https://www.nitrc.org/projects/gifti/) (.gii), [CIfTI-2](https://balsa.wustl.edu/about/fileTypes) (.nii), [MZ3](https://github.com/neurolabusc/surf-ice/tree/master/mz3) (.mz3), FreeSurfer (CURV, ANNOT), SMP, STC
+- **Tractography**: [TCK](https://mrtrix.readthedocs.io/en/latest/getting_started/image_data.html#tracks-file-format-tck) (.tck), [TRK](http://trackvis.org/docs/?subsect=fileformat) (.trk), [TRX](https://github.com/frheault/tractography_file_format) (.trx), VTK (.vtk)
 
 ## 🏗️ Architecture
 

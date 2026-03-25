@@ -246,6 +246,9 @@ async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSetting
         buffer = item.data.buffer
       }
       await nv.loadFromArrayBuffer(buffer, item.uri)
+    } else if (isBuffer && !isImageType(item.uri)) {
+      const mesh = await NVMesh.readMesh(item.data, item.uri, nv.gl)
+      nv.addMesh(mesh)
     } else if (typeof item.data === 'string') {
       const volume = await NVImage.loadFromUrl({
         url: item.data,
