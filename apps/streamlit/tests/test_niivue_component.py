@@ -272,3 +272,25 @@ def test_niivue_viewer_mesh_overlay_validation():
     
     with pytest.raises(ValueError, match="'data' field is required"):
         niivue_viewer(meshes=meshes, key="test_mesh_overlay_no_data")
+
+
+def test_niivue_viewer_mesh_overlay_on_second_mesh_warns():
+    """Test that overlays on non-first meshes emit a warning."""
+    meshes = [
+        {'data': b'\x00' * 100, 'name': 'lh.pial'},
+        {
+            'data': b'\xFF' * 100,
+            'name': 'rh.pial',
+            'overlays': [{
+                'data': b'\xAA' * 50,
+                'name': 'rh.thickness',
+            }]
+        },
+    ]
+    
+    import warnings as _warnings
+    with _warnings.catch_warnings(record=True) as w:
+        _warnings.simplefilter("always")
+        niivue_viewer(meshes=meshes, key="test_mesh_overlay_warn")
+        assert len(w) == 1
+        assert "only supported on the first mesh" in str(w[0].message)

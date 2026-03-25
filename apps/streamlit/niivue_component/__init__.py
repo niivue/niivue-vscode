@@ -1,4 +1,5 @@
 import os
+import warnings
 import streamlit.components.v1 as components
 import base64
 
@@ -48,7 +49,8 @@ def niivue_viewer(
         List of mesh surfaces to display (e.g. FreeSurfer pial, white, inflated), each with:
         - data: bytes - mesh file data
         - name: str - mesh filename (must include extension, e.g. 'lh.pial', 'brain.gii')
-        - overlays: list of dict, optional - mesh overlays (curvature, thickness, etc.)
+        - overlays: list of dict, optional - mesh overlays for the first mesh only
+            (curvature, thickness, etc.). Overlays on non-first meshes are ignored.
             - data: bytes - overlay data
             - name: str - overlay filename (e.g. 'lh.thickness', 'lh.curv')
             - colormap: str, optional - colormap name (default: 'redyell')
@@ -119,22 +121,28 @@ def niivue_viewer(
                 "name": mesh["name"],
             }
             
-            # Convert mesh overlays to base64
+            # Convert mesh overlays to base64 (only first mesh overlays are applied)
             mesh_overlays = []
             if 'overlays' in mesh and mesh['overlays']:
-                for j, mo in enumerate(mesh['overlays']):
-                    if 'data' not in mo:
-                        raise ValueError(f"Mesh {i}, overlay {j}: 'data' field is required")
-                    if not isinstance(mo['data'], bytes):
-                        raise ValueError(f"Mesh {i}, overlay {j}: 'data' must be bytes")
-                    if 'name' not in mo:
-                        raise ValueError(f"Mesh {i}, overlay {j}: 'name' field is required")
-                    mesh_overlays.append({
-                        "data": base64.b64encode(mo["data"]).decode(),
-                        "name": mo["name"],
-                        "colormap": mo.get("colormap", "redyell"),
-                        "opacity": mo.get("opacity", 0.7),
-                    })
+                if i > 0:
+                    warnings.warn(
+                        f"Mesh {i}: overlays are only supported on the first mesh and will be ignored.",
+                        stacklevel=2,
+                    )
+                else:
+                    for j, mo in enumerate(mesh['overlays']):
+                        if 'data' not in mo:
+                            raise ValueError(f"Mesh {i}, overlay {j}: 'data' field is required")
+                        if not isinstance(mo['data'], bytes):
+                            raise ValueError(f"Mesh {i}, overlay {j}: 'data' must be bytes")
+                        if 'name' not in mo:
+                            raise ValueError(f"Mesh {i}, overlay {j}: 'name' field is required")
+                        mesh_overlays.append({
+                            "data": base64.b64encode(mo["data"]).decode(),
+                            "name": mo["name"],
+                            "colormap": mo.get("colormap", "redyell"),
+                            "opacity": mo.get("opacity", 0.7),
+                        })
             mesh_dict["overlays"] = mesh_overlays
             meshes_data.append(mesh_dict)
     
