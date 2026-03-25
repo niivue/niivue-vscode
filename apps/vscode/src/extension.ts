@@ -6,6 +6,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(NiiVueEditorProvider.register(context))
   context.subscriptions.push(vscode.languages.registerHoverProvider('*', new LinkHoverProvider()))
 
+
   // Register keyboard shortcut commands
   const shortcutCommands = [
     'niivue.viewAxial',
@@ -40,6 +41,7 @@ export function activate(context: vscode.ExtensionContext) {
       }),
     )
   })
+
 
   context.subscriptions.push(
     vscode.commands.registerCommand('niivue.openWebLink', async () => {
