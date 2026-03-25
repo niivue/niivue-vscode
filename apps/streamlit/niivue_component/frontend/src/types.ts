@@ -1,5 +1,18 @@
 import { SLICE_TYPE } from '@niivue/niivue'
 
+export interface MeshOverlay {
+  data: string // base64 encoded overlay data
+  name: string
+  colormap?: string
+  opacity?: number
+}
+
+export interface MeshData {
+  data: string // base64 encoded mesh data
+  name: string
+  overlays?: MeshOverlay[]
+}
+
 export interface StreamlitArgs {
   nifti_data?: string // base64 encoded main image
   filename?: string
@@ -9,6 +22,7 @@ export interface StreamlitArgs {
     colormap?: string
     opacity?: number
   }>
+  meshes?: MeshData[]
   height?: number
   view_mode?: 'axial' | 'coronal' | 'sagittal' | '3d' | 'multiplanar'
   styled?: boolean // true for StyledViewer (with menu), false for UnstyledCanvas

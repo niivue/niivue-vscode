@@ -1,4 +1,5 @@
 import os
+import warnings
 import streamlit.components.v1 as components
 import base64
 
@@ -23,6 +24,7 @@ def niivue_viewer(
     nifti_data=None,
     filename="",
     overlays=None,
+    meshes=None,
     height=600,
     view_mode="multiplanar",
     styled=True,
@@ -43,6 +45,16 @@ def niivue_viewer(
         - name: str - overlay filename
         - colormap: str, optional - colormap name (default: 'red')
         - opacity: float, optional - opacity 0-1 (default: 0.5)
+    meshes : list of dict, optional
+        List of mesh surfaces to display (e.g. FreeSurfer pial, white, inflated), each with:
+        - data: bytes - mesh file data
+        - name: str - mesh filename (must include extension, e.g. 'lh.pial', 'brain.gii')
+        - overlays: list of dict, optional - mesh overlays for the first mesh only
+            (curvature, thickness, etc.). Overlays on non-first meshes are ignored.
+            - data: bytes - overlay data
+            - name: str - overlay filename (e.g. 'lh.thickness', 'lh.curv')
+            - colormap: str, optional - colormap name (default: 'redyell')
+            - opacity: float, optional - opacity 0-1 (default: 0.7)
     height : int
         Height of the component in pixels (default: 600)
     view_mode : str
@@ -93,11 +105,53 @@ def niivue_viewer(
             }
             overlays_data.append(overlay_dict)
     
+    # Convert meshes to base64
+    meshes_data = []
+    if meshes:
+        for i, mesh in enumerate(meshes):
+            if 'data' not in mesh:
+                raise ValueError(f"Mesh {i}: 'data' field is required")
+            if not isinstance(mesh['data'], bytes):
+                raise ValueError(f"Mesh {i}: 'data' must be bytes")
+            if 'name' not in mesh:
+                raise ValueError(f"Mesh {i}: 'name' field is required")
+            
+            mesh_dict = {
+                "data": base64.b64encode(mesh["data"]).decode(),
+                "name": mesh["name"],
+            }
+            
+            # Convert mesh overlays to base64 (only first mesh overlays are applied)
+            mesh_overlays = []
+            if 'overlays' in mesh and mesh['overlays']:
+                if i > 0:
+                    warnings.warn(
+                        f"Mesh {i}: overlays are only supported on the first mesh and will be ignored.",
+                        stacklevel=2,
+                    )
+                else:
+                    for j, mo in enumerate(mesh['overlays']):
+                        if 'data' not in mo:
+                            raise ValueError(f"Mesh {i}, overlay {j}: 'data' field is required")
+                        if not isinstance(mo['data'], bytes):
+                            raise ValueError(f"Mesh {i}, overlay {j}: 'data' must be bytes")
+                        if 'name' not in mo:
+                            raise ValueError(f"Mesh {i}, overlay {j}: 'name' field is required")
+                        mesh_overlays.append({
+                            "data": base64.b64encode(mo["data"]).decode(),
+                            "name": mo["name"],
+                            "colormap": mo.get("colormap", "redyell"),
+                            "opacity": mo.get("opacity", 0.7),
+                        })
+            mesh_dict["overlays"] = mesh_overlays
+            meshes_data.append(mesh_dict)
+    
     # Call the component
     component_value = _component_func(
         nifti_data=nifti_base64,
         filename=filename,
         overlays=overlays_data if overlays_data else None,
+        meshes=meshes_data if meshes_data else None,
         height=height,
         view_mode=view_mode,
         styled=styled,
