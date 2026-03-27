@@ -23,6 +23,7 @@ export const useStreamlitNiivue = (args: StreamlitArgs) => {
     defaultVolumeColormap: 'gray',
     zoomDragMode: false,
     defaultOverlayColormap: 'red',
+    defaultOverlayOpacity: 0.5,
     defaultMeshOverlayColormap: 'redyell',
     menuItems: {
       home: false,

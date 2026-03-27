@@ -1,5 +1,6 @@
 ---
 '@niivue/react': patch
+'niivue': patch
 '@niivue/jupyter': patch
 '@niivue/pwa': patch
 '@niivue/streamlit': patch
