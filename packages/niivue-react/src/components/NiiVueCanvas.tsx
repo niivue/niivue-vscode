@@ -68,6 +68,7 @@ export const NiiVueCanvas = ({
         render.value++ // required to update the names
         nvArray.value = [...nvArray.value] // trigger react signal for changes
         nv.createOnLocationChange() // TODO fix, still required?
+        nv.onVolumeUpdated()
         notifyImageLoaded()
       })
       .catch((error) => {
