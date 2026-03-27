@@ -21,25 +21,43 @@ export const ImageDrop = ({ children }: { children: ComponentChildren }) => {
     e.preventDefault()
     const files = e.dataTransfer!.files
     const fileArray = Array.from(files)
-    window.postMessage({
-      type: 'initCanvas',
-      body: {
-        n: fileArray.length,
-      },
-    })
-    const readimages = async () => {
-      for (const file of fileArray) {
-        const buffer = await file.arrayBuffer()
-        window.postMessage({
-          type: 'addImage',
-          body: {
-            data: buffer,
-            uri: file.name,
-          },
-        })
+    if (e.shiftKey) {
+      // shift+drop adds files as overlays to the last loaded canvas
+      const readOverlays = async () => {
+        for (const file of fileArray) {
+          const buffer = await file.arrayBuffer()
+          window.postMessage({
+            type: 'overlay',
+            body: {
+              data: buffer,
+              uri: file.name,
+              index: -1,
+            },
+          })
+        }
       }
+      readOverlays()
+    } else {
+      window.postMessage({
+        type: 'initCanvas',
+        body: {
+          n: fileArray.length,
+        },
+      })
+      const readimages = async () => {
+        for (const file of fileArray) {
+          const buffer = await file.arrayBuffer()
+          window.postMessage({
+            type: 'addImage',
+            body: {
+              data: buffer,
+              uri: file.name,
+            },
+          })
+        }
+      }
+      readimages()
     }
-    readimages()
   }
 
   return (

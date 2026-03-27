@@ -32,8 +32,11 @@ export async function handleMessage(message: any, appProps: AppProps) {
       break
     case 'overlay':
       {
-        await addOverlay(nvArray.value[body.index], body, settings.value)
-        notifyImageLoaded()
+        const index = body.index >= 0 ? body.index : nvArray.value.length - 1
+        if (index >= 0 && index < nvArray.value.length) {
+          await addOverlay(nvArray.value[index], body, settings.value)
+          notifyImageLoaded()
+        }
       }
       break
     case 'addImage':
@@ -367,6 +370,7 @@ export class ExtendedNiivue extends Niivue {
   uri = ''
   key = NaN
   body = null
+  onVolumeUpdated = () => { }
   onFrameUpdate = (frame: number) => { }
   setFrame4D(volumeOrId: any, frame: number) {
     super.setFrame4D(volumeOrId, frame)
