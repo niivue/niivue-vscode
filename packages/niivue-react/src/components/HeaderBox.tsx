@@ -1,5 +1,4 @@
-import { useSignal } from '@preact/signals'
-import { useEffect } from 'preact/hooks'
+import { effect, useSignal } from '@preact/signals'
 import { ExtendedNiivue } from '../events'
 
 type HeaderInfo = {
@@ -13,15 +12,15 @@ export const HeaderBox = (props: any) => {
 
   const headerInfo = useSignal({ pixDims: [3, 1, 1, 1], qoffset: [0, 0, 0] } as HeaderInfo)
 
-  useEffect(() => {
-    if (nvArraySelected.value.length > 0) {
+  effect(() => {
+    if (nvArraySelected.value.length > 0 && nvArraySelected.value[0]?.volumes?.[0]) {
       const hdr = nvArraySelected.value[0].volumes[0].hdr
       headerInfo.value = {
         pixDims: [hdr.pixDims[0], hdr.pixDims[1], hdr.pixDims[2], hdr.pixDims[3]],
         qoffset: [hdr.qoffset_x, hdr.qoffset_y, hdr.qoffset_z],
       }
     }
-  }, [nvArraySelected])
+  })
 
   const setVoxelSizeAndOrigin = () => {
     nvArraySelected.value.forEach((nv: ExtendedNiivue) => {
