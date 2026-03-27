@@ -17,6 +17,7 @@ export interface NiiVueSettings {
   zoomDragMode: boolean
   defaultVolumeColormap: string
   defaultOverlayColormap: string
+  defaultOverlayOpacity: number
   defaultMeshOverlayColormap: string
   menuItems?: MenuItems
 }
@@ -29,6 +30,7 @@ export const defaultSettings: NiiVueSettings = {
   zoomDragMode: false,
   defaultVolumeColormap: 'gray',
   defaultOverlayColormap: 'redyell',
+  defaultOverlayOpacity: 0.5,
   defaultMeshOverlayColormap: 'hsv',
   menuItems: {
     home: true,

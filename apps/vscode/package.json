@@ -407,6 +407,13 @@
           "default": "redyell",
           "description": "Default colormap to use for overlay images."
         },
+        "niivue.defaultOverlayOpacity": {
+          "type": "number",
+          "default": 0.5,
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Default opacity for overlay images (0 = transparent, 1 = opaque)."
+        },
         "niivue.defaultMeshOverlayColormap": {
           "type": "string",
           "default": "hsv",
