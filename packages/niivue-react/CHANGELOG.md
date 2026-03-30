@@ -1,6 +1,6 @@
-# Change Log
+# @niivue/react
 
-## 2.9.0
+## 0.2.0
 
 ### Minor Changes
 
@@ -8,24 +8,9 @@
 
 ### Patch Changes
 
+- 27432cf: Add mesh surface support to the Streamlit component. Users can now display FreeSurfer surface files (pial, white, inflated), GIfTI, MZ3, STL, OBJ, and other mesh formats via the new `meshes` parameter. Mesh overlays (curvature, thickness, annotations) are also supported. Fix mesh binary data loading in niivue-react's loadVolume function.
 - 23028fd: shift+drop adds files as overlays to the last canvas instead of creating new ones
   overlay handler resolves index -1 to last canvas with bounds check
   HeaderBox now uses signal effect instead of stale useEffect dependency
   added onVolumeUpdated callback to ExtendedNiivue, called after load
 - 79610b8: Initial configuration for automated independent releases via Changesets.
-
-## [2.6.2] - 2026-02-02
-
-### Added
-
-- New 4D navigation panel.
-- Improved error handling in canvas with descriptive error messages.
-- Added support for `.mnc` files in JupyterLab extension.
-
-### Fixed
-
-- Fixed double loading issue for images where files would open twice.
-
-## [Unreleased]
-
-- Initial release
