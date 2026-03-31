@@ -520,15 +520,15 @@ export const Menu = (props: AppProps) => {
       zoomDragMode.value = preset.settings.zoomDragMode
     }
 
-    // Apply colormap defaults
-    if (preset.settings.defaultVolumeColormap) {
+    // Apply colormap defaults from settings (skip if baseImageDefaults/overlayDefaults has colormap)
+    if (preset.settings.defaultVolumeColormap && !preset.baseImageDefaults?.colormap) {
       nvArraySelected.value.forEach((nv) => {
         if (nv.volumes.length > 0) {
           nv.volumes[0].colormap = preset.settings.defaultVolumeColormap!
         }
       })
     }
-    if (preset.settings.defaultOverlayColormap) {
+    if (preset.settings.defaultOverlayColormap && !preset.overlayDefaults?.colormap) {
       nvArraySelected.value.forEach((nv) => {
         if (nv.volumes.length > 1) {
           nv.volumes[1].colormap = preset.settings.defaultOverlayColormap!
@@ -568,18 +568,20 @@ export const Menu = (props: AppProps) => {
     }
 
     // Apply base image defaults (volume index 0)
+    // Note: colormap setter triggers calMinMax() which resets cal_min/cal_max,
+    // so colormap must be set first, then cal_min/cal_max afterward.
     if (preset.baseImageDefaults) {
       nvArraySelected.value.forEach((nv) => {
         if (nv.volumes.length > 0) {
           const vol = nv.volumes[0]
+          if (preset.baseImageDefaults!.colormap) {
+            vol.colormap = preset.baseImageDefaults!.colormap
+          }
           if (preset.baseImageDefaults!.cal_min !== undefined) {
             vol.cal_min = preset.baseImageDefaults!.cal_min
           }
           if (preset.baseImageDefaults!.cal_max !== undefined) {
             vol.cal_max = preset.baseImageDefaults!.cal_max
-          }
-          if (preset.baseImageDefaults!.colormap) {
-            vol.colormap = preset.baseImageDefaults!.colormap
           }
           if (preset.baseImageDefaults!.opacity !== undefined) {
             vol.opacity = preset.baseImageDefaults!.opacity
@@ -594,17 +596,16 @@ export const Menu = (props: AppProps) => {
     // Apply overlay defaults (volume index > 0)
     if (preset.overlayDefaults) {
       nvArraySelected.value.forEach((nv) => {
-        // Apply to all overlay volumes (index > 0)
         for (let i = 1; i < nv.volumes.length; i++) {
           const vol = nv.volumes[i]
+          if (preset.overlayDefaults!.colormap) {
+            vol.colormap = preset.overlayDefaults!.colormap
+          }
           if (preset.overlayDefaults!.cal_min !== undefined) {
             vol.cal_min = preset.overlayDefaults!.cal_min
           }
           if (preset.overlayDefaults!.cal_max !== undefined) {
             vol.cal_max = preset.overlayDefaults!.cal_max
-          }
-          if (preset.overlayDefaults!.colormap) {
-            vol.colormap = preset.overlayDefaults!.colormap
           }
           if (preset.overlayDefaults!.opacity !== undefined) {
             vol.opacity = preset.overlayDefaults!.opacity
@@ -835,7 +836,7 @@ export const Menu = (props: AppProps) => {
           ))}
           {userPresets.value.length > 0 && <hr />}
           {userPresets.value.map((preset) => (
-            <div key={preset.id} className="flex items-center justify-between gap-1">
+            <div key={preset.id} className="flex items-center justify-between gap-1 bg-gray-900 hover:bg-gray-700">
               <MenuEntry
                 label={`${preset.name}${preset.isDefault ? ' ★' : ''}`}
                 onClick={() => applyPreset(preset)}
