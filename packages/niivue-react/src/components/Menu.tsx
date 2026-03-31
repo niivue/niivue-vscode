@@ -12,11 +12,15 @@ import {
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
 import {
   BUILTIN_PRESETS,
+  ColorScalingDefaults,
   ViewPreset,
+  clearDefaultPreset,
   createUserPreset,
   deleteUserPreset,
+  getDefaultPreset,
   loadUserPresets,
   saveUserPresets,
+  setDefaultPreset,
 } from '../presets'
 import { getMetadataString, getNumberOfPoints } from '../utility'
 import { AppProps, SelectionMode } from './AppProps'
@@ -50,6 +54,7 @@ export const Menu = (props: AppProps) => {
   const selectionActive = useSignal(false)
   const selectMultiple = useSignal(false)
   const userPresets = useSignal(loadUserPresets())
+  const defaultPresetApplied = useSignal(false)
   const showSavePresetDialog = useSignal(false)
   const presetNameInput = useSignal('')
   const presetDescInput = useSignal('')
@@ -129,6 +134,39 @@ export const Menu = (props: AppProps) => {
         zoomDragMode: zoomDragMode.value,
       }
     }
+  })
+
+  // Apply default user preset when first image is loaded
+  effect(() => {
+    if (defaultPresetApplied.value || nvArray.value.length === 0) return
+    const defaultPreset = getDefaultPreset()
+    if (!defaultPreset) {
+      defaultPresetApplied.value = true
+      return
+    }
+    // Apply settings from default preset
+    if (defaultPreset.settings.interpolation !== undefined) {
+      interpolation.value = defaultPreset.settings.interpolation
+    }
+    if (defaultPreset.settings.showCrosshairs !== undefined) {
+      crosshair.value = defaultPreset.settings.showCrosshairs
+    }
+    if (defaultPreset.settings.radiologicalConvention !== undefined) {
+      radiologicalConvention.value = defaultPreset.settings.radiologicalConvention
+    }
+    if (defaultPreset.settings.colorbar !== undefined) {
+      colorbar.value = defaultPreset.settings.colorbar
+    }
+    if (defaultPreset.settings.zoomDragMode !== undefined) {
+      zoomDragMode.value = defaultPreset.settings.zoomDragMode
+    }
+    if (defaultPreset.viewOptions?.sliceType !== undefined) {
+      sliceType.value = defaultPreset.viewOptions.sliceType
+    }
+    if (defaultPreset.viewOptions?.hideUI !== undefined) {
+      hideUI.value = defaultPreset.viewOptions.hideUI
+    }
+    defaultPresetApplied.value = true
   })
 
   // Menu Click events
@@ -535,21 +573,19 @@ export const Menu = (props: AppProps) => {
         if (nv.volumes.length > 0) {
           const vol = nv.volumes[0]
           if (preset.baseImageDefaults!.cal_min !== undefined) {
-            // Only apply if not already set
-            if (vol.cal_min === vol.global_min || vol.cal_min === 0) {
-              vol.cal_min = preset.baseImageDefaults!.cal_min
-            }
+            vol.cal_min = preset.baseImageDefaults!.cal_min
           }
           if (preset.baseImageDefaults!.cal_max !== undefined) {
-            if (vol.cal_max === vol.global_max || vol.cal_max === 0) {
-              vol.cal_max = preset.baseImageDefaults!.cal_max
-            }
+            vol.cal_max = preset.baseImageDefaults!.cal_max
           }
           if (preset.baseImageDefaults!.colormap) {
             vol.colormap = preset.baseImageDefaults!.colormap
           }
           if (preset.baseImageDefaults!.opacity !== undefined) {
             vol.opacity = preset.baseImageDefaults!.opacity
+          }
+          if (preset.baseImageDefaults!.colormapInvert !== undefined) {
+            vol.colormapInvert = preset.baseImageDefaults!.colormapInvert
           }
         }
       })
@@ -562,21 +598,19 @@ export const Menu = (props: AppProps) => {
         for (let i = 1; i < nv.volumes.length; i++) {
           const vol = nv.volumes[i]
           if (preset.overlayDefaults!.cal_min !== undefined) {
-            // Only apply if not already set
-            if (vol.cal_min === vol.global_min || vol.cal_min === 0) {
-              vol.cal_min = preset.overlayDefaults!.cal_min
-            }
+            vol.cal_min = preset.overlayDefaults!.cal_min
           }
           if (preset.overlayDefaults!.cal_max !== undefined) {
-            if (vol.cal_max === vol.global_max || vol.cal_max === 0) {
-              vol.cal_max = preset.overlayDefaults!.cal_max
-            }
+            vol.cal_max = preset.overlayDefaults!.cal_max
           }
           if (preset.overlayDefaults!.colormap) {
             vol.colormap = preset.overlayDefaults!.colormap
           }
           if (preset.overlayDefaults!.opacity !== undefined) {
             vol.opacity = preset.overlayDefaults!.opacity
+          }
+          if (preset.overlayDefaults!.colormapInvert !== undefined) {
+            vol.colormapInvert = preset.overlayDefaults!.colormapInvert
           }
         }
       })
@@ -608,11 +642,40 @@ export const Menu = (props: AppProps) => {
       hideUI: hideUI.value,
     }
 
+    // Capture colorscale options from currently loaded volumes
+    let baseImageDefaults: ColorScalingDefaults | undefined
+    let overlayDefaults: ColorScalingDefaults | undefined
+
+    const nv = nvArraySelected.value[0]
+    if (nv && nv.volumes.length > 0) {
+      const baseVol = nv.volumes[0]
+      baseImageDefaults = {
+        cal_min: baseVol.cal_min,
+        cal_max: baseVol.cal_max,
+        colormap: baseVol.colormap,
+        opacity: baseVol.opacity,
+        colormapInvert: baseVol.colormapInvert,
+      }
+
+      if (nv.volumes.length > 1) {
+        const overlayVol = nv.volumes[1]
+        overlayDefaults = {
+          cal_min: overlayVol.cal_min,
+          cal_max: overlayVol.cal_max,
+          colormap: overlayVol.colormap,
+          opacity: overlayVol.opacity,
+          colormapInvert: overlayVol.colormapInvert,
+        }
+      }
+    }
+
     const newPreset = createUserPreset(
       presetNameInput.value,
       presetDescInput.value || 'Custom user preset',
       currentSettings,
       viewOptions,
+      baseImageDefaults,
+      overlayDefaults,
     )
 
     const presets = [...userPresets.value, newPreset]
@@ -628,6 +691,16 @@ export const Menu = (props: AppProps) => {
 
   const deletePreset = (id: string) => {
     deleteUserPreset(id)
+    userPresets.value = loadUserPresets()
+  }
+
+  const toggleDefaultPreset = (id: string) => {
+    const preset = userPresets.value.find((p) => p.id === id)
+    if (preset?.isDefault) {
+      clearDefaultPreset()
+    } else {
+      setDefaultPreset(id)
+    }
     userPresets.value = loadUserPresets()
   }
 
@@ -762,8 +835,18 @@ export const Menu = (props: AppProps) => {
           ))}
           {userPresets.value.length > 0 && <hr />}
           {userPresets.value.map((preset) => (
-            <div key={preset.id} className="flex items-center justify-between">
-              <MenuEntry label={preset.name} onClick={() => applyPreset(preset)} />
+            <div key={preset.id} className="flex items-center justify-between gap-1">
+              <MenuEntry
+                label={`${preset.name}${preset.isDefault ? ' ★' : ''}`}
+                onClick={() => applyPreset(preset)}
+              />
+              <button
+                className={`text-xs px-1 ${preset.isDefault ? 'text-yellow-400' : 'hover:text-yellow-400'}`}
+                onClick={() => toggleDefaultPreset(preset.id)}
+                title={preset.isDefault ? 'Clear default' : 'Set as default'}
+              >
+                ★
+              </button>
               <button
                 className="text-xs px-1 hover:text-red-500"
                 onClick={() => deletePreset(preset.id)}

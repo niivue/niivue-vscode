@@ -2,8 +2,11 @@ import { expect, test } from 'vitest'
 import {
   BUILTIN_PRESETS,
   createUserPreset,
+  getDefaultPreset,
   loadUserPresets,
   saveUserPresets,
+  setDefaultPreset,
+  clearDefaultPreset,
   deleteUserPreset,
 } from '../presets'
 
@@ -91,4 +94,71 @@ test.skip('delete user preset', () => {
   
   // Clean up
   localStorage.removeItem(testKey)
+})
+
+test('create user preset with colorscale options', () => {
+  const baseDefaults = {
+    cal_min: 0,
+    cal_max: 100,
+    colormap: 'gray',
+    opacity: 1.0,
+    colormapInvert: false,
+  }
+  const overlayDefaults = {
+    cal_min: -5,
+    cal_max: 5,
+    colormap: 'redyell',
+    opacity: 0.7,
+    colormapInvert: true,
+  }
+  const preset = createUserPreset(
+    'Full Preset',
+    'Preset with colorscale',
+    { interpolation: true },
+    { sliceType: 3 },
+    baseDefaults,
+    overlayDefaults,
+  )
+  expect(preset.baseImageDefaults?.cal_min).toBe(0)
+  expect(preset.baseImageDefaults?.cal_max).toBe(100)
+  expect(preset.baseImageDefaults?.colormap).toBe('gray')
+  expect(preset.baseImageDefaults?.opacity).toBe(1.0)
+  expect(preset.baseImageDefaults?.colormapInvert).toBe(false)
+  expect(preset.overlayDefaults?.cal_min).toBe(-5)
+  expect(preset.overlayDefaults?.cal_max).toBe(5)
+  expect(preset.overlayDefaults?.colormap).toBe('redyell')
+  expect(preset.overlayDefaults?.opacity).toBe(0.7)
+  expect(preset.overlayDefaults?.colormapInvert).toBe(true)
+})
+
+test('set and get default preset', () => {
+  localStorage.clear()
+
+  const preset1 = createUserPreset('Preset 1', 'First preset', { interpolation: true })
+  // Ensure unique IDs by modifying id directly
+  preset1.id = 'user_test_1'
+  const preset2 = createUserPreset('Preset 2', 'Second preset', { colorbar: true })
+  preset2.id = 'user_test_2'
+  saveUserPresets([preset1, preset2])
+
+  // Initially no default
+  expect(getDefaultPreset()).toBeUndefined()
+
+  // Set preset2 as default
+  setDefaultPreset(preset2.id)
+  const defaultP = getDefaultPreset()
+  expect(defaultP).toBeDefined()
+  expect(defaultP!.name).toBe('Preset 2')
+  expect(defaultP!.isDefault).toBe(true)
+
+  // Preset1 should not be default
+  const all = loadUserPresets()
+  expect(all[0].isDefault).toBe(false)
+  expect(all[1].isDefault).toBe(true)
+
+  // Clear default
+  clearDefaultPreset()
+  expect(getDefaultPreset()).toBeUndefined()
+
+  localStorage.clear()
 })

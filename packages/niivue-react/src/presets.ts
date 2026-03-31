@@ -15,6 +15,7 @@ export interface ColorScalingDefaults {
   opacity?: number
   cal_min?: number
   cal_max?: number
+  colormapInvert?: boolean
 }
 
 export interface ViewPreset {
@@ -89,6 +90,7 @@ export const BUILTIN_PRESETS: Record<string, ViewPreset> = {
 export interface UserPreset extends ViewPreset {
   id: string
   createdAt: string
+  isDefault?: boolean
 }
 
 /**
@@ -176,4 +178,36 @@ export function deleteUserPreset(id: string): void {
   const presets = loadUserPresets()
   const filtered = presets.filter((p) => p.id !== id)
   saveUserPresets(filtered)
+}
+
+/**
+ * Set a user preset as the default (clears default from all others)
+ */
+export function setDefaultPreset(id: string): void {
+  const presets = loadUserPresets()
+  const updated = presets.map((p) => ({
+    ...p,
+    isDefault: p.id === id,
+  }))
+  saveUserPresets(updated)
+}
+
+/**
+ * Clear the default preset flag from all user presets
+ */
+export function clearDefaultPreset(): void {
+  const presets = loadUserPresets()
+  const updated = presets.map((p) => ({
+    ...p,
+    isDefault: false,
+  }))
+  saveUserPresets(updated)
+}
+
+/**
+ * Get the default user preset, if any
+ */
+export function getDefaultPreset(): UserPreset | undefined {
+  const presets = loadUserPresets()
+  return presets.find((p) => p.isDefault)
 }
