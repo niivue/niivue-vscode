@@ -520,7 +520,9 @@ export const Menu = (props: AppProps) => {
       zoomDragMode.value = preset.settings.zoomDragMode
     }
 
-    // Apply colormap defaults from settings (skip if baseImageDefaults/overlayDefaults has colormap)
+    // Apply colormap defaults from settings.
+    // baseImageDefaults.colormap / overlayDefaults.colormap take precedence
+    // over defaultVolumeColormap / defaultOverlayColormap respectively.
     if (preset.settings.defaultVolumeColormap && !preset.baseImageDefaults?.colormap) {
       nvArraySelected.value.forEach((nv) => {
         if (nv.volumes.length > 0) {
