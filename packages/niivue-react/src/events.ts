@@ -32,8 +32,11 @@ export async function handleMessage(message: any, appProps: AppProps) {
       break
     case 'overlay':
       {
-        await addOverlay(nvArray.value[body.index], body, settings.value)
-        notifyImageLoaded()
+        const index = body.index >= 0 ? body.index : nvArray.value.length - 1
+        if (index >= 0 && index < nvArray.value.length) {
+          await addOverlay(nvArray.value[index], body, settings.value)
+          notifyImageLoaded()
+        }
       }
       break
     case 'addImage':
@@ -238,13 +241,20 @@ function getLayerDefaults(type: string, settings: NiiVueSettings) {
 async function addOverlay(nv: Niivue, item: any, settings: NiiVueSettings) {
   if (isImageType(item.uri)) {
     const overlayColormap = item.colormap || settings?.defaultOverlayColormap || 'redyell'
+    const overlayOpacity = item.opacity ?? settings?.defaultOverlayOpacity ?? 0.5
     const image = await NVImage.loadFromUrl({
       url: item.data || item.uri,
       name: item.uri,
       colormap: overlayColormap,
-      opacity: item.opacity ?? 0.5
+      opacity: overlayOpacity,
     })
     nv.addVolume(image)
+    const idx = nv.volumes.length - 1
+    if (idx >= 0) {
+      nv.volumes[idx].colormap = overlayColormap
+      nv.setOpacity(idx, overlayOpacity)
+      nv.updateGLVolume()
+    }
   } else {
     const mesh = await NVMesh.readMesh(item.data, item.uri, nv.gl, 0.5)
     nv.addMesh(mesh)
@@ -367,6 +377,7 @@ export class ExtendedNiivue extends Niivue {
   uri = ''
   key = NaN
   body = null
+  onVolumeUpdated = () => { }
   onFrameUpdate = (frame: number) => { }
   setFrame4D(volumeOrId: any, frame: number) {
     super.setFrame4D(volumeOrId, frame)
@@ -399,6 +410,7 @@ function growNvArrayBy(nvArray: Signal<Niivue[]>, n: number) {
     const nv = new ExtendedNiivue({
       isResizeCanvas: true,
       dragMode: 1, // contrast
+      dragAndDropEnabled: false, // handled by app (Volume component)
     })
     nv.key = Math.random()
     nvArray.value = [...nvArray.value, nv]

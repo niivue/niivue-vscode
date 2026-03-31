@@ -93,6 +93,71 @@ export const Volume = (props: AppProps & VolumeProps) => {
 
   const is4D = computed(() => nv.volumes[0]?.nFrame4D && nv.volumes[0]?.nFrame4D > 1)
 
+  // Use capture-phase listeners to intercept drag/drop before niivue's canvas handlers
+  // (niivue registers bubble-phase listeners that call stopPropagation, preventing our handlers)
+  useEffect(() => {
+    const el = canvasRef.current
+    if (!el) return
+
+    const handleCanvasDragOver = (e: DragEvent) => {
+      e.stopPropagation()
+      e.preventDefault()
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'link'
+    }
+
+    const handleCanvasDrop = (e: DragEvent) => {
+      e.stopPropagation()
+      e.preventDefault()
+      const files = Array.from(e.dataTransfer?.files ?? [])
+      if (files.length === 0) return
+
+      if (e.shiftKey) {
+        // shift+drop adds files as overlays to this canvas
+        const readOverlays = async () => {
+          for (const file of files) {
+            const buffer = await file.arrayBuffer()
+            window.postMessage({
+              type: 'overlay',
+              body: {
+                data: buffer,
+                uri: file.name,
+                index: volumeIndex,
+              },
+            })
+          }
+        }
+        readOverlays()
+      } else {
+        // normal drop creates new canvases
+        window.postMessage({
+          type: 'initCanvas',
+          body: { n: files.length },
+        })
+        const readImages = async () => {
+          for (const file of files) {
+            const buffer = await file.arrayBuffer()
+            window.postMessage({
+              type: 'addImage',
+              body: {
+                data: buffer,
+                uri: file.name,
+              },
+            })
+          }
+        }
+        readImages()
+      }
+    }
+
+    el.addEventListener('dragover', handleCanvasDragOver, { capture: true })
+    el.addEventListener('drop', handleCanvasDrop, { capture: true })
+
+    return () => {
+      el.removeEventListener('dragover', handleCanvasDragOver, { capture: true })
+      el.removeEventListener('drop', handleCanvasDrop, { capture: true })
+    }
+  }, [canvasRef.current, volumeIndex])
+
   return (
     <div
       className={`relative ${

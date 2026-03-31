@@ -59,6 +59,7 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     const zoomDragMode = config.get<boolean>('zoomDragMode', false)
     const defaultVolumeColormap = config.get<string>('defaultVolumeColormap', 'gray')
     const defaultOverlayColormap = config.get<string>('defaultOverlayColormap', 'redyell')
+    const defaultOverlayOpacity = config.get<number>('defaultOverlayOpacity', 0.5)
     const defaultMeshOverlayColormap = config.get<string>('defaultMeshOverlayColormap', 'hsv')
     const userPresets = config.get<
       Array<{
@@ -82,6 +83,7 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
         zoomDragMode,
         defaultVolumeColormap,
         defaultOverlayColormap,
+        defaultOverlayOpacity,
         defaultMeshOverlayColormap,
         userPresets,
       },

@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { base64ToArrayBuffer } from '../src/utils'
+import { describe, expect, it, vi } from 'vitest'
+import { base64ToArrayBuffer, throttle } from '../src/utils'
 
 describe('utils', () => {
   describe('base64ToArrayBuffer', () => {
@@ -30,6 +30,109 @@ describe('utils', () => {
       const text = decoder.decode(result)
 
       expect(text).toBe('Hello World')
+    })
+  })
+
+  describe('throttle', () => {
+    it('should fire immediately on first call (leading edge)', () => {
+      const fn = vi.fn()
+      const throttled = throttle(fn, 100)
+
+      throttled('a')
+      expect(fn).toHaveBeenCalledTimes(1)
+      expect(fn).toHaveBeenCalledWith('a')
+
+      throttled.cancel()
+    })
+
+    it('should suppress rapid calls within the interval', () => {
+      vi.useFakeTimers()
+      const fn = vi.fn()
+      const throttled = throttle(fn, 100)
+
+      throttled('a')
+      throttled('b')
+      throttled('c')
+
+      // Only the first (leading) call should have fired
+      expect(fn).toHaveBeenCalledTimes(1)
+      expect(fn).toHaveBeenCalledWith('a')
+
+      throttled.cancel()
+      vi.useRealTimers()
+    })
+
+    it('should fire trailing edge with most recent args after interval', () => {
+      vi.useFakeTimers()
+      const fn = vi.fn()
+      const throttled = throttle(fn, 100)
+
+      throttled('a') // fires immediately (leading)
+      throttled('b') // suppressed, queued
+      throttled('c') // suppressed, replaces 'b' as pending
+
+      expect(fn).toHaveBeenCalledTimes(1)
+
+      vi.advanceTimersByTime(100)
+      // Trailing edge fires with most recent args
+      expect(fn).toHaveBeenCalledTimes(2)
+      expect(fn).toHaveBeenLastCalledWith('c')
+
+      throttled.cancel()
+      vi.useRealTimers()
+    })
+
+    it('should allow calls after the interval has elapsed', () => {
+      vi.useFakeTimers()
+      const fn = vi.fn()
+      const throttled = throttle(fn, 100)
+
+      throttled('a') // fires immediately
+      vi.advanceTimersByTime(100)
+      throttled('b') // fires immediately (interval elapsed)
+
+      expect(fn).toHaveBeenCalledTimes(2)
+      expect(fn).toHaveBeenLastCalledWith('b')
+
+      throttled.cancel()
+      vi.useRealTimers()
+    })
+
+    it('should cancel pending trailing call', () => {
+      vi.useFakeTimers()
+      const fn = vi.fn()
+      const throttled = throttle(fn, 100)
+
+      throttled('a') // fires immediately
+      throttled('b') // queued for trailing edge
+
+      throttled.cancel()
+      vi.advanceTimersByTime(200)
+
+      // Only the leading call should have fired
+      expect(fn).toHaveBeenCalledTimes(1)
+      expect(fn).toHaveBeenCalledWith('a')
+
+      vi.useRealTimers()
+    })
+
+    it('should fire immediately after cancel (fresh leading edge)', () => {
+      vi.useFakeTimers()
+      const fn = vi.fn()
+      const throttled = throttle(fn, 100)
+
+      throttled('a') // fires immediately (leading)
+      throttled('b') // queued for trailing edge
+
+      throttled.cancel()
+
+      // Next call should fire immediately as if it were a fresh invocation
+      throttled('c')
+      expect(fn).toHaveBeenCalledTimes(2)
+      expect(fn).toHaveBeenLastCalledWith('c')
+
+      throttled.cancel()
+      vi.useRealTimers()
     })
   })
 })
