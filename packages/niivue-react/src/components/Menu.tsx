@@ -10,6 +10,18 @@ import {
     openImageFromURL,
 } from '../events'
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
+import {
+  BUILTIN_PRESETS,
+  ColorScalingDefaults,
+  ViewPreset,
+  clearDefaultPreset,
+  createUserPreset,
+  deleteUserPreset,
+  getDefaultPreset,
+  loadUserPresets,
+  saveUserPresets,
+  setDefaultPreset,
+} from '../presets'
 import { getMetadataString, getNumberOfPoints } from '../utility'
 import { AppProps, SelectionMode } from './AppProps'
 import { HeaderBox } from './HeaderBox'
@@ -41,6 +53,11 @@ export const Menu = (props: AppProps) => {
   const zoomDragMode = useSignal(settings.value.zoomDragMode)
   const selectionActive = useSignal(false)
   const selectMultiple = useSignal(false)
+  const userPresets = useSignal(loadUserPresets())
+  const defaultPresetApplied = useSignal(false)
+  const showSavePresetDialog = useSignal(false)
+  const presetNameInput = useSignal('')
+  const presetDescInput = useSignal('')
 
   // Computed
   const isOverlay = computed(() => nvArraySelected.value[0]?.volumes?.length > 1)
@@ -117,6 +134,39 @@ export const Menu = (props: AppProps) => {
         zoomDragMode: zoomDragMode.value,
       }
     }
+  })
+
+  // Apply default user preset when first image is loaded
+  effect(() => {
+    if (defaultPresetApplied.value || nvArray.value.length === 0) return
+    const defaultPreset = getDefaultPreset()
+    if (!defaultPreset) {
+      defaultPresetApplied.value = true
+      return
+    }
+    // Apply settings from default preset
+    if (defaultPreset.settings.interpolation !== undefined) {
+      interpolation.value = defaultPreset.settings.interpolation
+    }
+    if (defaultPreset.settings.showCrosshairs !== undefined) {
+      crosshair.value = defaultPreset.settings.showCrosshairs
+    }
+    if (defaultPreset.settings.radiologicalConvention !== undefined) {
+      radiologicalConvention.value = defaultPreset.settings.radiologicalConvention
+    }
+    if (defaultPreset.settings.colorbar !== undefined) {
+      colorbar.value = defaultPreset.settings.colorbar
+    }
+    if (defaultPreset.settings.zoomDragMode !== undefined) {
+      zoomDragMode.value = defaultPreset.settings.zoomDragMode
+    }
+    if (defaultPreset.viewOptions?.sliceType !== undefined) {
+      sliceType.value = defaultPreset.viewOptions.sliceType
+    }
+    if (defaultPreset.viewOptions?.hideUI !== undefined) {
+      hideUI.value = defaultPreset.viewOptions.hideUI
+    }
+    defaultPresetApplied.value = true
   })
 
   // Menu Click events
@@ -451,6 +501,212 @@ export const Menu = (props: AppProps) => {
 
   useKeyboardShortcuts(handlers)
 
+  // Preset functions
+  const applyPreset = (preset: ViewPreset) => {
+    // Apply settings
+    if (preset.settings.interpolation !== undefined) {
+      interpolation.value = preset.settings.interpolation
+    }
+    if (preset.settings.showCrosshairs !== undefined) {
+      crosshair.value = preset.settings.showCrosshairs
+    }
+    if (preset.settings.radiologicalConvention !== undefined) {
+      radiologicalConvention.value = preset.settings.radiologicalConvention
+    }
+    if (preset.settings.colorbar !== undefined) {
+      colorbar.value = preset.settings.colorbar
+    }
+    if (preset.settings.zoomDragMode !== undefined) {
+      zoomDragMode.value = preset.settings.zoomDragMode
+    }
+
+    // Apply colormap defaults from settings.
+    // baseImageDefaults.colormap / overlayDefaults.colormap take precedence
+    // over defaultVolumeColormap / defaultOverlayColormap respectively.
+    if (preset.settings.defaultVolumeColormap && !preset.baseImageDefaults?.colormap) {
+      nvArraySelected.value.forEach((nv) => {
+        if (nv.volumes.length > 0) {
+          nv.volumes[0].colormap = preset.settings.defaultVolumeColormap!
+        }
+      })
+    }
+    if (preset.settings.defaultOverlayColormap && !preset.overlayDefaults?.colormap) {
+      nvArraySelected.value.forEach((nv) => {
+        if (nv.volumes.length > 1) {
+          nv.volumes[1].colormap = preset.settings.defaultOverlayColormap!
+        }
+      })
+    }
+
+    // Apply view options
+    if (preset.viewOptions) {
+      if (preset.viewOptions.sliceType !== undefined) {
+        sliceType.value = preset.viewOptions.sliceType
+      }
+      if (preset.viewOptions.hideUI !== undefined) {
+        hideUI.value = preset.viewOptions.hideUI
+      }
+
+      // Apply special view settings for fMRI-like presets
+      if (
+        preset.viewOptions.autoSizeMultiplanar !== undefined ||
+        preset.viewOptions.multiplanarForceRender !== undefined
+      ) {
+        nvArraySelected.value.forEach((nv) => {
+          if (preset.viewOptions!.autoSizeMultiplanar !== undefined) {
+            nv.graph.autoSizeMultiplanar = preset.viewOptions!.autoSizeMultiplanar
+          }
+          if (preset.viewOptions!.multiplanarForceRender !== undefined) {
+            nv.opts.multiplanarForceRender = preset.viewOptions!.multiplanarForceRender
+          }
+          if (preset.viewOptions!.normalizeValues !== undefined) {
+            nv.graph.normalizeValues = preset.viewOptions!.normalizeValues
+          }
+          if (preset.viewOptions!.graphOpacity !== undefined) {
+            nv.graph.opacity = preset.viewOptions!.graphOpacity
+          }
+        })
+      }
+    }
+
+    // Apply base image defaults (volume index 0)
+    // Note: colormap setter triggers calMinMax() which resets cal_min/cal_max,
+    // so colormap must be set first, then cal_min/cal_max afterward.
+    if (preset.baseImageDefaults) {
+      nvArraySelected.value.forEach((nv) => {
+        if (nv.volumes.length > 0) {
+          const vol = nv.volumes[0]
+          if (preset.baseImageDefaults!.colormap) {
+            vol.colormap = preset.baseImageDefaults!.colormap
+          }
+          if (preset.baseImageDefaults!.cal_min !== undefined) {
+            vol.cal_min = preset.baseImageDefaults!.cal_min
+          }
+          if (preset.baseImageDefaults!.cal_max !== undefined) {
+            vol.cal_max = preset.baseImageDefaults!.cal_max
+          }
+          if (preset.baseImageDefaults!.opacity !== undefined) {
+            vol.opacity = preset.baseImageDefaults!.opacity
+          }
+          if (preset.baseImageDefaults!.colormapInvert !== undefined) {
+            vol.colormapInvert = preset.baseImageDefaults!.colormapInvert
+          }
+        }
+      })
+    }
+
+    // Apply overlay defaults (volume index > 0)
+    if (preset.overlayDefaults) {
+      nvArraySelected.value.forEach((nv) => {
+        for (let i = 1; i < nv.volumes.length; i++) {
+          const vol = nv.volumes[i]
+          if (preset.overlayDefaults!.colormap) {
+            vol.colormap = preset.overlayDefaults!.colormap
+          }
+          if (preset.overlayDefaults!.cal_min !== undefined) {
+            vol.cal_min = preset.overlayDefaults!.cal_min
+          }
+          if (preset.overlayDefaults!.cal_max !== undefined) {
+            vol.cal_max = preset.overlayDefaults!.cal_max
+          }
+          if (preset.overlayDefaults!.opacity !== undefined) {
+            vol.opacity = preset.overlayDefaults!.opacity
+          }
+          if (preset.overlayDefaults!.colormapInvert !== undefined) {
+            vol.colormapInvert = preset.overlayDefaults!.colormapInvert
+          }
+        }
+      })
+    }
+
+    // Update the display
+    nvArraySelected.value.forEach((nv) => {
+      nv.updateGLVolume()
+    })
+    nvArray.value = [...nvArray.value]
+  }
+
+  const saveCurrentAsPreset = () => {
+    if (!presetNameInput.value.trim()) {
+      alert('Please enter a name for the preset')
+      return
+    }
+
+    const currentSettings = {
+      interpolation: interpolation.value,
+      showCrosshairs: crosshair.value,
+      radiologicalConvention: radiologicalConvention.value,
+      colorbar: colorbar.value,
+      zoomDragMode: zoomDragMode.value,
+    }
+
+    const viewOptions = {
+      sliceType: sliceType.value,
+      hideUI: hideUI.value,
+    }
+
+    // Capture colorscale options from currently loaded volumes
+    let baseImageDefaults: ColorScalingDefaults | undefined
+    let overlayDefaults: ColorScalingDefaults | undefined
+
+    const nv = nvArraySelected.value[0]
+    if (nv && nv.volumes.length > 0) {
+      const baseVol = nv.volumes[0]
+      baseImageDefaults = {
+        cal_min: baseVol.cal_min,
+        cal_max: baseVol.cal_max,
+        colormap: baseVol.colormap,
+        opacity: baseVol.opacity,
+        colormapInvert: baseVol.colormapInvert,
+      }
+
+      if (nv.volumes.length > 1) {
+        const overlayVol = nv.volumes[1]
+        overlayDefaults = {
+          cal_min: overlayVol.cal_min,
+          cal_max: overlayVol.cal_max,
+          colormap: overlayVol.colormap,
+          opacity: overlayVol.opacity,
+          colormapInvert: overlayVol.colormapInvert,
+        }
+      }
+    }
+
+    const newPreset = createUserPreset(
+      presetNameInput.value,
+      presetDescInput.value || 'Custom user preset',
+      currentSettings,
+      viewOptions,
+      baseImageDefaults,
+      overlayDefaults,
+    )
+
+    const presets = [...userPresets.value, newPreset]
+    saveUserPresets(presets)
+    userPresets.value = presets
+
+    presetNameInput.value = ''
+    presetDescInput.value = ''
+    showSavePresetDialog.value = false
+
+    alert(`Preset "${newPreset.name}" saved!`)
+  }
+
+  const deletePreset = (id: string) => {
+    deleteUserPreset(id)
+    userPresets.value = loadUserPresets()
+  }
+
+  const toggleDefaultPreset = (id: string) => {
+    const preset = userPresets.value.find((p) => p.id === id)
+    if (preset?.isDefault) {
+      clearDefaultPreset()
+    } else {
+      setDefaultPreset(id)
+    }
+    userPresets.value = loadUserPresets()
+  }
+
   return (
     <>
       <div
@@ -572,6 +828,40 @@ export const Menu = (props: AppProps) => {
             shortcut={formatShortcut(UI_SHORTCUTS.TOGGLE_ZOOM_MODE)}
           />
         )}
+        <MenuItem label="Presets">
+          {Object.values(BUILTIN_PRESETS).map((preset) => (
+            <MenuEntry
+              key={preset.name}
+              label={preset.name}
+              onClick={() => applyPreset(preset)}
+            />
+          ))}
+          {userPresets.value.length > 0 && <hr />}
+          {userPresets.value.map((preset) => (
+            <div key={preset.id} className="flex items-center justify-between gap-1 bg-gray-900 hover:bg-gray-700">
+              <MenuEntry
+                label={`${preset.name}${preset.isDefault ? ' ★' : ''}`}
+                onClick={() => applyPreset(preset)}
+              />
+              <button
+                className={`text-xs px-1 ${preset.isDefault ? 'text-yellow-400' : 'hover:text-yellow-400'}`}
+                onClick={() => toggleDefaultPreset(preset.id)}
+                title={preset.isDefault ? 'Clear default' : 'Set as default'}
+              >
+                ★
+              </button>
+              <button
+                className="text-xs px-1 hover:text-red-500"
+                onClick={() => deletePreset(preset.id)}
+                title="Delete preset"
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+          <hr />
+          <MenuEntry label="Save Current as Preset" onClick={toggle(showSavePresetDialog)} />
+        </MenuItem>
         {settings.value.menuItems?.colorScale && (
           <MenuItem
             label="ColorScale"
@@ -680,6 +970,51 @@ export const Menu = (props: AppProps) => {
       />
       <HeaderBox nvArraySelected={nvArraySelected} nvArray={nvArray} visible={setHeaderMenu} />
       <HeaderDialog nvArraySelected={nvArraySelected} isOpen={headerDialog} />
+      {showSavePresetDialog.value && (
+        <div className="absolute left-8 top-8 bg-gray-700 rounded-md z-50 p-4 space-y-2 min-w-64">
+          <h3 className="text-lg font-bold">Save Preset</h3>
+          <div>
+            <label className="block text-sm">Name:</label>
+            <input
+              className="bg-gray-600 w-full border-2 border-gray-600 rounded-md px-2 py-1"
+              type="text"
+              value={presetNameInput.value}
+              onInput={(e: Event) => {
+                const target = e.target as HTMLInputElement
+                presetNameInput.value = target.value
+              }}
+              placeholder="Enter preset name"
+            />
+          </div>
+          <div>
+            <label className="block text-sm">Description (optional):</label>
+            <input
+              className="bg-gray-600 w-full border-2 border-gray-600 rounded-md px-2 py-1"
+              type="text"
+              value={presetDescInput.value}
+              onInput={(e: Event) => {
+                const target = e.target as HTMLInputElement
+                presetDescInput.value = target.value
+              }}
+              placeholder="Enter description"
+            />
+          </div>
+          <div className="flex gap-2 justify-end">
+            <button
+              className="bg-gray-600 border-2 border-gray-600 rounded-md px-3 py-1"
+              onClick={() => (showSavePresetDialog.value = false)}
+            >
+              Cancel
+            </button>
+            <button
+              className="bg-blue-600 border-2 border-blue-600 rounded-md px-3 py-1"
+              onClick={saveCurrentAsPreset}
+            >
+              Save
+            </button>
+          </div>
+        </div>
+      )}
     </>
   )
 }
