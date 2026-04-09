@@ -1,5 +1,6 @@
 import { SLICE_TYPE } from '@niivue/niivue'
 import { Signal, useSignal } from '@preact/signals'
+import { useMemo } from 'preact/hooks'
 import { ColorScalingDefaults, UserPreset, ViewOptions, ViewPreset } from '../presets'
 import { NiiVueSettings } from '../settings'
 
@@ -92,7 +93,10 @@ export const PresetEditor = ({
   const overlayOpacity = useSignal(init?.overlayDefaults?.opacity ?? currentOverlay?.opacity ?? 0.5)
   const overlayInvert = useSignal(init?.overlayDefaults?.colormapInvert ?? currentOverlay?.colormapInvert ?? false)
 
-  const allColormaps = [...new Set([...COMMON_COLORMAPS, ...colormaps])]
+  const allColormaps = useMemo(
+    () => [...new Set([...COMMON_COLORMAPS, ...colormaps])],
+    [colormaps],
+  )
 
   const handleSave = () => {
     if (!name.value.trim()) {

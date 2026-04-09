@@ -864,6 +864,7 @@ export const Menu = (props: AppProps) => {
                 className="text-xs px-1 hover:text-blue-400"
                 onClick={() => openPresetEditor(preset)}
                 title="Edit preset"
+                aria-label="Edit preset"
               >
                 ✎
               </button>
