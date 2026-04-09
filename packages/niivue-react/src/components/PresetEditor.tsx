@@ -109,8 +109,6 @@ export const PresetEditor = ({
   colormaps,
   onSave,
 }: PresetEditorProps) => {
-  if (!visible.value) return null
-
   const isEditing = !!existingPreset
   const init = existingPreset as ViewPreset | undefined
 
@@ -119,30 +117,6 @@ export const PresetEditor = ({
   const description = useSignal(init?.description ?? '')
   const isDefault = useSignal((existingPreset as UserPreset)?.isDefault ?? false)
 
-  // --- View settings: values ---
-  const interpolation = useSignal(init?.settings.interpolation ?? currentSettings.interpolation)
-  const showCrosshairs = useSignal(init?.settings.showCrosshairs ?? currentSettings.showCrosshairs)
-  const radiologicalConvention = useSignal(init?.settings.radiologicalConvention ?? currentSettings.radiologicalConvention)
-  const colorbar = useSignal(init?.settings.colorbar ?? currentSettings.colorbar)
-  const zoomDragMode = useSignal(init?.settings.zoomDragMode ?? currentSettings.zoomDragMode)
-
-  // --- View settings: enabled flags ---
-  const eInterpolation = useSignal(isEditing ? init?.settings.interpolation !== undefined : true)
-  const eCrosshairs = useSignal(isEditing ? init?.settings.showCrosshairs !== undefined : true)
-  const eRadiological = useSignal(isEditing ? init?.settings.radiologicalConvention !== undefined : true)
-  const eColorbar = useSignal(isEditing ? init?.settings.colorbar !== undefined : true)
-  const eZoomDrag = useSignal(isEditing ? init?.settings.zoomDragMode !== undefined : true)
-  const viewSettingsFlags = [eInterpolation, eCrosshairs, eRadiological, eColorbar, eZoomDrag]
-
-  // --- View options: values ---
-  const sliceType = useSignal(init?.viewOptions?.sliceType ?? currentViewOptions.sliceType)
-  const hideUI = useSignal(init?.viewOptions?.hideUI ?? currentViewOptions.hideUI)
-
-  // --- View options: enabled flags ---
-  const eSliceType = useSignal(isEditing ? init?.viewOptions?.sliceType !== undefined : true)
-  const eHideUI = useSignal(isEditing ? init?.viewOptions?.hideUI !== undefined : true)
-  const viewOptionsFlags = [eSliceType, eHideUI]
-
   // --- Base image color scaling: values ---
   const baseColormap = useSignal(init?.baseImageDefaults?.colormap ?? currentBaseImage?.colormap ?? 'gray')
   const baseCmin = useSignal(init?.baseImageDefaults?.cal_min ?? currentBaseImage?.cal_min ?? 0)
@@ -150,13 +124,13 @@ export const PresetEditor = ({
   const baseOpacity = useSignal(init?.baseImageDefaults?.opacity ?? currentBaseImage?.opacity ?? 1)
   const baseInvert = useSignal(init?.baseImageDefaults?.colormapInvert ?? currentBaseImage?.colormapInvert ?? false)
 
-  // --- Base image: enabled flags ---
-  const eBaseColormap = useSignal(isEditing ? init?.baseImageDefaults?.colormap !== undefined : true)
+  // --- Base image: enabled flags (new preset = all off; editing = on only if saved) ---
+  const eBaseColormap = useSignal(isEditing ? init?.baseImageDefaults?.colormap !== undefined : false)
   const eBaseMinMax = useSignal(isEditing
     ? (init?.baseImageDefaults?.cal_min !== undefined || init?.baseImageDefaults?.cal_max !== undefined)
-    : true)
-  const eBaseOpacity = useSignal(isEditing ? init?.baseImageDefaults?.opacity !== undefined : true)
-  const eBaseInvert = useSignal(isEditing ? init?.baseImageDefaults?.colormapInvert !== undefined : true)
+    : false)
+  const eBaseOpacity = useSignal(isEditing ? init?.baseImageDefaults?.opacity !== undefined : false)
+  const eBaseInvert = useSignal(isEditing ? init?.baseImageDefaults?.colormapInvert !== undefined : false)
   const baseFlags = [eBaseColormap, eBaseMinMax, eBaseOpacity, eBaseInvert]
 
   // --- Overlay color scaling: values ---
@@ -167,13 +141,32 @@ export const PresetEditor = ({
   const overlayInvert = useSignal(init?.overlayDefaults?.colormapInvert ?? currentOverlay?.colormapInvert ?? false)
 
   // --- Overlay: enabled flags ---
-  const eOverlayColormap = useSignal(isEditing ? init?.overlayDefaults?.colormap !== undefined : true)
+  const eOverlayColormap = useSignal(isEditing ? init?.overlayDefaults?.colormap !== undefined : false)
   const eOverlayMinMax = useSignal(isEditing
     ? (init?.overlayDefaults?.cal_min !== undefined || init?.overlayDefaults?.cal_max !== undefined)
-    : true)
-  const eOverlayOpacity = useSignal(isEditing ? init?.overlayDefaults?.opacity !== undefined : true)
-  const eOverlayInvert = useSignal(isEditing ? init?.overlayDefaults?.colormapInvert !== undefined : true)
+    : false)
+  const eOverlayOpacity = useSignal(isEditing ? init?.overlayDefaults?.opacity !== undefined : false)
+  const eOverlayInvert = useSignal(isEditing ? init?.overlayDefaults?.colormapInvert !== undefined : false)
   const overlayFlags = [eOverlayColormap, eOverlayMinMax, eOverlayOpacity, eOverlayInvert]
+
+  // --- View settings: values ---
+  const interpolation = useSignal(init?.settings.interpolation ?? currentSettings.interpolation)
+  const showCrosshairs = useSignal(init?.settings.showCrosshairs ?? currentSettings.showCrosshairs)
+  const radiologicalConvention = useSignal(init?.settings.radiologicalConvention ?? currentSettings.radiologicalConvention)
+  const colorbar = useSignal(init?.settings.colorbar ?? currentSettings.colorbar)
+  const zoomDragMode = useSignal(init?.settings.zoomDragMode ?? currentSettings.zoomDragMode)
+  const sliceType = useSignal(init?.viewOptions?.sliceType ?? currentViewOptions.sliceType)
+  const hideUI = useSignal(init?.viewOptions?.hideUI ?? currentViewOptions.hideUI)
+
+  // --- View settings: enabled flags ---
+  const eInterpolation = useSignal(isEditing ? init?.settings.interpolation !== undefined : false)
+  const eCrosshairs = useSignal(isEditing ? init?.settings.showCrosshairs !== undefined : false)
+  const eRadiological = useSignal(isEditing ? init?.settings.radiologicalConvention !== undefined : false)
+  const eColorbar = useSignal(isEditing ? init?.settings.colorbar !== undefined : false)
+  const eZoomDrag = useSignal(isEditing ? init?.settings.zoomDragMode !== undefined : false)
+  const eSliceType = useSignal(isEditing ? init?.viewOptions?.sliceType !== undefined : false)
+  const eHideUI = useSignal(isEditing ? init?.viewOptions?.hideUI !== undefined : false)
+  const viewSettingsFlags = [eInterpolation, eCrosshairs, eRadiological, eColorbar, eZoomDrag, eSliceType, eHideUI]
 
   const allColormaps = useMemo(
     () => [...new Set([...COMMON_COLORMAPS, ...colormaps])],
@@ -185,19 +178,6 @@ export const PresetEditor = ({
       alert('Please enter a name for the preset')
       return
     }
-
-    // Only include enabled settings
-    const settingsObj: Partial<NiiVueSettings> = {}
-    if (eInterpolation.value) settingsObj.interpolation = interpolation.value
-    if (eCrosshairs.value) settingsObj.showCrosshairs = showCrosshairs.value
-    if (eRadiological.value) settingsObj.radiologicalConvention = radiologicalConvention.value
-    if (eColorbar.value) settingsObj.colorbar = colorbar.value
-    if (eZoomDrag.value) settingsObj.zoomDragMode = zoomDragMode.value
-
-    // Only include enabled view options
-    const viewOpts: ViewOptions = {}
-    if (eSliceType.value) viewOpts.sliceType = sliceType.value
-    if (eHideUI.value) viewOpts.hideUI = hideUI.value
 
     // Only include enabled base image defaults
     const baseDefs: ColorScalingDefaults = {}
@@ -221,6 +201,18 @@ export const PresetEditor = ({
     if (eOverlayInvert.value) overlayDefs.colormapInvert = overlayInvert.value
     const hasOverlay = Object.keys(overlayDefs).length > 0
 
+    // Only include enabled view settings
+    const settingsObj: Partial<NiiVueSettings> = {}
+    if (eInterpolation.value) settingsObj.interpolation = interpolation.value
+    if (eCrosshairs.value) settingsObj.showCrosshairs = showCrosshairs.value
+    if (eRadiological.value) settingsObj.radiologicalConvention = radiologicalConvention.value
+    if (eColorbar.value) settingsObj.colorbar = colorbar.value
+    if (eZoomDrag.value) settingsObj.zoomDragMode = zoomDragMode.value
+
+    const viewOpts: ViewOptions = {}
+    if (eSliceType.value) viewOpts.sliceType = sliceType.value
+    if (eHideUI.value) viewOpts.hideUI = hideUI.value
+
     onSave({
       name: name.value.trim(),
       description: description.value || 'Custom user preset',
@@ -234,6 +226,8 @@ export const PresetEditor = ({
     })
     visible.value = false
   }
+
+  if (!visible.value) return null
 
   const inputClass = 'bg-gray-600 w-full border border-gray-500 rounded px-2 py-0.5 text-sm'
   const numberInputClass = 'bg-gray-600 w-20 border border-gray-500 rounded px-2 py-0.5 text-sm'
@@ -278,74 +272,6 @@ export const PresetEditor = ({
           />
           Set as default preset
         </label>
-      </div>
-
-      {/* View Settings */}
-      <div className={sectionClass}>
-        <SectionHeader label="View Settings" flags={viewSettingsFlags} />
-        <OptionalField enabled={eInterpolation}>
-          <label className={checkboxRow}>
-            <input type="checkbox" checked={interpolation.value} onChange={() => { interpolation.value = !interpolation.value }} />
-            Interpolation
-          </label>
-        </OptionalField>
-        <OptionalField enabled={eCrosshairs}>
-          <label className={checkboxRow}>
-            <input type="checkbox" checked={showCrosshairs.value} onChange={() => { showCrosshairs.value = !showCrosshairs.value }} />
-            Crosshairs
-          </label>
-        </OptionalField>
-        <OptionalField enabled={eRadiological}>
-          <label className={checkboxRow}>
-            <input type="checkbox" checked={radiologicalConvention.value} onChange={() => { radiologicalConvention.value = !radiologicalConvention.value }} />
-            Radiological Convention
-          </label>
-        </OptionalField>
-        <OptionalField enabled={eColorbar}>
-          <label className={checkboxRow}>
-            <input type="checkbox" checked={colorbar.value} onChange={() => { colorbar.value = !colorbar.value }} />
-            Colorbar
-          </label>
-        </OptionalField>
-        <OptionalField enabled={eZoomDrag}>
-          <label className={checkboxRow}>
-            <input type="checkbox" checked={zoomDragMode.value} onChange={() => { zoomDragMode.value = !zoomDragMode.value }} />
-            Zoom Drag Mode
-          </label>
-        </OptionalField>
-      </div>
-
-      {/* View Options */}
-      <div className={sectionClass}>
-        <SectionHeader label="View Options" flags={viewOptionsFlags} />
-        <OptionalField enabled={eSliceType}>
-          <div>
-            <label className={labelClass}>Slice Type</label>
-            <select
-              className={selectClass}
-              value={sliceType.value}
-              onChange={(e: Event) => { sliceType.value = parseInt((e.target as HTMLSelectElement).value) }}
-            >
-              {SLICE_TYPE_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
-          </div>
-        </OptionalField>
-        <OptionalField enabled={eHideUI}>
-          <div>
-            <label className={labelClass}>UI Visibility</label>
-            <select
-              className={selectClass}
-              value={hideUI.value}
-              onChange={(e: Event) => { hideUI.value = parseInt((e.target as HTMLSelectElement).value) }}
-            >
-              <option value={3}>Show All</option>
-              <option value={2}>Hide UI</option>
-              <option value={0}>Hide All</option>
-            </select>
-          </div>
-        </OptionalField>
       </div>
 
       {/* Base Image Color Scaling */}
@@ -471,6 +397,69 @@ export const PresetEditor = ({
             <input type="checkbox" checked={overlayInvert.value} onChange={() => { overlayInvert.value = !overlayInvert.value }} />
             Invert Colormap
           </label>
+        </OptionalField>
+      </div>
+
+      {/* View Settings (merged: settings + view options) */}
+      <div className={sectionClass}>
+        <SectionHeader label="View Settings" flags={viewSettingsFlags} />
+        <OptionalField enabled={eInterpolation}>
+          <label className={checkboxRow}>
+            <input type="checkbox" checked={interpolation.value} onChange={() => { interpolation.value = !interpolation.value }} />
+            Interpolation
+          </label>
+        </OptionalField>
+        <OptionalField enabled={eCrosshairs}>
+          <label className={checkboxRow}>
+            <input type="checkbox" checked={showCrosshairs.value} onChange={() => { showCrosshairs.value = !showCrosshairs.value }} />
+            Crosshairs
+          </label>
+        </OptionalField>
+        <OptionalField enabled={eRadiological}>
+          <label className={checkboxRow}>
+            <input type="checkbox" checked={radiologicalConvention.value} onChange={() => { radiologicalConvention.value = !radiologicalConvention.value }} />
+            Radiological Convention
+          </label>
+        </OptionalField>
+        <OptionalField enabled={eColorbar}>
+          <label className={checkboxRow}>
+            <input type="checkbox" checked={colorbar.value} onChange={() => { colorbar.value = !colorbar.value }} />
+            Colorbar
+          </label>
+        </OptionalField>
+        <OptionalField enabled={eZoomDrag}>
+          <label className={checkboxRow}>
+            <input type="checkbox" checked={zoomDragMode.value} onChange={() => { zoomDragMode.value = !zoomDragMode.value }} />
+            Zoom Drag Mode
+          </label>
+        </OptionalField>
+        <OptionalField enabled={eSliceType}>
+          <div>
+            <label className={labelClass}>Slice Type</label>
+            <select
+              className={selectClass}
+              value={sliceType.value}
+              onChange={(e: Event) => { sliceType.value = parseInt((e.target as HTMLSelectElement).value) }}
+            >
+              {SLICE_TYPE_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+        </OptionalField>
+        <OptionalField enabled={eHideUI}>
+          <div>
+            <label className={labelClass}>UI Visibility</label>
+            <select
+              className={selectClass}
+              value={hideUI.value}
+              onChange={(e: Event) => { hideUI.value = parseInt((e.target as HTMLSelectElement).value) }}
+            >
+              <option value={3}>Show All</option>
+              <option value={2}>Hide UI</option>
+              <option value={0}>Hide All</option>
+            </select>
+          </div>
         </OptionalField>
       </div>
 
