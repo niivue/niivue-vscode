@@ -59,7 +59,8 @@ export const Menu = (props: AppProps) => {
   const selectionActive = useSignal(false)
   const selectMultiple = useSignal(false)
   const userPresets = useSignal(loadUserPresets())
-  const prevNvCount = useSignal(0)
+  const prevVolumeSnapshot = useSignal<Map<number, number>>(new Map())
+  const settingsAppliedOnce = useSignal(false)
   const showPresetEditor = useSignal(false)
   const editingPreset = useSignal<UserPreset | undefined>(undefined)
 
@@ -140,20 +141,76 @@ export const Menu = (props: AppProps) => {
     }
   })
 
-  // Apply default preset when new images are loaded
-  // Tracks nvArray length to detect when new images are added
+  // Apply default preset selectively when new volumes are loaded.
+  // - Full preset (settings + view) only applied once on first image load
+  // - baseImageDefaults applied to newly loaded base images only
+  // - overlayDefaults applied to newly loaded overlays only
   effect(() => {
-    const currentCount = nvArray.value.length
-    if (currentCount === 0 || currentCount <= prevNvCount.value) {
-      prevNvCount.value = currentCount
-      return
-    }
-    prevNvCount.value = currentCount
-    const hasVolumes = nvArray.value.some((nv) => nv.volumes?.length > 0)
-    if (!hasVolumes) return
     const defaultPreset = getDefaultPreset()
     if (!defaultPreset) return
-    applyPreset(defaultPreset)
+
+    // Build a snapshot of current volume counts per NV instance
+    const currentSnapshot = new Map<number, number>()
+    let hasNewBase = false
+    const newOverlayTargets: Array<{ nv: ExtendedNiivue; indices: number[] }> = []
+    const newBaseTargets: ExtendedNiivue[] = []
+
+    for (const nv of nvArray.value) {
+      const volCount = nv.volumes?.length ?? 0
+      currentSnapshot.set(nv.key, volCount)
+      if (volCount === 0) continue
+
+      const prevCount = prevVolumeSnapshot.value.get(nv.key)
+      if (prevCount === undefined) {
+        // New NV instance with volumes = new base image
+        hasNewBase = true
+        newBaseTargets.push(nv)
+        // If it also has overlays already, track them
+        if (volCount > 1) {
+          const overlayIndices = Array.from({ length: volCount - 1 }, (_, i) => i + 1)
+          newOverlayTargets.push({ nv, indices: overlayIndices })
+        }
+      } else if (volCount > prevCount) {
+        // Existing NV instance gained new overlay volumes
+        const overlayIndices = Array.from({ length: volCount - prevCount }, (_, i) => prevCount + i)
+        newOverlayTargets.push({ nv, indices: overlayIndices })
+      }
+    }
+
+    prevVolumeSnapshot.value = currentSnapshot
+
+    const hasChanges = hasNewBase || newOverlayTargets.length > 0
+    if (!hasChanges) return
+
+    // Apply settings and view options only on first image load
+    if (hasNewBase && !settingsAppliedOnce.value) {
+      settingsAppliedOnce.value = true
+      applyPresetSettingsAndView(defaultPreset)
+    }
+
+    // Apply baseImageDefaults to new base images only
+    if (hasNewBase && defaultPreset.baseImageDefaults) {
+      for (const nv of newBaseTargets) {
+        if (nv.volumes.length > 0) {
+          applyColorScalingToVolume(nv.volumes[0], defaultPreset.baseImageDefaults)
+          nv.updateGLVolume()
+        }
+      }
+    }
+
+    // Apply overlayDefaults to new overlay volumes only
+    if (newOverlayTargets.length > 0 && defaultPreset.overlayDefaults) {
+      for (const { nv, indices } of newOverlayTargets) {
+        for (const idx of indices) {
+          if (idx < nv.volumes.length) {
+            applyColorScalingToVolume(nv.volumes[idx], defaultPreset.overlayDefaults)
+          }
+        }
+        nv.updateGLVolume()
+      }
+    }
+
+    nvArray.value = [...nvArray.value]
   })
 
   // Menu Click events
@@ -489,8 +546,30 @@ export const Menu = (props: AppProps) => {
   useKeyboardShortcuts(handlers)
 
   // Preset functions
-  const applyPreset = (preset: ViewPreset) => {
-    // Apply settings
+
+  // Apply color scaling defaults to a single volume.
+  // Note: colormap setter triggers calMinMax() which resets cal_min/cal_max,
+  // so colormap must be set first, then cal_min/cal_max afterward.
+  const applyColorScalingToVolume = (vol: any, defaults: ColorScalingDefaults) => {
+    if (defaults.colormap) {
+      vol.colormap = defaults.colormap
+    }
+    if (defaults.cal_min !== undefined) {
+      vol.cal_min = defaults.cal_min
+    }
+    if (defaults.cal_max !== undefined) {
+      vol.cal_max = defaults.cal_max
+    }
+    if (defaults.opacity !== undefined) {
+      vol.opacity = defaults.opacity
+    }
+    if (defaults.colormapInvert !== undefined) {
+      vol.colormapInvert = defaults.colormapInvert
+    }
+  }
+
+  // Apply settings (interpolation, crosshairs, etc.) and view options (slice type, UI visibility)
+  const applyPresetSettingsAndView = (preset: ViewPreset) => {
     if (preset.settings.interpolation !== undefined) {
       interpolation.value = preset.settings.interpolation
     }
@@ -507,25 +586,6 @@ export const Menu = (props: AppProps) => {
       zoomDragMode.value = preset.settings.zoomDragMode
     }
 
-    // Apply colormap defaults from settings.
-    // baseImageDefaults.colormap / overlayDefaults.colormap take precedence
-    // over defaultVolumeColormap / defaultOverlayColormap respectively.
-    if (preset.settings.defaultVolumeColormap && !preset.baseImageDefaults?.colormap) {
-      nvArraySelected.value.forEach((nv) => {
-        if (nv.volumes.length > 0) {
-          nv.volumes[0].colormap = preset.settings.defaultVolumeColormap!
-        }
-      })
-    }
-    if (preset.settings.defaultOverlayColormap && !preset.overlayDefaults?.colormap) {
-      nvArraySelected.value.forEach((nv) => {
-        if (nv.volumes.length > 1) {
-          nv.volumes[1].colormap = preset.settings.defaultOverlayColormap!
-        }
-      })
-    }
-
-    // Apply view options
     if (preset.viewOptions) {
       if (preset.viewOptions.sliceType !== undefined) {
         sliceType.value = preset.viewOptions.sliceType
@@ -534,7 +594,6 @@ export const Menu = (props: AppProps) => {
         hideUI.value = preset.viewOptions.hideUI
       }
 
-      // Apply special view settings for fMRI-like presets
       if (
         preset.viewOptions.autoSizeMultiplanar !== undefined ||
         preset.viewOptions.multiplanarForceRender !== undefined
@@ -555,29 +614,35 @@ export const Menu = (props: AppProps) => {
         })
       }
     }
+  }
+
+  const applyPreset = (preset: ViewPreset) => {
+    // Apply settings and view options
+    applyPresetSettingsAndView(preset)
+
+    // Apply colormap defaults from settings.
+    // baseImageDefaults.colormap / overlayDefaults.colormap take precedence
+    // over defaultVolumeColormap / defaultOverlayColormap respectively.
+    if (preset.settings.defaultVolumeColormap && !preset.baseImageDefaults?.colormap) {
+      nvArraySelected.value.forEach((nv) => {
+        if (nv.volumes.length > 0) {
+          nv.volumes[0].colormap = preset.settings.defaultVolumeColormap!
+        }
+      })
+    }
+    if (preset.settings.defaultOverlayColormap && !preset.overlayDefaults?.colormap) {
+      nvArraySelected.value.forEach((nv) => {
+        if (nv.volumes.length > 1) {
+          nv.volumes[1].colormap = preset.settings.defaultOverlayColormap!
+        }
+      })
+    }
 
     // Apply base image defaults (volume index 0)
-    // Note: colormap setter triggers calMinMax() which resets cal_min/cal_max,
-    // so colormap must be set first, then cal_min/cal_max afterward.
     if (preset.baseImageDefaults) {
       nvArraySelected.value.forEach((nv) => {
         if (nv.volumes.length > 0) {
-          const vol = nv.volumes[0]
-          if (preset.baseImageDefaults!.colormap) {
-            vol.colormap = preset.baseImageDefaults!.colormap
-          }
-          if (preset.baseImageDefaults!.cal_min !== undefined) {
-            vol.cal_min = preset.baseImageDefaults!.cal_min
-          }
-          if (preset.baseImageDefaults!.cal_max !== undefined) {
-            vol.cal_max = preset.baseImageDefaults!.cal_max
-          }
-          if (preset.baseImageDefaults!.opacity !== undefined) {
-            vol.opacity = preset.baseImageDefaults!.opacity
-          }
-          if (preset.baseImageDefaults!.colormapInvert !== undefined) {
-            vol.colormapInvert = preset.baseImageDefaults!.colormapInvert
-          }
+          applyColorScalingToVolume(nv.volumes[0], preset.baseImageDefaults!)
         }
       })
     }
@@ -586,22 +651,7 @@ export const Menu = (props: AppProps) => {
     if (preset.overlayDefaults) {
       nvArraySelected.value.forEach((nv) => {
         for (let i = 1; i < nv.volumes.length; i++) {
-          const vol = nv.volumes[i]
-          if (preset.overlayDefaults!.colormap) {
-            vol.colormap = preset.overlayDefaults!.colormap
-          }
-          if (preset.overlayDefaults!.cal_min !== undefined) {
-            vol.cal_min = preset.overlayDefaults!.cal_min
-          }
-          if (preset.overlayDefaults!.cal_max !== undefined) {
-            vol.cal_max = preset.overlayDefaults!.cal_max
-          }
-          if (preset.overlayDefaults!.opacity !== undefined) {
-            vol.opacity = preset.overlayDefaults!.opacity
-          }
-          if (preset.overlayDefaults!.colormapInvert !== undefined) {
-            vol.colormapInvert = preset.overlayDefaults!.colormapInvert
-          }
+          applyColorScalingToVolume(nv.volumes[i], preset.overlayDefaults!)
         }
       })
     }
