@@ -18,6 +18,57 @@ const COMMON_COLORMAPS = [
   'ge_color', 'symmetric',
 ]
 
+/** Toggle icon for including/excluding a field from the preset */
+const FieldToggle = ({ active, onClick }: { active: boolean; onClick: () => void }) => (
+  <button
+    className={`text-sm flex-shrink-0 w-4 text-center leading-none ${active ? 'text-blue-400' : 'text-gray-600'}`}
+    onClick={(e: Event) => { e.preventDefault(); onClick() }}
+    title={active ? 'Exclude from preset' : 'Include in preset'}
+    type="button"
+  >
+    {active ? '●' : '○'}
+  </button>
+)
+
+/** Wraps a field with an enable/disable toggle. Disabled fields are greyed out. */
+const OptionalField = ({
+  enabled,
+  children,
+  className = '',
+}: {
+  enabled: Signal<boolean>
+  children: any
+  className?: string
+}) => (
+  <div className={`flex items-center gap-1.5 ${className}`}>
+    <FieldToggle active={enabled.value} onClick={() => { enabled.value = !enabled.value }} />
+    <div className={`flex-1 min-w-0 ${enabled.value ? '' : 'opacity-30 pointer-events-none'}`}>
+      {children}
+    </div>
+  </div>
+)
+
+/** Section header with a toggle-all button */
+const SectionHeader = ({
+  label,
+  flags,
+}: {
+  label: string
+  flags: Signal<boolean>[]
+}) => {
+  const anyActive = flags.some((f) => f.value)
+  const toggleAll = () => {
+    const allOn = flags.every((f) => f.value)
+    flags.forEach((f) => { f.value = !allOn })
+  }
+  return (
+    <div className="flex items-center gap-1.5">
+      <FieldToggle active={anyActive} onClick={toggleAll} />
+      <h4 className="text-sm font-semibold text-gray-200">{label}</h4>
+    </div>
+  )
+}
+
 interface PresetEditorProps {
   visible: Signal<boolean>
   existingPreset?: UserPreset
@@ -68,30 +119,61 @@ export const PresetEditor = ({
   const description = useSignal(init?.description ?? '')
   const isDefault = useSignal((existingPreset as UserPreset)?.isDefault ?? false)
 
-  // View settings
+  // --- View settings: values ---
   const interpolation = useSignal(init?.settings.interpolation ?? currentSettings.interpolation)
   const showCrosshairs = useSignal(init?.settings.showCrosshairs ?? currentSettings.showCrosshairs)
   const radiologicalConvention = useSignal(init?.settings.radiologicalConvention ?? currentSettings.radiologicalConvention)
   const colorbar = useSignal(init?.settings.colorbar ?? currentSettings.colorbar)
   const zoomDragMode = useSignal(init?.settings.zoomDragMode ?? currentSettings.zoomDragMode)
 
-  // View options
+  // --- View settings: enabled flags ---
+  const eInterpolation = useSignal(isEditing ? init?.settings.interpolation !== undefined : true)
+  const eCrosshairs = useSignal(isEditing ? init?.settings.showCrosshairs !== undefined : true)
+  const eRadiological = useSignal(isEditing ? init?.settings.radiologicalConvention !== undefined : true)
+  const eColorbar = useSignal(isEditing ? init?.settings.colorbar !== undefined : true)
+  const eZoomDrag = useSignal(isEditing ? init?.settings.zoomDragMode !== undefined : true)
+  const viewSettingsFlags = [eInterpolation, eCrosshairs, eRadiological, eColorbar, eZoomDrag]
+
+  // --- View options: values ---
   const sliceType = useSignal(init?.viewOptions?.sliceType ?? currentViewOptions.sliceType)
   const hideUI = useSignal(init?.viewOptions?.hideUI ?? currentViewOptions.hideUI)
 
-  // Base image color scaling
+  // --- View options: enabled flags ---
+  const eSliceType = useSignal(isEditing ? init?.viewOptions?.sliceType !== undefined : true)
+  const eHideUI = useSignal(isEditing ? init?.viewOptions?.hideUI !== undefined : true)
+  const viewOptionsFlags = [eSliceType, eHideUI]
+
+  // --- Base image color scaling: values ---
   const baseColormap = useSignal(init?.baseImageDefaults?.colormap ?? currentBaseImage?.colormap ?? 'gray')
   const baseCmin = useSignal(init?.baseImageDefaults?.cal_min ?? currentBaseImage?.cal_min ?? 0)
   const baseCmax = useSignal(init?.baseImageDefaults?.cal_max ?? currentBaseImage?.cal_max ?? 1)
   const baseOpacity = useSignal(init?.baseImageDefaults?.opacity ?? currentBaseImage?.opacity ?? 1)
   const baseInvert = useSignal(init?.baseImageDefaults?.colormapInvert ?? currentBaseImage?.colormapInvert ?? false)
 
-  // Overlay color scaling
+  // --- Base image: enabled flags ---
+  const eBaseColormap = useSignal(isEditing ? init?.baseImageDefaults?.colormap !== undefined : true)
+  const eBaseMinMax = useSignal(isEditing
+    ? (init?.baseImageDefaults?.cal_min !== undefined || init?.baseImageDefaults?.cal_max !== undefined)
+    : true)
+  const eBaseOpacity = useSignal(isEditing ? init?.baseImageDefaults?.opacity !== undefined : true)
+  const eBaseInvert = useSignal(isEditing ? init?.baseImageDefaults?.colormapInvert !== undefined : true)
+  const baseFlags = [eBaseColormap, eBaseMinMax, eBaseOpacity, eBaseInvert]
+
+  // --- Overlay color scaling: values ---
   const overlayColormap = useSignal(init?.overlayDefaults?.colormap ?? currentOverlay?.colormap ?? 'redyell')
   const overlayCmin = useSignal(init?.overlayDefaults?.cal_min ?? currentOverlay?.cal_min ?? 0)
   const overlayCmax = useSignal(init?.overlayDefaults?.cal_max ?? currentOverlay?.cal_max ?? 1)
   const overlayOpacity = useSignal(init?.overlayDefaults?.opacity ?? currentOverlay?.opacity ?? 0.5)
   const overlayInvert = useSignal(init?.overlayDefaults?.colormapInvert ?? currentOverlay?.colormapInvert ?? false)
+
+  // --- Overlay: enabled flags ---
+  const eOverlayColormap = useSignal(isEditing ? init?.overlayDefaults?.colormap !== undefined : true)
+  const eOverlayMinMax = useSignal(isEditing
+    ? (init?.overlayDefaults?.cal_min !== undefined || init?.overlayDefaults?.cal_max !== undefined)
+    : true)
+  const eOverlayOpacity = useSignal(isEditing ? init?.overlayDefaults?.opacity !== undefined : true)
+  const eOverlayInvert = useSignal(isEditing ? init?.overlayDefaults?.colormapInvert !== undefined : true)
+  const overlayFlags = [eOverlayColormap, eOverlayMinMax, eOverlayOpacity, eOverlayInvert]
 
   const allColormaps = useMemo(
     () => [...new Set([...COMMON_COLORMAPS, ...colormaps])],
@@ -103,34 +185,49 @@ export const PresetEditor = ({
       alert('Please enter a name for the preset')
       return
     }
+
+    // Only include enabled settings
+    const settingsObj: Partial<NiiVueSettings> = {}
+    if (eInterpolation.value) settingsObj.interpolation = interpolation.value
+    if (eCrosshairs.value) settingsObj.showCrosshairs = showCrosshairs.value
+    if (eRadiological.value) settingsObj.radiologicalConvention = radiologicalConvention.value
+    if (eColorbar.value) settingsObj.colorbar = colorbar.value
+    if (eZoomDrag.value) settingsObj.zoomDragMode = zoomDragMode.value
+
+    // Only include enabled view options
+    const viewOpts: ViewOptions = {}
+    if (eSliceType.value) viewOpts.sliceType = sliceType.value
+    if (eHideUI.value) viewOpts.hideUI = hideUI.value
+
+    // Only include enabled base image defaults
+    const baseDefs: ColorScalingDefaults = {}
+    if (eBaseColormap.value) baseDefs.colormap = baseColormap.value
+    if (eBaseMinMax.value) {
+      baseDefs.cal_min = baseCmin.value
+      baseDefs.cal_max = baseCmax.value
+    }
+    if (eBaseOpacity.value) baseDefs.opacity = baseOpacity.value
+    if (eBaseInvert.value) baseDefs.colormapInvert = baseInvert.value
+    const hasBase = Object.keys(baseDefs).length > 0
+
+    // Only include enabled overlay defaults
+    const overlayDefs: ColorScalingDefaults = {}
+    if (eOverlayColormap.value) overlayDefs.colormap = overlayColormap.value
+    if (eOverlayMinMax.value) {
+      overlayDefs.cal_min = overlayCmin.value
+      overlayDefs.cal_max = overlayCmax.value
+    }
+    if (eOverlayOpacity.value) overlayDefs.opacity = overlayOpacity.value
+    if (eOverlayInvert.value) overlayDefs.colormapInvert = overlayInvert.value
+    const hasOverlay = Object.keys(overlayDefs).length > 0
+
     onSave({
       name: name.value.trim(),
       description: description.value || 'Custom user preset',
-      settings: {
-        interpolation: interpolation.value,
-        showCrosshairs: showCrosshairs.value,
-        radiologicalConvention: radiologicalConvention.value,
-        colorbar: colorbar.value,
-        zoomDragMode: zoomDragMode.value,
-      },
-      viewOptions: {
-        sliceType: sliceType.value,
-        hideUI: hideUI.value,
-      },
-      baseImageDefaults: {
-        colormap: baseColormap.value,
-        cal_min: baseCmin.value,
-        cal_max: baseCmax.value,
-        opacity: baseOpacity.value,
-        colormapInvert: baseInvert.value,
-      },
-      overlayDefaults: {
-        colormap: overlayColormap.value,
-        cal_min: overlayCmin.value,
-        cal_max: overlayCmax.value,
-        opacity: overlayOpacity.value,
-        colormapInvert: overlayInvert.value,
-      },
+      settings: settingsObj,
+      viewOptions: viewOpts,
+      baseImageDefaults: hasBase ? baseDefs : undefined,
+      overlayDefaults: hasOverlay ? overlayDefs : undefined,
       isDefault: isDefault.value,
       id: existingPreset?.id,
       createdAt: existingPreset?.createdAt,
@@ -185,166 +282,196 @@ export const PresetEditor = ({
 
       {/* View Settings */}
       <div className={sectionClass}>
-        <h4 className="text-sm font-semibold text-gray-200">View Settings</h4>
-        <label className={checkboxRow}>
-          <input type="checkbox" checked={interpolation.value} onChange={() => { interpolation.value = !interpolation.value }} />
-          Interpolation
-        </label>
-        <label className={checkboxRow}>
-          <input type="checkbox" checked={showCrosshairs.value} onChange={() => { showCrosshairs.value = !showCrosshairs.value }} />
-          Crosshairs
-        </label>
-        <label className={checkboxRow}>
-          <input type="checkbox" checked={radiologicalConvention.value} onChange={() => { radiologicalConvention.value = !radiologicalConvention.value }} />
-          Radiological Convention
-        </label>
-        <label className={checkboxRow}>
-          <input type="checkbox" checked={colorbar.value} onChange={() => { colorbar.value = !colorbar.value }} />
-          Colorbar
-        </label>
-        <label className={checkboxRow}>
-          <input type="checkbox" checked={zoomDragMode.value} onChange={() => { zoomDragMode.value = !zoomDragMode.value }} />
-          Zoom Drag Mode
-        </label>
+        <SectionHeader label="View Settings" flags={viewSettingsFlags} />
+        <OptionalField enabled={eInterpolation}>
+          <label className={checkboxRow}>
+            <input type="checkbox" checked={interpolation.value} onChange={() => { interpolation.value = !interpolation.value }} />
+            Interpolation
+          </label>
+        </OptionalField>
+        <OptionalField enabled={eCrosshairs}>
+          <label className={checkboxRow}>
+            <input type="checkbox" checked={showCrosshairs.value} onChange={() => { showCrosshairs.value = !showCrosshairs.value }} />
+            Crosshairs
+          </label>
+        </OptionalField>
+        <OptionalField enabled={eRadiological}>
+          <label className={checkboxRow}>
+            <input type="checkbox" checked={radiologicalConvention.value} onChange={() => { radiologicalConvention.value = !radiologicalConvention.value }} />
+            Radiological Convention
+          </label>
+        </OptionalField>
+        <OptionalField enabled={eColorbar}>
+          <label className={checkboxRow}>
+            <input type="checkbox" checked={colorbar.value} onChange={() => { colorbar.value = !colorbar.value }} />
+            Colorbar
+          </label>
+        </OptionalField>
+        <OptionalField enabled={eZoomDrag}>
+          <label className={checkboxRow}>
+            <input type="checkbox" checked={zoomDragMode.value} onChange={() => { zoomDragMode.value = !zoomDragMode.value }} />
+            Zoom Drag Mode
+          </label>
+        </OptionalField>
       </div>
 
       {/* View Options */}
       <div className={sectionClass}>
-        <h4 className="text-sm font-semibold text-gray-200">View Options</h4>
-        <div>
-          <label className={labelClass}>Slice Type</label>
-          <select
-            className={selectClass}
-            value={sliceType.value}
-            onChange={(e: Event) => { sliceType.value = parseInt((e.target as HTMLSelectElement).value) }}
-          >
-            {SLICE_TYPE_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className={labelClass}>UI Visibility</label>
-          <select
-            className={selectClass}
-            value={hideUI.value}
-            onChange={(e: Event) => { hideUI.value = parseInt((e.target as HTMLSelectElement).value) }}
-          >
-            <option value={3}>Show All</option>
-            <option value={2}>Hide UI</option>
-            <option value={0}>Hide All</option>
-          </select>
-        </div>
+        <SectionHeader label="View Options" flags={viewOptionsFlags} />
+        <OptionalField enabled={eSliceType}>
+          <div>
+            <label className={labelClass}>Slice Type</label>
+            <select
+              className={selectClass}
+              value={sliceType.value}
+              onChange={(e: Event) => { sliceType.value = parseInt((e.target as HTMLSelectElement).value) }}
+            >
+              {SLICE_TYPE_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+        </OptionalField>
+        <OptionalField enabled={eHideUI}>
+          <div>
+            <label className={labelClass}>UI Visibility</label>
+            <select
+              className={selectClass}
+              value={hideUI.value}
+              onChange={(e: Event) => { hideUI.value = parseInt((e.target as HTMLSelectElement).value) }}
+            >
+              <option value={3}>Show All</option>
+              <option value={2}>Hide UI</option>
+              <option value={0}>Hide All</option>
+            </select>
+          </div>
+        </OptionalField>
       </div>
 
       {/* Base Image Color Scaling */}
       <div className={sectionClass}>
-        <h4 className="text-sm font-semibold text-gray-200">Base Image</h4>
-        <div>
-          <label className={labelClass}>Colormap</label>
-          <select
-            className={selectClass}
-            value={baseColormap.value}
-            onChange={(e: Event) => { baseColormap.value = (e.target as HTMLSelectElement).value }}
-          >
-            {allColormaps.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
-        </div>
-        <div className="flex gap-2">
-          <div className="flex-1">
-            <label className={labelClass}>Min</label>
+        <SectionHeader label="Base Image" flags={baseFlags} />
+        <OptionalField enabled={eBaseColormap}>
+          <div>
+            <label className={labelClass}>Colormap</label>
+            <select
+              className={selectClass}
+              value={baseColormap.value}
+              onChange={(e: Event) => { baseColormap.value = (e.target as HTMLSelectElement).value }}
+            >
+              {allColormaps.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+        </OptionalField>
+        <OptionalField enabled={eBaseMinMax}>
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <label className={labelClass}>Min</label>
+              <input
+                className={numberInputClass}
+                type="number"
+                step="any"
+                value={baseCmin.value}
+                onInput={(e: Event) => { baseCmin.value = parseFloat((e.target as HTMLInputElement).value) || 0 }}
+              />
+            </div>
+            <div className="flex-1">
+              <label className={labelClass}>Max</label>
+              <input
+                className={numberInputClass}
+                type="number"
+                step="any"
+                value={baseCmax.value}
+                onInput={(e: Event) => { baseCmax.value = parseFloat((e.target as HTMLInputElement).value) || 0 }}
+              />
+            </div>
+          </div>
+        </OptionalField>
+        <OptionalField enabled={eBaseOpacity}>
+          <div>
+            <label className={labelClass}>Opacity</label>
             <input
               className={numberInputClass}
               type="number"
-              step="any"
-              value={baseCmin.value}
-              onInput={(e: Event) => { baseCmin.value = parseFloat((e.target as HTMLInputElement).value) || 0 }}
+              min="0"
+              max="1"
+              step="0.1"
+              value={baseOpacity.value}
+              onInput={(e: Event) => { baseOpacity.value = parseFloat((e.target as HTMLInputElement).value) || 0 }}
             />
           </div>
-          <div className="flex-1">
-            <label className={labelClass}>Max</label>
-            <input
-              className={numberInputClass}
-              type="number"
-              step="any"
-              value={baseCmax.value}
-              onInput={(e: Event) => { baseCmax.value = parseFloat((e.target as HTMLInputElement).value) || 0 }}
-            />
-          </div>
-        </div>
-        <div>
-          <label className={labelClass}>Opacity</label>
-          <input
-            className={numberInputClass}
-            type="number"
-            min="0"
-            max="1"
-            step="0.1"
-            value={baseOpacity.value}
-            onInput={(e: Event) => { baseOpacity.value = parseFloat((e.target as HTMLInputElement).value) || 0 }}
-          />
-        </div>
-        <label className={checkboxRow}>
-          <input type="checkbox" checked={baseInvert.value} onChange={() => { baseInvert.value = !baseInvert.value }} />
-          Invert Colormap
-        </label>
+        </OptionalField>
+        <OptionalField enabled={eBaseInvert}>
+          <label className={checkboxRow}>
+            <input type="checkbox" checked={baseInvert.value} onChange={() => { baseInvert.value = !baseInvert.value }} />
+            Invert Colormap
+          </label>
+        </OptionalField>
       </div>
 
       {/* Overlay Color Scaling */}
       <div className={sectionClass}>
-        <h4 className="text-sm font-semibold text-gray-200">Overlay</h4>
-        <div>
-          <label className={labelClass}>Colormap</label>
-          <select
-            className={selectClass}
-            value={overlayColormap.value}
-            onChange={(e: Event) => { overlayColormap.value = (e.target as HTMLSelectElement).value }}
-          >
-            {allColormaps.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
-        </div>
-        <div className="flex gap-2">
-          <div className="flex-1">
-            <label className={labelClass}>Min</label>
+        <SectionHeader label="Overlay" flags={overlayFlags} />
+        <OptionalField enabled={eOverlayColormap}>
+          <div>
+            <label className={labelClass}>Colormap</label>
+            <select
+              className={selectClass}
+              value={overlayColormap.value}
+              onChange={(e: Event) => { overlayColormap.value = (e.target as HTMLSelectElement).value }}
+            >
+              {allColormaps.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+        </OptionalField>
+        <OptionalField enabled={eOverlayMinMax}>
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <label className={labelClass}>Min</label>
+              <input
+                className={numberInputClass}
+                type="number"
+                step="any"
+                value={overlayCmin.value}
+                onInput={(e: Event) => { overlayCmin.value = parseFloat((e.target as HTMLInputElement).value) || 0 }}
+              />
+            </div>
+            <div className="flex-1">
+              <label className={labelClass}>Max</label>
+              <input
+                className={numberInputClass}
+                type="number"
+                step="any"
+                value={overlayCmax.value}
+                onInput={(e: Event) => { overlayCmax.value = parseFloat((e.target as HTMLInputElement).value) || 0 }}
+              />
+            </div>
+          </div>
+        </OptionalField>
+        <OptionalField enabled={eOverlayOpacity}>
+          <div>
+            <label className={labelClass}>Opacity</label>
             <input
               className={numberInputClass}
               type="number"
-              step="any"
-              value={overlayCmin.value}
-              onInput={(e: Event) => { overlayCmin.value = parseFloat((e.target as HTMLInputElement).value) || 0 }}
+              min="0"
+              max="1"
+              step="0.1"
+              value={overlayOpacity.value}
+              onInput={(e: Event) => { overlayOpacity.value = parseFloat((e.target as HTMLInputElement).value) || 0 }}
             />
           </div>
-          <div className="flex-1">
-            <label className={labelClass}>Max</label>
-            <input
-              className={numberInputClass}
-              type="number"
-              step="any"
-              value={overlayCmax.value}
-              onInput={(e: Event) => { overlayCmax.value = parseFloat((e.target as HTMLInputElement).value) || 0 }}
-            />
-          </div>
-        </div>
-        <div>
-          <label className={labelClass}>Opacity</label>
-          <input
-            className={numberInputClass}
-            type="number"
-            min="0"
-            max="1"
-            step="0.1"
-            value={overlayOpacity.value}
-            onInput={(e: Event) => { overlayOpacity.value = parseFloat((e.target as HTMLInputElement).value) || 0 }}
-          />
-        </div>
-        <label className={checkboxRow}>
-          <input type="checkbox" checked={overlayInvert.value} onChange={() => { overlayInvert.value = !overlayInvert.value }} />
-          Invert Colormap
-        </label>
+        </OptionalField>
+        <OptionalField enabled={eOverlayInvert}>
+          <label className={checkboxRow}>
+            <input type="checkbox" checked={overlayInvert.value} onChange={() => { overlayInvert.value = !overlayInvert.value }} />
+            Invert Colormap
+          </label>
+        </OptionalField>
       </div>
 
       {/* Actions */}
