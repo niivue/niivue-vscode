@@ -101,15 +101,16 @@ export function loadUserPresets(): UserPreset[] {
   try {
     // Check if we're in VSCode environment
     const vscode = (globalThis as { vscode?: unknown }).vscode
-    if (vscode) {
-      // VSCode presets are passed via initSettings message
-      // They will be loaded separately through the settings flow
-      const stored = localStorage.getItem('niivue_vscode_user_presets')
-      return stored ? JSON.parse(stored) : []
-    } else {
-      const stored = localStorage.getItem('niivue_user_presets')
-      return stored ? JSON.parse(stored) : []
-    }
+    const key = vscode ? 'niivue_vscode_user_presets' : 'niivue_user_presets'
+    const stored = localStorage.getItem(key)
+    if (!stored) return []
+    const parsed = JSON.parse(stored)
+    // Validate shape: must be an array of objects with required fields
+    if (!Array.isArray(parsed)) return []
+    return parsed.filter(
+      (p): p is UserPreset =>
+        typeof p === 'object' && p !== null && typeof p.id === 'string' && typeof p.name === 'string',
+    )
   } catch (e) {
     console.error('Failed to load user presets:', e)
     return []
