@@ -1,4 +1,4 @@
-import { SLICE_TYPE } from '@niivue/niivue'
+import { NVImage, SLICE_TYPE } from '@niivue/niivue'
 import { NiiVueSettings } from './settings'
 
 export interface ViewOptions {
@@ -245,7 +245,7 @@ export function getDefaultPreset(): ViewPreset | undefined {
  * Note: colormap setter triggers calMinMax() which resets cal_min/cal_max,
  * so colormap must be set first, then cal_min/cal_max afterward.
  */
-export function applyColorScalingToVolume(vol: Record<string, unknown>, defaults: ColorScalingDefaults): void {
+export function applyColorScalingToVolume(vol: NVImage, defaults: ColorScalingDefaults): void {
   if (defaults.colormap) {
     vol.colormap = defaults.colormap
   }
