@@ -13,6 +13,8 @@ import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
 import {
   BUILTIN_PRESETS,
   ColorScalingDefaults,
+  UserPreset,
+  ViewOptions,
   ViewPreset,
   clearDefaultPreset,
   createUserPreset,
@@ -22,6 +24,7 @@ import {
   saveUserPresets,
   setDefaultPreset,
 } from '../presets'
+import { NiiVueSettings } from '../settings'
 import { getMetadataString, getNumberOfPoints } from '../utility'
 import { AppProps, SelectionMode } from './AppProps'
 import { HeaderBox } from './HeaderBox'
@@ -35,6 +38,7 @@ import {
     ToggleEntry,
     toggle,
 } from './MenuElements'
+import { PresetEditor } from './PresetEditor'
 import { ScalingBox } from './ScalingBox'
 
 export const Menu = (props: AppProps) => {
@@ -55,9 +59,8 @@ export const Menu = (props: AppProps) => {
   const selectMultiple = useSignal(false)
   const userPresets = useSignal(loadUserPresets())
   const defaultPresetApplied = useSignal(false)
-  const showSavePresetDialog = useSignal(false)
-  const presetNameInput = useSignal('')
-  const presetDescInput = useSignal('')
+  const showPresetEditor = useSignal(false)
+  const editingPreset = useSignal<UserPreset | undefined>(undefined)
 
   // Computed
   const isOverlay = computed(() => nvArraySelected.value[0]?.volumes?.length > 1)
@@ -137,35 +140,17 @@ export const Menu = (props: AppProps) => {
   })
 
   // Apply default user preset when first image is loaded
+  // Uses applyPreset to ensure all options (settings, view, colorscale) are applied
   effect(() => {
     if (defaultPresetApplied.value || nvArray.value.length === 0) return
+    const hasVolumes = nvArray.value.some((nv) => nv.volumes?.length > 0)
+    if (!hasVolumes) return
     const defaultPreset = getDefaultPreset()
     if (!defaultPreset) {
       defaultPresetApplied.value = true
       return
     }
-    // Apply settings from default preset
-    if (defaultPreset.settings.interpolation !== undefined) {
-      interpolation.value = defaultPreset.settings.interpolation
-    }
-    if (defaultPreset.settings.showCrosshairs !== undefined) {
-      crosshair.value = defaultPreset.settings.showCrosshairs
-    }
-    if (defaultPreset.settings.radiologicalConvention !== undefined) {
-      radiologicalConvention.value = defaultPreset.settings.radiologicalConvention
-    }
-    if (defaultPreset.settings.colorbar !== undefined) {
-      colorbar.value = defaultPreset.settings.colorbar
-    }
-    if (defaultPreset.settings.zoomDragMode !== undefined) {
-      zoomDragMode.value = defaultPreset.settings.zoomDragMode
-    }
-    if (defaultPreset.viewOptions?.sliceType !== undefined) {
-      sliceType.value = defaultPreset.viewOptions.sliceType
-    }
-    if (defaultPreset.viewOptions?.hideUI !== undefined) {
-      hideUI.value = defaultPreset.viewOptions.hideUI
-    }
+    applyPreset(defaultPreset)
     defaultPresetApplied.value = true
   })
 
@@ -626,70 +611,63 @@ export const Menu = (props: AppProps) => {
     nvArray.value = [...nvArray.value]
   }
 
-  const saveCurrentAsPreset = () => {
-    if (!presetNameInput.value.trim()) {
-      alert('Please enter a name for the preset')
-      return
-    }
+  const openPresetEditor = (preset?: UserPreset) => {
+    editingPreset.value = preset
+    showPresetEditor.value = true
+  }
 
-    const currentSettings = {
-      interpolation: interpolation.value,
-      showCrosshairs: crosshair.value,
-      radiologicalConvention: radiologicalConvention.value,
-      colorbar: colorbar.value,
-      zoomDragMode: zoomDragMode.value,
-    }
-
-    const viewOptions = {
-      sliceType: sliceType.value,
-      hideUI: hideUI.value,
-    }
-
-    // Capture colorscale options from currently loaded volumes
-    let baseImageDefaults: ColorScalingDefaults | undefined
-    let overlayDefaults: ColorScalingDefaults | undefined
-
-    const nv = nvArraySelected.value[0]
-    if (nv && nv.volumes.length > 0) {
-      const baseVol = nv.volumes[0]
-      baseImageDefaults = {
-        cal_min: baseVol.cal_min,
-        cal_max: baseVol.cal_max,
-        colormap: baseVol.colormap,
-        opacity: baseVol.opacity,
-        colormapInvert: baseVol.colormapInvert,
+  const handlePresetSave = (presetData: {
+    name: string
+    description: string
+    settings: Partial<NiiVueSettings>
+    viewOptions: ViewOptions
+    baseImageDefaults?: ColorScalingDefaults
+    overlayDefaults?: ColorScalingDefaults
+    isDefault?: boolean
+    id?: string
+    createdAt?: string
+  }) => {
+    if (presetData.id) {
+      // Editing existing preset
+      const updated = userPresets.value.map((p) =>
+        p.id === presetData.id
+          ? {
+              ...p,
+              name: presetData.name,
+              description: presetData.description,
+              settings: presetData.settings,
+              viewOptions: presetData.viewOptions,
+              baseImageDefaults: presetData.baseImageDefaults,
+              overlayDefaults: presetData.overlayDefaults,
+              isDefault: presetData.isDefault,
+            }
+          : presetData.isDefault ? { ...p, isDefault: false } : p,
+      )
+      saveUserPresets(updated)
+      userPresets.value = updated
+    } else {
+      // Creating new preset
+      const newPreset = createUserPreset(
+        presetData.name,
+        presetData.description,
+        presetData.settings,
+        presetData.viewOptions,
+        presetData.baseImageDefaults,
+        presetData.overlayDefaults,
+      )
+      if (presetData.isDefault) {
+        newPreset.isDefault = true
       }
-
-      if (nv.volumes.length > 1) {
-        const overlayVol = nv.volumes[1]
-        overlayDefaults = {
-          cal_min: overlayVol.cal_min,
-          cal_max: overlayVol.cal_max,
-          colormap: overlayVol.colormap,
-          opacity: overlayVol.opacity,
-          colormapInvert: overlayVol.colormapInvert,
-        }
-      }
+      // If new preset is default, clear default from others
+      const existingPresets = presetData.isDefault
+        ? userPresets.value.map((p) => ({ ...p, isDefault: false }))
+        : userPresets.value
+      const presets = [...existingPresets, newPreset]
+      saveUserPresets(presets)
+      userPresets.value = presets
     }
-
-    const newPreset = createUserPreset(
-      presetNameInput.value,
-      presetDescInput.value || 'Custom user preset',
-      currentSettings,
-      viewOptions,
-      baseImageDefaults,
-      overlayDefaults,
-    )
-
-    const presets = [...userPresets.value, newPreset]
-    saveUserPresets(presets)
-    userPresets.value = presets
-
-    presetNameInput.value = ''
-    presetDescInput.value = ''
-    showSavePresetDialog.value = false
-
-    alert(`Preset "${newPreset.name}" saved!`)
+    editingPreset.value = undefined
+    showPresetEditor.value = false
   }
 
   const deletePreset = (id: string) => {
@@ -706,6 +684,45 @@ export const Menu = (props: AppProps) => {
     }
     userPresets.value = loadUserPresets()
   }
+
+  // Gather current state for preset editor defaults
+  const currentBaseImage = computed(() => {
+    const nv = nvArraySelected.value[0]
+    if (nv?.volumes?.length > 0) {
+      const vol = nv.volumes[0]
+      return {
+        colormap: vol.colormap,
+        cal_min: vol.cal_min,
+        cal_max: vol.cal_max,
+        opacity: vol.opacity,
+        colormapInvert: vol.colormapInvert,
+      } as ColorScalingDefaults
+    }
+    return undefined
+  })
+
+  const currentOverlay = computed(() => {
+    const nv = nvArraySelected.value[0]
+    if (nv?.volumes?.length > 1) {
+      const vol = nv.volumes[1]
+      return {
+        colormap: vol.colormap,
+        cal_min: vol.cal_min,
+        cal_max: vol.cal_max,
+        opacity: vol.opacity,
+        colormapInvert: vol.colormapInvert,
+      } as ColorScalingDefaults
+    }
+    return undefined
+  })
+
+  const availableColormaps = computed(() => {
+    const nv = nvArraySelected.value[0]
+    if (nv?.volumes?.length > 0) {
+      return nv.colormaps()
+    }
+    return []
+  })
 
   return (
     <>
@@ -844,6 +861,13 @@ export const Menu = (props: AppProps) => {
                 onClick={() => applyPreset(preset)}
               />
               <button
+                className="text-xs px-1 hover:text-blue-400"
+                onClick={() => openPresetEditor(preset)}
+                title="Edit preset"
+              >
+                ✎
+              </button>
+              <button
                 className={`text-xs px-1 ${preset.isDefault ? 'text-yellow-400' : 'hover:text-yellow-400'}`}
                 onClick={() => toggleDefaultPreset(preset.id)}
                 title={preset.isDefault ? 'Clear default' : 'Set as default'}
@@ -860,7 +884,7 @@ export const Menu = (props: AppProps) => {
             </div>
           ))}
           <hr />
-          <MenuEntry label="Save Current as Preset" onClick={toggle(showSavePresetDialog)} />
+          <MenuEntry label="New Preset" onClick={() => openPresetEditor()} />
         </MenuItem>
         {settings.value.menuItems?.colorScale && (
           <MenuItem
@@ -970,51 +994,25 @@ export const Menu = (props: AppProps) => {
       />
       <HeaderBox nvArraySelected={nvArraySelected} nvArray={nvArray} visible={setHeaderMenu} />
       <HeaderDialog nvArraySelected={nvArraySelected} isOpen={headerDialog} />
-      {showSavePresetDialog.value && (
-        <div className="absolute left-8 top-8 bg-gray-700 rounded-md z-50 p-4 space-y-2 min-w-64">
-          <h3 className="text-lg font-bold">Save Preset</h3>
-          <div>
-            <label className="block text-sm">Name:</label>
-            <input
-              className="bg-gray-600 w-full border-2 border-gray-600 rounded-md px-2 py-1"
-              type="text"
-              value={presetNameInput.value}
-              onInput={(e: Event) => {
-                const target = e.target as HTMLInputElement
-                presetNameInput.value = target.value
-              }}
-              placeholder="Enter preset name"
-            />
-          </div>
-          <div>
-            <label className="block text-sm">Description (optional):</label>
-            <input
-              className="bg-gray-600 w-full border-2 border-gray-600 rounded-md px-2 py-1"
-              type="text"
-              value={presetDescInput.value}
-              onInput={(e: Event) => {
-                const target = e.target as HTMLInputElement
-                presetDescInput.value = target.value
-              }}
-              placeholder="Enter description"
-            />
-          </div>
-          <div className="flex gap-2 justify-end">
-            <button
-              className="bg-gray-600 border-2 border-gray-600 rounded-md px-3 py-1"
-              onClick={() => (showSavePresetDialog.value = false)}
-            >
-              Cancel
-            </button>
-            <button
-              className="bg-blue-600 border-2 border-blue-600 rounded-md px-3 py-1"
-              onClick={saveCurrentAsPreset}
-            >
-              Save
-            </button>
-          </div>
-        </div>
-      )}
+      <PresetEditor
+        visible={showPresetEditor}
+        existingPreset={editingPreset.value}
+        currentSettings={{
+          interpolation: interpolation.value,
+          showCrosshairs: crosshair.value,
+          radiologicalConvention: radiologicalConvention.value,
+          colorbar: colorbar.value,
+          zoomDragMode: zoomDragMode.value,
+        }}
+        currentViewOptions={{
+          sliceType: sliceType.value,
+          hideUI: hideUI.value,
+        }}
+        currentBaseImage={currentBaseImage.value}
+        currentOverlay={currentOverlay.value}
+        colormaps={availableColormaps.value}
+        onSave={handlePresetSave}
+      />
     </>
   )
 }
