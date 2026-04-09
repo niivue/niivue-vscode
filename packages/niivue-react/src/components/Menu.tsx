@@ -20,6 +20,7 @@ import {
   createUserPreset,
   deleteUserPreset,
   getDefaultPreset,
+  getDefaultPresetRef,
   loadUserPresets,
   saveUserPresets,
   setDefaultPreset,
@@ -58,7 +59,7 @@ export const Menu = (props: AppProps) => {
   const selectionActive = useSignal(false)
   const selectMultiple = useSignal(false)
   const userPresets = useSignal(loadUserPresets())
-  const defaultPresetApplied = useSignal(false)
+  const prevNvCount = useSignal(0)
   const showPresetEditor = useSignal(false)
   const editingPreset = useSignal<UserPreset | undefined>(undefined)
 
@@ -139,19 +140,20 @@ export const Menu = (props: AppProps) => {
     }
   })
 
-  // Apply default user preset when first image is loaded
-  // Uses applyPreset to ensure all options (settings, view, colorscale) are applied
+  // Apply default preset when new images are loaded
+  // Tracks nvArray length to detect when new images are added
   effect(() => {
-    if (defaultPresetApplied.value || nvArray.value.length === 0) return
+    const currentCount = nvArray.value.length
+    if (currentCount === 0 || currentCount <= prevNvCount.value) {
+      prevNvCount.value = currentCount
+      return
+    }
+    prevNvCount.value = currentCount
     const hasVolumes = nvArray.value.some((nv) => nv.volumes?.length > 0)
     if (!hasVolumes) return
     const defaultPreset = getDefaultPreset()
-    if (!defaultPreset) {
-      defaultPresetApplied.value = true
-      return
-    }
+    if (!defaultPreset) return
     applyPreset(defaultPreset)
-    defaultPresetApplied.value = true
   })
 
   // Menu Click events
@@ -639,12 +641,20 @@ export const Menu = (props: AppProps) => {
               viewOptions: presetData.viewOptions,
               baseImageDefaults: presetData.baseImageDefaults,
               overlayDefaults: presetData.overlayDefaults,
-              isDefault: presetData.isDefault,
             }
-          : presetData.isDefault ? { ...p, isDefault: false } : p,
+          : p,
       )
       saveUserPresets(updated)
       userPresets.value = updated
+      // Update default preset reference
+      if (presetData.isDefault) {
+        setDefaultPreset('user', presetData.id)
+      } else {
+        const ref = getDefaultPresetRef()
+        if (ref?.type === 'user' && ref?.id === presetData.id) {
+          clearDefaultPreset()
+        }
+      }
     } else {
       // Creating new preset
       const newPreset = createUserPreset(
@@ -655,17 +665,15 @@ export const Menu = (props: AppProps) => {
         presetData.baseImageDefaults,
         presetData.overlayDefaults,
       )
-      if (presetData.isDefault) {
-        newPreset.isDefault = true
-      }
-      // If new preset is default, clear default from others
-      const existingPresets = presetData.isDefault
-        ? userPresets.value.map((p) => ({ ...p, isDefault: false }))
-        : userPresets.value
-      const presets = [...existingPresets, newPreset]
+      const presets = [...userPresets.value, newPreset]
       saveUserPresets(presets)
       userPresets.value = presets
+      // Set as default if requested
+      if (presetData.isDefault) {
+        setDefaultPreset('user', newPreset.id)
+      }
     }
+    defaultRef.value = getDefaultPresetRef()
     editingPreset.value = undefined
     showPresetEditor.value = false
   }
@@ -675,15 +683,20 @@ export const Menu = (props: AppProps) => {
     userPresets.value = loadUserPresets()
   }
 
-  const toggleDefaultPreset = (id: string) => {
-    const preset = userPresets.value.find((p) => p.id === id)
-    if (preset?.isDefault) {
+  const toggleDefaultPreset = (type: 'builtin' | 'user', id: string) => {
+    const ref = getDefaultPresetRef()
+    if (ref?.type === type && ref?.id === id) {
       clearDefaultPreset()
     } else {
-      setDefaultPreset(id)
+      setDefaultPreset(type, id)
     }
+    // Refresh user presets and default ref to update UI
     userPresets.value = loadUserPresets()
+    defaultRef.value = getDefaultPresetRef()
   }
+
+  // Track current default preset reference for UI rendering
+  const defaultRef = useSignal(getDefaultPresetRef())
 
   // Gather current state for preset editor defaults
   const currentBaseImage = computed(() => {
@@ -846,44 +859,61 @@ export const Menu = (props: AppProps) => {
           />
         )}
         <MenuItem label="Presets">
-          {Object.values(BUILTIN_PRESETS).map((preset) => (
-            <MenuEntry
-              key={preset.name}
-              label={preset.name}
-              onClick={() => applyPreset(preset)}
-            />
-          ))}
+          {Object.entries(BUILTIN_PRESETS).map(([key, preset]) => {
+            const isDefault = defaultRef.value?.type === 'builtin' && defaultRef.value?.id === key
+            return (
+              <div key={key} className="flex items-center justify-between gap-1 bg-gray-900 hover:bg-gray-700">
+                <MenuEntry
+                  label={`${preset.name}${isDefault ? ' ★' : ''}`}
+                  onClick={() => applyPreset(preset)}
+                />
+                <button
+                  className={`text-xs px-1 ${isDefault ? 'text-yellow-400' : 'hover:text-yellow-400'}`}
+                  onClick={() => toggleDefaultPreset('builtin', key)}
+                  title={isDefault ? 'Clear default' : 'Set as default'}
+                  aria-label={isDefault ? 'Clear default preset' : 'Set as default preset'}
+                >
+                  ★
+                </button>
+              </div>
+            )
+          })}
           {userPresets.value.length > 0 && <hr />}
-          {userPresets.value.map((preset) => (
-            <div key={preset.id} className="flex items-center justify-between gap-1 bg-gray-900 hover:bg-gray-700">
-              <MenuEntry
-                label={`${preset.name}${preset.isDefault ? ' ★' : ''}`}
-                onClick={() => applyPreset(preset)}
-              />
-              <button
-                className="text-xs px-1 hover:text-blue-400"
-                onClick={() => openPresetEditor(preset)}
-                title="Edit preset"
-                aria-label="Edit preset"
-              >
-                ✎
-              </button>
-              <button
-                className={`text-xs px-1 ${preset.isDefault ? 'text-yellow-400' : 'hover:text-yellow-400'}`}
-                onClick={() => toggleDefaultPreset(preset.id)}
-                title={preset.isDefault ? 'Clear default' : 'Set as default'}
-              >
-                ★
-              </button>
-              <button
-                className="text-xs px-1 hover:text-red-500"
-                onClick={() => deletePreset(preset.id)}
-                title="Delete preset"
-              >
-                ✕
-              </button>
-            </div>
-          ))}
+          {userPresets.value.map((preset) => {
+            const isDefault = defaultRef.value?.type === 'user' && defaultRef.value?.id === preset.id
+            return (
+              <div key={preset.id} className="flex items-center justify-between gap-1 bg-gray-900 hover:bg-gray-700">
+                <MenuEntry
+                  label={`${preset.name}${isDefault ? ' ★' : ''}`}
+                  onClick={() => applyPreset(preset)}
+                />
+                <button
+                  className="text-xs px-1 hover:text-blue-400"
+                  onClick={() => openPresetEditor(preset)}
+                  title="Edit preset"
+                  aria-label="Edit preset"
+                >
+                  ✎
+                </button>
+                <button
+                  className={`text-xs px-1 ${isDefault ? 'text-yellow-400' : 'hover:text-yellow-400'}`}
+                  onClick={() => toggleDefaultPreset('user', preset.id)}
+                  title={isDefault ? 'Clear default' : 'Set as default'}
+                  aria-label={isDefault ? 'Clear default preset' : 'Set as default preset'}
+                >
+                  ★
+                </button>
+                <button
+                  className="text-xs px-1 hover:text-red-500"
+                  onClick={() => deletePreset(preset.id)}
+                  title="Delete preset"
+                  aria-label="Delete preset"
+                >
+                  ✕
+                </button>
+              </div>
+            )
+          })}
           <hr />
           <MenuEntry label="New Preset" onClick={() => openPresetEditor()} />
         </MenuItem>

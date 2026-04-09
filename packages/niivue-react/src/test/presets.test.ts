@@ -3,6 +3,7 @@ import {
   BUILTIN_PRESETS,
   createUserPreset,
   getDefaultPreset,
+  getDefaultPresetRef,
   loadUserPresets,
   saveUserPresets,
   setDefaultPreset,
@@ -63,37 +64,27 @@ test('save and load user presets', () => {
   localStorage.clear()
 })
 
-// Note: This test is skipped due to localStorage state interference in the test environment.
-// The deleteUserPreset function is simple (filter + save) and works correctly in practice.
-test.skip('delete user preset', () => {
-  // Use a unique key per test to avoid interference
-  const testKey = 'niivue_user_presets_test_delete'
-  
-  // Manually save to a test key
+test('delete user preset', () => {
+  localStorage.clear()
+
   const preset1 = createUserPreset('Preset 1', 'First preset', { interpolation: true })
+  preset1.id = 'user_test_del_1'
   const preset2 = createUserPreset('Preset 2', 'Second preset', { colorbar: true })
-  
-  const initialData = [preset1, preset2]
-  localStorage.setItem(testKey, JSON.stringify(initialData))
-  
-  // Verify it was saved
-  const afterSave = localStorage.getItem(testKey)
-  const afterSaveParsed = afterSave ? JSON.parse(afterSave) : []
-  expect(afterSaveParsed).toHaveLength(2)
-  
-  // Manually delete
-  const filtered = afterSaveParsed.filter((p: typeof preset1) => p.id !== preset1.id)
-  expect(filtered).toHaveLength(1)
-  localStorage.setItem(testKey, JSON.stringify(filtered))
-  
-  // Verify
-  const result = localStorage.getItem(testKey)
-  const loaded = result ? JSON.parse(result) : []
+  preset2.id = 'user_test_del_2'
+
+  saveUserPresets([preset1, preset2])
+
+  const beforeDelete = loadUserPresets()
+  expect(beforeDelete).toHaveLength(2)
+
+  deleteUserPreset(preset1.id)
+
+  const loaded = loadUserPresets()
   expect(loaded).toHaveLength(1)
+  expect(loaded[0].id).toBe(preset2.id)
   expect(loaded[0].name).toBe('Preset 2')
-  
-  // Clean up
-  localStorage.removeItem(testKey)
+
+  localStorage.clear()
 })
 
 test('create user preset with colorscale options', () => {
@@ -131,11 +122,10 @@ test('create user preset with colorscale options', () => {
   expect(preset.overlayDefaults?.colormapInvert).toBe(true)
 })
 
-test('set and get default preset', () => {
+test('set and get default user preset', () => {
   localStorage.clear()
 
   const preset1 = createUserPreset('Preset 1', 'First preset', { interpolation: true })
-  // Ensure unique IDs by modifying id directly
   preset1.id = 'user_test_1'
   const preset2 = createUserPreset('Preset 2', 'Second preset', { colorbar: true })
   preset2.id = 'user_test_2'
@@ -143,22 +133,67 @@ test('set and get default preset', () => {
 
   // Initially no default
   expect(getDefaultPreset()).toBeUndefined()
+  expect(getDefaultPresetRef()).toBeNull()
 
   // Set preset2 as default
-  setDefaultPreset(preset2.id)
+  setDefaultPreset('user', preset2.id)
+  const ref = getDefaultPresetRef()
+  expect(ref).toEqual({ type: 'user', id: 'user_test_2' })
   const defaultP = getDefaultPreset()
   expect(defaultP).toBeDefined()
   expect(defaultP!.name).toBe('Preset 2')
-  expect(defaultP!.isDefault).toBe(true)
-
-  // Preset1 should not be default
-  const all = loadUserPresets()
-  expect(all[0].isDefault).toBe(false)
-  expect(all[1].isDefault).toBe(true)
 
   // Clear default
   clearDefaultPreset()
   expect(getDefaultPreset()).toBeUndefined()
+  expect(getDefaultPresetRef()).toBeNull()
+
+  localStorage.clear()
+})
+
+test('set and get default builtin preset', () => {
+  localStorage.clear()
+
+  // Initially no default
+  expect(getDefaultPreset()).toBeUndefined()
+
+  // Set fmri as default
+  setDefaultPreset('builtin', 'fmri')
+  const ref = getDefaultPresetRef()
+  expect(ref).toEqual({ type: 'builtin', id: 'fmri' })
+  const defaultP = getDefaultPreset()
+  expect(defaultP).toBeDefined()
+  expect(defaultP!.name).toBe('fMRI')
+
+  // Switch to phase
+  setDefaultPreset('builtin', 'phase')
+  const ref2 = getDefaultPresetRef()
+  expect(ref2).toEqual({ type: 'builtin', id: 'phase' })
+  const defaultP2 = getDefaultPreset()
+  expect(defaultP2!.name).toBe('Phase Data')
+
+  // Clear default
+  clearDefaultPreset()
+  expect(getDefaultPreset()).toBeUndefined()
+
+  localStorage.clear()
+})
+
+test('switching default between builtin and user presets', () => {
+  localStorage.clear()
+
+  const userPreset = createUserPreset('My Preset', 'desc', { interpolation: false })
+  userPreset.id = 'user_test_switch'
+  saveUserPresets([userPreset])
+
+  // Set builtin as default
+  setDefaultPreset('builtin', 'anatomical')
+  expect(getDefaultPresetRef()).toEqual({ type: 'builtin', id: 'anatomical' })
+
+  // Switch to user preset
+  setDefaultPreset('user', 'user_test_switch')
+  expect(getDefaultPresetRef()).toEqual({ type: 'user', id: 'user_test_switch' })
+  expect(getDefaultPreset()!.name).toBe('My Preset')
 
   localStorage.clear()
 })

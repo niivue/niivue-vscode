@@ -1,7 +1,7 @@
 import { SLICE_TYPE } from '@niivue/niivue'
 import { Signal, useSignal } from '@preact/signals'
 import { useMemo } from 'preact/hooks'
-import { ColorScalingDefaults, UserPreset, ViewOptions, ViewPreset } from '../presets'
+import { ColorScalingDefaults, UserPreset, ViewOptions, ViewPreset, getDefaultPresetRef } from '../presets'
 import { NiiVueSettings } from '../settings'
 
 const SLICE_TYPE_OPTIONS = [
@@ -115,7 +115,14 @@ export const PresetEditor = ({
   // Name & description
   const name = useSignal(init?.name ?? '')
   const description = useSignal(init?.description ?? '')
-  const isDefault = useSignal((existingPreset as UserPreset)?.isDefault ?? false)
+  const existingIsDefault = (() => {
+    if (!existingPreset) return false
+    const ref = getDefaultPresetRef()
+    if (!ref) return false
+    const userPreset = existingPreset as UserPreset
+    return ref.type === 'user' && ref.id === userPreset.id
+  })()
+  const isDefault = useSignal(existingIsDefault)
 
   // --- Base image color scaling: values ---
   const baseColormap = useSignal(init?.baseImageDefaults?.colormap ?? currentBaseImage?.colormap ?? 'gray')

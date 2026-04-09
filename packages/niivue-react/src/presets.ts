@@ -180,34 +180,61 @@ export function deleteUserPreset(id: string): void {
   saveUserPresets(filtered)
 }
 
+export interface DefaultPresetRef {
+  type: 'builtin' | 'user'
+  id: string
+}
+
+const DEFAULT_PRESET_KEY = 'niivue_default_preset'
+
 /**
- * Set a user preset as the default (clears default from all others)
+ * Set any preset (builtin or user) as the default.
+ * For builtin presets, id is the key in BUILTIN_PRESETS (e.g. 'fmri').
+ * For user presets, id is the user preset id (e.g. 'user_123').
  */
-export function setDefaultPreset(id: string): void {
-  const presets = loadUserPresets()
-  const updated = presets.map((p) => ({
-    ...p,
-    isDefault: p.id === id,
-  }))
-  saveUserPresets(updated)
+export function setDefaultPreset(type: 'builtin' | 'user', id: string): void {
+  try {
+    localStorage.setItem(DEFAULT_PRESET_KEY, JSON.stringify({ type, id }))
+  } catch (e) {
+    console.error('Failed to save default preset:', e)
+  }
 }
 
 /**
- * Clear the default preset flag from all user presets
+ * Clear the default preset
  */
 export function clearDefaultPreset(): void {
-  const presets = loadUserPresets()
-  const updated = presets.map((p) => ({
-    ...p,
-    isDefault: false,
-  }))
-  saveUserPresets(updated)
+  try {
+    localStorage.removeItem(DEFAULT_PRESET_KEY)
+  } catch (e) {
+    console.error('Failed to clear default preset:', e)
+  }
 }
 
 /**
- * Get the default user preset, if any
+ * Get the reference to the current default preset (type + id), if any
  */
-export function getDefaultPreset(): UserPreset | undefined {
+export function getDefaultPresetRef(): DefaultPresetRef | null {
+  try {
+    const stored = localStorage.getItem(DEFAULT_PRESET_KEY)
+    if (!stored) return null
+    const ref = JSON.parse(stored) as DefaultPresetRef
+    if (ref.type && ref.id) return ref
+    return null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Get the default preset, if any (resolves builtin or user presets)
+ */
+export function getDefaultPreset(): ViewPreset | undefined {
+  const ref = getDefaultPresetRef()
+  if (!ref) return undefined
+  if (ref.type === 'builtin') {
+    return BUILTIN_PRESETS[ref.id]
+  }
   const presets = loadUserPresets()
-  return presets.find((p) => p.isDefault)
+  return presets.find((p) => p.id === ref.id)
 }
