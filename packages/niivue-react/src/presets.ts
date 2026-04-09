@@ -245,8 +245,7 @@ export function getDefaultPreset(): ViewPreset | undefined {
  * Note: colormap setter triggers calMinMax() which resets cal_min/cal_max,
  * so colormap must be set first, then cal_min/cal_max afterward.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function applyColorScalingToVolume(vol: any, defaults: ColorScalingDefaults): void {
+export function applyColorScalingToVolume(vol: Record<string, unknown>, defaults: ColorScalingDefaults): void {
   if (defaults.colormap) {
     vol.colormap = defaults.colormap
   }
