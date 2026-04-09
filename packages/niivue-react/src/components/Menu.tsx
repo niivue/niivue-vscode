@@ -16,6 +16,7 @@ import {
   UserPreset,
   ViewOptions,
   ViewPreset,
+  applyColorScalingToVolume,
   clearDefaultPreset,
   createUserPreset,
   deleteUserPreset,
@@ -59,8 +60,6 @@ export const Menu = (props: AppProps) => {
   const selectionActive = useSignal(false)
   const selectMultiple = useSignal(false)
   const userPresets = useSignal(loadUserPresets())
-  const prevVolumeSnapshot = useSignal<Map<number, number>>(new Map())
-  const settingsAppliedOnce = useSignal(false)
   const showPresetEditor = useSignal(false)
   const editingPreset = useSignal<UserPreset | undefined>(undefined)
 
@@ -141,77 +140,15 @@ export const Menu = (props: AppProps) => {
     }
   })
 
-  // Apply default preset selectively when new volumes are loaded.
-  // - Full preset (settings + view) only applied once on first image load
-  // - baseImageDefaults applied to newly loaded base images only
-  // - overlayDefaults applied to newly loaded overlays only
-  effect(() => {
+  // Apply default preset settings and view options once on initialization.
+  // Color scaling defaults are applied at load time in NiiVueCanvas (base images)
+  // and events.ts (overlays), so no nvArray tracking is needed here.
+  useMemo(() => {
     const defaultPreset = getDefaultPreset()
-    if (!defaultPreset) return
-
-    // Build a snapshot of current volume counts per NV instance
-    const currentSnapshot = new Map<number, number>()
-    let hasNewBase = false
-    const newOverlayTargets: Array<{ nv: ExtendedNiivue; indices: number[] }> = []
-    const newBaseTargets: ExtendedNiivue[] = []
-
-    for (const nv of nvArray.value) {
-      const volCount = nv.volumes?.length ?? 0
-      currentSnapshot.set(nv.key, volCount)
-      if (volCount === 0) continue
-
-      const prevCount = prevVolumeSnapshot.value.get(nv.key)
-      if (prevCount === undefined) {
-        // New NV instance with volumes = new base image
-        hasNewBase = true
-        newBaseTargets.push(nv)
-        // If it also has overlays already, track them
-        if (volCount > 1) {
-          const overlayIndices = Array.from({ length: volCount - 1 }, (_, i) => i + 1)
-          newOverlayTargets.push({ nv, indices: overlayIndices })
-        }
-      } else if (volCount > prevCount) {
-        // Existing NV instance gained new overlay volumes
-        const overlayIndices = Array.from({ length: volCount - prevCount }, (_, i) => prevCount + i)
-        newOverlayTargets.push({ nv, indices: overlayIndices })
-      }
-    }
-
-    prevVolumeSnapshot.value = currentSnapshot
-
-    const hasChanges = hasNewBase || newOverlayTargets.length > 0
-    if (!hasChanges) return
-
-    // Apply settings and view options only on first image load
-    if (hasNewBase && !settingsAppliedOnce.value) {
-      settingsAppliedOnce.value = true
+    if (defaultPreset) {
       applyPresetSettingsAndView(defaultPreset)
     }
-
-    // Apply baseImageDefaults to new base images only
-    if (hasNewBase && defaultPreset.baseImageDefaults) {
-      for (const nv of newBaseTargets) {
-        if (nv.volumes.length > 0) {
-          applyColorScalingToVolume(nv.volumes[0], defaultPreset.baseImageDefaults)
-          nv.updateGLVolume()
-        }
-      }
-    }
-
-    // Apply overlayDefaults to new overlay volumes only
-    if (newOverlayTargets.length > 0 && defaultPreset.overlayDefaults) {
-      for (const { nv, indices } of newOverlayTargets) {
-        for (const idx of indices) {
-          if (idx < nv.volumes.length) {
-            applyColorScalingToVolume(nv.volumes[idx], defaultPreset.overlayDefaults)
-          }
-        }
-        nv.updateGLVolume()
-      }
-    }
-
-    nvArray.value = [...nvArray.value]
-  })
+  }, [])
 
   // Menu Click events
   const homeEvent = () => {
@@ -547,28 +484,9 @@ export const Menu = (props: AppProps) => {
 
   // Preset functions
 
-  // Apply color scaling defaults to a single volume.
-  // Note: colormap setter triggers calMinMax() which resets cal_min/cal_max,
-  // so colormap must be set first, then cal_min/cal_max afterward.
-  const applyColorScalingToVolume = (vol: any, defaults: ColorScalingDefaults) => {
-    if (defaults.colormap) {
-      vol.colormap = defaults.colormap
-    }
-    if (defaults.cal_min !== undefined) {
-      vol.cal_min = defaults.cal_min
-    }
-    if (defaults.cal_max !== undefined) {
-      vol.cal_max = defaults.cal_max
-    }
-    if (defaults.opacity !== undefined) {
-      vol.opacity = defaults.opacity
-    }
-    if (defaults.colormapInvert !== undefined) {
-      vol.colormapInvert = defaults.colormapInvert
-    }
-  }
-
-  // Apply settings (interpolation, crosshairs, etc.) and view options (slice type, UI visibility)
+  // Apply settings (interpolation, crosshairs, etc.) and view options (slice type, UI visibility).
+  // Also updates settings.value for defaultVolumeColormap / defaultOverlayColormap so that
+  // newly loaded volumes use the preset's colormaps.
   const applyPresetSettingsAndView = (preset: ViewPreset) => {
     if (preset.settings.interpolation !== undefined) {
       interpolation.value = preset.settings.interpolation
@@ -584,6 +502,28 @@ export const Menu = (props: AppProps) => {
     }
     if (preset.settings.zoomDragMode !== undefined) {
       zoomDragMode.value = preset.settings.zoomDragMode
+    }
+
+    // Update global defaults so newly loaded volumes pick up the preset colormaps.
+    // baseImageDefaults.colormap takes precedence over defaultVolumeColormap.
+    const newSettings = { ...settings.value }
+    let settingsChanged = false
+    if (preset.baseImageDefaults?.colormap) {
+      newSettings.defaultVolumeColormap = preset.baseImageDefaults.colormap
+      settingsChanged = true
+    } else if (preset.settings.defaultVolumeColormap) {
+      newSettings.defaultVolumeColormap = preset.settings.defaultVolumeColormap
+      settingsChanged = true
+    }
+    if (preset.overlayDefaults?.colormap) {
+      newSettings.defaultOverlayColormap = preset.overlayDefaults.colormap
+      settingsChanged = true
+    } else if (preset.settings.defaultOverlayColormap) {
+      newSettings.defaultOverlayColormap = preset.settings.defaultOverlayColormap
+      settingsChanged = true
+    }
+    if (settingsChanged) {
+      settings.value = newSettings
     }
 
     if (preset.viewOptions) {

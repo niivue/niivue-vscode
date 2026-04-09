@@ -1,6 +1,7 @@
 import { Niivue, NVImage, NVMesh, NVMeshLoaders, SLICE_TYPE } from '@niivue/niivue'
 import { Signal } from '@preact/signals'
 import { AppProps } from './components/AppProps'
+import { applyColorScalingToVolume, getDefaultPreset } from './presets'
 import { readyStateManager } from './readyState'
 import { NiiVueSettings } from './settings'
 import { isImageType } from './utility'
@@ -253,6 +254,11 @@ async function addOverlay(nv: Niivue, item: any, settings: NiiVueSettings) {
     if (idx >= 0) {
       nv.volumes[idx].colormap = overlayColormap
       nv.setOpacity(idx, overlayOpacity)
+      // Apply default preset overlay defaults to the newly loaded overlay
+      const defaultPreset = getDefaultPreset()
+      if (defaultPreset?.overlayDefaults) {
+        applyColorScalingToVolume(nv.volumes[idx], defaultPreset.overlayDefaults)
+      }
       nv.updateGLVolume()
     }
   } else {

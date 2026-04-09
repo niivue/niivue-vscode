@@ -239,3 +239,27 @@ export function getDefaultPreset(): ViewPreset | undefined {
   const presets = loadUserPresets()
   return presets.find((p) => p.id === ref.id)
 }
+
+/**
+ * Apply color scaling defaults to a single NiiVue volume object.
+ * Note: colormap setter triggers calMinMax() which resets cal_min/cal_max,
+ * so colormap must be set first, then cal_min/cal_max afterward.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function applyColorScalingToVolume(vol: any, defaults: ColorScalingDefaults): void {
+  if (defaults.colormap !== undefined) {
+    vol.colormap = defaults.colormap
+  }
+  if (defaults.cal_min !== undefined) {
+    vol.cal_min = defaults.cal_min
+  }
+  if (defaults.cal_max !== undefined) {
+    vol.cal_max = defaults.cal_max
+  }
+  if (defaults.opacity !== undefined) {
+    vol.opacity = defaults.opacity
+  }
+  if (defaults.colormapInvert !== undefined) {
+    vol.colormapInvert = defaults.colormapInvert
+  }
+}

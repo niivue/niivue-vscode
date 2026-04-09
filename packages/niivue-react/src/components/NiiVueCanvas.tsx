@@ -29,6 +29,7 @@ import { NVImage, NVMesh } from '@niivue/niivue'
 import { Signal } from '@preact/signals'
 import { useEffect, useRef } from 'preact/hooks'
 import { ExtendedNiivue, notifyImageLoaded } from '../events'
+import { applyColorScalingToVolume, getDefaultPreset } from '../presets'
 import { NiiVueSettings } from '../settings'
 import { isImageType } from '../utility'
 import { AppProps } from './AppProps'
@@ -65,6 +66,12 @@ export const NiiVueCanvas = ({
         nv.isLoaded = true
         nv.isLoading = false
         nv.body = null
+        // Apply default preset base image defaults to the newly loaded volume
+        const defaultPreset = getDefaultPreset()
+        if (defaultPreset?.baseImageDefaults && nv.volumes.length > 0) {
+          applyColorScalingToVolume(nv.volumes[0], defaultPreset.baseImageDefaults)
+          nv.updateGLVolume()
+        }
         render.value++ // required to update the names
         nvArray.value = [...nvArray.value] // trigger react signal for changes
         nv.createOnLocationChange() // TODO fix, still required?
