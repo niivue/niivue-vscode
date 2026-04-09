@@ -247,7 +247,7 @@ export function getDefaultPreset(): ViewPreset | undefined {
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function applyColorScalingToVolume(vol: any, defaults: ColorScalingDefaults): void {
-  if (defaults.colormap !== undefined) {
+  if (defaults.colormap) {
     vol.colormap = defaults.colormap
   }
   if (defaults.cal_min !== undefined) {

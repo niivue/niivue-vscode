@@ -1,6 +1,6 @@
 import { SLICE_TYPE } from '@niivue/niivue'
 import { Signal, computed, effect, useSignal } from '@preact/signals'
-import { useMemo } from 'preact/hooks'
+import { useEffect, useMemo } from 'preact/hooks'
 import { NIIVUE_CORE_SHORTCUTS, UI_SHORTCUTS, formatShortcut } from '../constants/keyboardShortcuts'
 import {
     ExtendedNiivue,
@@ -143,7 +143,7 @@ export const Menu = (props: AppProps) => {
   // Apply default preset settings and view options once on initialization.
   // Color scaling defaults are applied at load time in NiiVueCanvas (base images)
   // and events.ts (overlays), so no nvArray tracking is needed here.
-  useMemo(() => {
+  useEffect(() => {
     const defaultPreset = getDefaultPreset()
     if (defaultPreset) {
       applyPresetSettingsAndView(defaultPreset)
