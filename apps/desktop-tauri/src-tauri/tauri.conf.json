@@ -1,0 +1,61 @@
+{
+  "productName": "NiiVue Desktop",
+  "version": "0.1.0",
+  "identifier": "org.niivue.desktop",
+  "build": {
+    "frontendDist": "../build",
+    "devUrl": "http://localhost:4001",
+    "beforeDevCommand": "pnpm dev:frontend",
+    "beforeBuildCommand": "pnpm build:frontend"
+  },
+  "app": {
+    "title": "NiiVue Desktop",
+    "windows": [
+      {
+        "title": "NiiVue Desktop",
+        "width": 1280,
+        "height": 800,
+        "minWidth": 800,
+        "minHeight": 600,
+        "resizable": true,
+        "fullscreen": false,
+        "decorations": true,
+        "transparent": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' asset: blob: data:; connect-src 'self' ipc: http://ipc.localhost asset: https://niivue.github.io; worker-src 'self' blob:; font-src 'self' data:"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "category": "Medical",
+    "shortDescription": "Medical image viewer for NIfTI and DICOM files",
+    "longDescription": "NiiVue Desktop is a high-performance medical image viewer built with Tauri and WebGL2. It supports NIfTI, DICOM, and many other neuroimaging formats with direct filesystem access for fast loading of large datasets.",
+    "linux": {
+      "deb": {
+        "depends": ["libwebkit2gtk-4.1-0", "libgtk-3-0"]
+      },
+      "appimage": {
+        "bundleMediaFramework": true
+      }
+    },
+    "macOS": {
+      "minimumSystemVersion": "10.15"
+    },
+    "windows": {
+      "webviewInstallMode": {
+        "type": "embedBootstrapper",
+        "silent": true
+      }
+    }
+  }
+}

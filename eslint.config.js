@@ -74,4 +74,14 @@ export default [
       'no-console': 'off', // Allow console logging for debugging
     },
   },
+  // Relaxed rules for Tauri desktop application
+  {
+    files: ['apps/desktop-tauri/**/*.{ts,tsx}'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off', // Working with NiiVue library and Tauri APIs
+      eqeqeq: 'off', // Allow loose equality for compatibility with NiiVue
+      'sort-imports': 'off', // Allow flexible import ordering for React components
+      'no-console': 'off', // Allow console logging for debugging
+    },
+  },
 ]

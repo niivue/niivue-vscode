@@ -67,7 +67,7 @@
     "turbo": "^2.5.8",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.46.2",
-    "vite": "^7.1.12",
+    "vite": "^7.3.2",
     "vite-plugin-dts": "^4.5.4"
   },
   "engines": {

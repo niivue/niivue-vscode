@@ -1,0 +1,29 @@
+[package]
+name = "niivue-desktop"
+version = "0.1.0"
+description = "NiiVue Desktop - Medical image viewer"
+authors = ["Korbinian Eckstein <korbinian90@gmail.com>"]
+license = "BSD-2-Clause"
+repository = "https://github.com/niivue/niivue-vscode"
+edition = "2021"
+
+[lib]
+name = "niivue_desktop_lib"
+crate-type = ["lib", "cdylib", "staticlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+tauri-plugin-store = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[profile.release]
+panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true
