@@ -1,5 +1,4 @@
 {
-  "$schema": "https://raw.githubusercontent.com/nicnacnic/tauri-apps-tauri/refs/heads/v2/crates/tauri-cli/schema.json",
   "productName": "NiiVue Desktop",
   "version": "0.1.0",
   "identifier": "org.niivue.desktop",
