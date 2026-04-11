@@ -26,6 +26,7 @@ jobs:
       jupyter: ${{ steps.filter.outputs.jupyter }}
       vscode: ${{ steps.filter.outputs.vscode }}
       streamlit: ${{ steps.filter.outputs.streamlit }}
+      desktop: ${{ steps.filter.outputs.desktop }}
     steps:
       - uses: actions/checkout@v6
       - uses: dorny/paths-filter@v4
@@ -45,6 +46,9 @@ jobs:
               - 'packages/**'
             streamlit:
               - 'apps/streamlit/**'
+              - 'packages/**'
+            desktop:
+              - 'apps/desktop-tauri/**'
               - 'packages/**'
 
   lint-and-typecheck:
@@ -325,6 +329,39 @@ jobs:
             apps/streamlit/coverage/python/
           if-no-files-found: ignore
           retention-days: 1
+
+  test-desktop:
+    needs: [changes, build]
+    if: needs.changes.outputs.desktop == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Restore build artifacts
+        uses: actions/cache@v5
+        with:
+          path: |
+            apps/*/dist
+            apps/*/build
+            apps/*/lib
+            packages/*/dist
+          key: build-artifacts-${{ github.sha }}
+
+      - name: Test Desktop (Vitest)
+        run: pnpm turbo test --filter=@niivue/desktop
 
   e2e-tests:
     needs: [changes, build]
