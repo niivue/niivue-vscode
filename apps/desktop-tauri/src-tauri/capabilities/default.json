@@ -1,5 +1,4 @@
 {
-  "$schema": "https://raw.githubusercontent.com/nicnacnic/tauri-apps-tauri/refs/heads/v2/crates/tauri-plugin-dialog/permissions/schemas/schema.json",
   "identifier": "default",
   "description": "Default capability for NiiVue Desktop",
   "windows": ["main"],
