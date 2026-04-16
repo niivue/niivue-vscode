@@ -19,8 +19,13 @@ if not overlay_path.exists():
     st.error(f"Required file {overlay_path.name} not found.")
     st.stop()
 
-background_data = background_path.read_bytes()
-overlay_data = overlay_path.read_bytes()
+@st.cache_data
+def load_bytes(path: str) -> bytes:
+    return Path(path).read_bytes()
+
+
+background_data = load_bytes(str(background_path))
+overlay_data = load_bytes(str(overlay_path))
 
 # Define overlays
 overlays = [
@@ -41,6 +46,7 @@ with col1:
         overlays=overlays,
         height=700,
         styled=True,
+        update_interval_ms=None,
         key="overlay_viewer"
     )
 
