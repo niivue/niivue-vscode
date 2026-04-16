@@ -29,6 +29,7 @@ def niivue_viewer(
     view_mode="multiplanar",
     styled=True,
     settings=None,
+    update_interval_ms=100,
     key=None
 ):
     """Create a NiiVue viewer component.
@@ -67,6 +68,11 @@ def niivue_viewer(
         - radiological: bool - radiological convention (default: False)
         - colorbar: bool - show colorbar (default: False)
         - interpolation: bool - interpolate voxels (default: True)
+    update_interval_ms : int or None
+        Throttle interval in ms for click/drag events sent back to Python
+        (default: 100). Set to None to disable click feedback entirely —
+        this restores the low-latency behaviour of the pre-overlay viewer
+        and is recommended whenever the return value is not consumed.
     key : str or None
         Unique key for the component
         
@@ -156,6 +162,7 @@ def niivue_viewer(
         view_mode=view_mode,
         styled=styled,
         settings=settings or {},
+        update_interval_ms=update_interval_ms,
         default=None,
         key=key
     )

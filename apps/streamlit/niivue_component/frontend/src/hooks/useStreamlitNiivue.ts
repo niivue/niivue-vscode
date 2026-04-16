@@ -229,16 +229,23 @@ export const useStreamlitNiivue = (args: StreamlitArgs) => {
   }, [appProps.nvArray.value, appProps.nvArray.value[0]?.isLoaded, args.meshes])
 
   // Throttled wrapper for Streamlit.setComponentValue to avoid overwhelming
-  // Python with updates during mouse drag (fires at most once per 100ms)
+  // Python with updates during mouse drag. update_interval_ms === null
+  // disables feedback entirely: no handler attached, no Streamlit round-trips.
+  const feedbackDisabled = args.update_interval_ms === null
+  const intervalMs = typeof args.update_interval_ms === 'number' ? args.update_interval_ms : 100
   const throttledSetValue = useRef<ReturnType<typeof throttle<(data: { type: string; voxel: number[]; mm: number[]; value: number; filename: string }) => void>> | null>(null)
-  if (!throttledSetValue.current) {
+  if (!feedbackDisabled && !throttledSetValue.current) {
     throttledSetValue.current = throttle((data: { type: string; voxel: number[]; mm: number[]; value: number; filename: string }) => {
       Streamlit.setComponentValue(data)
-    }, 100)
+    }, intervalMs)
   }
 
   // Sync click events back to Streamlit
   useEffect(() => {
+    if (feedbackDisabled) {
+      return
+    }
+
     const handleLocationChange = (data: any) => {
       if (appProps.nvArray.value.length > 0 && appProps.nvArray.value[0]?.isLoaded) {
         const voxel = data.vox
@@ -270,7 +277,7 @@ export const useStreamlitNiivue = (args: StreamlitArgs) => {
         }
       })
     }
-  }, [appProps.nvArray.value, args.filename])
+  }, [appProps.nvArray.value, args.filename, feedbackDisabled])
 
   // Set frame height
   useEffect(() => {

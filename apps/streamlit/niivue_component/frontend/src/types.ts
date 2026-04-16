@@ -32,6 +32,10 @@ export interface StreamlitArgs {
     colorbar?: boolean
     interpolation?: boolean
   }
+  // Throttle interval (ms) for click/drag events sent back to Python.
+  // null disables feedback entirely — no setComponentValue calls, no Python
+  // round-trips on mouse interaction.
+  update_interval_ms?: number | null
 }
 
 export interface ClickEventData {
