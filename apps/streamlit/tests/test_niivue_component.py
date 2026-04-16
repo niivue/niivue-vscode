@@ -274,6 +274,28 @@ def test_niivue_viewer_mesh_overlay_validation():
         niivue_viewer(meshes=meshes, key="test_mesh_overlay_no_data")
 
 
+def test_niivue_viewer_disable_feedback():
+    """update_interval_ms=None should be accepted (disables click feedback)."""
+    result = niivue_viewer(
+        nifti_data=b'\x00' * 100,
+        filename="test.nii",
+        update_interval_ms=None,
+        key="test_disable_feedback",
+    )
+    assert result is None
+
+
+def test_niivue_viewer_custom_update_interval():
+    """update_interval_ms as int should be accepted."""
+    result = niivue_viewer(
+        nifti_data=b'\x00' * 100,
+        filename="test.nii",
+        update_interval_ms=500,
+        key="test_custom_interval",
+    )
+    assert result is None
+
+
 def test_niivue_viewer_mesh_overlay_on_second_mesh_warns():
     """Test that overlays on non-first meshes emit a warning."""
     meshes = [
