@@ -152,6 +152,51 @@ result = niivue_viewer(
 )
 ```
 
+## ⚡ Performance
+
+Because Streamlit re-runs the whole script whenever a component calls
+`Streamlit.setComponentValue`, bidirectional click feedback from the viewer
+can become a bottleneck: without care, every mouse event re-reads the file,
+re-base64-encodes the NIfTI, and re-transmits it to the iframe. Three knobs
+keep the viewer snappy:
+
+1. **`@st.fragment`** — wrap the viewer plus the UI that consumes its
+   return value in a fragment. Clicks re-run only the fragment, not the
+   whole page. See `app_bidirectional.py`.
+2. **`@st.cache_data`** — cache `Path.read_bytes()` (and any other pure
+   work) so the same bytes aren't re-loaded on every re-run.
+3. **`update_interval_ms`** — controls the throttle on click events sent
+   back to Python (default `100` ms). Pass `None` to disable feedback
+   entirely when the return value isn't used (e.g. `app_simple.py`,
+   `app_overlay.py`, `app_advanced.py`).
+
+Minimal template:
+
+```python
+import streamlit as st
+from niivue_component import niivue_viewer
+from pathlib import Path
+
+@st.cache_data
+def load_nifti(path: str) -> bytes:
+    return Path(path).read_bytes()
+
+image = load_nifti("brain.nii.gz")
+
+@st.fragment
+def viewer():
+    result = niivue_viewer(
+        nifti_data=image,
+        filename="brain.nii.gz",
+        key="viewer",
+        update_interval_ms=100,  # or None to disable feedback
+    )
+    if result:
+        st.write(result)
+
+viewer()
+```
+
 ## 📚 API Reference
 
 ### `niivue_viewer()`
@@ -181,6 +226,10 @@ result = niivue_viewer(
   - `radiological` (bool): default False
   - `colorbar` (bool): default False
   - `interpolation` (bool): default True
+- `update_interval_ms` (int or None): throttle for click events sent back to
+  Python (default: 100 ms). `None` disables feedback entirely — use it when
+  the return value isn't consumed to avoid any Python round-trip during
+  mouse interaction.
 - `key` (str, optional): Component key
 
 **Returns:**
