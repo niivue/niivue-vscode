@@ -1,6 +1,6 @@
-# Change Log
+# @niivue/pwa
 
-## 2.9.0
+## 0.1.0
 
 ### Minor Changes
 
@@ -13,19 +13,8 @@
   HeaderBox now uses signal effect instead of stale useEffect dependency
   added onVolumeUpdated callback to ExtendedNiivue, called after load
 - 79610b8: Initial configuration for automated independent releases via Changesets.
-
-## [2.6.2] - 2026-02-02
-
-### Added
-
-- New 4D navigation panel.
-- Improved error handling in canvas with descriptive error messages.
-- Added support for `.mnc` files in JupyterLab extension.
-
-### Fixed
-
-- Fixed double loading issue for images where files would open twice.
-
-## [Unreleased]
-
-- Initial release
+- Updated dependencies [27432cf]
+- Updated dependencies [23028fd]
+- Updated dependencies [79610b8]
+- Updated dependencies [62ecdef]
+  - @niivue/react@0.2.0
