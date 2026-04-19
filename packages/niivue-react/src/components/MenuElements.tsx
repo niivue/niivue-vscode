@@ -20,7 +20,7 @@ export const MenuEntry = ({ label, onClick, isOpen, visible, shortcut, keepOpen 
   const ariaLabel = shortcut ? `${label} (Keyboard shortcut: ${shortcut})` : label
   return (
     <button
-      className="w-full px-2 py-1 text-left bg-gray-900 hover:bg-gray-700 flex justify-between items-center"
+      className="nv-menu-item"
       onClick={() => {
         onClick()
         if (!keepOpen) activeMenu.value = null
@@ -29,7 +29,7 @@ export const MenuEntry = ({ label, onClick, isOpen, visible, shortcut, keepOpen 
       aria-label={ariaLabel}
     >
       <span>{label}</span>
-      {shortcut && <span className="text-xs text-gray-400 ml-4">{shortcut}</span>}
+      {shortcut && <span className="nv-menu-item-shortcut">{shortcut}</span>}
     </button>
   )
 }
@@ -42,7 +42,7 @@ export const MenuItem = ({ label, onClick, children, visible, shortcut }: any) =
   return (
     <div className="relative group">
       <button
-        className="group-hover:bg-gray-700 px-2 rounded-l-md h-6 align-middle"
+        className="nv-topbtn"
         onClick={() => {
           activeMenu.value = null
           if (onClick) onClick()
@@ -52,7 +52,7 @@ export const MenuItem = ({ label, onClick, children, visible, shortcut }: any) =
         {label}
       </button>
       <button
-        className="hover:bg-gray-700 pr-2 rounded-r-md h-6 align-middle"
+        className="nv-topbtn"
         onClick={(e) => {
           e.stopPropagation()
           activeMenu.value = activeMenu.value === label ? null : label
@@ -61,9 +61,11 @@ export const MenuItem = ({ label, onClick, children, visible, shortcut }: any) =
       >
         <DownArrow />
       </button>
-      <div className="absolute cursor-pointer left-0 z-50 min-w-full">
-        {isOpen.value && children}
-      </div>
+      {isOpen.value && (
+        <div className="nv-menu-panel absolute left-0 z-50 min-w-full">
+          {children}
+        </div>
+      )}
     </div>
   )
 }
@@ -72,14 +74,12 @@ export const ToggleEntry = ({ label, state, shortcut }: any) => {
   return (
     <div className="relative group">
       <button
-        className={`w-full px-2 py-1 text-left hover:bg-gray-700 flex justify-between items-center ${
-          state.value ? 'bg-gray-600' : 'bg-gray-900'
-        }`}
+        className={`nv-menu-item${state.value ? ' is-active' : ''}`}
         onClick={toggle(state)}
         title={shortcut ? `Keyboard shortcut: ${shortcut}` : undefined}
       >
         <span>{label}</span>
-        {shortcut && <span className="text-xs text-gray-400 ml-4">{shortcut}</span>}
+        {shortcut && <span className="nv-menu-item-shortcut">{shortcut}</span>}
       </button>
     </div>
   )
@@ -97,7 +97,7 @@ export const MenuButton = ({
   return (
     <div className="relative">
       <button
-        className="hover:bg-gray-700 px-2 rounded-md h-6 align-middle"
+        className="nv-topbtn"
         onClick={onClick}
         title={shortcut ? `Keyboard shortcut: ${shortcut}` : undefined}
       >
@@ -111,9 +111,7 @@ export const MenuToggle = ({ label, state, shortcut }: any) => {
   return (
     <div className="relative">
       <button
-        className={`px-2 rounded-md h-6 align-middle hover:bg-gray-700 ${
-          state.value && 'bg-gray-500'
-        }`}
+        className={`nv-topbtn${state.value ? ' is-active' : ''}`}
         onClick={toggle(state)}
         title={shortcut ? `Keyboard shortcut: ${shortcut}` : undefined}
       >
@@ -167,9 +165,7 @@ export const ImageSelect = ({ label, state, children, visible }: any) => {
   return (
     <div className="relative group">
       <button
-        className={`group-hover:bg-gray-700 px-2 rounded-l-md h-6 align-middle ${
-          state.value && 'bg-gray-500'
-        }`}
+        className={`nv-topbtn${state.value ? ' is-active' : ''}`}
         onClick={() => {
           activeMenu.value = null
           state.value = !state.value
@@ -178,7 +174,7 @@ export const ImageSelect = ({ label, state, children, visible }: any) => {
         {label}
       </button>
       <button
-        className="hover:bg-gray-700 pr-2 rounded-r-md h-6 align-middle"
+        className="nv-topbtn"
         onClick={(e) => {
           e.stopPropagation()
           activeMenu.value = activeMenu.value === label ? null : label
@@ -187,7 +183,9 @@ export const ImageSelect = ({ label, state, children, visible }: any) => {
       >
         <DownArrow />
       </button>
-      <div className="absolute cursor-pointer left-0 z-50">{isOpen.value && children}</div>
+      {isOpen.value && (
+        <div className="nv-menu-panel absolute left-0 z-50">{children}</div>
+      )}
     </div>
   )
 }

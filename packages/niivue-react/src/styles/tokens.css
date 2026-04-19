@@ -1,0 +1,57 @@
+/* Design tokens — source: /tmp/design-project/niivue-vscode/project/styles.css (lines 6–52, 668–679).
+   Tokens only; no component styles. Consumed by tailwind.config.js theme extension
+   and by component-scoped CSS in ./components/*.module.css. */
+
+:root {
+  --accent: #22d3ee;
+  --bg-0: #07090c;
+  --bg-1: #0b0e13;
+  --bg-2: #10141b;
+  --bg-3: #161b23;
+  --bg-4: #1d232d;
+  --bg-5: #262d38;
+  --line: rgba(255, 255, 255, 0.06);
+  --line-2: rgba(255, 255, 255, 0.10);
+  --line-3: rgba(255, 255, 255, 0.16);
+  --fg-0: #f4f6f8;
+  --fg-1: #c7ced9;
+  --fg-2: #8892a0;
+  --fg-3: #5b6473;
+  --fg-4: #3b424d;
+
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
+
+  --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --rail-w: 56px;
+  --topbar-h: 48px;
+  --status-h: 40px;
+  --gap: 8px;
+  --panel-w: 320px;
+  --pad-y: 14px;
+  --pad-x: 16px;
+  --tool-size: 44px;
+  --font-base: 13px;
+  --font-sm: 11.5px;
+  --font-xs: 10.5px;
+}
+
+.nv-density-balanced {
+  --rail-w: 52px; --topbar-h: 44px; --status-h: 36px; --panel-w: 300px;
+  --pad-y: 11px; --pad-x: 13px; --tool-size: 40px; --font-base: 12.5px;
+}
+.nv-density-dense {
+  --rail-w: 44px; --topbar-h: 36px; --status-h: 30px; --panel-w: 272px;
+  --pad-y: 8px; --pad-x: 10px; --tool-size: 34px; --font-base: 12px; --font-sm: 11px;
+  --radius: 7px;
+}
+
+.nv-form-vscode {
+  --topbar-h: 36px; --status-h: 26px; --rail-w: 40px;
+  --pad-x: 10px; --pad-y: 10px;
+  --tool-size: 32px;
+  --font-base: 12px;
+}

@@ -453,12 +453,18 @@ export const Menu = (props: AppProps) => {
 
   return (
     <>
-      <div
-        className="flex flex-wrap items-baseline gap-2"
-      >
-        {!isVscode && settings.value.menuItems?.home && (
-          <MenuButton label="Home" onClick={homeEvent} />
-        )}
+      <div className="nv-topbar">
+        <div className="nv-topbar-left">
+          <div className="nv-brand">
+            <div className="nv-brand-mark">N</div>
+            <div className="nv-brand-text">
+              <span className="nv-brand-name">niivue</span>
+              {!isVscode && <span className="nv-brand-sub">Viewer</span>}
+            </div>
+          </div>
+          {!isVscode && settings.value.menuItems?.home && (
+            <MenuButton label="Home" onClick={homeEvent} />
+          )}
         {settings.value.menuItems?.addImage && (
           <MenuItem
             label="Add Image"
@@ -666,12 +672,15 @@ export const Menu = (props: AppProps) => {
             />
           </MenuItem>
         )}
-        <ImageSelect label="Select" state={selectionActive} visible={multipleVolumes}>
-          <ToggleEntry label="Multiple" state={selectMultiple} />
-          <MenuEntry label="Select All" onClick={selectAll} />
-        </ImageSelect>
+        </div>
+        <div className="nv-topbar-right">
+          <ImageSelect label="Select" state={selectionActive} visible={multipleVolumes}>
+            <ToggleEntry label="Multiple" state={selectMultiple} />
+            <MenuEntry label="Select All" onClick={selectAll} />
+          </ImageSelect>
+        </div>
       </div>
-      <p className="pl-2">{displayInfo.value}</p>
+      <p className="pl-2 text-fg-2">{displayInfo.value}</p>
       <ScalingBox
         selectedOverlayNumber={selectedOverlayNumber}
         overlayMenu={overlayMenu}

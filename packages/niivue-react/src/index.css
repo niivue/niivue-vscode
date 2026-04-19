@@ -1,3 +1,7 @@
+@import './styles/tokens.css';
+@import './components/Menu.module.css';
+@import './components/Volume.module.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
