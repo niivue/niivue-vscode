@@ -1,6 +1,4 @@
-/* Top bar + menu primitives — source: prototype styles.css lines 83–143, 605–624.
-   Imported globally from index.css; classes are plain (not CSS-Module-scoped).
-   The `nv-` prefix provides the scoping. */
+/* Top bar + menu primitives. Global stylesheet; the `nv-` prefix provides scoping. */
 
 .nv-topbar {
   display: flex; align-items: center; justify-content: space-between;
@@ -19,7 +17,7 @@
   width: 26px; height: 26px; border-radius: 7px;
   display: grid; place-items: center;
   color: #0a0e13;
-  font-weight: 700; font-size: 14px;
+  font-weight: 600; font-size: 14px;
   background: var(--accent);
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.1) inset,

@@ -1,6 +1,6 @@
 @import './styles/tokens.css';
-@import './components/Menu.module.css';
-@import './components/Volume.module.css';
+@import './components/Menu.css' layer(components);
+@import './components/Volume.css' layer(components);
 
 @tailwind base;
 @tailwind components;

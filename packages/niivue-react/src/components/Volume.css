@@ -1,5 +1,4 @@
-/* Viewport tile chrome — source: prototype styles.css lines 206–280.
-   Imported globally from index.css; classes are plain (not CSS-Module-scoped). */
+/* Viewport tile chrome. Global stylesheet; the `nv-` prefix provides scoping. */
 
 .nv-pane {
   position: relative;

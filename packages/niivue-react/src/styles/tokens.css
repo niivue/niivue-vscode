@@ -1,6 +1,5 @@
-/* Design tokens — source: /tmp/design-project/niivue-vscode/project/styles.css (lines 6–52, 668–679).
-   Tokens only; no component styles. Consumed by tailwind.config.js theme extension
-   and by component-scoped CSS in ./components/*.module.css. */
+/* Design tokens. Consumed by tailwind.config.js theme extension and by
+   component-scoped CSS in ./components/*.css. */
 
 :root {
   --accent: #22d3ee;
