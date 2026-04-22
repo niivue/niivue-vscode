@@ -20,8 +20,8 @@ test.describe('Error Handling', () => {
     await page.waitForTimeout(1000)
     await expect(page.locator('div').filter({ hasText: /nonexistent|fetch/i }).first()).toBeVisible()
 
-    // Close with X button
-    await page.click('button:has-text("X")')
+    // Close with the close button
+    await page.getByRole('button', { name: 'Close' }).click()
     await expect(page.locator('text=Failed to load image')).not.toBeVisible()
   })
 })
