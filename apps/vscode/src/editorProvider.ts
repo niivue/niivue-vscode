@@ -19,7 +19,7 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
   private static readonly viewType = 'niiVue.default'
   private readonly webviews = new WebviewCollection()
 
-  constructor(private readonly _context: vscode.ExtensionContext) { }
+  constructor(private readonly _context: vscode.ExtensionContext) {}
 
   async openCustomDocument(uri: vscode.Uri): Promise<NiiVueDocument> {
     console.log(`Opening document ${uri}`)
