@@ -7,7 +7,11 @@ import { Menu } from '../components/Menu'
 
 // Mock canvas and niivue to avoid webgl context issues in jsdom
 vi.mock('@niivue/niivue', () => ({
-  SLICE_TYPE: { AXIAL: 0, CORONAL: 1, SAGITTAL: 2, MULTIPLANAR: 3, RENDER: 4 }
+  SLICE_TYPE: { AXIAL: 0, CORONAL: 1, SAGITTAL: 2, MULTIPLANAR: 3, RENDER: 4 },
+  Niivue: vi.fn(),
+  NVImage: { loadFromUrl: vi.fn() },
+  NVMesh: { readMesh: vi.fn() },
+  NVMeshLoaders: { readLayer: vi.fn() },
 }))
 
 describe('Menu', () => {
@@ -53,9 +57,10 @@ describe('Menu', () => {
     
     render(<Menu {...mockProps as unknown as AppProps} />)
     
-    // Find the view menu button and open it
-    const viewButton = screen.getByText('View')
-    fireEvent.click(viewButton)
+    // Click the dropdown arrow button to open the View menu
+    // (the label button calls resetZoom and closes any open dropdown)
+    const viewDropdown = screen.getByTestId('menu-item-dropdown-View')
+    fireEvent.click(viewDropdown)
     
     // Find Cycle Clip Plane (3D)
     const cycleClipButton = await screen.findByText("Cycle Clip Plane (3D)")
