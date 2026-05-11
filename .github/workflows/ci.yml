@@ -328,6 +328,15 @@ jobs:
           path: apps/pwa/playwright-report/
           retention-days: 30
 
+      - name: Upload e2e coverage artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-e2e-pwa
+          path: apps/pwa/coverage/e2e/
+          if-no-files-found: ignore
+          retention-days: 1
+
   coverage:
     needs: [test-pwa, test-jupyter, test-streamlit, e2e-tests]
     if: |
@@ -366,6 +375,13 @@ jobs:
         with:
           name: coverage-streamlit
           path: .
+        continue-on-error: true
+
+      - name: Download e2e coverage artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-e2e-pwa
+          path: apps/pwa/coverage/e2e/
         continue-on-error: true
 
       - name: Aggregate coverage reports
