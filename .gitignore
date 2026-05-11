@@ -56,6 +56,9 @@ test-results/
 playwright-report/
 coverage/
 
+# Exception: keep the coverage aggregation script
+!scripts/coverage/
+
 # Individual package lockfiles (use root pnpm-lock.yaml only)
 **/package-lock.json
 **/yarn.lock
