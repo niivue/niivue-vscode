@@ -37,7 +37,7 @@ export default defineConfig({
         sourceFilter: (sourcePath: string) =>
           sourcePath.includes('apps/pwa/src') ||
           sourcePath.includes('packages/niivue-react/src'),
-        reports: ['v8', 'json', 'json-summary', 'lcov'],
+        reports: ['v8', 'istanbul', 'json', 'json-summary', 'lcov'],
         outputDir: './coverage/e2e',
       },
     }],
