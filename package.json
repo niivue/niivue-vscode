@@ -47,7 +47,8 @@
     "update:check": "pnpm dlx syncpack list && echo '\\n📋 Run pnpm update:safe for safe updates or pnpm update:all for latest versions'",
     "changeset": "changeset",
     "version": "changeset version && pnpm install --no-frozen-lockfile",
-    "release": "changeset publish"
+    "release": "changeset publish",
+    "coverage:report": "node scripts/coverage/aggregate.mjs"
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.8",

@@ -1,6 +1,33 @@
-import { Page } from '@playwright/test'
+import { Page, TestInfo } from '@playwright/test'
 
 export const BASE_URL = 'http://localhost:4000/'
+
+/**
+ * Start collecting V8 JS/CSS coverage for the current test.
+ * Call this in a beforeEach hook to capture coverage across all navigations.
+ */
+export async function startCoverage(page: Page) {
+  await Promise.all([
+    page.coverage.startJSCoverage({ resetOnNavigation: false }),
+    page.coverage.startCSSCoverage({ resetOnNavigation: false }),
+  ])
+}
+
+/**
+ * Stop collecting V8 coverage and attach the raw coverage payload to the
+ * test result.  Monocart-reporter picks it up automatically and merges it
+ * across all 54 tests.
+ */
+export async function stopCoverage(page: Page, testInfo: TestInfo) {
+  const [js, css] = await Promise.all([
+    page.coverage.stopJSCoverage(),
+    page.coverage.stopCSSCoverage(),
+  ])
+  await testInfo.attach('coverage', {
+    body: JSON.stringify({ js, css }),
+    contentType: 'application/json',
+  })
+}
 
 export async function waitForImageLoad(page: Page, timeout = 10000) {
   // Snapshot the current loaded count before we start waiting.

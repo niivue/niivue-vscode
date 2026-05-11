@@ -16,5 +16,12 @@ export default defineConfig({
     setupFiles: './test/setup.ts',
     include: ['test/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     exclude: ['node_modules/**', 'build/**', 'dist/**'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html', 'json', 'json-summary'],
+      reportsDirectory: './coverage/unit',
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: ['src/**/*.d.ts'],
+    },
   },
 })

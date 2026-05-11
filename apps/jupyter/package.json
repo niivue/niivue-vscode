@@ -55,6 +55,8 @@
     "format": "prettier \"**/*.{ts,tsx,js,jsx,css,json,md}\" --write",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "coverage": "pnpm run test:coverage",
     "release:test": "pnpm run clean:all && pnpm run build:prod && python -m build --wheel && python -m twine upload --repository testpypi dist/*",
     "release:prod": "pnpm run clean:all && pnpm run build:prod && python -m build --wheel && python -m twine upload dist/*",
     "release:check": "pnpm run clean:all && pnpm run build:prod && python -m build --wheel && python -m twine check dist/*"
@@ -77,6 +79,7 @@
     "@niivue/dicom-loader": "^1.0.0",
     "@niivue/react": "workspace:*",
     "@preact/signals": "^2.3.2",
+    "@vitest/coverage-v8": "^3.2.4",
     "copy-webpack-plugin": "^13.0.1",
     "css-loader": "^7.1.2",
     "eslint-plugin-prettier": "^5.5.4",

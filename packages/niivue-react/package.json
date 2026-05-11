@@ -59,7 +59,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "coverage": "pnpm run test:coverage"
   },
   "dependencies": {
     "@niivue/dcm2niix": "^1.2.0",

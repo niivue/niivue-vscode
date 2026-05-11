@@ -22,6 +22,18 @@ export default defineConfig({
     ['html', { open: 'never' }], // Don't auto-open browser with report
     ['junit', { outputFile: 'test-results/junit.xml' }],
     ['json', { outputFile: 'test-results/results.json' }],
+    ['monocart-reporter', {
+      name: 'NiiVue PWA Coverage',
+      outputFile: './coverage/e2e/index.html',
+      coverage: {
+        entryFilter: (entry: { url: string }) => entry.url.startsWith('http://localhost:4000'),
+        sourceFilter: (sourcePath: string) =>
+          sourcePath.includes('apps/pwa/src') ||
+          sourcePath.includes('packages/niivue-react/src'),
+        reports: ['v8', 'json', 'json-summary', 'lcov'],
+        outputDir: './coverage/e2e',
+      },
+    }],
   ],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {

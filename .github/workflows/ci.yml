@@ -280,3 +280,85 @@ jobs:
           name: playwright-report
           path: apps/pwa/playwright-report/
           retention-days: 30
+
+  coverage:
+    needs: [test-pwa, test-jupyter, test-streamlit, e2e-tests]
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install pytest pytest-cov
+          cd apps/streamlit && python -m pip install -e ".[test]" 2>/dev/null || python -m pip install streamlit
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Restore build artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            apps/*/dist
+            apps/*/build
+            apps/*/lib
+            packages/*/dist
+          key: build-artifacts-${{ github.sha }}
+
+      - name: Run coverage for all packages
+        run: pnpm turbo coverage --filter=@niivue/react --filter=@niivue/pwa --filter=@niivue/jupyter
+
+      - name: Run Streamlit frontend coverage
+        run: cd apps/streamlit/niivue_component/frontend && pnpm test:coverage
+
+      - name: Run Streamlit Python coverage
+        run: |
+          cd apps/streamlit
+          python -m pytest tests/ --cov=niivue_component --cov-report=json:./coverage/python/coverage.json --cov-report=html:./coverage/python 2>/dev/null || true
+
+      - name: Aggregate coverage reports
+        run: node scripts/coverage/aggregate.mjs
+
+      - name: Upload merged coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-merged
+          path: coverage/merged/
+          retention-days: 30
+
+      - name: Upload coverage summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-summary
+          path: |
+            coverage/summary.json
+            coverage/summary.md
+          retention-days: 30
+
+      - name: Comment coverage summary on PR
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          path: coverage/summary.md
