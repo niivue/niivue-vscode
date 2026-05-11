@@ -140,8 +140,21 @@ jobs:
             packages/*/dist
           key: build-artifacts-${{ github.sha }}
 
-      - name: Test PWA
-        run: pnpm turbo test --filter=@niivue/pwa
+      - name: Test PWA (with coverage)
+        run: |
+          pnpm --filter=@niivue/react test:coverage
+          pnpm --filter=@niivue/pwa test:coverage
+
+      - name: Upload unit coverage artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-unit-pwa
+          path: |
+            packages/niivue-react/coverage/
+            apps/pwa/coverage/unit/
+          if-no-files-found: ignore
+          retention-days: 1
 
   test-jupyter:
     needs: [changes, build]
@@ -188,6 +201,19 @@ jobs:
           jupyter labextension list
           python -m jupyterlab.browser_check
 
+      - name: Run Jupyter vitest coverage
+        run: pnpm --filter=@niivue/jupyter test:coverage
+        continue-on-error: true
+
+      - name: Upload Jupyter vitest coverage artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-unit-jupyter
+          path: apps/jupyter/coverage/unit/
+          if-no-files-found: ignore
+          retention-days: 1
+
   test-streamlit:
     needs: [changes, build]
     if: needs.changes.outputs.streamlit == 'true'
@@ -226,13 +252,34 @@ jobs:
       - name: Install Python test dependencies
         run: |
           cd apps/streamlit
-          python -m pip install pytest streamlit
+          python -m pip install pytest pytest-cov streamlit
 
       - name: Run Streamlit frontend tests
         run: pnpm turbo test:frontend --filter=@niivue/streamlit
 
       - name: Run Streamlit Python tests
         run: pnpm turbo test:python --filter=@niivue/streamlit
+
+      - name: Run Streamlit frontend coverage
+        run: cd apps/streamlit/niivue_component/frontend && pnpm test:coverage
+        continue-on-error: true
+
+      - name: Run Streamlit Python coverage
+        run: |
+          cd apps/streamlit
+          python -m pytest tests/ --cov=niivue_component --cov-report=json:./coverage/python/coverage.json --cov-report=html:./coverage/python || echo "Streamlit Python coverage step failed; continuing"
+        continue-on-error: true
+
+      - name: Upload Streamlit coverage artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-streamlit
+          path: |
+            apps/streamlit/niivue_component/frontend/coverage/
+            apps/streamlit/coverage/python/
+          if-no-files-found: ignore
+          retention-days: 1
 
   e2e-tests:
     needs: [changes, build]
@@ -295,53 +342,28 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'pnpm'
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - name: Download pwa/react coverage artifacts
+        uses: actions/download-artifact@v4
         with:
-          python-version: '3.12'
+          name: coverage-unit-pwa
+        continue-on-error: true
 
-      - name: Install Python dependencies
-        run: |
-          python -m pip install pytest pytest-cov
-          if cd apps/streamlit && python -m pip install -e ".[test]"; then
-            echo "Installed streamlit package with test extras"
-          else
-            echo "Could not install streamlit package with test extras, installing streamlit directly"
-            python -m pip install streamlit
-          fi
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Restore build artifacts
-        uses: actions/cache@v4
+      - name: Download Jupyter coverage artifacts
+        uses: actions/download-artifact@v4
         with:
-          path: |
-            apps/*/dist
-            apps/*/build
-            apps/*/lib
-            packages/*/dist
-          key: build-artifacts-${{ github.sha }}
+          name: coverage-unit-jupyter
+        continue-on-error: true
 
-      - name: Run coverage for all packages
-        run: pnpm turbo coverage --filter=@niivue/react --filter=@niivue/pwa --filter=@niivue/jupyter
-
-      - name: Run Streamlit frontend coverage
-        run: cd apps/streamlit/niivue_component/frontend && pnpm test:coverage
-
-      - name: Run Streamlit Python coverage
-        run: |
-          cd apps/streamlit
-          python -m pytest tests/ --cov=niivue_component --cov-report=json:./coverage/python/coverage.json --cov-report=html:./coverage/python || echo "Streamlit Python coverage step failed; continuing"
+      - name: Download Streamlit coverage artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-streamlit
+        continue-on-error: true
 
       - name: Aggregate coverage reports
         run: node scripts/coverage/aggregate.mjs

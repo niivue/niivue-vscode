@@ -59,7 +59,7 @@
       "cache": false
     },
     "coverage": {
-      "dependsOn": ["build"],
+      "dependsOn": [],
       "outputs": ["coverage/**"],
       "inputs": ["src/**", "test/**", "tests/**"]
     }
