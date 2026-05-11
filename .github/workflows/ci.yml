@@ -267,7 +267,7 @@ jobs:
       - name: Run Streamlit Python coverage
         run: |
           cd apps/streamlit
-          python -m pytest tests/ --cov=niivue_component --cov-report=json:./coverage/python/coverage.json --cov-report=html:./coverage/python || echo "Streamlit Python coverage step failed; continuing"
+          python -m pytest tests/ --cov=niivue_component --cov-report=json:./coverage/python/coverage.json --cov-report=html:./coverage/python
         continue-on-error: true
 
       - name: Upload Streamlit coverage artifacts
@@ -351,18 +351,21 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: coverage-unit-pwa
+          path: .
         continue-on-error: true
 
       - name: Download Jupyter coverage artifacts
         uses: actions/download-artifact@v4
         with:
           name: coverage-unit-jupyter
+          path: .
         continue-on-error: true
 
       - name: Download Streamlit coverage artifacts
         uses: actions/download-artifact@v4
         with:
           name: coverage-streamlit
+          path: .
         continue-on-error: true
 
       - name: Aggregate coverage reports
