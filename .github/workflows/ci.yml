@@ -312,7 +312,12 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install pytest pytest-cov
-          cd apps/streamlit && python -m pip install -e ".[test]" 2>/dev/null || python -m pip install streamlit
+          if cd apps/streamlit && python -m pip install -e ".[test]"; then
+            echo "Installed streamlit package with test extras"
+          else
+            echo "Could not install streamlit package with test extras, installing streamlit directly"
+            python -m pip install streamlit
+          fi
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -336,7 +341,7 @@ jobs:
       - name: Run Streamlit Python coverage
         run: |
           cd apps/streamlit
-          python -m pytest tests/ --cov=niivue_component --cov-report=json:./coverage/python/coverage.json --cov-report=html:./coverage/python 2>/dev/null || true
+          python -m pytest tests/ --cov=niivue_component --cov-report=json:./coverage/python/coverage.json --cov-report=html:./coverage/python || echo "Streamlit Python coverage step failed; continuing"
 
       - name: Aggregate coverage reports
         run: node scripts/coverage/aggregate.mjs

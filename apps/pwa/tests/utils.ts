@@ -16,7 +16,7 @@ export async function startCoverage(page: Page) {
 /**
  * Stop collecting V8 coverage and attach the raw coverage payload to the
  * test result.  Monocart-reporter picks it up automatically and merges it
- * across all 54 tests.
+ * across all tests.
  */
 export async function stopCoverage(page: Page, testInfo: TestInfo) {
   const [js, css] = await Promise.all([
