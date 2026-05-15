@@ -27,12 +27,19 @@ export default defineConfig({
       outputFile: './coverage/e2e/index.html',
       coverage: {
         entryFilter: (entry: { url: string }) => entry.url.startsWith('http://localhost:4000'),
-        // Vite serves apps/pwa as its root, so source-map paths for pwa
-        // come through as 'src/...' rather than 'apps/pwa/src/...'.
-        // Match any first-party source under a /src/ folder; skip deps.
+        // Skip third-party / Vite-internal sources; let the aggregator's
+        // bucket matcher categorize the rest.
         sourceFilter: (sourcePath: string) =>
           !sourcePath.includes('node_modules') &&
-          /(^|\/)src\//.test(sourcePath),
+          !sourcePath.startsWith('@'),
+        // Vite serves apps/pwa as its project root, so pwa source-map paths
+        // arrive unprefixed (e.g. 'src/main.tsx', 'Pwa.tsx'). Prepend the
+        // workspace prefix so the aggregator's `apps/pwa/src` bucket
+        // matcher catches them.
+        sourcePath: (sourcePath: string) =>
+          sourcePath.includes('apps/') || sourcePath.includes('packages/')
+            ? sourcePath
+            : 'apps/pwa/' + sourcePath.replace(/^\//, ''),
         reports: ['v8', 'json', 'json-summary', 'lcov'],
         outputDir: './coverage/e2e',
       },
