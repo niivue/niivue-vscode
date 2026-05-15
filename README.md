@@ -1,5 +1,7 @@
 # NiiVue VS Code (and Jupyterlab, web native, streamlit)
 
+[![Coverage](https://img.shields.io/endpoint?url=https://niivue.github.io/niivue-vscode/coverage/main/badge.json)](https://niivue.github.io/niivue-vscode/coverage/main/)
+
 **WebGL 2.0 medical image viewers for multiple platforms**
 
 This monorepo contains the [NiiVue](https://github.com/niivue/niivue) integration projects for VS Code, JupyterLab, web browsers, and Streamlit. View NIfTI files, meshes, tractography, and DICOM images with hardware-accelerated rendering across your favorite development environments.
@@ -37,7 +39,7 @@ jupyter lab
 
 Browser-based viewer that works offline as an installable web app.
 
-- **Try it**: [https://korbinian90.github.io/niivue-vscode](https://korbinian90.github.io/niivue-vscode)
+- **Try it**: [https://niivue.github.io/niivue-vscode](https://niivue.github.io/niivue-vscode)
 - **Install**: Click "Install App" in Chrome/Edge
 - **Docs**: [apps/pwa/README.md](apps/pwa/README.md)
 

@@ -345,7 +345,7 @@ jobs:
       !contains(needs.*.result, 'cancelled')
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       pull-requests: write
     steps:
       - name: Checkout
@@ -384,7 +384,39 @@ jobs:
           path: apps/pwa/coverage/e2e/
         continue-on-error: true
 
+      - name: Determine coverage deploy target
+        id: target
+        run: |
+          repo_name="${{ github.event.repository.name }}"
+          owner="${{ github.repository_owner }}"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            dest="coverage/pr-${{ github.event.pull_request.number }}"
+          else
+            dest="coverage/main"
+          fi
+          url="https://${owner}.github.io/${repo_name}/${dest}/"
+          badge_url="https://img.shields.io/endpoint?url=${url}badge.json"
+          {
+            echo "dest=${dest}"
+            echo "url=${url}"
+            echo "badge_url=${badge_url}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Fetch baseline coverage from main (for delta)
+        continue-on-error: true
+        run: |
+          baseline_url="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/coverage/main/summary.json"
+          if curl -fsSL "$baseline_url" -o /tmp/coverage-baseline.json; then
+            echo "COVERAGE_BASELINE=/tmp/coverage-baseline.json" >> "$GITHUB_ENV"
+            echo "Baseline fetched from $baseline_url"
+          else
+            echo "No baseline available at $baseline_url (first run or main not yet published)"
+          fi
+
       - name: Aggregate coverage reports
+        env:
+          COVERAGE_REPORT_URL: ${{ steps.target.outputs.url }}
+          COVERAGE_BADGE_URL: ${{ steps.target.outputs.badge_url }}
         run: node scripts/coverage/aggregate.mjs
 
       - name: Upload merged coverage report
@@ -401,7 +433,30 @@ jobs:
           path: |
             coverage/summary.json
             coverage/summary.md
+            coverage/badge.json
           retention-days: 30
+
+      - name: Stage publishable coverage assets
+        run: |
+          mkdir -p coverage/publish
+          # Flatten merged/index.html to publish/ root so the deploy URL serves it directly
+          cp coverage/merged/index.html coverage/publish/index.html
+          cp coverage/badge.json coverage/publish/
+          cp coverage/summary.json coverage/publish/
+          cp coverage/summary.md coverage/publish/
+
+      - name: Deploy coverage report to GitHub Pages
+        if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+        continue-on-error: true
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./coverage/publish
+          destination_dir: ${{ steps.target.outputs.dest }}
+          keep_files: true
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+          commit_message: 'Publish coverage report to ${{ steps.target.outputs.dest }}'
 
       - name: Comment coverage summary on PR
         if: github.event_name == 'pull_request'
