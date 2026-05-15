@@ -447,7 +447,10 @@ jobs:
 
       - name: Deploy coverage report to GitHub Pages
         if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
-        continue-on-error: true
+        # Tolerate failures only on PRs (fork PRs have a read-only GITHUB_TOKEN
+        # and will fail the deploy — we still want the sticky comment to post).
+        # On main, a failed deploy means a stale badge, so we fail the build.
+        continue-on-error: ${{ github.event_name == 'pull_request' }}
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
