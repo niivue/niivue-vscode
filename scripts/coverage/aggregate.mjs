@@ -90,24 +90,24 @@ const BUCKETS = [
   },
   {
     id: 'pwa-glue',
-    label: '`apps/pwa` glue',
+    label: '`apps/pwa`',
     match: (f) => f.includes('apps/pwa/src'),
   },
   {
     id: 'jupyter-glue',
-    label: '`apps/jupyter` glue',
+    label: '`apps/jupyter`',
     match: (f) => f.includes('apps/jupyter/src'),
   },
   {
     id: 'streamlit-glue',
-    label: '`apps/streamlit` glue',
+    label: '`apps/streamlit`',
     match: (f) =>
       f.includes('apps/streamlit/niivue_component/frontend/src') ||
       f.includes('apps/streamlit/niivue_component/'),
   },
   {
     id: 'vscode-glue',
-    label: '`apps/vscode` glue',
+    label: '`apps/vscode`',
     match: (f) => f.includes('apps/vscode/src'),
   },
 ]
