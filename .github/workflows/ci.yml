@@ -384,19 +384,6 @@ jobs:
           path: apps/pwa/coverage/e2e/
         continue-on-error: true
 
-      - name: Debug — list downloaded coverage trees
-        run: |
-          echo "=== apps/pwa/coverage tree ==="
-          find apps/pwa/coverage -maxdepth 4 -type f \
-            \( -name '*.json' -o -name '*.info' -o -name 'index.html' \) \
-            -printf '%p (%s bytes)\n' 2>/dev/null | sort | head -60 || true
-          echo "=== packages/niivue-react/coverage tree ==="
-          find packages/niivue-react/coverage -maxdepth 4 -type f -name '*.json' \
-            -printf '%p (%s bytes)\n' 2>/dev/null | sort | head -20 || true
-          echo "=== streamlit downloaded to repo root ==="
-          find niivue_component apps/streamlit -maxdepth 5 -type f -name '*.json' \
-            -printf '%p (%s bytes)\n' 2>/dev/null | sort | head -20 || true
-
       - name: Aggregate coverage reports
         run: node scripts/coverage/aggregate.mjs
 
