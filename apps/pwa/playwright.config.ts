@@ -27,9 +27,12 @@ export default defineConfig({
       outputFile: './coverage/e2e/index.html',
       coverage: {
         entryFilter: (entry: { url: string }) => entry.url.startsWith('http://localhost:4000'),
+        // Vite serves apps/pwa as its root, so source-map paths for pwa
+        // come through as 'src/...' rather than 'apps/pwa/src/...'.
+        // Match any first-party source under a /src/ folder; skip deps.
         sourceFilter: (sourcePath: string) =>
-          sourcePath.includes('apps/pwa/src') ||
-          sourcePath.includes('packages/niivue-react/src'),
+          !sourcePath.includes('node_modules') &&
+          /(^|\/)src\//.test(sourcePath),
         reports: ['v8', 'json', 'json-summary', 'lcov'],
         outputDir: './coverage/e2e',
       },
