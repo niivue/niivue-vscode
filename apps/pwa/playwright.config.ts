@@ -27,19 +27,9 @@ export default defineConfig({
       outputFile: './coverage/e2e/index.html',
       coverage: {
         entryFilter: (entry: { url: string }) => entry.url.startsWith('http://localhost:4000'),
-        // Skip third-party / Vite-internal sources; let the aggregator's
-        // bucket matcher categorize the rest.
         sourceFilter: (sourcePath: string) =>
-          !sourcePath.includes('node_modules') &&
-          !sourcePath.startsWith('@'),
-        // Vite serves apps/pwa as its project root, so pwa source-map paths
-        // arrive unprefixed (e.g. 'src/main.tsx', 'Pwa.tsx'). Prepend the
-        // workspace prefix so the aggregator's `apps/pwa/src` bucket
-        // matcher catches them.
-        sourcePath: (sourcePath: string) =>
-          sourcePath.includes('apps/') || sourcePath.includes('packages/')
-            ? sourcePath
-            : 'apps/pwa/' + sourcePath.replace(/^\//, ''),
+          sourcePath.includes('apps/pwa/src') ||
+          sourcePath.includes('packages/niivue-react/src'),
         reports: ['v8', 'json', 'json-summary', 'lcov'],
         outputDir: './coverage/e2e',
       },
@@ -87,12 +77,19 @@ export default defineConfig({
     // },
   ],
 
-  /* Run your local dev server before starting the tests */
+  /*
+   * Build the app and serve it via `vite preview` so source maps have full
+   * paths (e.g. `apps/pwa/src/Pwa.tsx`, `packages/niivue-react/src/...`).
+   * `--base /` overrides the GitHub Pages base so tests can hit the root.
+   * For local iteration, run `pnpm dev` separately and playwright will
+   * reuseExistingServer.
+   */
   webServer: {
-    command: 'pnpm run dev',
+    command:
+      'node copy-assets.mjs && vite build --base / && vite preview --base / --port 4000',
     url: 'http://localhost:4000',
     reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000, // 120 seconds to start server
+    timeout: 5 * 60 * 1000, // 5 minutes — production build can take a while
   },
 
   /* Global setup and teardown */
