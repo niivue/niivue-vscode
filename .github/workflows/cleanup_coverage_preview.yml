@@ -21,13 +21,19 @@ jobs:
       - name: Remove PR coverage directory
         run: |
           PR_DIR="coverage/pr-${{ github.event.pull_request.number }}"
-          if [ -d "$PR_DIR" ]; then
-            git config user.name 'github-actions[bot]'
-            git config user.email 'github-actions[bot]@users.noreply.github.com'
-            git rm -rf "$PR_DIR"
+          if [ ! -d "$PR_DIR" ]; then
+            echo "Coverage directory $PR_DIR does not exist, nothing to clean up"
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          # --ignore-unmatch tolerates the case where the directory exists in the
+          # working tree but contains no tracked files (already removed in a prior run).
+          git rm -rf --ignore-unmatch "$PR_DIR"
+          if git diff --cached --quiet; then
+            echo "Nothing staged for $PR_DIR (already untracked), skipping commit"
+          else
             git commit -m "Remove coverage report for closed PR #${{ github.event.pull_request.number }}"
             git push
             echo "Removed coverage directory: $PR_DIR"
-          else
-            echo "Coverage directory $PR_DIR does not exist, nothing to clean up"
           fi
