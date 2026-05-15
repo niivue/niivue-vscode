@@ -256,22 +256,38 @@ function buildBadgeJson(summary) {
   }
 }
 
+// Render a single cell. When the current run produced no value for this
+// metric but the baseline (last main run) has one, carry the baseline value
+// forward with a "*" marker so readers can tell the row was skipped, not
+// permanently uncovered. Returns { text, stale }.
+function renderCell(curr, prev) {
+  if (curr !== null && curr !== undefined) {
+    return { text: pctStr(curr) + deltaStr(curr, prev), stale: false }
+  }
+  if (prev !== null && prev !== undefined) {
+    return { text: `${prev}%*`, stale: true }
+  }
+  return { text: 'N/A', stale: false }
+}
+
 function buildMarkdownTable(summary, opts = {}) {
   const { baseline = null, reportUrl = null, badgeUrl = null } = opts
 
   const overall = summary._overall?.stats?.lines ?? null
   const baseOverall = baseline?._overall?.stats?.lines ?? null
 
+  let anyStale = false
   const rows = BUCKETS.map((b) => {
     const s = summary[b.id]?.stats ?? {}
     const baseStats = baseline?.[b.id]?.stats ?? {}
-    return [
-      b.label,
-      pctStr(s.statements) + deltaStr(s.statements ?? null, baseStats.statements),
-      pctStr(s.branches) + deltaStr(s.branches ?? null, baseStats.branches),
-      pctStr(s.functions) + deltaStr(s.functions ?? null, baseStats.functions),
-      pctStr(s.lines) + deltaStr(s.lines ?? null, baseStats.lines),
+    const cells = [
+      renderCell(s.statements ?? null, baseStats.statements ?? null),
+      renderCell(s.branches ?? null, baseStats.branches ?? null),
+      renderCell(s.functions ?? null, baseStats.functions ?? null),
+      renderCell(s.lines ?? null, baseStats.lines ?? null),
     ]
+    if (cells.some((c) => c.stale)) anyStale = true
+    return [b.label, ...cells.map((c) => c.text)]
   })
 
   const header = ['Package', 'Statements', 'Branches', 'Functions', 'Lines']
@@ -288,14 +304,25 @@ function buildMarkdownTable(summary, opts = {}) {
     lines.push('')
   }
 
-  if (overall !== null) {
-    const delta = deltaStr(overall, baseOverall)
-    lines.push(`**Overall line coverage: ${pctStr(overall)}${delta ? ` ${delta.trim()} vs \`main\`` : ''}**`)
+  const overallCell = renderCell(overall, baseOverall)
+  if (overallCell.text !== 'N/A') {
+    if (overallCell.stale) anyStale = true
+    if (overall !== null) {
+      const delta = deltaStr(overall, baseOverall)
+      lines.push(`**Overall line coverage: ${pctStr(overall)}${delta ? ` ${delta.trim()} vs \`main\`` : ''}**`)
+    } else {
+      lines.push(`**Overall line coverage: ${overallCell.text}**`)
+    }
     lines.push('')
   }
 
   lines.push(table)
   lines.push('')
+
+  if (anyStale) {
+    lines.push('_\\* value carried over from `main` — this run did not produce coverage for that cell._')
+    lines.push('')
+  }
 
   if (reportUrl) {
     lines.push(`📊 [View full report →](${reportUrl})`)
