@@ -5,6 +5,12 @@ on:
   pull_request:
     types: [closed]
 
+# Shared group with cleanup_coverage_preview.yml — both push to gh-pages on
+# the same event and would otherwise race with non-fast-forward push errors.
+concurrency:
+  group: gh-pages-mutation
+  cancel-in-progress: false
+
 permissions:
   contents: write
   pull-requests: write

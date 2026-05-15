@@ -437,6 +437,10 @@ jobs:
           retention-days: 30
 
       - name: Stage publishable coverage assets
+        # aggregate.mjs exits 0 when no coverage JSON files are present (e.g.
+        # docs-only commits where all test jobs were skipped) — skip staging
+        # rather than failing on missing files.
+        if: hashFiles('coverage/merged/index.html') != ''
         run: |
           mkdir -p coverage/publish
           # Flatten merged/index.html to publish/ root so the deploy URL serves it directly
@@ -446,7 +450,7 @@ jobs:
           cp coverage/summary.md coverage/publish/
 
       - name: Deploy coverage report to GitHub Pages
-        if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+        if: (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') && hashFiles('coverage/publish/index.html') != ''
         # Tolerate failures only on PRs (fork PRs have a read-only GITHUB_TOKEN
         # and will fail the deploy — we still want the sticky comment to post).
         # On main, a failed deploy means a stale badge, so we fail the build.
@@ -462,7 +466,7 @@ jobs:
           commit_message: 'Publish coverage report to ${{ steps.target.outputs.dest }}'
 
       - name: Comment coverage summary on PR
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && hashFiles('coverage/summary.md') != ''
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           path: coverage/summary.md

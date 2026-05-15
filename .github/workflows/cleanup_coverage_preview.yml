@@ -5,6 +5,13 @@ on:
   pull_request:
     types: [closed]
 
+# Serialize against any other workflow that mutates gh-pages (notably
+# cleanup_pwa_preview.yml fires on the same event) so concurrent pushes
+# don't fail with non-fast-forward errors.
+concurrency:
+  group: gh-pages-mutation
+  cancel-in-progress: false
+
 permissions:
   contents: write
 
