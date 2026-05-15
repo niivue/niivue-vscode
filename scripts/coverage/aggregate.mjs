@@ -214,6 +214,7 @@ function bucketData(istanbulData) {
     }
     result[bucket.id] = { label: bucket.label, stats: computeStats(subset) }
   }
+  result._overall = { label: 'Overall', stats: computeStats(istanbulData) }
   return result
 }
 
@@ -226,25 +227,82 @@ function pctStr(v) {
   return `${v}%`
 }
 
-function buildMarkdownTable(summary) {
+function deltaStr(curr, prev) {
+  if (curr === null || prev === null || prev === undefined) return ''
+  const diff = Math.round((curr - prev) * 10) / 10
+  if (diff === 0) return ''
+  const sign = diff > 0 ? '+' : '−'
+  return ` (${sign}${Math.abs(diff)})`
+}
+
+// Shields color thresholds for line coverage.
+function badgeColor(pct) {
+  if (pct === null) return 'lightgrey'
+  if (pct >= 90) return 'brightgreen'
+  if (pct >= 80) return 'green'
+  if (pct >= 70) return 'yellowgreen'
+  if (pct >= 60) return 'yellow'
+  if (pct >= 50) return 'orange'
+  return 'red'
+}
+
+function buildBadgeJson(summary) {
+  const overall = summary._overall?.stats?.lines
+  return {
+    schemaVersion: 1,
+    label: 'coverage',
+    message: overall === null || overall === undefined ? 'unknown' : `${overall}%`,
+    color: badgeColor(overall ?? null),
+  }
+}
+
+function buildMarkdownTable(summary, opts = {}) {
+  const { baseline = null, reportUrl = null, badgeUrl = null } = opts
+
+  const overall = summary._overall?.stats?.lines ?? null
+  const baseOverall = baseline?._overall?.stats?.lines ?? null
+
   const rows = BUCKETS.map((b) => {
     const s = summary[b.id]?.stats ?? {}
+    const baseStats = baseline?.[b.id]?.stats ?? {}
     return [
       b.label,
-      pctStr(s.statements),
-      pctStr(s.branches),
-      pctStr(s.functions),
-      pctStr(s.lines),
+      pctStr(s.statements) + deltaStr(s.statements ?? null, baseStats.statements),
+      pctStr(s.branches) + deltaStr(s.branches ?? null, baseStats.branches),
+      pctStr(s.functions) + deltaStr(s.functions ?? null, baseStats.functions),
+      pctStr(s.lines) + deltaStr(s.lines ?? null, baseStats.lines),
     ]
   })
 
-  const header = ['Row', 'Statements', 'Branches', 'Functions', 'Lines']
+  const header = ['Package', 'Statements', 'Branches', 'Functions', 'Lines']
   const separator = header.map(() => '---')
   const table = [header, separator, ...rows]
     .map((row) => `| ${row.join(' | ')} |`)
     .join('\n')
 
-  return `## Coverage Summary\n\n${table}\n`
+  const lines = ['## Coverage Report', '']
+
+  if (badgeUrl) {
+    const badgeImg = `![coverage](${badgeUrl})`
+    lines.push(badgeImg)
+    lines.push('')
+  }
+
+  if (overall !== null) {
+    const delta = deltaStr(overall, baseOverall)
+    lines.push(`**Overall line coverage: ${pctStr(overall)}${delta ? ` ${delta.trim()} vs \`main\`` : ''}**`)
+    lines.push('')
+  }
+
+  lines.push(table)
+  lines.push('')
+
+  if (reportUrl) {
+    lines.push(`📊 [View full report →](${reportUrl})`)
+    lines.push('')
+  }
+
+  return lines.join('\n')
 }
 
 function buildHtmlReport(mergedData) {
@@ -315,8 +373,25 @@ async function main() {
   }
 
   const summary = bucketData(mergedData)
-  const markdownTable = buildMarkdownTable(summary)
+
+  // Optional baseline (previous summary.json fetched from gh-pages main report)
+  let baseline = null
+  const baselinePath = process.env.COVERAGE_BASELINE
+  if (baselinePath && existsSync(baselinePath)) {
+    try {
+      baseline = JSON.parse(readFileSync(baselinePath, 'utf8'))
+      console.log(`📐 Using baseline: ${baselinePath}`)
+    } catch (err) {
+      console.warn(`⚠️  Could not parse baseline at ${baselinePath}: ${err.message}`)
+    }
+  }
+
+  const reportUrl = process.env.COVERAGE_REPORT_URL || null
+  const badgeUrl = process.env.COVERAGE_BADGE_URL || null
+
+  const markdownTable = buildMarkdownTable(summary, { baseline, reportUrl, badgeUrl })
   const htmlReport = buildHtmlReport(mergedData)
+  const badgeJson = buildBadgeJson(summary)
 
   // Write outputs
   const outDir = path.join(repoRoot, 'coverage')
@@ -326,12 +401,14 @@ async function main() {
   writeFileSync(path.join(mergedDir, 'index.html'), htmlReport, 'utf8')
   writeFileSync(path.join(outDir, 'summary.json'), JSON.stringify(summary, null, 2), 'utf8')
   writeFileSync(path.join(outDir, 'summary.md'), markdownTable, 'utf8')
+  writeFileSync(path.join(outDir, 'badge.json'), JSON.stringify(badgeJson, null, 2), 'utf8')
 
   console.log('\n' + markdownTable)
   console.log(`✅ Written:`)
   console.log(`   coverage/merged/index.html`)
   console.log(`   coverage/summary.json`)
   console.log(`   coverage/summary.md`)
+  console.log(`   coverage/badge.json`)
 }
 
 main().catch((err) => {
