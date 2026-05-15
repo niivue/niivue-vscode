@@ -9,6 +9,12 @@ import { startCoverage, stopCoverage } from './utils'
  */
 export const test = base.extend({
   page: async ({ page }, use, testInfo) => {
+    // Pwa.tsx only exposes `window.appProps` for tests when `import.meta.env.DEV`
+    // is true OR `window.PLAYWRIGHT_TEST` is set. We run e2e against a production
+    // build (no DEV), so flag the page as under test before the app boots.
+    await page.addInitScript(() => {
+      ;(window as any).PLAYWRIGHT_TEST = true
+    })
     await startCoverage(page)
     await use(page)
     await stopCoverage(page, testInfo)
