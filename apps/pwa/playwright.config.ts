@@ -27,6 +27,13 @@ export default defineConfig({
       outputFile: './coverage/e2e/index.html',
       coverage: {
         entryFilter: (entry: { url: string }) => entry.url.startsWith('http://localhost:4000'),
+        // niivue-react files arrive repo-root-relative (because Vite resolves
+        // them via the `../../packages/niivue-react/src` alias). pwa's own
+        // files arrive Vite-root-relative as `src/...` — Vite treats apps/pwa
+        // as the project root. Canonicalize the pwa case so both the filter
+        // and the aggregator's bucket matcher catch them.
+        sourcePath: (sourcePath: string) =>
+          sourcePath.startsWith('src/') ? 'apps/pwa/' + sourcePath : sourcePath,
         sourceFilter: (sourcePath: string) =>
           sourcePath.includes('apps/pwa/src') ||
           sourcePath.includes('packages/niivue-react/src'),
