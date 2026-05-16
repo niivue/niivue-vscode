@@ -182,8 +182,14 @@ async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSetting
   }
 
   if (isImageType(item.uri) && !item.data && !item.uri.endsWith('.dcm')) {
-    // If the item is an image type but has no data, load it from the URL
-    const image = { url: item.uri, colormap: settings.defaultVolumeColormap }
+    // If the item is an image type but has no data, load it from the URL.
+    // Pass urlImgData so NiiVue can fetch the paired raw file for detached
+    // formats like MHD (ElementDataFile = <name>.raw).
+    const image = {
+      url: item.uri,
+      colormap: settings.defaultVolumeColormap,
+      ...(item.urlImgData ? { urlImgData: item.urlImgData } : {}),
+    }
     await nv.loadImages([image])
     return
   }
@@ -246,7 +252,29 @@ async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSetting
       } else {
         buffer = item.data.buffer
       }
-      await nv.loadFromArrayBuffer(buffer, item.uri)
+      if (item.pairedData) {
+        // Detached format (e.g. MHD + .raw): wrap the raw pixel data in a
+        // temporary Blob URL so NiiVue can fetch it as urlImgData.
+        const rawPaired: unknown = item.pairedData
+        const pairedBuffer: ArrayBuffer =
+          rawPaired instanceof ArrayBuffer
+            ? rawPaired
+            : new Uint8Array(rawPaired as number[]).buffer
+        const blobUrl = URL.createObjectURL(new Blob([pairedBuffer]))
+        try {
+          const volume = await NVImage.loadFromUrl({
+            url: buffer,
+            urlImgData: blobUrl,
+            name: item.uri,
+            colormap: settings.defaultVolumeColormap,
+          })
+          nv.addVolume(volume)
+        } finally {
+          URL.revokeObjectURL(blobUrl)
+        }
+      } else {
+        await nv.loadFromArrayBuffer(buffer, item.uri)
+      }
     } else if (isBuffer && !isImageType(item.uri)) {
       const mesh = await NVMesh.readMesh(item.data, item.uri, nv.gl)
       nv.addMesh(mesh)

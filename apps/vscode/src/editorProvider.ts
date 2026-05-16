@@ -90,12 +90,16 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
           isImageSent = true
           this.postInitSettings(panel)
 
-          // Send file URL instead of reading the entire file
-          const fileUrl = editor.createFileUrl(uri, panel.webview)
-          panel.webview.postMessage({
-            type: 'addImage',
-            body: { uri: fileUrl },
-          })
+          if (uri.path.toLowerCase().endsWith('.mhd')) {
+            await NiiVueEditorProvider.sendMhdMessage(uri, panel.webview, editor.isUriAccessible(uri))
+          } else {
+            // Send file URL instead of reading the entire file
+            const fileUrl = editor.createFileUrl(uri, panel.webview)
+            panel.webview.postMessage({
+              type: 'addImage',
+              body: { uri: fileUrl },
+            })
+          }
         }
       })
     })
@@ -187,13 +191,21 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
                   body: { n: uris.length },
                 })
                 for (const uri of uris) {
-                  // Handle DICOM files differently - send data instead of URL
-                  if (uri.path.toLowerCase().endsWith('.dcm')) {
+                  const lowerPath = uri.path.toLowerCase()
+                  if (lowerPath.endsWith('.mhd')) {
+                    // MHD files need paired .raw data
+                    await NiiVueEditorProvider.sendMhdMessage(
+                      uri,
+                      panel.webview,
+                      editor.isUriAccessible(uri),
+                    )
+                  } else if (lowerPath.endsWith('.dcm')) {
+                    // Handle DICOM files differently - send data instead of URL
                     const data = await vscode.workspace.fs.readFile(uri)
                     panel.webview.postMessage({
                       type: 'addImage',
                       body: {
-                        data: data.buffer,
+                        data: NiiVueEditorProvider.toArrayBuffer(data),
                         uri: uri.toString(),
                       },
                     })
@@ -232,7 +244,9 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     const files = await vscode.workspace.fs.readDirectory(folderUri)
     const fileUris = files.map((file) => vscode.Uri.joinPath(folderUri, file[0]))
     const data = await Promise.all(
-      fileUris.map((uri) => vscode.workspace.fs.readFile(uri).then((data) => data.buffer)),
+      fileUris.map((uri) =>
+        vscode.workspace.fs.readFile(uri).then((data) => NiiVueEditorProvider.toArrayBuffer(data)),
+      ),
     )
     panel.webview.postMessage({
       type: 'addImage',
@@ -271,7 +285,14 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
 
         // Handle DICOM and MINC files differently - send data instead of URL
         const lowerCasePath = document.uri.path.toLowerCase()
-        if (
+        if (lowerCasePath.endsWith('.mhd')) {
+          // MHD files have detached raw data; resolve the paired .raw file
+          await NiiVueEditorProvider.sendMhdMessage(
+            document.uri,
+            webviewPanel.webview,
+            this.isUriAccessible(document.uri),
+          )
+        } else if (
           lowerCasePath.endsWith('.dcm') ||
           lowerCasePath.endsWith('.mnc') ||
           !this.isUriAccessible(document.uri)
@@ -280,7 +301,7 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
           webviewPanel.webview.postMessage({
             type: 'addImage',
             body: {
-              data: data.buffer,
+              data: NiiVueEditorProvider.toArrayBuffer(data),
               uri: document.uri.toString(),
             },
           })
@@ -314,6 +335,70 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
       }
     }
     return false
+  }
+
+  /**
+   * Parse an MHD header to find the paired raw data file URI.
+   * Returns null if the data is LOCAL (embedded) or the field is absent.
+   */
+  private static getMhdPairedRawUri(mhdUri: vscode.Uri, mhdText: string): vscode.Uri | null {
+    const match = mhdText.match(/^ElementDataFile\s*=\s*(.+)/im)
+    if (match) {
+      const rawFilename = match[1].trim()
+      if (rawFilename.toUpperCase() !== 'LOCAL') {
+        const slashIndex = mhdUri.path.lastIndexOf('/')
+        const dirPath = slashIndex >= 0 ? mhdUri.path.substring(0, slashIndex) : ''
+        return mhdUri.with({ path: `${dirPath}/${rawFilename}` })
+      }
+    }
+    return null
+  }
+
+  private static toArrayBuffer(data: Uint8Array): ArrayBuffer {
+    const buffer = new ArrayBuffer(data.byteLength)
+    new Uint8Array(buffer).set(data)
+    return buffer
+  }
+
+  /**
+   * Read an MHD file, resolve its paired .raw file, and send an addImage
+   * message to the webview with both parts.
+   *
+   * When the file is accessible via webview URI (local or SSH-remote workspace),
+   * both the .mhd and .raw webview URIs are sent so NiiVue can fetch them
+   * directly.  When the file is not accessible that way, both files are read
+   * and sent as binary buffers.
+   */
+  static async sendMhdMessage(
+    uri: vscode.Uri,
+    webview: vscode.Webview,
+    isAccessible: boolean,
+  ): Promise<void> {
+    const mhdData = await vscode.workspace.fs.readFile(uri)
+    const mhdText = new TextDecoder().decode(mhdData)
+    const rawUri = NiiVueEditorProvider.getMhdPairedRawUri(uri, mhdText)
+
+    if (isAccessible) {
+      const body: Record<string, unknown> = { uri: webview.asWebviewUri(uri).toString() }
+      if (rawUri) {
+        body.urlImgData = webview.asWebviewUri(rawUri).toString()
+      }
+      webview.postMessage({ type: 'addImage', body })
+    } else {
+      const body: Record<string, unknown> = {
+        data: NiiVueEditorProvider.toArrayBuffer(mhdData),
+        uri: uri.toString(),
+      }
+      if (rawUri) {
+        try {
+          const rawData = await vscode.workspace.fs.readFile(rawUri)
+          body.pairedData = NiiVueEditorProvider.toArrayBuffer(rawData)
+        } catch {
+          // Fall back to header-only; NiiVue may still handle LOCAL data
+        }
+      }
+      webview.postMessage({ type: 'addImage', body })
+    }
   }
 }
 
