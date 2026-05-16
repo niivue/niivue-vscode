@@ -23,6 +23,7 @@ else:
 def niivue_viewer(
     nifti_data=None,
     filename="",
+    paired_data=None,
     overlays=None,
     meshes=None,
     height=600,
@@ -33,13 +34,17 @@ def niivue_viewer(
     key=None
 ):
     """Create a NiiVue viewer component.
-    
+
     Parameters:
     -----------
     nifti_data : bytes or None
         Raw NIFTI file data for the main image
     filename : str
         Name of the file being displayed
+    paired_data : bytes or None
+        Raw voxel data for detached formats. Required when ``nifti_data`` is
+        an MHD header with ``ElementDataFile`` pointing to a separate file
+        (typically ``.raw``). Ignored for self-contained formats.
     overlays : list of dict, optional
         List of overlay images, each with:
         - data: bytes - overlay image data
@@ -90,6 +95,13 @@ def niivue_viewer(
     nifti_base64 = ""
     if nifti_data is not None:
         nifti_base64 = base64.b64encode(nifti_data).decode()
+
+    # Convert paired_data (detached raw voxels for MHD) to base64 if provided
+    paired_base64 = ""
+    if paired_data is not None:
+        if not isinstance(paired_data, bytes):
+            raise ValueError("paired_data must be bytes")
+        paired_base64 = base64.b64encode(paired_data).decode()
     
     # Convert overlays to base64
     overlays_data = []
@@ -156,6 +168,7 @@ def niivue_viewer(
     component_value = _component_func(
         nifti_data=nifti_base64,
         filename=filename,
+        paired_data=paired_base64 if paired_base64 else None,
         overlays=overlays_data if overlays_data else None,
         meshes=meshes_data if meshes_data else None,
         height=height,

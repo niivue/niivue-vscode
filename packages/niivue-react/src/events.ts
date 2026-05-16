@@ -3,7 +3,7 @@ import { Signal } from '@preact/signals'
 import { AppProps } from './components/AppProps'
 import { readyStateManager } from './readyState'
 import { NiiVueSettings } from './settings'
-import { isImageType } from './utility'
+import { buildImageMessageBodies, isImageType } from './utility'
 
 /**
  * Increments a global counter used by E2E tests to know when an image or
@@ -42,9 +42,16 @@ export async function handleMessage(message: any, appProps: AppProps) {
     case 'addImage':
       {
         const nv = getUnitinializedNvInstance(nvArray)
-        nv.body = body
         nv.uri = body.uri
         nv.isNew = false
+        if (body.loadError) {
+          // Surface the error in the existing on-canvas error overlay
+          // (Volume.tsx) instead of attempting a doomed load.
+          nv.loadError = body.loadError
+          notifyImageLoaded()
+        } else {
+          nv.body = body
+        }
       }
       break
     case 'initCanvas':
@@ -135,27 +142,41 @@ export function openImageFromURL(uri: string) {
 export function addImageFromURLParams() {
   const urlParams = new URLSearchParams(window.location.search)
   const imageURLs = urlParams.get('images')?.split(',') ?? []
-  if (imageURLs.length > 0) {
-    window.postMessage({
-      type: 'initCanvas',
-      body: {
-        n: imageURLs.length,
-      },
-    })
-    imageURLs.forEach((url) => {
-      fetch(url)
-        .then((response) => response.arrayBuffer())
-        .then((data) => {
-          window.postMessage({
-            type: 'addImage',
-            body: {
-              data,
-              uri: url,
-            },
-          })
-        })
-    })
+  if (imageURLs.length === 0) {
+    return
   }
+  window.postMessage({
+    type: 'initCanvas',
+    body: { n: imageURLs.length },
+  })
+  imageURLs.forEach(async (url) => {
+    try {
+      const data = await (await fetch(url)).arrayBuffer()
+      const body: Record<string, unknown> = { data, uri: url }
+      if (url.toLowerCase().endsWith('.mhd')) {
+        const text = new TextDecoder().decode(data)
+        const match = text.match(/^ElementDataFile\s*=\s*(.+)$/im)
+        const rawValue = match?.[1].trim().replace(/^["']|["']$/g, '') ?? ''
+        if (rawValue && rawValue.toUpperCase() !== 'LOCAL') {
+          const basename = rawValue.replace(/\\/g, '/').split('/').pop()
+          if (basename) {
+            const rawUrl = url.replace(/[^/]+$/, basename)
+            try {
+              const resp = await fetch(rawUrl)
+              if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
+              body.pairedData = await resp.arrayBuffer()
+            } catch (err) {
+              console.warn(`Failed to fetch paired MHD raw file ${rawUrl}:`, err)
+              body.loadError = `Missing paired data file "${basename}" at ${rawUrl}. MHD is a detached format and requires its referenced voxel file.`
+            }
+          }
+        }
+      }
+      window.postMessage({ type: 'addImage', body })
+    } catch (err) {
+      console.error(`Failed to load image from URL ${url}:`, err)
+    }
+  })
 }
 
 interface LayerOptions {
@@ -302,21 +323,14 @@ export function addImagesEvent() {
     input.onchange = async (e) => {
       const files = Array.from((e.target as HTMLInputElement)?.files ?? [])
       if (files.length > 0) {
+        const bodies = await buildImageMessageBodies(files)
+        if (bodies.length === 0) return
         window.postMessage({
           type: 'initCanvas',
-          body: {
-            n: files.length,
-          },
+          body: { n: bodies.length },
         })
-        for (const file of files) {
-          const data = await file.arrayBuffer()
-          window.postMessage({
-            type: 'addImage',
-            body: {
-              data,
-              uri: file.name,
-            },
-          })
+        for (const body of bodies) {
+          window.postMessage({ type: 'addImage', body })
         }
       }
     }

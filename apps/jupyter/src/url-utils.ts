@@ -66,6 +66,34 @@ export async function fetchArrayBuffer(
 }
 
 /**
+ * Parse an MHD header and return the basename of the paired raw data file,
+ * or null if the data is LOCAL (embedded) or the field is absent.
+ */
+export function getMhdPairedRawBasename(mhdBuffer: ArrayBuffer): string | null {
+  const text = new TextDecoder().decode(mhdBuffer)
+  const match = text.match(/^ElementDataFile\s*=\s*(.+)$/im)
+  if (!match) {
+    return null
+  }
+  const raw = match[1].trim().replace(/^["']|["']$/g, '')
+  if (!raw || raw.toUpperCase() === 'LOCAL') {
+    return null
+  }
+  // Use the basename; reject any subdir components for safety.
+  return raw.replace(/\\/g, '/').split('/').pop() ?? null
+}
+
+/**
+ * Given the JupyterLab path of an .mhd file, returns the sibling path of the
+ * paired raw file referenced by ElementDataFile.
+ */
+export function getMhdPairedRawPath(mhdPath: string, rawBasename: string): string {
+  const slashIndex = mhdPath.lastIndexOf('/')
+  const dir = slashIndex >= 0 ? mhdPath.substring(0, slashIndex + 1) : ''
+  return `${dir}${rawBasename}`
+}
+
+/**
  * Fetches JSON from the given URL using ServerConnection.
  * Handles authentication and provides detailed error messages.
  */

@@ -340,18 +340,22 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
   /**
    * Parse an MHD header to find the paired raw data file URI.
    * Returns null if the data is LOCAL (embedded) or the field is absent.
+   * Handles relative paths with `/` or `\` separators and optional surrounding quotes.
    */
   private static getMhdPairedRawUri(mhdUri: vscode.Uri, mhdText: string): vscode.Uri | null {
-    const match = mhdText.match(/^ElementDataFile\s*=\s*(.+)/im)
-    if (match) {
-      const rawFilename = match[1].trim()
-      if (rawFilename.toUpperCase() !== 'LOCAL') {
-        const slashIndex = mhdUri.path.lastIndexOf('/')
-        const dirPath = slashIndex >= 0 ? mhdUri.path.substring(0, slashIndex) : ''
-        return mhdUri.with({ path: `${dirPath}/${rawFilename}` })
-      }
+    const match = mhdText.match(/^ElementDataFile\s*=\s*(.+)$/im)
+    if (!match) {
+      return null
     }
-    return null
+    const raw = match[1].trim().replace(/^["']|["']$/g, '')
+    if (!raw || raw.toUpperCase() === 'LOCAL') {
+      return null
+    }
+    const segments = raw.replace(/\\/g, '/').split('/').filter((s) => s.length > 0)
+    const slashIndex = mhdUri.path.lastIndexOf('/')
+    const parentPath = slashIndex >= 0 ? mhdUri.path.substring(0, slashIndex) : ''
+    const parentDir = mhdUri.with({ path: parentPath || '/' })
+    return vscode.Uri.joinPath(parentDir, ...segments)
   }
 
   private static toArrayBuffer(data: Uint8Array): ArrayBuffer {
@@ -379,9 +383,12 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     const rawUri = NiiVueEditorProvider.getMhdPairedRawUri(uri, mhdText)
 
     if (isAccessible) {
-      const body: Record<string, unknown> = { uri: webview.asWebviewUri(uri).toString() }
+      const mhdWebviewUri = webview.asWebviewUri(uri).toString()
+      const body: Record<string, unknown> = { uri: mhdWebviewUri }
       if (rawUri) {
         body.urlImgData = webview.asWebviewUri(rawUri).toString()
+      } else {
+        body.loadError = NiiVueEditorProvider.unpairedMhdMessage(uri, mhdText)
       }
       webview.postMessage({ type: 'addImage', body })
     } else {
@@ -393,12 +400,28 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
         try {
           const rawData = await vscode.workspace.fs.readFile(rawUri)
           body.pairedData = NiiVueEditorProvider.toArrayBuffer(rawData)
-        } catch {
-          // Fall back to header-only; NiiVue may still handle LOCAL data
+        } catch (error) {
+          body.loadError =
+            `Missing paired data file at ${rawUri.toString()}: ${
+              error instanceof Error ? error.message : String(error)
+            }. MHD is a detached format and requires its referenced voxel file.`
         }
+      } else {
+        body.loadError = NiiVueEditorProvider.unpairedMhdMessage(uri, mhdText)
       }
       webview.postMessage({ type: 'addImage', body })
     }
+  }
+
+  private static unpairedMhdMessage(uri: vscode.Uri, mhdText: string): string {
+    const match = mhdText.match(/^ElementDataFile\s*=\s*(.+)$/im)
+    const ref = match?.[1].trim().replace(/^["']|["']$/g, '') ?? '(unknown)'
+    const basename = ref.replace(/\\/g, '/').split('/').pop() ?? ref
+    return (
+      `Missing paired data file "${basename}" referenced by ${uri.path}. ` +
+      `MHD is a detached format and requires its referenced voxel file ` +
+      `to be present next to the header.`
+    )
   }
 }
 

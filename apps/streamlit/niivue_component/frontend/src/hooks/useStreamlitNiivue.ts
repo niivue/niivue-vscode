@@ -88,13 +88,20 @@ export const useStreamlitNiivue = (args: StreamlitArgs) => {
 
     if (args.nifti_data) {
       // Load volume as base image
-      handleMessage({
-        type: 'addImage',
-        body: {
-          data: base64ToArrayBuffer(args.nifti_data),
-          uri: args.filename || 'image.nii',
-        },
-      }, appProps)
+      const filename = args.filename || 'image.nii'
+      const body: Record<string, unknown> = {
+        data: base64ToArrayBuffer(args.nifti_data),
+        uri: filename,
+      }
+      if (args.paired_data) {
+        body.pairedData = base64ToArrayBuffer(args.paired_data)
+      } else if (filename.toLowerCase().endsWith('.mhd')) {
+        body.loadError =
+          `MHD is a detached format. Pass the referenced voxel file ` +
+          `(e.g. .raw) via the paired_data argument: ` +
+          `niivue_viewer(nifti_data=mhd_bytes, paired_data=raw_bytes, filename="${filename}")`
+      }
+      handleMessage({ type: 'addImage', body }, appProps)
     } else if (args.meshes && args.meshes.length > 0) {
       // Load first mesh as base image (mesh-only mode)
       const firstMesh = args.meshes[0]

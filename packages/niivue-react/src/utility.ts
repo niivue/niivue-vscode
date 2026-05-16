@@ -159,6 +159,76 @@ export function isImageType(item: string) {
   ].find((fileType) => item.endsWith(fileType))
 }
 
+/**
+ * Given a list of dropped/picked Files, returns one `addImage` message body
+ * per logical image. For MHD files, finds the paired `.raw` file in the
+ * same list (by basename from the `ElementDataFile` header field) and
+ * attaches its bytes as `pairedData`. The paired `.raw` file is removed
+ * from the result so it is not loaded as a separate image.
+ */
+export type ImageMessageBody = {
+  data: ArrayBuffer
+  uri: string
+  pairedData?: ArrayBuffer
+  loadError?: string
+}
+
+export async function buildImageMessageBodies(
+  files: File[],
+): Promise<ImageMessageBody[]> {
+  const byName = new Map<string, File>()
+  for (const f of files) {
+    byName.set(f.name.toLowerCase(), f)
+  }
+
+  // First pass: pre-read every .mhd header so we know which .raw files are
+  // claimed as paired data, regardless of iteration order. This makes the
+  // result independent of which file the user grabbed when dragging.
+  const pairedDataByMhd = new Map<string, ArrayBuffer>()
+  const claimedAsPair = new Set<string>()
+  const mhdBuffers = new Map<string, ArrayBuffer>()
+  const errorByMhd = new Map<string, string>()
+  for (const file of files) {
+    if (!file.name.toLowerCase().endsWith('.mhd')) continue
+    const data = await file.arrayBuffer()
+    mhdBuffers.set(file.name.toLowerCase(), data)
+    const text = new TextDecoder().decode(data)
+    const match = text.match(/^ElementDataFile\s*=\s*(.+)$/im)
+    const rawValue = match?.[1].trim().replace(/^["']|["']$/g, '') ?? ''
+    if (!rawValue || rawValue.toUpperCase() === 'LOCAL') continue
+    const basename = rawValue.replace(/\\/g, '/').split('/').pop() ?? ''
+    const pairedFile = byName.get(basename.toLowerCase())
+    if (!pairedFile) {
+      errorByMhd.set(
+        file.name.toLowerCase(),
+        `Missing paired data file "${basename}". MHD is a detached format — please drop or select ${file.name} together with ${basename}.`,
+      )
+      continue
+    }
+    pairedDataByMhd.set(file.name.toLowerCase(), await pairedFile.arrayBuffer())
+    claimedAsPair.add(basename.toLowerCase())
+  }
+
+  const bodies: ImageMessageBody[] = []
+  for (const file of files) {
+    const key = file.name.toLowerCase()
+    if (claimedAsPair.has(key)) continue
+    const data = mhdBuffers.get(key) ?? (await file.arrayBuffer())
+    const loadError = errorByMhd.get(key)
+    if (loadError) {
+      bodies.push({ data, uri: file.name, loadError })
+    } else {
+      const pairedData = pairedDataByMhd.get(key)
+      if (pairedData) {
+        bodies.push({ data, uri: file.name, pairedData })
+      } else {
+        bodies.push({ data, uri: file.name })
+      }
+    }
+  }
+  return bodies
+}
+
 export function getMetadataString(nv: Niivue) {
   const meta = nv?.volumes?.[0]?.getImageMetadata()
   if (!meta || !meta.nx) {
