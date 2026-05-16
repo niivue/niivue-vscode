@@ -82,10 +82,8 @@ export class NiivueWidget extends Widget {
     // Cache buster so labextension rebuilds aren't masked by stale iframe assets.
     const v = `?v=${Date.now()}`
     // Use the static file handler we set up in handlers.py
-    const scriptPath =
-      getJupyterUrl('lab/extensions/@niivue/jupyter/static/niivue/index.js') + v
-    const cssPath =
-      getJupyterUrl('lab/extensions/@niivue/jupyter/static/niivue/index.css') + v
+    const scriptPath = getJupyterUrl('lab/extensions/@niivue/jupyter/static/niivue/index.js') + v
+    const cssPath = getJupyterUrl('lab/extensions/@niivue/jupyter/static/niivue/index.css') + v
 
     return `<!doctype html>
           <html lang="en">
