@@ -51,9 +51,17 @@ test('probe: load sphere.mhd via URL with explicit urlImgData', async ({ page })
 
   await page.screenshot({ path: 'test-results/sphere-mhd-render.png', fullPage: true })
 
-  console.log('PROBE_RESULT', JSON.stringify({ status, nvDiag }))
-  console.log('PROBE_CONSOLE', JSON.stringify(consoleEvents.slice(-30)))
+  // Attach diagnostics so failures still surface logs and screenshot.
+  await test.info().attach('probe-result', {
+    body: JSON.stringify({ status, nvDiag }, null, 2),
+    contentType: 'application/json',
+  })
+  await test.info().attach('console', {
+    body: JSON.stringify(consoleEvents.slice(-30), null, 2),
+    contentType: 'application/json',
+  })
 
-  // Don't fail — we want diagnostic output.
-  expect(true).toBe(true)
+  expect(status, 'sphere.mhd should load before timeout').not.toBeNull()
+  expect((status as any).count, 'loadedCount should bump for the paired MHD').toBeGreaterThan(0)
+  expect((status as any).errs, 'no "Failed to load" should appear on the canvas').toBe(false)
 })

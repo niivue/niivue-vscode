@@ -188,6 +188,9 @@ export async function buildImageMessageBodies(
   const claimedAsPair = new Set<string>()
   const mhdBuffers = new Map<string, ArrayBuffer>()
   const errorByMhd = new Map<string, string>()
+  // Cache raw buffers by basename so two MHDs referencing the same .raw
+  // don't double-read a potentially large file into memory.
+  const rawBufferCache = new Map<string, ArrayBuffer>()
   for (const file of files) {
     if (!file.name.toLowerCase().endsWith('.mhd')) continue
     const data = await file.arrayBuffer()
@@ -197,7 +200,8 @@ export async function buildImageMessageBodies(
     const rawValue = match?.[1].trim().replace(/^["']|["']$/g, '') ?? ''
     if (!rawValue || rawValue.toUpperCase() === 'LOCAL') continue
     const basename = rawValue.replace(/\\/g, '/').split('/').pop() ?? ''
-    const pairedFile = byName.get(basename.toLowerCase())
+    const basenameKey = basename.toLowerCase()
+    const pairedFile = byName.get(basenameKey)
     if (!pairedFile) {
       errorByMhd.set(
         file.name.toLowerCase(),
@@ -205,8 +209,13 @@ export async function buildImageMessageBodies(
       )
       continue
     }
-    pairedDataByMhd.set(file.name.toLowerCase(), await pairedFile.arrayBuffer())
-    claimedAsPair.add(basename.toLowerCase())
+    let pairedData = rawBufferCache.get(basenameKey)
+    if (!pairedData) {
+      pairedData = await pairedFile.arrayBuffer()
+      rawBufferCache.set(basenameKey, pairedData)
+    }
+    pairedDataByMhd.set(file.name.toLowerCase(), pairedData)
+    claimedAsPair.add(basenameKey)
   }
 
   const bodies: ImageMessageBody[] = []

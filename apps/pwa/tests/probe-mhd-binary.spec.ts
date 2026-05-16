@@ -51,8 +51,16 @@ test('probe: load sphere.mhd via binary buffer (simulates vscode "outside worksp
 
   await page.screenshot({ path: 'test-results/sphere-mhd-binary-render.png', fullPage: true })
 
-  console.log('STATUS', JSON.stringify(status))
-  console.log('CONSOLE', JSON.stringify(consoleEvents.slice(-50)))
+  await test.info().attach('status', {
+    body: JSON.stringify(status, null, 2),
+    contentType: 'application/json',
+  })
+  await test.info().attach('console', {
+    body: JSON.stringify(consoleEvents.slice(-50), null, 2),
+    contentType: 'application/json',
+  })
 
-  expect(true).toBe(true)
+  expect(loaded, 'binary-buffer MHD should reach loadedCount > 0').not.toBeNull()
+  expect(status.loadedCount, 'loadedCount should bump for paired binary MHD').toBeGreaterThan(0)
+  expect(status.bodyText.includes('Failed to load'), 'no on-canvas load error').toBe(false)
 })
