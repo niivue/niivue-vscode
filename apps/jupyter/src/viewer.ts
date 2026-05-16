@@ -180,7 +180,7 @@ export class NiivueWidget extends Widget {
           console.warn(`Failed to fetch paired MHD raw file ${rawPath}:`, err)
           body.loadError =
             `Missing paired data file "${rawBasename}" at ${rawPath}. ` +
-            `MHD is a detached format and requires its referenced voxel file.`
+            'MHD is a detached format and requires its referenced voxel file.'
         }
       }
     }
