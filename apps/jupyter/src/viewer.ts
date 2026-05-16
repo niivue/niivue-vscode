@@ -3,7 +3,15 @@ import { ABCWidgetFactory, DocumentRegistry, DocumentWidget } from '@jupyterlab/
 import { FileDialog } from '@jupyterlab/filebrowser'
 import { ServerConnection } from '@jupyterlab/services'
 import { Widget } from '@lumino/widgets'
-import { fetchArrayBuffer, fetchJson, getContentsUrl, getFileUrl, getJupyterUrl } from './url-utils'
+import {
+  fetchArrayBuffer,
+  fetchJson,
+  getContentsUrl,
+  getFileUrl,
+  getJupyterUrl,
+  getMhdPairedRawBasename,
+  getMhdPairedRawPath,
+} from './url-utils'
 
 export class NiivueWidget extends Widget {
   private _context: DocumentRegistry.IContext<DocumentRegistry.IModel>
@@ -131,34 +139,48 @@ export class NiivueWidget extends Widget {
   }
 
   private async _sendAddImageMessage(filePath: string): Promise<void> {
-    if (this._iframe.contentWindow) {
-      try {
-        console.log('Reading file data for:', filePath)
+    if (!this._iframe.contentWindow) {
+      return
+    }
+    try {
+      const body = await this._buildImageBody(filePath)
+      this._iframe.contentWindow.postMessage({ type: 'addImage', body }, '*')
+    } catch (error) {
+      console.error('Error reading file:', error)
+      this._showError(
+        `Could not load file: ${filePath}\n${error instanceof Error ? error.message : String(error)}`,
+      )
+    }
+  }
 
-        const fileUrl = getFileUrl(this._serverSettings.baseUrl, filePath)
-        console.log('Fetching file from URL:', fileUrl)
+  /**
+   * Fetch a file's bytes for an addImage/overlay message. For .mhd files,
+   * also resolve and fetch the paired raw file referenced by ElementDataFile
+   * and include its bytes as `pairedData`.
+   */
+  protected async _buildImageBody(filePath: string): Promise<Record<string, unknown>> {
+    const fileUrl = getFileUrl(this._serverSettings.baseUrl, filePath)
+    const buffer = await fetchArrayBuffer(fileUrl, this._serverSettings)
+    const body: Record<string, unknown> = { data: buffer, uri: filePath }
 
-        const buffer = await fetchArrayBuffer(fileUrl, this._serverSettings)
-        console.log('Sending file data to iframe, size:', buffer.byteLength)
-
-        // Send the file data directly to the iframe
-        this._iframe.contentWindow.postMessage(
-          {
-            type: 'addImage',
-            body: {
-              data: buffer,
-              uri: filePath,
-            },
-          },
-          '*',
-        )
-      } catch (error) {
-        console.error('Error reading file:', error)
-        this._showError(
-          `Could not load file: ${filePath}\n${error instanceof Error ? error.message : String(error)}`,
-        )
+    if (filePath.toLowerCase().endsWith('.mhd')) {
+      const rawBasename = getMhdPairedRawBasename(buffer)
+      if (rawBasename) {
+        const rawPath = getMhdPairedRawPath(filePath, rawBasename)
+        try {
+          body.pairedData = await fetchArrayBuffer(
+            getFileUrl(this._serverSettings.baseUrl, rawPath),
+            this._serverSettings,
+          )
+        } catch (err) {
+          console.warn(`Failed to fetch paired MHD raw file ${rawPath}:`, err)
+          body.loadError =
+            `Missing paired data file "${rawBasename}" at ${rawPath}. ` +
+            'MHD is a detached format and requires its referenced voxel file.'
+        }
       }
     }
+    return body
   }
 
   private _showError(message: string): void {
@@ -263,28 +285,23 @@ export class NiivueWidget extends Widget {
     messageType: string,
     body?: any,
   ): Promise<void> {
-    if (this._iframe.contentWindow) {
-      try {
-        const fileUrl = getFileUrl(this._serverSettings.baseUrl, filePath)
-        const buffer = await fetchArrayBuffer(fileUrl, this._serverSettings)
-
-        this._iframe.contentWindow.postMessage(
-          {
-            type: messageType,
-            body: {
-              data: buffer,
-              uri: filePath,
-              ...body,
-            },
-          },
-          '*',
-        )
-      } catch (error) {
-        console.error('Error reading file:', error)
-        this._showError(
-          `Could not load file: ${filePath}\n${error instanceof Error ? error.message : String(error)}`,
-        )
-      }
+    if (!this._iframe.contentWindow) {
+      return
+    }
+    try {
+      const built = await this._buildImageBody(filePath)
+      this._iframe.contentWindow.postMessage(
+        {
+          type: messageType,
+          body: { ...built, ...body },
+        },
+        '*',
+      )
+    } catch (error) {
+      console.error('Error reading file:', error)
+      this._showError(
+        `Could not load file: ${filePath}\n${error instanceof Error ? error.message : String(error)}`,
+      )
     }
   }
 

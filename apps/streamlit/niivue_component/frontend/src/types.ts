@@ -16,6 +16,7 @@ export interface MeshData {
 export interface StreamlitArgs {
   nifti_data?: string // base64 encoded main image
   filename?: string
+  paired_data?: string // base64 encoded paired raw voxels for detached MHD
   overlays?: Array<{
     data: string // base64 encoded overlay
     name: string

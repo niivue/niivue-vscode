@@ -29,13 +29,17 @@ async function globalSetup(config: FullConfig) {
         // vite dev on :4000). Skip; public/ above is enough.
         continue
       }
+      let copied = 0
       for (const file of files) {
-        await fs.copyFile(
-          path.join(testAssetsDir, file),
-          path.join(targetDir, file),
-        )
+        const src = path.join(testAssetsDir, file)
+        const stat = await fs.stat(src)
+        // Skip subdirectories (e.g. JupyterLab's .ipynb_checkpoints) — only
+        // copy regular files to the served test-fixture directories.
+        if (!stat.isFile()) continue
+        await fs.copyFile(src, path.join(targetDir, file))
+        copied++
       }
-      console.log(`Copied ${files.length} test asset(s) to ${target}/`)
+      console.log(`Copied ${copied} test asset(s) to ${target}/`)
     }
   } catch (error) {
     console.error('Error setting up test assets:', error)

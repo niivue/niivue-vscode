@@ -1,5 +1,6 @@
 import { useSignal } from '@preact/signals'
 import { ComponentChildren } from 'preact'
+import { buildImageMessageBodies } from '../utility'
 
 export const ImageDrop = ({ children }: { children: ComponentChildren }) => {
   const isDrag = useSignal(false)
@@ -38,22 +39,15 @@ export const ImageDrop = ({ children }: { children: ComponentChildren }) => {
       }
       readOverlays()
     } else {
-      window.postMessage({
-        type: 'initCanvas',
-        body: {
-          n: fileArray.length,
-        },
-      })
       const readimages = async () => {
-        for (const file of fileArray) {
-          const buffer = await file.arrayBuffer()
-          window.postMessage({
-            type: 'addImage',
-            body: {
-              data: buffer,
-              uri: file.name,
-            },
-          })
+        const bodies = await buildImageMessageBodies(fileArray)
+        if (bodies.length === 0) return
+        window.postMessage({
+          type: 'initCanvas',
+          body: { n: bodies.length },
+        })
+        for (const body of bodies) {
+          window.postMessage({ type: 'addImage', body })
         }
       }
       readimages()
