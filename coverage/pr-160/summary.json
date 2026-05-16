@@ -3,7 +3,7 @@
     "label": "Shared core (`packages/niivue-react`)",
     "stats": {
       "statements": 34.3,
-      "branches": 64.5,
+      "branches": 64.6,
       "functions": 50.3,
       "lines": 34.2
     }
@@ -48,7 +48,7 @@
     "label": "Overall",
     "stats": {
       "statements": 33.4,
-      "branches": 64.4,
+      "branches": 64.5,
       "functions": 51,
       "lines": 33.3
     }
