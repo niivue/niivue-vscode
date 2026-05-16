@@ -64,3 +64,6 @@ coverage/
 **/yarn.lock
 **/pnpm-lock.yaml
 !pnpm-lock.yaml
+
+# Claude Code session metadata (worktrees, memory, jobs)
+.claude/
