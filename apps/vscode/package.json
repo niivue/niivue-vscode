@@ -56,18 +56,24 @@
     "clean": "rm -rf dist niivue",
     "lint": "eslint src --ext .ts,.tsx --report-unused-disable-directives --max-warnings 0",
     "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "package": "pnpm run build && vsce package",
-    "publish": "pnpm run build && vsce publish"
+    "publish": "pnpm run build && vsce publish",
+    "test:coverage": "vitest run --coverage",
+    "coverage": "pnpm run test:coverage"
   },
   "devDependencies": {
     "@types/vscode": "1.70.0",
+    "@vitest/coverage-v8": "^3.2.4",
     "@vscode/vsce": "^3.6.2",
     "autoprefixer": "^10.4.21",
     "concurrently": "^9.2.1",
     "esbuild": "^0.25.11",
     "ovsx": "^0.10.6",
     "postcss": "^8.5.6",
-    "tailwindcss": "^3.4.18"
+    "tailwindcss": "^3.4.18",
+    "vitest": "^3.2.4"
   },
   "contributes": {
     "commands": [
