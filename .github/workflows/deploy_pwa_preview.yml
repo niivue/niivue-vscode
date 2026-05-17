@@ -17,12 +17,6 @@ on:
   workflow_run:
     workflows: ['Build PWA Preview']
     types: [completed]
-  workflow_dispatch:
-    inputs:
-      pr_number:
-        description: 'PR number to redeploy (uses the most recent successful Build PWA Preview run for that PR)'
-        required: true
-        type: string
 
 permissions:
   contents: write
@@ -39,62 +33,29 @@ concurrency:
 
 jobs:
   deploy:
-    # Auto path (workflow_run):
-    #  - upstream build must have succeeded
-    #  - allow workflow_dispatch (maintainer-triggered build) and same-repo PR
-    #  - block fork pull_request: maintainer must manually dispatch Build PWA Preview
-    #    (or this workflow directly, see workflow_dispatch input above)
-    # Manual path (workflow_dispatch on this workflow):
-    #  - always allowed; reuses the most recent successful Build artifact for
-    #    the supplied PR number. Useful when a previous deploy failed mid-run
-    #    (gh-pages push conflict, etc.) and a fresh build isn't needed.
+    # No standalone workflow_dispatch here: the only entry point for previews
+    # is "Build PWA Preview" (which has its own workflow_dispatch). Re-deploys
+    # without rebuilding turned out rare enough to not justify a second button
+    # — if a deploy fails, re-running Build PWA Preview rebuilds and re-deploys
+    # in one step.
+    #
+    # Fork-PR gating: the primary gate is on Build PWA Preview's job-level if;
+    # fork PRs skip the build, so the workflow_run conclusion isn't 'success'
+    # and this if naturally filters them out. The same-repo check below is
+    # defense-in-depth in case the build's gate is ever loosened.
     if: |
-      github.event_name == 'workflow_dispatch' ||
-      (github.event.workflow_run.conclusion == 'success' &&
-       (github.event.workflow_run.event == 'workflow_dispatch' ||
-        (github.event.workflow_run.event == 'pull_request' &&
-         github.event.workflow_run.head_repository.full_name == github.repository)))
+      github.event.workflow_run.conclusion == 'success' &&
+      (github.event.workflow_run.event == 'workflow_dispatch' ||
+       (github.event.workflow_run.event == 'pull_request' &&
+        github.event.workflow_run.head_repository.full_name == github.repository))
     runs-on: ubuntu-latest
     steps:
-      # workflow_dispatch path: maintainer entered a PR number. Resolve the PR
-      # head SHA, then find the most recent successful Build PWA Preview run
-      # for that SHA via the API. Filter by SHA, not branch name, so fork
-      # branch-name collisions can't pick the wrong run.
-      - name: Resolve Build PWA Preview run for manual dispatch
-        if: github.event_name == 'workflow_dispatch'
-        id: dispatch
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ inputs.pr_number }}
-        run: |
-          set -euo pipefail
-          if ! [[ "$PR_NUMBER" =~ ^[0-9]+$ ]]; then
-            echo "::error::pr_number must be digits, got '$PR_NUMBER'"
-            exit 1
-          fi
-          head_sha=$(gh pr view "$PR_NUMBER" \
-            --repo "${{ github.repository }}" \
-            --json headRefOid --jq '.headRefOid')
-          if ! [[ "$head_sha" =~ ^[0-9a-f]{40}$ ]]; then
-            echo "::error::could not resolve head SHA for PR #$PR_NUMBER"
-            exit 1
-          fi
-          runs=$(gh api \
-            "repos/${{ github.repository }}/actions/workflows/build_pwa_preview.yml/runs?per_page=50&status=success&head_sha=$head_sha")
-          run_id=$(echo "$runs" | jq -r '.workflow_runs[0].id // empty')
-          if [ -z "$run_id" ]; then
-            echo "::error::no successful Build PWA Preview run found for PR #$PR_NUMBER at head $head_sha"
-            echo "    Trigger Build PWA Preview for this PR first, then retry."
-            exit 1
-          fi
-          echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
-
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
           name: pwa-preview
           path: pwa-preview
-          run-id: ${{ steps.dispatch.outputs.run_id || github.event.workflow_run.id }}
+          run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       # The artifact came from a job that ran PR code, so the embedded values
