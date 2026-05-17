@@ -11,14 +11,14 @@ on:
   workflow_dispatch:
     inputs:
       pr_number:
-        description: 'PR number (used for destination_dir pr-N and PR comment)'
+        description: 'PR number'
         required: true
       head_repository:
-        description: 'Repository owning the branch (e.g. user/niivue-vscode). Defaults to this repo.'
+        description: 'Override repository owning the branch (auto-resolved from PR when empty)'
         required: false
       ref:
-        description: 'Branch name or commit SHA to build'
-        required: true
+        description: 'Override branch / commit SHA (auto-resolved to PR head SHA when empty)'
+        required: false
 
 permissions:
   contents: write
@@ -34,11 +34,27 @@ jobs:
     if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
+      - name: Resolve PR head
+        if: github.event_name == 'workflow_dispatch'
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_HEAD_REPOSITORY: ${{ inputs.head_repository }}
+          INPUT_REF: ${{ inputs.ref }}
+        run: |
+          pr_data=$(gh pr view "${{ inputs.pr_number }}" \
+            --repo "${{ github.repository }}" \
+            --json headRepositoryOwner,headRepository,headRefOid)
+          api_repo="$(echo "$pr_data" | jq -r '.headRepositoryOwner.login + "/" + .headRepository.name')"
+          api_ref="$(echo "$pr_data" | jq -r '.headRefOid')"
+          echo "repo=${INPUT_HEAD_REPOSITORY:-$api_repo}" >> "$GITHUB_OUTPUT"
+          echo "ref=${INPUT_REF:-$api_ref}" >> "$GITHUB_OUTPUT"
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          repository: ${{ inputs.head_repository || github.repository }}
-          ref: ${{ inputs.ref || github.event.pull_request.head.sha }}
+          repository: ${{ steps.pr.outputs.repo || github.repository }}
+          ref: ${{ steps.pr.outputs.ref || github.event.pull_request.head.sha }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
