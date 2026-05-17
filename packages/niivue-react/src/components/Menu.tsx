@@ -1,6 +1,6 @@
 import { SLICE_TYPE } from '@niivue/niivue'
 import { Signal, computed, effect, useSignal } from '@preact/signals'
-import { useMemo } from 'preact/hooks'
+import { useEffect, useMemo } from 'preact/hooks'
 import { NIIVUE_CORE_SHORTCUTS, UI_SHORTCUTS, formatShortcut } from '../constants/keyboardShortcuts'
 import {
     ExtendedNiivue,
@@ -10,6 +10,23 @@ import {
     openImageFromURL,
 } from '../events'
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
+import {
+  BUILTIN_PRESETS,
+  ColorScalingDefaults,
+  UserPreset,
+  ViewOptions,
+  ViewPreset,
+  applyColorScalingToVolume,
+  clearDefaultPreset,
+  createUserPreset,
+  deleteUserPreset,
+  getDefaultPreset,
+  getDefaultPresetRef,
+  loadUserPresets,
+  saveUserPresets,
+  setDefaultPreset,
+} from '../presets'
+import { NiiVueSettings } from '../settings'
 import { getMetadataString, getNumberOfPoints } from '../utility'
 import { AppProps, SelectionMode } from './AppProps'
 import { HeaderBox } from './HeaderBox'
@@ -23,6 +40,7 @@ import {
     ToggleEntry,
     toggle,
 } from './MenuElements'
+import { PresetEditor } from './PresetEditor'
 import { ScalingBox } from './ScalingBox'
 
 export const Menu = (props: AppProps) => {
@@ -41,6 +59,9 @@ export const Menu = (props: AppProps) => {
   const zoomDragMode = useSignal(settings.value.zoomDragMode)
   const selectionActive = useSignal(false)
   const selectMultiple = useSignal(false)
+  const userPresets = useSignal(loadUserPresets())
+  const showPresetEditor = useSignal(false)
+  const editingPreset = useSignal<UserPreset | undefined>(undefined)
 
   // Computed
   const isOverlay = computed(() => nvArraySelected.value[0]?.volumes?.length > 1)
@@ -118,6 +139,16 @@ export const Menu = (props: AppProps) => {
       }
     }
   })
+
+  // Apply default preset settings and view options once on initialization.
+  // Color scaling defaults are applied at load time in NiiVueCanvas (base images)
+  // and events.ts (overlays), so no nvArray tracking is needed here.
+  useEffect(() => {
+    const defaultPreset = getDefaultPreset()
+    if (defaultPreset) {
+      applyPresetSettingsAndView(defaultPreset)
+    }
+  }, [])
 
   // Menu Click events
   const homeEvent = () => {
@@ -451,6 +482,251 @@ export const Menu = (props: AppProps) => {
 
   useKeyboardShortcuts(handlers)
 
+  // Preset functions
+
+  // Apply settings (interpolation, crosshairs, etc.) and view options (slice type, UI visibility).
+  // Also updates settings.value for defaultVolumeColormap / defaultOverlayColormap so that
+  // newly loaded volumes use the preset's colormaps.
+  const applyPresetSettingsAndView = (preset: ViewPreset) => {
+    if (preset.settings.interpolation !== undefined) {
+      interpolation.value = preset.settings.interpolation
+    }
+    if (preset.settings.showCrosshairs !== undefined) {
+      crosshair.value = preset.settings.showCrosshairs
+    }
+    if (preset.settings.radiologicalConvention !== undefined) {
+      radiologicalConvention.value = preset.settings.radiologicalConvention
+    }
+    if (preset.settings.colorbar !== undefined) {
+      colorbar.value = preset.settings.colorbar
+    }
+    if (preset.settings.zoomDragMode !== undefined) {
+      zoomDragMode.value = preset.settings.zoomDragMode
+    }
+
+    // Update global defaults so newly loaded volumes pick up the preset colormaps.
+    // baseImageDefaults.colormap takes precedence over defaultVolumeColormap.
+    const newSettings = { ...settings.value }
+    let settingsChanged = false
+    if (preset.baseImageDefaults?.colormap) {
+      newSettings.defaultVolumeColormap = preset.baseImageDefaults.colormap
+      settingsChanged = true
+    } else if (preset.settings.defaultVolumeColormap) {
+      newSettings.defaultVolumeColormap = preset.settings.defaultVolumeColormap
+      settingsChanged = true
+    }
+    if (preset.overlayDefaults?.colormap) {
+      newSettings.defaultOverlayColormap = preset.overlayDefaults.colormap
+      settingsChanged = true
+    } else if (preset.settings.defaultOverlayColormap) {
+      newSettings.defaultOverlayColormap = preset.settings.defaultOverlayColormap
+      settingsChanged = true
+    }
+    if (settingsChanged) {
+      settings.value = newSettings
+    }
+
+    if (preset.viewOptions) {
+      if (preset.viewOptions.sliceType !== undefined) {
+        sliceType.value = preset.viewOptions.sliceType
+      }
+      if (preset.viewOptions.hideUI !== undefined) {
+        hideUI.value = preset.viewOptions.hideUI
+      }
+
+      if (
+        preset.viewOptions.autoSizeMultiplanar !== undefined ||
+        preset.viewOptions.multiplanarForceRender !== undefined
+      ) {
+        nvArraySelected.value.forEach((nv) => {
+          if (preset.viewOptions!.autoSizeMultiplanar !== undefined) {
+            nv.graph.autoSizeMultiplanar = preset.viewOptions!.autoSizeMultiplanar
+          }
+          if (preset.viewOptions!.multiplanarForceRender !== undefined) {
+            nv.opts.multiplanarForceRender = preset.viewOptions!.multiplanarForceRender
+          }
+          if (preset.viewOptions!.normalizeValues !== undefined) {
+            nv.graph.normalizeValues = preset.viewOptions!.normalizeValues
+          }
+          if (preset.viewOptions!.graphOpacity !== undefined) {
+            nv.graph.opacity = preset.viewOptions!.graphOpacity
+          }
+        })
+      }
+    }
+  }
+
+  const applyPreset = (preset: ViewPreset) => {
+    // Apply settings and view options
+    applyPresetSettingsAndView(preset)
+
+    // Apply colormap defaults from settings.
+    // baseImageDefaults.colormap / overlayDefaults.colormap take precedence
+    // over defaultVolumeColormap / defaultOverlayColormap respectively.
+    if (preset.settings.defaultVolumeColormap && !preset.baseImageDefaults?.colormap) {
+      nvArraySelected.value.forEach((nv) => {
+        if (nv.volumes.length > 0) {
+          nv.volumes[0].colormap = preset.settings.defaultVolumeColormap!
+        }
+      })
+    }
+    if (preset.settings.defaultOverlayColormap && !preset.overlayDefaults?.colormap) {
+      nvArraySelected.value.forEach((nv) => {
+        if (nv.volumes.length > 1) {
+          nv.volumes[1].colormap = preset.settings.defaultOverlayColormap!
+        }
+      })
+    }
+
+    // Apply base image defaults (volume index 0)
+    if (preset.baseImageDefaults) {
+      nvArraySelected.value.forEach((nv) => {
+        if (nv.volumes.length > 0) {
+          applyColorScalingToVolume(nv.volumes[0], preset.baseImageDefaults!)
+        }
+      })
+    }
+
+    // Apply overlay defaults (volume index > 0)
+    if (preset.overlayDefaults) {
+      nvArraySelected.value.forEach((nv) => {
+        for (let i = 1; i < nv.volumes.length; i++) {
+          applyColorScalingToVolume(nv.volumes[i], preset.overlayDefaults!)
+        }
+      })
+    }
+
+    // Update the display
+    nvArraySelected.value.forEach((nv) => {
+      nv.updateGLVolume()
+    })
+    nvArray.value = [...nvArray.value]
+  }
+
+  const openPresetEditor = (preset?: UserPreset) => {
+    editingPreset.value = preset
+    showPresetEditor.value = true
+  }
+
+  const handlePresetSave = (presetData: {
+    name: string
+    description: string
+    settings: Partial<NiiVueSettings>
+    viewOptions: ViewOptions
+    baseImageDefaults?: ColorScalingDefaults
+    overlayDefaults?: ColorScalingDefaults
+    isDefault?: boolean
+    id?: string
+    createdAt?: string
+  }) => {
+    if (presetData.id) {
+      // Editing existing preset
+      const updated = userPresets.value.map((p) =>
+        p.id === presetData.id
+          ? {
+              ...p,
+              name: presetData.name,
+              description: presetData.description,
+              settings: presetData.settings,
+              viewOptions: presetData.viewOptions,
+              baseImageDefaults: presetData.baseImageDefaults,
+              overlayDefaults: presetData.overlayDefaults,
+            }
+          : p,
+      )
+      saveUserPresets(updated)
+      userPresets.value = updated
+      // Update default preset reference
+      if (presetData.isDefault) {
+        setDefaultPreset('user', presetData.id)
+      } else {
+        const ref = getDefaultPresetRef()
+        if (ref?.type === 'user' && ref?.id === presetData.id) {
+          clearDefaultPreset()
+        }
+      }
+    } else {
+      // Creating new preset
+      const newPreset = createUserPreset(
+        presetData.name,
+        presetData.description,
+        presetData.settings,
+        presetData.viewOptions,
+        presetData.baseImageDefaults,
+        presetData.overlayDefaults,
+      )
+      const presets = [...userPresets.value, newPreset]
+      saveUserPresets(presets)
+      userPresets.value = presets
+      // Set as default if requested
+      if (presetData.isDefault) {
+        setDefaultPreset('user', newPreset.id)
+      }
+    }
+    defaultRef.value = getDefaultPresetRef()
+    editingPreset.value = undefined
+    showPresetEditor.value = false
+  }
+
+  const deletePreset = (id: string) => {
+    deleteUserPreset(id)
+    userPresets.value = loadUserPresets()
+  }
+
+  const toggleDefaultPreset = (type: 'builtin' | 'user', id: string) => {
+    const ref = getDefaultPresetRef()
+    if (ref?.type === type && ref?.id === id) {
+      clearDefaultPreset()
+    } else {
+      setDefaultPreset(type, id)
+    }
+    // Refresh user presets and default ref to update UI
+    userPresets.value = loadUserPresets()
+    defaultRef.value = getDefaultPresetRef()
+  }
+
+  // Track current default preset reference for UI rendering
+  const defaultRef = useSignal(getDefaultPresetRef())
+
+  // Gather current state for preset editor defaults
+  const currentBaseImage = computed(() => {
+    const nv = nvArraySelected.value[0]
+    if (nv?.volumes?.length > 0) {
+      const vol = nv.volumes[0]
+      return {
+        colormap: vol.colormap,
+        cal_min: vol.cal_min,
+        cal_max: vol.cal_max,
+        opacity: vol.opacity,
+        colormapInvert: vol.colormapInvert,
+      } as ColorScalingDefaults
+    }
+    return undefined
+  })
+
+  const currentOverlay = computed(() => {
+    const nv = nvArraySelected.value[0]
+    if (nv?.volumes?.length > 1) {
+      const vol = nv.volumes[1]
+      return {
+        colormap: vol.colormap,
+        cal_min: vol.cal_min,
+        cal_max: vol.cal_max,
+        opacity: vol.opacity,
+        colormapInvert: vol.colormapInvert,
+      } as ColorScalingDefaults
+    }
+    return undefined
+  })
+
+  const availableColormaps = computed(() => {
+    const nv = nvArraySelected.value[0]
+    if (nv?.volumes?.length > 0) {
+      return nv.colormaps()
+    }
+    return []
+  })
+
   return (
     <>
       <div
@@ -572,6 +848,65 @@ export const Menu = (props: AppProps) => {
             shortcut={formatShortcut(UI_SHORTCUTS.TOGGLE_ZOOM_MODE)}
           />
         )}
+        <MenuItem label="Presets">
+          {Object.entries(BUILTIN_PRESETS).map(([key, preset]) => {
+            const isDefault = defaultRef.value?.type === 'builtin' && defaultRef.value?.id === key
+            return (
+              <div key={key} className="flex items-center justify-between gap-1 bg-gray-900 hover:bg-gray-700">
+                <MenuEntry
+                  label={`${preset.name}${isDefault ? ' ★' : ''}`}
+                  onClick={() => applyPreset(preset)}
+                />
+                <button
+                  className={`text-xs px-1 ${isDefault ? 'text-yellow-400' : 'hover:text-yellow-400'}`}
+                  onClick={() => toggleDefaultPreset('builtin', key)}
+                  title={isDefault ? 'Clear default' : 'Set as default'}
+                  aria-label={isDefault ? 'Clear default preset' : 'Set as default preset'}
+                >
+                  ★
+                </button>
+              </div>
+            )
+          })}
+          {userPresets.value.length > 0 && <hr />}
+          {userPresets.value.map((preset) => {
+            const isDefault = defaultRef.value?.type === 'user' && defaultRef.value?.id === preset.id
+            return (
+              <div key={preset.id} className="flex items-center justify-between gap-1 bg-gray-900 hover:bg-gray-700">
+                <MenuEntry
+                  label={`${preset.name}${isDefault ? ' ★' : ''}`}
+                  onClick={() => applyPreset(preset)}
+                />
+                <button
+                  className="text-xs px-1 hover:text-blue-400"
+                  onClick={() => openPresetEditor(preset)}
+                  title="Edit preset"
+                  aria-label="Edit preset"
+                >
+                  ✎
+                </button>
+                <button
+                  className={`text-xs px-1 ${isDefault ? 'text-yellow-400' : 'hover:text-yellow-400'}`}
+                  onClick={() => toggleDefaultPreset('user', preset.id)}
+                  title={isDefault ? 'Clear default' : 'Set as default'}
+                  aria-label={isDefault ? 'Clear default preset' : 'Set as default preset'}
+                >
+                  ★
+                </button>
+                <button
+                  className="text-xs px-1 hover:text-red-500"
+                  onClick={() => deletePreset(preset.id)}
+                  title="Delete preset"
+                  aria-label="Delete preset"
+                >
+                  ✕
+                </button>
+              </div>
+            )
+          })}
+          <hr />
+          <MenuEntry label="New Preset" onClick={() => openPresetEditor()} />
+        </MenuItem>
         {settings.value.menuItems?.colorScale && (
           <MenuItem
             label="ColorScale"
@@ -680,6 +1015,25 @@ export const Menu = (props: AppProps) => {
       />
       <HeaderBox nvArraySelected={nvArraySelected} nvArray={nvArray} visible={setHeaderMenu} />
       <HeaderDialog nvArraySelected={nvArraySelected} isOpen={headerDialog} />
+      <PresetEditor
+        visible={showPresetEditor}
+        existingPreset={editingPreset.value}
+        currentSettings={{
+          interpolation: interpolation.value,
+          showCrosshairs: crosshair.value,
+          radiologicalConvention: radiologicalConvention.value,
+          colorbar: colorbar.value,
+          zoomDragMode: zoomDragMode.value,
+        }}
+        currentViewOptions={{
+          sliceType: sliceType.value,
+          hideUI: hideUI.value,
+        }}
+        currentBaseImage={currentBaseImage.value}
+        currentOverlay={currentOverlay.value}
+        colormaps={availableColormaps.value}
+        onSave={handlePresetSave}
+      />
     </>
   )
 }

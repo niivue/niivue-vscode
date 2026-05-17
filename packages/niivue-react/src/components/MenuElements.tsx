@@ -61,7 +61,7 @@ export const MenuItem = ({ label, onClick, children, visible, shortcut }: any) =
       >
         <DownArrow />
       </button>
-      <div className="absolute cursor-pointer left-0 z-50 min-w-full">
+      <div className="absolute cursor-pointer left-0 z-50 min-w-full bg-gray-900">
         {isOpen.value && children}
       </div>
     </div>
