@@ -63,9 +63,9 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          meta=pwa-preview/.build_meta.json
+          meta=pwa-preview/build-meta.json
           if [ ! -f "$meta" ]; then
-            echo "::error::artifact missing .build_meta.json"
+            echo "::error::artifact missing build-meta.json"
             exit 1
           fi
           pr_number=$(jq -r '.pr_number' "$meta")
