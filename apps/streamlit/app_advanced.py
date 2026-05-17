@@ -7,13 +7,18 @@ st.set_page_config(layout="wide", page_title="NiiVue — Advanced")
 
 st.title("🧠 NiiVue Advanced Showcase")
 
+@st.cache_data
+def load_nifti(path: str) -> bytes:
+    return Path(path).read_bytes()
+
+
 # Load bundled example image
 data_path = Path(__file__).parent / "tests" / "assets" / "lesion.nii.gz"
 if not data_path.exists():
     st.error(f"Required file {data_path.name} not found.")
     st.stop()
 
-image_data = data_path.read_bytes()
+image_data = load_nifti(str(data_path))
 
 # Sidebar for configuration
 with st.sidebar:
@@ -50,6 +55,7 @@ niivue_viewer(
     view_mode=view_mode,
     styled=True,
     settings=settings,
+    update_interval_ms=None,
     key="advanced_viewer"
 )
 

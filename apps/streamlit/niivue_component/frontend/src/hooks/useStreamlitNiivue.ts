@@ -50,18 +50,25 @@ export const useStreamlitNiivue = (args: StreamlitArgs) => {
     }
   }, [args.view_mode])
 
-  // Sync settings (crosshairs, radiological, etc)
+  // Sync settings (crosshairs, radiological, etc). Streamlit always hands us
+  // a fresh args.settings object identity on every re-run, so depending on
+  // it directly would re-fire setInterpolation/setCrosshairWidth/drawScene
+  // in NiiVueCanvas (the dominant GL-side cost during bidirectional drag).
+  // Depend on a content fingerprint instead so the effect only runs when a
+  // user-controllable field actually changed.
+  const settingsKey = args.settings
+    ? `${args.settings.crosshair}|${args.settings.radiological}|${args.settings.colorbar}|${args.settings.interpolation}`
+    : ''
   useEffect(() => {
-    if (args.settings) {
-      settings.value = {
-        ...settings.value,
-        showCrosshairs: args.settings.crosshair ?? settings.value.showCrosshairs,
-        radiologicalConvention: args.settings.radiological ?? settings.value.radiologicalConvention,
-        colorbar: args.settings.colorbar ?? settings.value.colorbar,
-        interpolation: args.settings.interpolation ?? settings.value.interpolation,
-      }
+    if (!args.settings) return
+    settings.value = {
+      ...settings.value,
+      showCrosshairs: args.settings.crosshair ?? settings.value.showCrosshairs,
+      radiologicalConvention: args.settings.radiological ?? settings.value.radiologicalConvention,
+      colorbar: args.settings.colorbar ?? settings.value.colorbar,
+      interpolation: args.settings.interpolation ?? settings.value.interpolation,
     }
-  }, [args.settings])
+  }, [settingsKey])
 
   // Compute a stable ID for the mesh list using data fingerprints (for change detection)
   const meshId = args.meshes
