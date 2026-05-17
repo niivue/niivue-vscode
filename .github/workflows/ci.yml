@@ -519,7 +519,14 @@ jobs:
           commit_message: 'Publish coverage report to ${{ steps.target.outputs.dest }}'
 
       - name: Comment coverage summary on PR
+        # PRs from forks receive a read-only GITHUB_TOKEN regardless of the
+        # job's permissions block, so this step fails with "Resource not
+        # accessible by integration". Tolerate that — the coverage data is
+        # still uploaded as an artifact and (where possible) deployed to
+        # Pages, so we don't want to fail the whole job over a missing
+        # comment. Same rationale as the deploy step above.
         if: github.event_name == 'pull_request' && hashFiles('coverage/summary.md') != ''
+        continue-on-error: true
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           path: coverage/summary.md
