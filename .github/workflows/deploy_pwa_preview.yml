@@ -13,6 +13,9 @@ on:
       pr_number:
         description: 'PR number (used for destination_dir pr-N and PR comment)'
         required: true
+      head_repository:
+        description: 'Repository owning the branch (e.g. user/niivue-vscode). Defaults to this repo.'
+        required: false
       ref:
         description: 'Branch name or commit SHA to build'
         required: true
@@ -34,6 +37,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          repository: ${{ inputs.head_repository || github.repository }}
           ref: ${{ inputs.ref || github.event.pull_request.head.sha }}
 
       - name: Setup pnpm
