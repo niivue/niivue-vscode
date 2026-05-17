@@ -413,10 +413,14 @@ jobs:
         continue-on-error: true
 
       - name: Download VS Code coverage artifacts
+        # upload-artifact@v4 strips the parent path for single-path uploads,
+        # so the artifact's files sit at its root. Extract them back under
+        # apps/vscode/coverage/unit/ so the aggregator's walk (which requires
+        # a `coverage` path segment) picks them up.
         uses: actions/download-artifact@v4
         with:
           name: coverage-unit-vscode
-          path: .
+          path: apps/vscode/coverage/unit/
         continue-on-error: true
 
       - name: Download Streamlit coverage artifacts
