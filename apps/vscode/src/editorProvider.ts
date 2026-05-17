@@ -82,8 +82,6 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     const name = vscode.Uri.parse(uri.toString()).path.split('/').pop()
     const tabName = name ? `web: ${name}` : 'NiiVue Web Panel'
     this.createPanel(context, 'niivue.webview', tabName, uri).then((panel) => {
-      const editor = new NiiVueEditorProvider(context)
-
       let isImageSent = false
       panel.webview.onDidReceiveMessage(async (e) => {
         if (e.type === 'ready' && !isImageSent) {
@@ -91,14 +89,10 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
           this.postInitSettings(panel)
 
           if (uri.path.toLowerCase().endsWith('.mhd')) {
-            await NiiVueEditorProvider.sendMhdMessage(uri, panel.webview, editor.isUriAccessible(uri))
+            await NiiVueEditorProvider.sendMhdMessage(uri, panel.webview)
           } else {
-            // Send file URL instead of reading the entire file
-            const fileUrl = editor.createFileUrl(uri, panel.webview)
-            panel.webview.postMessage({
-              type: 'addImage',
-              body: { uri: fileUrl },
-            })
+            const body = await NiiVueEditorProvider.uriToImageBody(uri, panel.webview)
+            panel.webview.postMessage({ type: 'addImage', body })
           }
         }
       })
@@ -123,8 +117,6 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
   public static async createCompareView(context: vscode.ExtensionContext, items: any) {
     const uris = items.map((item: any) => vscode.Uri.parse(item))
     this.createPanel(context, 'niivue.compare', 'NiiVue Compare Panel', uris[0]).then((panel) => {
-      const editor = new NiiVueEditorProvider(context)
-
       let isImageSent = false
       panel.webview.onDidReceiveMessage(async (e) => {
         if (e.type === 'ready' && !isImageSent) {
@@ -135,13 +127,8 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
             body: { n: uris.length },
           })
           for (const uri of uris) {
-            const fileUrl = editor.createFileUrl(uri, panel.webview)
-            panel.webview.postMessage({
-              type: 'addImage',
-              body: {
-                uri: fileUrl,
-              },
-            })
+            const body = await NiiVueEditorProvider.uriToImageBody(uri, panel.webview)
+            panel.webview.postMessage({ type: 'addImage', body })
           }
         }
       })
@@ -149,8 +136,6 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
   }
 
   private static addCommonListeners(panel: vscode.WebviewPanel) {
-    const editor = new NiiVueEditorProvider(null as any) // Temporary instance for createFileUrl method
-
     panel.webview.onDidReceiveMessage(async (e) => {
       switch (e.type) {
         case 'addOverlay':
@@ -162,15 +147,12 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
               openLabel: 'Open Overlay',
               // filters: fileTypes // doesn't work properly in remote
             })
-            .then((uris) => {
+            .then(async (uris) => {
               if (uris && uris.length > 0) {
-                const fileUrl = editor.createFileUrl(uris[0], panel.webview)
+                const body = await NiiVueEditorProvider.uriToImageBody(uris[0], panel.webview)
                 panel.webview.postMessage({
                   type: e.body.type,
-                  body: {
-                    uri: fileUrl,
-                    index: e.body.index,
-                  },
+                  body: { ...body, index: e.body.index },
                 })
               }
             })
@@ -191,32 +173,12 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
                   body: { n: uris.length },
                 })
                 for (const uri of uris) {
-                  const lowerPath = uri.path.toLowerCase()
-                  if (lowerPath.endsWith('.mhd')) {
-                    // MHD files need paired .raw data
-                    await NiiVueEditorProvider.sendMhdMessage(
-                      uri,
-                      panel.webview,
-                      editor.isUriAccessible(uri),
-                    )
-                  } else if (lowerPath.endsWith('.dcm')) {
-                    // Handle DICOM files differently - send data instead of URL
-                    const data = await vscode.workspace.fs.readFile(uri)
-                    panel.webview.postMessage({
-                      type: 'addImage',
-                      body: {
-                        data: NiiVueEditorProvider.toArrayBuffer(data),
-                        uri: uri.toString(),
-                      },
-                    })
+                  if (uri.path.toLowerCase().endsWith('.mhd')) {
+                    // MHD needs paired .raw resolution; handled separately.
+                    await NiiVueEditorProvider.sendMhdMessage(uri, panel.webview)
                   } else {
-                    const fileUrl = editor.createFileUrl(uri, panel.webview)
-                    panel.webview.postMessage({
-                      type: 'addImage',
-                      body: {
-                        uri: fileUrl,
-                      },
-                    })
+                    const body = await NiiVueEditorProvider.uriToImageBody(uri, panel.webview)
+                    panel.webview.postMessage({ type: 'addImage', body })
                   }
                 }
               }
@@ -283,54 +245,68 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
       if (message.type === 'ready') {
         NiiVueEditorProvider.postInitSettings(webviewPanel)
 
-        // Handle DICOM and MINC files differently - send data instead of URL
-        const lowerCasePath = document.uri.path.toLowerCase()
-        if (lowerCasePath.endsWith('.mhd')) {
-          // MHD files have detached raw data; resolve the paired .raw file
-          await NiiVueEditorProvider.sendMhdMessage(
+        if (document.uri.path.toLowerCase().endsWith('.mhd')) {
+          // MHD files have detached raw data; resolve the paired .raw file.
+          await NiiVueEditorProvider.sendMhdMessage(document.uri, webviewPanel.webview)
+        } else {
+          const body = await NiiVueEditorProvider.uriToImageBody(
             document.uri,
             webviewPanel.webview,
-            this.isUriAccessible(document.uri),
           )
-        } else if (
-          lowerCasePath.endsWith('.dcm') ||
-          lowerCasePath.endsWith('.mnc') ||
-          !this.isUriAccessible(document.uri)
-        ) {
-          const data = await vscode.workspace.fs.readFile(document.uri)
-          webviewPanel.webview.postMessage({
-            type: 'addImage',
-            body: {
-              data: NiiVueEditorProvider.toArrayBuffer(data),
-              uri: document.uri.toString(),
-            },
-          })
-        } else {
-          // Send file URL instead of data for other files
-          const fileUrl = this.createFileUrl(document.uri, webviewPanel.webview)
-          webviewPanel.webview.postMessage({
-            type: 'addImage',
-            body: {
-              uri: fileUrl,
-            },
-          })
+          webviewPanel.webview.postMessage({ type: 'addImage', body })
         }
       }
     })
   }
 
-  private createFileUrl(uri: vscode.Uri, webview: vscode.Webview): string {
-    // Use VS Code's secure webview URI system for serving files
-    return webview.asWebviewUri(uri).toString()
+  /**
+   * Build the message body for an `addImage`/overlay payload.  Prefers a
+   * webview URI (so NiiVue can stream large volumes) but falls back to reading
+   * the file as binary when the URI is not reachable via the webview resource
+   * proxy — i.e. remote workspaces where the file sits outside
+   * `localResourceRoots`, or formats that NiiVue can only ingest as bytes
+   * (`.dcm`, `.mnc`).
+   *
+   * MHD files are handled separately by `sendMhdMessage` because they need
+   * the paired `.raw` voxel file resolved alongside the header.
+   */
+  static async uriToImageBody(
+    uri: vscode.Uri,
+    webview: vscode.Webview,
+  ): Promise<{ uri: string; data?: ArrayBuffer }> {
+    const lowerCasePath = uri.path.toLowerCase()
+    if (
+      lowerCasePath.endsWith('.dcm') ||
+      lowerCasePath.endsWith('.mnc') ||
+      !NiiVueEditorProvider.isUriAccessible(uri)
+    ) {
+      const data = await vscode.workspace.fs.readFile(uri)
+      return {
+        data: NiiVueEditorProvider.toArrayBuffer(data),
+        uri: uri.toString(),
+      }
+    }
+    return { uri: webview.asWebviewUri(uri).toString() }
   }
 
-  private isUriAccessible(uri: vscode.Uri): boolean {
+  /**
+   * Whether `uri` can be served through the webview resource proxy.  Requires
+   * the same scheme *and* authority as one of the workspace folders so that a
+   * `file://` workspace never claims to host a `vscode-remote://` file (which
+   * is what broke menu-driven Add Image / Add Overlay on SSH-remote sessions
+   * in single-file mode).
+   */
+  static isUriAccessible(uri: vscode.Uri): boolean {
     const workspaceFolders = vscode.workspace.workspaceFolders
     if (!workspaceFolders) {
       return false
     }
     for (const folder of workspaceFolders) {
-      if (uri.path.startsWith(folder.uri.path)) {
+      if (
+        uri.scheme === folder.uri.scheme &&
+        uri.authority === folder.uri.authority &&
+        uri.path.startsWith(folder.uri.path)
+      ) {
         return true
       }
     }
@@ -391,17 +367,13 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
    * directly.  When the file is not accessible that way, both files are read
    * and sent as binary buffers.
    */
-  static async sendMhdMessage(
-    uri: vscode.Uri,
-    webview: vscode.Webview,
-    isAccessible: boolean,
-  ): Promise<void> {
+  static async sendMhdMessage(uri: vscode.Uri, webview: vscode.Webview): Promise<void> {
     const mhdData = await vscode.workspace.fs.readFile(uri)
     const mhdText = new TextDecoder().decode(mhdData)
     const rawRef = NiiVueEditorProvider.getMhdPairedRawRef(mhdText)
     const rawUri = rawRef ? NiiVueEditorProvider.resolveMhdPairedRawUri(uri, rawRef) : null
 
-    if (isAccessible) {
+    if (NiiVueEditorProvider.isUriAccessible(uri)) {
       const mhdWebviewUri = webview.asWebviewUri(uri).toString()
       const body: Record<string, unknown> = { uri: mhdWebviewUri }
       if (rawRef) {
