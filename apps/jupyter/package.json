@@ -112,10 +112,5 @@
     "outputDir": "jupyterlab_niivue/labextension",
     "schemaDir": "schema",
     "webpackConfig": "./webpack.config.js"
-  },
-  "jupyter-releaser": {
-    "skip": [
-      "check-links"
-    ]
   }
 }

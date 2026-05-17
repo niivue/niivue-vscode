@@ -86,9 +86,5 @@ npm = ["pnpm"]
 [tool.hatch.build.hooks.jupyter-builder.wheel-build-kwargs]
 skip_if_exists = ["jupyterlab_niivue/labextension/static/style.js"]
 
-[tool.jupyter-releaser.options]
-version_cmd = "hatch version"
-admin_check = false
-
 [tool.check-wheel-contents]
 ignore = ["W002"]
