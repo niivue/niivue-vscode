@@ -6,11 +6,17 @@
 #   - Never runs PR code. Only consumes the coverage-publish artifact CI
 #     uploaded (a static directory of HTML + JSON files) and deploys it.
 #
-# Fork-PR policy:
-#   - Same-repo PR / push to main: auto-fires after CI succeeds.
-#   - Fork PR: skipped on the workflow_run path. A maintainer can manually
-#     dispatch this workflow with the PR number to publish the report after
-#     reviewing the diff.
+# Fork-PR policy: auto-publish for everyone, including forks.
+#   The coverage report is a passive, generated artifact (Istanbul HTML + a
+#   markdown table). Unlike the PWA preview — which deploys a runnable SPA
+#   on the same origin as the rest of niivue.github.io and could in principle
+#   embed attacker scripts — the coverage report has bounded HTML rendered
+#   by istanbul-lib-report from structured numeric inputs, so we accept the
+#   smaller risk in exchange for letting fork contributors see their coverage
+#   delta automatically.
+#
+#   workflow_dispatch is still provided as a recovery path (re-publish after
+#   a failed deploy, or republish a stale fork PR after fixes).
 
 name: Coverage Report
 
@@ -38,16 +44,16 @@ concurrency:
 
 jobs:
   publish:
-    # workflow_run path: only auto-publish for trusted triggers. Fork PRs get
-    # skipped here; the maintainer can republish via workflow_dispatch.
-    # workflow_dispatch path: always allowed (only maintainers can dispatch).
+    # Auto-publish for every successful CI run (push to main, same-repo PR,
+    # fork PR, or maintainer workflow_dispatch) — see the file header for the
+    # asymmetry vs. deploy_pwa_preview.yml. workflow_dispatch is always
+    # allowed (only maintainers can dispatch).
     if: |
       github.event_name == 'workflow_dispatch' ||
       (github.event.workflow_run.conclusion == 'success' &&
        (github.event.workflow_run.event == 'workflow_dispatch' ||
         github.event.workflow_run.event == 'push' ||
-        (github.event.workflow_run.event == 'pull_request' &&
-         github.event.workflow_run.head_repository.full_name == github.repository)))
+        github.event.workflow_run.event == 'pull_request'))
     runs-on: ubuntu-latest
     steps:
       # workflow_dispatch path: maintainer entered a PR number. Resolve the
