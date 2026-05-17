@@ -349,6 +349,9 @@ importers:
       '@types/vscode':
         specifier: 1.70.0
         version: 1.70.0
+      '@vitest/coverage-v8':
+        specifier: ^3.2.4
+        version: 3.2.4(vitest@3.2.4)
       '@vscode/vsce':
         specifier: ^3.6.2
         version: 3.6.2

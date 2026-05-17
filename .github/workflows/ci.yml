@@ -214,6 +214,48 @@ jobs:
           if-no-files-found: ignore
           retention-days: 1
 
+  test-vscode:
+    needs: [changes, build]
+    if: needs.changes.outputs.vscode == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Restore build artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            apps/*/dist
+            apps/*/build
+            apps/*/lib
+            packages/*/dist
+          key: build-artifacts-${{ github.sha }}
+
+      - name: Run VS Code extension vitest coverage
+        run: pnpm --filter=niivue test:coverage
+
+      - name: Upload VS Code vitest coverage artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-unit-vscode
+          path: apps/vscode/coverage/unit/
+          if-no-files-found: ignore
+          retention-days: 1
+
   test-streamlit:
     needs: [changes, build]
     if: needs.changes.outputs.streamlit == 'true'
@@ -338,7 +380,7 @@ jobs:
           retention-days: 1
 
   coverage:
-    needs: [test-pwa, test-jupyter, test-streamlit, e2e-tests]
+    needs: [test-pwa, test-jupyter, test-vscode, test-streamlit, e2e-tests]
     if: |
       always() &&
       !contains(needs.*.result, 'failure') &&
@@ -367,6 +409,13 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: coverage-unit-jupyter
+          path: .
+        continue-on-error: true
+
+      - name: Download VS Code coverage artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-unit-vscode
           path: .
         continue-on-error: true
 

@@ -10,6 +10,13 @@ export default defineConfig({
     environment: 'node',
     include: ['test/**/*.{test,spec}.ts'],
     exclude: ['node_modules/**', 'dist/**'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html', 'json', 'json-summary'],
+      reportsDirectory: './coverage/unit',
+      include: ['src/**/*.ts'],
+      exclude: ['src/**/*.d.ts'],
+    },
   },
   resolve: {
     alias: {
