@@ -6,11 +6,17 @@
 #   - Never runs PR code. Only consumes the coverage-publish artifact CI
 #     uploaded (a static directory of HTML + JSON files) and deploys it.
 #
-# Fork-PR policy:
-#   - Same-repo PR / push to main: auto-fires after CI succeeds.
-#   - Fork PR: skipped on the workflow_run path. A maintainer can manually
-#     dispatch this workflow with the PR number to publish the report after
-#     reviewing the diff.
+# Fork-PR policy: auto-publish for everyone, including forks.
+#   The coverage report is a passive, generated artifact (Istanbul HTML + a
+#   markdown table). Unlike the PWA preview — which deploys a runnable SPA
+#   on the same origin as the rest of niivue.github.io and could in principle
+#   embed attacker scripts — the coverage report has bounded HTML rendered
+#   by istanbul-lib-report from structured numeric inputs, so we accept the
+#   smaller risk in exchange for letting fork contributors see their coverage
+#   delta automatically.
+#
+#   workflow_dispatch is still provided as a recovery path (re-publish after
+#   a failed deploy, or republish a stale fork PR after fixes).
 
 name: Coverage Report
 
@@ -38,16 +44,16 @@ concurrency:
 
 jobs:
   publish:
-    # workflow_run path: only auto-publish for trusted triggers. Fork PRs get
-    # skipped here; the maintainer can republish via workflow_dispatch.
-    # workflow_dispatch path: always allowed (only maintainers can dispatch).
+    # Auto-publish for every successful CI run (push to main, same-repo PR,
+    # fork PR, or maintainer workflow_dispatch) — see the file header for the
+    # asymmetry vs. deploy_pwa_preview.yml. workflow_dispatch is always
+    # allowed (only maintainers can dispatch).
     if: |
       github.event_name == 'workflow_dispatch' ||
       (github.event.workflow_run.conclusion == 'success' &&
        (github.event.workflow_run.event == 'workflow_dispatch' ||
         github.event.workflow_run.event == 'push' ||
-        (github.event.workflow_run.event == 'pull_request' &&
-         github.event.workflow_run.head_repository.full_name == github.repository)))
+        github.event.workflow_run.event == 'pull_request'))
     runs-on: ubuntu-latest
     steps:
       # workflow_dispatch path: maintainer entered a PR number. Resolve the
@@ -88,7 +94,28 @@ jobs:
             echo "head_sha=$head_sha"
           } >> "$GITHUB_OUTPUT"
 
+      # CI's coverage job exits 0 without uploading the artifact for paths-only
+      # commits where all `test-*` jobs were skipped (no source-code coverage to
+      # report). Treat that as a clean "nothing to publish" rather than a
+      # failure, otherwise every workflow-only commit on main reds the dashboard.
+      - name: Check for upstream coverage artifact
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          UPSTREAM_RUN_ID: ${{ steps.dispatch.outputs.run_id || github.event.workflow_run.id }}
+        run: |
+          set -euo pipefail
+          found=$(gh api "repos/${{ github.repository }}/actions/runs/$UPSTREAM_RUN_ID/artifacts?per_page=100" \
+            --jq '[.artifacts[] | select(.name == "coverage-publish")] | length')
+          if [ "$found" = "0" ]; then
+            echo "::notice::No coverage-publish artifact in upstream CI run $UPSTREAM_RUN_ID — likely a paths-filtered commit with all test jobs skipped. Nothing to publish."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Download coverage-publish artifact
+        if: steps.check.outputs.skip != 'true'
         uses: actions/download-artifact@v4
         with:
           name: coverage-publish
@@ -102,14 +129,15 @@ jobs:
       # means a new commit was pushed (stale artifact) or the artifact was
       # forged — skip either way.
       - name: Read coverage metadata
+        if: steps.check.outputs.skip != 'true'
         id: meta
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          meta_file=coverage-publish/.coverage_meta.json
+          meta_file=coverage-publish/coverage-meta.json
           if [ ! -f "$meta_file" ]; then
-            echo "::error::artifact missing .coverage_meta.json"
+            echo "::error::artifact missing coverage-meta.json"
             exit 1
           fi
           event=$(jq -r '.event' "$meta_file")
@@ -157,7 +185,7 @@ jobs:
           rm -f "$meta_file"
 
       - name: Deploy coverage report to gh-pages
-        if: steps.meta.outputs.skip != 'true'
+        if: steps.meta.outputs.skip == 'false'
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -170,7 +198,7 @@ jobs:
 
       - name: Comment coverage summary on PR
         if: |
-          steps.meta.outputs.skip != 'true' &&
+          steps.meta.outputs.skip == 'false' &&
           steps.meta.outputs.pr_number != '' &&
           steps.meta.outputs.pr_number != 'null'
         uses: marocchino/sticky-pull-request-comment@v2
@@ -180,7 +208,7 @@ jobs:
 
       - name: Surface coverage status on PR head commit
         if: |
-          steps.meta.outputs.skip != 'true' &&
+          steps.meta.outputs.skip == 'false' &&
           steps.meta.outputs.pr_number != '' &&
           steps.meta.outputs.pr_number != 'null'
         uses: actions/github-script@v7
