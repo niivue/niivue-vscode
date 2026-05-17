@@ -2,19 +2,19 @@
   "shared-core": {
     "label": "Shared core (`packages/niivue-react`)",
     "stats": {
-      "statements": 34.3,
-      "branches": 64.6,
-      "functions": 50.3,
-      "lines": 34.2
+      "statements": null,
+      "branches": null,
+      "functions": null,
+      "lines": null
     }
   },
   "pwa-glue": {
     "label": "`apps/pwa`",
     "stats": {
-      "statements": 53.1,
-      "branches": 55,
-      "functions": 69.2,
-      "lines": 53.1
+      "statements": null,
+      "branches": null,
+      "functions": null,
+      "lines": null
     }
   },
   "jupyter-glue": {
@@ -29,28 +29,28 @@
   "streamlit-glue": {
     "label": "`apps/streamlit`",
     "stats": {
-      "statements": 15.9,
-      "branches": 70.6,
-      "functions": 55.6,
-      "lines": 15.9
-    }
-  },
-  "vscode-glue": {
-    "label": "`apps/vscode`",
-    "stats": {
       "statements": null,
       "branches": null,
       "functions": null,
       "lines": null
     }
   },
+  "vscode-glue": {
+    "label": "`apps/vscode`",
+    "stats": {
+      "statements": 7.8,
+      "branches": 70,
+      "functions": 30.8,
+      "lines": 7.8
+    }
+  },
   "_overall": {
     "label": "Overall",
     "stats": {
-      "statements": 33.4,
-      "branches": 64.5,
-      "functions": 51,
-      "lines": 33.3
+      "statements": 7.8,
+      "branches": 70,
+      "functions": 30.8,
+      "lines": 7.8
     }
   }
 }
