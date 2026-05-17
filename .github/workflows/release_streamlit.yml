@@ -65,9 +65,17 @@ jobs:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
 
-      - name: Create GitHub Release
+      # Use the package's tag (created by changesets/action) so we attach the
+      # wheel to the existing release rather than failing on `github.ref_name`
+      # being "main" under workflow_dispatch.
+      - name: Resolve release tag
+        id: release_tag
+        run: echo "tag=@niivue/streamlit@$(node -p "require('./apps/streamlit/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Attach wheel to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.release_tag.outputs.tag }}
           files: apps/streamlit/dist/*
           generate_release_notes: true
           prerelease: ${{ steps.prerelease.outputs.is_prerelease == 'true' }}

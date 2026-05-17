@@ -58,9 +58,17 @@ jobs:
         env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
 
-      - name: Create GitHub Release
+      # Use the package's tag (created by changesets/action) so we attach the
+      # .vsix to the existing release rather than failing on `github.ref_name`
+      # being "main" under workflow_dispatch.
+      - name: Resolve release tag
+        id: release_tag
+        run: echo "tag=niivue@$(node -p "require('./apps/vscode/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Attach VSIX to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.release_tag.outputs.tag }}
           files: apps/vscode/*.vsix
           generate_release_notes: true
           prerelease: ${{ steps.prerelease.outputs.is_prerelease == 'true' }}
