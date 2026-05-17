@@ -117,7 +117,7 @@ jobs:
           if ! [[ "$PR_HEAD_SHA" =~ ^[0-9a-f]{40}$ ]]; then
             echo "::error::invalid PR_HEAD_SHA '$PR_HEAD_SHA'"; exit 1
           fi
-          cat > apps/pwa/build/.build_meta.json <<EOF
+          cat > apps/pwa/build/build-meta.json <<EOF
           {
             "pr_number": $PR_NUMBER,
             "pr_head_sha": "$PR_HEAD_SHA"

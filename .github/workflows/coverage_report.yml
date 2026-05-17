@@ -94,7 +94,28 @@ jobs:
             echo "head_sha=$head_sha"
           } >> "$GITHUB_OUTPUT"
 
+      # CI's coverage job exits 0 without uploading the artifact for paths-only
+      # commits where all `test-*` jobs were skipped (no source-code coverage to
+      # report). Treat that as a clean "nothing to publish" rather than a
+      # failure, otherwise every workflow-only commit on main reds the dashboard.
+      - name: Check for upstream coverage artifact
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          UPSTREAM_RUN_ID: ${{ steps.dispatch.outputs.run_id || github.event.workflow_run.id }}
+        run: |
+          set -euo pipefail
+          found=$(gh api "repos/${{ github.repository }}/actions/runs/$UPSTREAM_RUN_ID/artifacts?per_page=100" \
+            --jq '[.artifacts[] | select(.name == "coverage-publish")] | length')
+          if [ "$found" = "0" ]; then
+            echo "::notice::No coverage-publish artifact in upstream CI run $UPSTREAM_RUN_ID — likely a paths-filtered commit with all test jobs skipped. Nothing to publish."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Download coverage-publish artifact
+        if: steps.check.outputs.skip != 'true'
         uses: actions/download-artifact@v4
         with:
           name: coverage-publish
@@ -108,14 +129,15 @@ jobs:
       # means a new commit was pushed (stale artifact) or the artifact was
       # forged — skip either way.
       - name: Read coverage metadata
+        if: steps.check.outputs.skip != 'true'
         id: meta
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          meta_file=coverage-publish/.coverage_meta.json
+          meta_file=coverage-publish/coverage-meta.json
           if [ ! -f "$meta_file" ]; then
-            echo "::error::artifact missing .coverage_meta.json"
+            echo "::error::artifact missing coverage-meta.json"
             exit 1
           fi
           event=$(jq -r '.event' "$meta_file")
@@ -163,7 +185,7 @@ jobs:
           rm -f "$meta_file"
 
       - name: Deploy coverage report to gh-pages
-        if: steps.meta.outputs.skip != 'true'
+        if: steps.meta.outputs.skip == 'false'
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -176,7 +198,7 @@ jobs:
 
       - name: Comment coverage summary on PR
         if: |
-          steps.meta.outputs.skip != 'true' &&
+          steps.meta.outputs.skip == 'false' &&
           steps.meta.outputs.pr_number != '' &&
           steps.meta.outputs.pr_number != 'null'
         uses: marocchino/sticky-pull-request-comment@v2
@@ -186,7 +208,7 @@ jobs:
 
       - name: Surface coverage status on PR head commit
         if: |
-          steps.meta.outputs.skip != 'true' &&
+          steps.meta.outputs.skip == 'false' &&
           steps.meta.outputs.pr_number != '' &&
           steps.meta.outputs.pr_number != 'null'
         uses: actions/github-script@v7

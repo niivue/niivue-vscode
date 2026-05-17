@@ -524,7 +524,7 @@ jobs:
             pr_json="null"
             sha_json="null"
           fi
-          cat > coverage/publish/.coverage_meta.json <<EOF
+          cat > coverage/publish/coverage-meta.json <<EOF
           {
             "event": "${EVENT_NAME}",
             "dest": "${DEST}",
