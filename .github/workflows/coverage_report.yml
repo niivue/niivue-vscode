@@ -50,8 +50,12 @@ jobs:
          github.event.workflow_run.head_repository.full_name == github.repository)))
     runs-on: ubuntu-latest
     steps:
-      # workflow_dispatch path: maintainer entered a PR number. Find the most
-      # recent successful CI run for that PR and use its artifact.
+      # workflow_dispatch path: maintainer entered a PR number. Resolve the
+      # PR's head SHA, then ask the API for the most recent successful CI
+      # workflow run whose head_sha matches. Filtering by SHA (not branch
+      # name) avoids the cross-fork branch-name collision problem: two fork
+      # PRs called "feature/foo" have different SHAs, so we always pick the
+      # right run.
       - name: Resolve CI run for manual dispatch
         if: github.event_name == 'workflow_dispatch'
         id: dispatch
@@ -64,19 +68,21 @@ jobs:
             echo "::error::pr_number must be digits, got '$PR_NUMBER'"
             exit 1
           fi
-          head_branch=$(gh pr view "$PR_NUMBER" \
-            --repo "${{ github.repository }}" \
-            --json headRefName --jq '.headRefName')
-          run_id=$(gh run list --repo "${{ github.repository }}" \
-            --workflow=CI --branch="$head_branch" --status=success \
-            --limit 1 --json databaseId --jq '.[0].databaseId')
-          if [ -z "$run_id" ] || [ "$run_id" = "null" ]; then
-            echo "::error::no successful CI run found for PR #$PR_NUMBER (branch=$head_branch)"
-            exit 1
-          fi
           head_sha=$(gh pr view "$PR_NUMBER" \
             --repo "${{ github.repository }}" \
             --json headRefOid --jq '.headRefOid')
+          if ! [[ "$head_sha" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::could not resolve head SHA for PR #$PR_NUMBER"
+            exit 1
+          fi
+          runs=$(gh api \
+            "repos/${{ github.repository }}/actions/workflows/ci.yml/runs?per_page=50&status=success&head_sha=$head_sha")
+          run_id=$(echo "$runs" | jq -r '.workflow_runs[0].id // empty')
+          if [ -z "$run_id" ]; then
+            echo "::error::no successful CI run found for PR #$PR_NUMBER at head $head_sha"
+            echo "    Push a new commit or re-run CI on the PR, then retry."
+            exit 1
+          fi
           {
             echo "run_id=$run_id"
             echo "head_sha=$head_sha"
@@ -90,9 +96,11 @@ jobs:
           run-id: ${{ steps.dispatch.outputs.run_id || github.event.workflow_run.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      # Read and validate the metadata CI embedded in the artifact. For PR
-      # builds, cross-check that the PR's current head SHA matches the run's
-      # head SHA so a stale or forged artifact can't be re-deployed.
+      # Read and validate the metadata CI embedded in the artifact. The
+      # artifact contains the explicit PR head SHA the build was for; cross-
+      # check that against the PR's current head SHA via the API. Mismatch
+      # means a new commit was pushed (stale artifact) or the artifact was
+      # forged — skip either way.
       - name: Read coverage metadata
         id: meta
         env:
@@ -107,6 +115,7 @@ jobs:
           event=$(jq -r '.event' "$meta_file")
           dest=$(jq -r '.dest' "$meta_file")
           pr_number=$(jq -r '.pr_number // ""' "$meta_file")
+          pr_head_sha=$(jq -r '.pr_head_sha // ""' "$meta_file")
 
           # Validate dest path: only allow coverage/main or coverage/pr-N
           if ! [[ "$dest" =~ ^coverage/(main|pr-[0-9]+)$ ]]; then
@@ -120,13 +129,16 @@ jobs:
               echo "::error::invalid pr_number '$pr_number'"
               exit 1
             fi
+            if ! [[ "$pr_head_sha" =~ ^[0-9a-f]{40}$ ]]; then
+              echo "::error::invalid pr_head_sha '$pr_head_sha' for PR build"
+              exit 1
+            fi
             api_sha=$(gh api "repos/${{ github.repository }}/pulls/$pr_number" --jq '.head.sha' 2>/dev/null || echo "")
-            build_sha="${{ steps.dispatch.outputs.head_sha || github.event.workflow_run.head_sha }}"
             if [ -z "$api_sha" ]; then
               echo "::warning::could not resolve PR #$pr_number; skipping deploy"
               echo "skip=true" >> "$GITHUB_OUTPUT"
-            elif [ "$api_sha" != "$build_sha" ]; then
-              echo "::warning::PR #$pr_number head ($api_sha) does not match build head ($build_sha); skipping"
+            elif [ "$api_sha" != "$pr_head_sha" ]; then
+              echo "::warning::PR #$pr_number current head ($api_sha) does not match artifact head ($pr_head_sha) — stale or forged, skipping"
               echo "skip=true" >> "$GITHUB_OUTPUT"
             else
               echo "skip=false" >> "$GITHUB_OUTPUT"
@@ -140,6 +152,7 @@ jobs:
             echo "event=$event"
             echo "dest=$dest"
             echo "pr_number=$pr_number"
+            echo "head_sha=$pr_head_sha"
           } >> "$GITHUB_OUTPUT"
           rm -f "$meta_file"
 
@@ -173,7 +186,7 @@ jobs:
         uses: actions/github-script@v7
         env:
           DEST: ${{ steps.meta.outputs.dest }}
-          HEAD_SHA: ${{ steps.dispatch.outputs.head_sha || github.event.workflow_run.head_sha }}
+          HEAD_SHA: ${{ steps.meta.outputs.head_sha }}
         with:
           script: |
             const url = `https://niivue.github.io/niivue-vscode/${process.env.DEST}/`;

@@ -501,6 +501,11 @@ jobs:
           DEST: ${{ steps.target.outputs.dest }}
           EVENT_NAME: ${{ github.event_name }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          # Explicit PR head SHA the build was for. Carried in the artifact so
+          # the downstream Coverage Report workflow can validate without
+          # inferring from workflow_run.head_sha (which is the merge SHA for
+          # pull_request, and the dispatch-branch SHA for workflow_dispatch).
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           set -euo pipefail
           mkdir -p coverage/publish
@@ -514,14 +519,17 @@ jobs:
           # distinguish "no PR" from "invalid input".
           if [ -n "${PR_NUMBER}" ]; then
             pr_json="$PR_NUMBER"
+            sha_json="\"${PR_HEAD_SHA}\""
           else
             pr_json="null"
+            sha_json="null"
           fi
           cat > coverage/publish/.coverage_meta.json <<EOF
           {
             "event": "${EVENT_NAME}",
             "dest": "${DEST}",
-            "pr_number": ${pr_json}
+            "pr_number": ${pr_json},
+            "pr_head_sha": ${sha_json}
           }
           EOF
 

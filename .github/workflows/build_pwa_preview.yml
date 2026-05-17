@@ -100,13 +100,29 @@ jobs:
           PR_NUMBER: ${{ steps.pr.outputs.number || github.event.pull_request.number }}
         run: pnpm turbo build --filter=@niivue/pwa --force
 
-      # Embed PR number alongside the build so the deploy workflow can resolve
-      # which PR this artifact belongs to without trusting workflow_run.pull_requests
-      # (which is empty for fork PRs).
-      - name: Embed PR number in build directory
+      # Embed PR number AND the actual PR head SHA being built alongside the
+      # build. The deploy workflow uses these as the source of truth instead
+      # of inferring from workflow_run.head_sha (which is the merge SHA for
+      # pull_request events and the dispatch-branch SHA for workflow_dispatch
+      # — both wrong for the deploy gate).
+      - name: Embed build metadata in build directory
         env:
           PR_NUMBER: ${{ steps.pr.outputs.number || github.event.pull_request.number }}
-        run: echo "$PR_NUMBER" > apps/pwa/build/.pr_number
+          PR_HEAD_SHA: ${{ steps.pr.outputs.ref || github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          if ! [[ "$PR_NUMBER" =~ ^[0-9]+$ ]]; then
+            echo "::error::invalid PR_NUMBER '$PR_NUMBER'"; exit 1
+          fi
+          if ! [[ "$PR_HEAD_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::invalid PR_HEAD_SHA '$PR_HEAD_SHA'"; exit 1
+          fi
+          cat > apps/pwa/build/.build_meta.json <<EOF
+          {
+            "pr_number": $PR_NUMBER,
+            "pr_head_sha": "$PR_HEAD_SHA"
+          }
+          EOF
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
