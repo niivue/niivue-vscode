@@ -1,5 +1,6 @@
 {
   "name": "@niivue/jupyter",
+  "private": true,
   "version": "0.2.7",
   "description": "A JupyterLab extension for viewing NIfTI files with Niivue",
   "keywords": [
@@ -111,10 +112,5 @@
     "outputDir": "jupyterlab_niivue/labextension",
     "schemaDir": "schema",
     "webpackConfig": "./webpack.config.js"
-  },
-  "jupyter-releaser": {
-    "skip": [
-      "check-links"
-    ]
   }
 }

@@ -118,11 +118,13 @@ This configures the React app for WebView embedding without PWA features.
 ### Automated Tests
 
 ```bash
-# Run tests for VS Code extension
-pnpm --filter @niivue/vscode test
+# Run tests for VS Code extension (package is named `niivue` — not `@niivue/vscode`)
+pnpm --filter niivue test
 ```
 
 ## Publishing
+
+Releases are automated via Changesets — see the monorepo's [Release.md](../../Release.md) for the standard flow. The commands below are only for manual emergency releases.
 
 ### Setup
 

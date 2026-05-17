@@ -40,7 +40,7 @@ pnpm dev
 ```bash
 # Run specific app
 pnpm --filter @niivue/pwa dev
-pnpm --filter @niivue/vscode watch
+pnpm --filter niivue watch
 
 # Build specific package
 pnpm --filter @niivue/react build
@@ -64,12 +64,13 @@ The monorepo uses:
 ## Deployment & Releases
 
 We use **Changesets** for independent versioning and automated releases. Read the full guide here:
-- **[Release Process Details](RELEASE.md)**
+- **[Release Process Details](Release.md)**
 
 High-level overview:
 - Developers run `pnpm changeset` to document changes.
-- Merging the generated "Version Packages" PR automatically tags versions.
-- GitHub Actions automatically publish upon tag creation:
-  - **VSCode**: Published to VS Code Marketplace & Open VSX.
-  - **Jupyter & Streamlit**: Published to PyPI (and TestPyPI for pre-releases).
-  - **PWA**: Deployed to GitHub Pages.
+- Merging the auto-generated "Version Packages" PR triggers Release Coordinator to tag the bumped apps and dispatch their per-app release workflows.
+- Each per-app workflow publishes to its registry:
+  - **VS Code**: VS Code Marketplace & Open VSX
+  - **Jupyter & Streamlit**: PyPI
+  - **PWA**: GitHub Pages (deployed directly from `main`, no tag involved)
+- Every push to `main` with pending changesets also publishes a per-commit pre-release (Marketplace pre-release channel / PyPI `--pre`).
