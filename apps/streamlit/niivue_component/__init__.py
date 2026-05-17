@@ -1,9 +1,24 @@
 import os
 import warnings
+import streamlit as st
 import streamlit.components.v1 as components
 import base64
 
 _RELEASE = os.environ.get("NIIVUE_DEV") != "1"
+
+
+@st.cache_data(show_spinner=False, hash_funcs={bytes: id})
+def _encode_b64(data: bytes) -> str:
+    """Base64-encode bytes, cached by object identity.
+
+    ``hash_funcs={bytes: id}`` is critical: without it Streamlit hashes the
+    full bytes object on every call, which costs roughly as much as
+    encoding. With ``id`` the cache hits whenever the same bytes object is
+    passed — typically the value returned from a user-level
+    ``@st.cache_data`` loader — so repeated re-runs (e.g. fragment re-runs
+    on click) skip the encode entirely.
+    """
+    return base64.b64encode(data).decode()
 
 # Declare a Streamlit component
 if not _RELEASE:
@@ -94,14 +109,14 @@ def niivue_viewer(
     # Convert nifti_data to base64 if provided
     nifti_base64 = ""
     if nifti_data is not None:
-        nifti_base64 = base64.b64encode(nifti_data).decode()
+        nifti_base64 = _encode_b64(nifti_data)
 
     # Convert paired_data (detached raw voxels for MHD) to base64 if provided
     paired_base64 = ""
     if paired_data is not None:
         if not isinstance(paired_data, bytes):
             raise ValueError("paired_data must be bytes")
-        paired_base64 = base64.b64encode(paired_data).decode()
+        paired_base64 = _encode_b64(paired_data)
     
     # Convert overlays to base64
     overlays_data = []
@@ -116,7 +131,7 @@ def niivue_viewer(
                 raise ValueError(f"Overlay {i}: either 'name' or 'filename' field is required")
             
             overlay_dict = {
-                "data": base64.b64encode(overlay["data"]).decode(),
+                "data": _encode_b64(overlay["data"]),
                 "name": overlay.get("name") or overlay.get("filename", "overlay"),
                 "colormap": overlay.get("colormap", "red"),
                 "opacity": overlay.get("opacity", 0.5),
@@ -135,7 +150,7 @@ def niivue_viewer(
                 raise ValueError(f"Mesh {i}: 'name' field is required")
             
             mesh_dict = {
-                "data": base64.b64encode(mesh["data"]).decode(),
+                "data": _encode_b64(mesh["data"]),
                 "name": mesh["name"],
             }
             
@@ -156,7 +171,7 @@ def niivue_viewer(
                         if 'name' not in mo:
                             raise ValueError(f"Mesh {i}, overlay {j}: 'name' field is required")
                         mesh_overlays.append({
-                            "data": base64.b64encode(mo["data"]).decode(),
+                            "data": _encode_b64(mo["data"]),
                             "name": mo["name"],
                             "colormap": mo.get("colormap", "redyell"),
                             "opacity": mo.get("opacity", 0.7),

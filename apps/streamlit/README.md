@@ -163,8 +163,10 @@ keep the viewer snappy:
 1. **`@st.fragment`** — wrap the viewer plus the UI that consumes its
    return value in a fragment. Clicks re-run only the fragment, not the
    whole page. See `app_bidirectional.py`.
-2. **`@st.cache_data`** — cache `Path.read_bytes()` (and any other pure
-   work) so the same bytes aren't re-loaded on every re-run.
+2. **`@st.cache_data`** — cache `Path.read_bytes()` so the same bytes
+   aren't re-loaded on every re-run. The component wrapper also caches the
+   base64 encoding internally, keyed on the bytes object's identity, so
+   caching your loader transparently skips re-encoding too.
 3. **`update_interval_ms`** — controls the throttle on click events sent
    back to Python (default `100` ms). Pass `None` to disable feedback
    entirely when the return value isn't used (e.g. `app_simple.py`,

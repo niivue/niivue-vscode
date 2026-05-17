@@ -33,4 +33,3 @@ niivue_viewer(
     update_interval_ms=None,
     key="simple",
 )
-

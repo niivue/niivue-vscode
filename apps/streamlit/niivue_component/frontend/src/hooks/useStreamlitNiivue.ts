@@ -50,30 +50,25 @@ export const useStreamlitNiivue = (args: StreamlitArgs) => {
     }
   }, [args.view_mode])
 
-  // Sync settings (crosshairs, radiological, etc). Only write when a field
-  // actually changed — otherwise every Streamlit re-run would trigger
-  // setInterpolation/setCrosshairWidth/drawScene in NiiVueCanvas even though
-  // nothing changed, which is the main GL-side cost during bidirectional drag.
+  // Sync settings (crosshairs, radiological, etc). Streamlit always hands us
+  // a fresh args.settings object identity on every re-run, so depending on
+  // it directly would re-fire setInterpolation/setCrosshairWidth/drawScene
+  // in NiiVueCanvas (the dominant GL-side cost during bidirectional drag).
+  // Depend on a content fingerprint instead so the effect only runs when a
+  // user-controllable field actually changed.
+  const settingsKey = args.settings
+    ? `${args.settings.crosshair}|${args.settings.radiological}|${args.settings.colorbar}|${args.settings.interpolation}`
+    : ''
   useEffect(() => {
     if (!args.settings) return
-    const prev = settings.value
-    const next = {
-      ...prev,
-      showCrosshairs: args.settings.crosshair ?? prev.showCrosshairs,
-      radiologicalConvention: args.settings.radiological ?? prev.radiologicalConvention,
-      colorbar: args.settings.colorbar ?? prev.colorbar,
-      interpolation: args.settings.interpolation ?? prev.interpolation,
+    settings.value = {
+      ...settings.value,
+      showCrosshairs: args.settings.crosshair ?? settings.value.showCrosshairs,
+      radiologicalConvention: args.settings.radiological ?? settings.value.radiologicalConvention,
+      colorbar: args.settings.colorbar ?? settings.value.colorbar,
+      interpolation: args.settings.interpolation ?? settings.value.interpolation,
     }
-    if (
-      next.showCrosshairs === prev.showCrosshairs &&
-      next.radiologicalConvention === prev.radiologicalConvention &&
-      next.colorbar === prev.colorbar &&
-      next.interpolation === prev.interpolation
-    ) {
-      return
-    }
-    settings.value = next
-  }, [args.settings])
+  }, [settingsKey])
 
   // Compute a stable ID for the mesh list using data fingerprints (for change detection)
   const meshId = args.meshes
