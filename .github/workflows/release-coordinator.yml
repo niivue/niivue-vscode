@@ -16,6 +16,7 @@ jobs:
       contents: write
       pull-requests: write
       id-token: write
+      actions: write
 
     steps:
       - name: Checkout Repo
@@ -44,3 +45,33 @@ jobs:
           title: "chore(release): version packages"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # `changeset publish` only tags the private app packages (npm publish is
+      # skipped). Tags pushed by GITHUB_TOKEN don't trigger other workflows, so
+      # dispatch each app's dedicated release workflow when its version
+      # actually changed in the merge commit. Stable release scheme: whatever
+      # changeset version produced (bare semver / PEP 440) ships as-is; the
+      # marketplace and PyPI both accept those formats for stable channels.
+      - name: Dispatch per-app release workflows
+        if: steps.changesets.outputs.hasChangesets == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          changed() {
+            git diff HEAD^ HEAD -- "$1" | grep -Eq '^[+-][[:space:]]*"version":'
+          }
+          dispatch() {
+            local app=$1 workflow=$2 pkg=apps/$1/package.json
+            if changed "$pkg"; then
+              local v
+              v=$(node -p "require('./$pkg').version")
+              echo "→ dispatching $workflow for $app v$v"
+              gh workflow run "$workflow" --ref main
+            else
+              echo "  skipping $app (no version change)"
+            fi
+          }
+          dispatch vscode    release_vscode.yml
+          dispatch jupyter   release_jupyterlab.yml
+          dispatch streamlit release_streamlit.yml
