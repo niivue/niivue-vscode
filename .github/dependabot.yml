@@ -51,14 +51,23 @@ updates:
       types:
         patterns:
           - '@types/*'
-      # ESLint + linting stack
+      # Prettier + format tooling — must be declared BEFORE the eslint group
+      # so that eslint-config-prettier / eslint-plugin-prettier match here
+      # (Dependabot assigns each dep to its first matching group).
+      prettier:
+        patterns:
+          - 'prettier'
+          - 'prettier-*'
+          - 'eslint-config-prettier'
+          - 'eslint-plugin-prettier'
+      # ESLint + linting stack (eslint-plugin-prettier already grabbed above)
       eslint:
         patterns:
           - 'eslint'
-          - 'eslint-*'
           - '@eslint/*'
           - '@typescript-eslint/*'
           - 'typescript-eslint'
+          - 'eslint-plugin-*'
       # Vitest unit tests
       vitest:
         patterns:
@@ -87,14 +96,15 @@ updates:
           - '@jupyterlab/*'
           - '@jupyter/*'
           - '@lumino/*'
-      # React/Preact stack
+      # React/Preact core only. Intentionally NOT using `react-*` so that
+      # unrelated React-ecosystem packages (e.g. react-router-dom v7) get
+      # their own ungrouped PRs and aren't bundled with a core React bump.
       react-preact:
         patterns:
           - 'react'
           - 'react-dom'
           - 'preact'
           - '@preact/*'
-          - 'react-*'
       # Tailwind + PostCSS
       tailwind:
         patterns:
@@ -104,12 +114,6 @@ updates:
           - 'postcss'
           - 'postcss-*'
           - 'autoprefixer'
-      # Prettier + format tooling
-      prettier:
-        patterns:
-          - 'prettier'
-          - 'prettier-*'
-          - 'eslint-config-prettier'
       # esbuild (used by apps/vscode)
       esbuild:
         patterns:
