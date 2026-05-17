@@ -1,5 +1,15 @@
 name: Pre-release
 
+# Auto-publish pre-releases on every push to main that carries pending
+# changesets. Versions are derived from the same source of truth as the next
+# stable (the queued changesets), so beta numbers always reflect what the
+# next stable will be. Scheme:
+#   - VS Code: <next-odd-minor>.<run>.0  (e.g. stable 2.10.0 → pre 2.11.<run>)
+#   - PyPI:    <next-stable>.dev<run>    (PEP 440 development release)
+#
+# Stable releases stay on the Release Coordinator path (merge the
+# "Version Packages" PR).
+
 on:
   push:
     branches:
@@ -19,106 +29,90 @@ jobs:
         with:
           fetch-depth: 2
 
-      # Detect which apps actually changed. Changes in the shared library
-      # (packages/niivue-react) count as changes for every app.
-      # workflow_dispatch always builds everything.
-      - name: Detect changes
-        id: changes
+      # Bail early if there are no pending changesets. Without any, there's
+      # nothing semantically new to pre-release on top of the last stable.
+      - name: Detect pending changesets
+        id: detect
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "vscode=true"    >> "$GITHUB_OUTPUT"
-            echo "jupyter=true"   >> "$GITHUB_OUTPUT"
-            echo "streamlit=true" >> "$GITHUB_OUTPUT"
+          shopt -s nullglob
+          count=0
+          for f in .changeset/*.md; do
+            [ "$(basename "$f")" = "README.md" ] && continue
+            count=$((count + 1))
+          done
+          if [ "$count" -gt 0 ]; then
+            echo "has_changesets=true" >> "$GITHUB_OUTPUT"
+            echo "Found $count pending changeset(s)."
           else
-            SHARED=$(git diff --name-only HEAD~1 -- packages/niivue-react/ | head -1)
-            VSCODE=$(git diff --name-only HEAD~1 -- apps/vscode/ | head -1)
-            JUPYTER=$(git diff --name-only HEAD~1 -- apps/jupyter/ | head -1)
-            STREAMLIT=$(git diff --name-only HEAD~1 -- apps/streamlit/ | head -1)
-
-            echo "vscode=$([[ -n "$SHARED" || -n "$VSCODE" ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
-            echo "jupyter=$([[ -n "$SHARED" || -n "$JUPYTER" ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
-            echo "streamlit=$([[ -n "$SHARED" || -n "$STREAMLIT" ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+            echo "has_changesets=false" >> "$GITHUB_OUTPUT"
+            echo "No pending changesets — skipping pre-release."
           fi
 
       - uses: pnpm/action-setup@v4
+        if: steps.detect.outputs.has_changesets == 'true'
 
       - uses: actions/setup-node@v4
+        if: steps.detect.outputs.has_changesets == 'true'
         with:
           node-version: '22'
           cache: 'pnpm'
 
       - uses: actions/setup-python@v5
-        if: steps.changes.outputs.jupyter == 'true' || steps.changes.outputs.streamlit == 'true'
+        if: steps.detect.outputs.has_changesets == 'true'
         with:
           python-version: '3.11'
 
       - name: Install JS dependencies
+        if: steps.detect.outputs.has_changesets == 'true'
         run: pnpm install --frozen-lockfile
 
       - name: Install Python build tools
-        if: steps.changes.outputs.jupyter == 'true' || steps.changes.outputs.streamlit == 'true'
+        if: steps.detect.outputs.has_changesets == 'true'
         run: python -m pip install "jupyterlab>=4.0.0,<5" build twine
 
+      # Compute "what would the next stable be?" via changeset's snapshot
+      # mode (does not delete changeset files), then rewrite per-target.
+      - name: Compute snapshot versions
+        if: steps.detect.outputs.has_changesets == 'true'
+        run: pnpm changeset version --snapshot beta
+
+      - name: Encode pre-release versions per target
+        if: steps.detect.outputs.has_changesets == 'true'
+        run: node scripts/release/encode-prerelease-versions.mjs ${{ github.run_number }}
+
+      # ── Build everything ───────────────────────────────────────────────────
+      - name: Build all apps
+        if: steps.detect.outputs.has_changesets == 'true'
+        run: pnpm turbo build
+
       # ── VS Code ────────────────────────────────────────────────────────────
-      # VSCode requires major.minor.patch (no semver pre-release tags).
-      # Convention: odd minor = pre-release. Stable 2.8.0 → pre-release 2.9.<run>.
-      - name: Build VS Code extension
-        if: steps.changes.outputs.vscode == 'true'
-        run: pnpm turbo build --filter=niivue
-
-      - name: Set VS Code pre-release version
-        if: steps.changes.outputs.vscode == 'true'
-        run: |
-          node -e "
-            const fs = require('fs'), p = 'apps/vscode/package.json';
-            const pkg = JSON.parse(fs.readFileSync(p));
-            pkg.version = '2.9.${{ github.run_number }}';
-            fs.writeFileSync(p, JSON.stringify(pkg, null, 2) + '\n');
-          "
-
       - name: Package VS Code extension
-        if: steps.changes.outputs.vscode == 'true'
+        if: steps.detect.outputs.has_changesets == 'true'
         run: pnpm vsce package --pre-release
         working-directory: ./apps/vscode
 
       - name: Publish to VS Code Marketplace
-        if: steps.changes.outputs.vscode == 'true'
+        if: steps.detect.outputs.has_changesets == 'true'
         run: pnpm vsce publish --pre-release
         working-directory: ./apps/vscode
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
 
       - name: Publish to Open VSX
-        if: steps.changes.outputs.vscode == 'true'
+        if: steps.detect.outputs.has_changesets == 'true'
         run: pnpm ovsx publish *.vsix --pre-release
         working-directory: ./apps/vscode
         env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
 
       # ── JupyterLab ─────────────────────────────────────────────────────────
-      # hatch-nodejs-version reads package.json and converts npm semver to PEP 440:
-      # 0.2.7-beta.<run> → 0.2.7b<run>  (valid PEP 440 beta)
-      - name: Build JupyterLab extension
-        if: steps.changes.outputs.jupyter == 'true'
-        run: pnpm turbo build --filter=@niivue/jupyter
-
-      - name: Set JupyterLab pre-release version
-        if: steps.changes.outputs.jupyter == 'true'
-        run: |
-          node -e "
-            const fs = require('fs'), p = 'apps/jupyter/package.json';
-            const pkg = JSON.parse(fs.readFileSync(p));
-            pkg.version = '0.2.7-beta.${{ github.run_number }}';
-            fs.writeFileSync(p, JSON.stringify(pkg, null, 2) + '\n');
-          "
-
       - name: Build JupyterLab Python package
-        if: steps.changes.outputs.jupyter == 'true'
+        if: steps.detect.outputs.has_changesets == 'true'
         run: python -m build
         working-directory: ./apps/jupyter
 
       - name: Publish JupyterLab to PyPI
-        if: steps.changes.outputs.jupyter == 'true'
+        if: steps.detect.outputs.has_changesets == 'true'
         run: python -m twine upload dist/*
         working-directory: ./apps/jupyter
         env:
@@ -126,23 +120,13 @@ jobs:
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
 
       # ── Streamlit ──────────────────────────────────────────────────────────
-      # Version is hardcoded in pyproject.toml, so patch it directly with PEP 440.
-      - name: Build Streamlit frontend
-        if: steps.changes.outputs.streamlit == 'true'
-        run: pnpm turbo build --filter=@niivue/streamlit
-
-      - name: Set Streamlit pre-release version
-        if: steps.changes.outputs.streamlit == 'true'
-        run: |
-          sed -i 's/^version = .*/version = "0.2.2b${{ github.run_number }}"/' apps/streamlit/pyproject.toml
-
       - name: Build Streamlit Python package
-        if: steps.changes.outputs.streamlit == 'true'
+        if: steps.detect.outputs.has_changesets == 'true'
         run: python -m build
         working-directory: ./apps/streamlit
 
       - name: Publish Streamlit to PyPI
-        if: steps.changes.outputs.streamlit == 'true'
+        if: steps.detect.outputs.has_changesets == 'true'
         run: python -m twine upload dist/*
         working-directory: ./apps/streamlit
         env:
@@ -150,30 +134,33 @@ jobs:
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
 
       # ── GitHub Release ─────────────────────────────────────────────────────
+      - name: Read encoded versions for release notes
+        if: steps.detect.outputs.has_changesets == 'true'
+        id: versions
+        run: |
+          vscode_v=$(node -p "require('./apps/vscode/package.json').version")
+          jupyter_v=$(node -p "require('./apps/jupyter/package.json').version")
+          streamlit_v=$(node -p "require('./apps/streamlit/package.json').version")
+          echo "vscode=$vscode_v"       >> "$GITHUB_OUTPUT"
+          echo "jupyter=$jupyter_v"     >> "$GITHUB_OUTPUT"
+          echo "streamlit=$streamlit_v" >> "$GITHUB_OUTPUT"
+
       - name: Prepare release notes
-        if: steps.changes.outputs.vscode == 'true' || steps.changes.outputs.jupyter == 'true' || steps.changes.outputs.streamlit == 'true'
+        if: steps.detect.outputs.has_changesets == 'true'
         id: notes
         run: |
           {
             echo 'body<<EOF'
             echo "Automated pre-release from commit ${{ github.sha }}."
             echo ""
-            if [ "${{ steps.changes.outputs.vscode }}" = "true" ]; then
-              echo "- **VS Code**: \`2.9.${{ github.run_number }}\` — install via Marketplace (pre-release channel) or download \`.vsix\` below"
-            fi
-            if [ "${{ steps.changes.outputs.jupyter }}" = "true" ]; then
-              echo "- **JupyterLab**: \`0.2.7b${{ github.run_number }}\` — \`pip install --pre jupyterlab_niivue\`"
-            fi
-            if [ "${{ steps.changes.outputs.streamlit }}" = "true" ]; then
-              echo "- **Streamlit**: \`0.2.2b${{ github.run_number }}\` — \`pip install --pre niivue-streamlit\`"
-            fi
+            echo "- **VS Code**: \`${{ steps.versions.outputs.vscode }}\` — install via Marketplace (pre-release channel) or download \`.vsix\` below"
+            echo "- **JupyterLab**: \`${{ steps.versions.outputs.jupyter }}\` — \`pip install --pre jupyterlab_niivue\`"
+            echo "- **Streamlit**: \`${{ steps.versions.outputs.streamlit }}\` — \`pip install --pre niivue-streamlit\`"
             echo 'EOF'
           } >> "$GITHUB_OUTPUT"
 
-      # fail_on_unmatched_files is false because only a subset of apps may
-      # have been built; globs for skipped apps will match nothing.
       - name: Create GitHub pre-release
-        if: steps.changes.outputs.vscode == 'true' || steps.changes.outputs.jupyter == 'true' || steps.changes.outputs.streamlit == 'true'
+        if: steps.detect.outputs.has_changesets == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: prerelease-${{ github.sha }}
