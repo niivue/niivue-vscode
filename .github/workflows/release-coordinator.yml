@@ -35,6 +35,17 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
+      # Snapshot existing tags so we can diff after publish and detect what
+      # changesets just created. Comparing HEAD^..HEAD package.json doesn't
+      # work because the version bump and the publish can happen in
+      # different runs (e.g. the publish run is triggered by a later push
+      # after an earlier publish crashed and left versions un-tagged).
+      - name: Snapshot tags before publish
+        run: |
+          git fetch --tags origin
+          git tag -l > /tmp/pre-publish-tags.txt
+          echo "Tags before publish: $(wc -l < /tmp/pre-publish-tags.txt)"
+
       - name: Create Version PR or Publish
         id: changesets
         uses: changesets/action@v1
@@ -47,9 +58,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # `changeset publish` only tags the private app packages (npm publish is
-      # skipped). Tags pushed by GITHUB_TOKEN don't trigger other workflows, so
-      # dispatch each app's dedicated release workflow when its version
-      # actually changed in the merge commit. Stable release scheme: whatever
+      # skipped). Tags pushed by GITHUB_TOKEN don't trigger other workflows,
+      # so dispatch each app's dedicated release workflow whenever changesets
+      # just created its tag in this run. Stable release scheme: whatever
       # changeset version produced (bare semver / PEP 440) ships as-is; the
       # marketplace and PyPI both accept those formats for stable channels.
       - name: Dispatch per-app release workflows
@@ -58,20 +69,27 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -e
-          changed() {
-            git diff HEAD^ HEAD -- "$1" | grep -Eq '^[+-][[:space:]]*"version":'
-          }
+          git tag -l > /tmp/post-publish-tags.txt
+          new_tags=$(comm -13 \
+            <(sort -u /tmp/pre-publish-tags.txt) \
+            <(sort -u /tmp/post-publish-tags.txt))
+          if [ -z "$new_tags" ]; then
+            echo "No new tags created in this run; nothing to dispatch."
+            exit 0
+          fi
+          echo "New tags created in this run:"
+          printf '  %s\n' $new_tags
           dispatch() {
-            local app=$1 workflow=$2 pkg=apps/$1/package.json
-            if changed "$pkg"; then
-              local v
-              v=$(node -p "require('./$pkg').version")
-              echo "→ dispatching $workflow for $app v$v"
-              gh workflow run "$workflow" --ref main
+            local pkg_name=$1 workflow=$2
+            local tag
+            tag=$(printf '%s\n' $new_tags | grep -E "^${pkg_name}@" | head -n1 || true)
+            if [ -n "$tag" ]; then
+              echo "→ dispatching $workflow for $tag"
+              gh workflow run "$workflow" --ref "$tag"
             else
-              echo "  skipping $app (no version change)"
+              echo "  skipping $pkg_name (no new tag in this run)"
             fi
           }
-          dispatch vscode    release_vscode.yml
-          dispatch jupyter   release_jupyterlab.yml
-          dispatch streamlit release_streamlit.yml
+          dispatch 'niivue'             release_vscode.yml
+          dispatch '@niivue/jupyter'    release_jupyterlab.yml
+          dispatch '@niivue/streamlit'  release_streamlit.yml

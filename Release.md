@@ -46,7 +46,7 @@ The Release Coordinator then:
 
    The apps are marked `"private": true` in their `package.json` so npm publish is skipped. Tags are still created because `.changeset/config.json` opts into `privatePackages.tag: true`.
 
-2. **Dispatches each app's release workflow** for the apps whose version actually changed in the merge commit. This uses `gh workflow run` rather than the tag-push trigger, because GitHub's recursion guard prevents tags pushed by `GITHUB_TOKEN` from triggering other workflows. `workflow_dispatch` is the documented exception.
+2. **Dispatches each app's release workflow** for the apps whose tag was just created in this run. The coordinator snapshots `git tag -l` before and after `changeset publish`, computes the diff, and matches new tags against each registered app (e.g. a new `niivue@*` tag → dispatch `release_vscode.yml --ref <tag>`). This uses `gh workflow run` rather than the tag-push trigger, because GitHub's recursion guard prevents tags pushed by `GITHUB_TOKEN` from triggering other workflows. `workflow_dispatch` is the documented exception. The tag-based detection is robust to the case where the version bump and the publish happen in different coordinator runs (e.g. an earlier publish failed and left versions un-tagged; a later push then triggers the catch-up publish).
 
 3. The per-app workflows (`release_vscode.yml`, `release_jupyterlab.yml`, `release_streamlit.yml`) each check out `main`, build, and publish the version recorded in `apps/<app>/package.json` (or `pyproject.toml` for Python apps) to the relevant registry:
    - VS Code → VS Code Marketplace and Open VSX
