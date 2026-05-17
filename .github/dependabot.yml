@@ -1,0 +1,158 @@
+# Dependabot config for the niivue-vscode monorepo.
+# - npm at the repo root covers all pnpm workspaces (apps/*, packages/*) via the shared pnpm-lock.yaml
+# - Updates are grouped to avoid PR sprawl in a 4-app monorepo
+# - @niivue/niivue is intentionally pinned to ^0.68.x while the mono (1.x) migration is planned;
+#   ignore major bumps so they don't surface as auto-PRs
+
+version: 2
+
+updates:
+  # GitHub Actions used by the workflows in .github/workflows
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: 'ci'
+      include: 'scope'
+    labels:
+      - 'dependencies'
+      - 'github-actions'
+    groups:
+      actions:
+        patterns:
+          - '*'
+
+  # npm / pnpm workspaces — root pnpm-lock.yaml covers apps/* and packages/*
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+    open-pull-requests-limit: 10
+    versioning-strategy: 'increase-if-necessary'
+    commit-message:
+      prefix: 'chore'
+      prefix-development: 'chore'
+      include: 'scope'
+    labels:
+      - 'dependencies'
+      - 'javascript'
+    ignore:
+      # @niivue/niivue 0.68.x → 1.x is a deliberate, planned migration (mono rewrite).
+      # Bump manually; don't open auto-PRs for major bumps in the meantime.
+      - dependency-name: '@niivue/niivue'
+        update-types:
+          - 'version-update:semver-major'
+    groups:
+      # Type definitions — almost always safe to batch
+      types:
+        patterns:
+          - '@types/*'
+      # ESLint + linting stack
+      eslint:
+        patterns:
+          - 'eslint'
+          - 'eslint-*'
+          - '@eslint/*'
+          - '@typescript-eslint/*'
+          - 'typescript-eslint'
+      # Vitest unit tests
+      vitest:
+        patterns:
+          - 'vitest'
+          - '@vitest/*'
+      # Playwright E2E
+      playwright:
+        patterns:
+          - 'playwright'
+          - '@playwright/*'
+      # Vite + plugins
+      vite:
+        patterns:
+          - 'vite'
+          - '@vitejs/*'
+          - 'vite-plugin-*'
+          - 'vite-tsconfig-paths'
+      # Turborepo
+      turbo:
+        patterns:
+          - 'turbo'
+          - '@turbo/*'
+      # JupyterLab extension framework (apps/jupyter)
+      jupyterlab:
+        patterns:
+          - '@jupyterlab/*'
+          - '@jupyter/*'
+          - '@lumino/*'
+      # React/Preact stack
+      react-preact:
+        patterns:
+          - 'react'
+          - 'react-dom'
+          - 'preact'
+          - '@preact/*'
+          - 'react-*'
+      # Tailwind + PostCSS
+      tailwind:
+        patterns:
+          - 'tailwindcss'
+          - 'tailwindcss-*'
+          - '@tailwindcss/*'
+          - 'postcss'
+          - 'postcss-*'
+          - 'autoprefixer'
+      # Prettier + format tooling
+      prettier:
+        patterns:
+          - 'prettier'
+          - 'prettier-*'
+          - 'eslint-config-prettier'
+      # esbuild (used by apps/vscode)
+      esbuild:
+        patterns:
+          - 'esbuild'
+          - 'esbuild-*'
+          - '@esbuild/*'
+      # Changesets
+      changesets:
+        patterns:
+          - '@changesets/*'
+
+  # Python — Streamlit component (published to PyPI as niivue-streamlit)
+  - package-ecosystem: 'pip'
+    directory: '/apps/streamlit'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: 'chore'
+      include: 'scope'
+    labels:
+      - 'dependencies'
+      - 'python'
+    groups:
+      streamlit-python:
+        patterns:
+          - '*'
+
+  # Python — JupyterLab extension (published to PyPI as jupyterlab_niivue)
+  - package-ecosystem: 'pip'
+    directory: '/apps/jupyter'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: 'chore'
+      include: 'scope'
+    labels:
+      - 'dependencies'
+      - 'python'
+    groups:
+      jupyter-python:
+        patterns:
+          - '*'
