@@ -1,101 +1,159 @@
-# Workflow for deploying PWA previews to GitHub Pages for PRs
+# Deploys the artifact produced by "Build PWA Preview" to the gh-pages branch
+# and comments the preview URL on the PR.
+#
+# Trust posture: TRUSTED.
+#   - Triggered by workflow_run, which always runs the default-branch version
+#     of this file. Attackers cannot modify this workflow through a PR.
+#   - Never runs PR code: only downloads a pre-built artifact (static files)
+#     and a validated PR number, then deploys via official actions.
+#   - For fork PRs (event=pull_request, head_repository != github.repository)
+#     this skips auto-deploy. A maintainer triggers Build PWA Preview manually
+#     for fork PRs; the resulting workflow_run event = workflow_dispatch and
+#     this workflow deploys normally.
+
 name: Deploy PWA Preview
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'apps/pwa/**'
-      - 'packages/**'
-      - '.github/workflows/deploy_pwa_preview.yml'
+  workflow_run:
+    workflows: ['Build PWA Preview']
+    types: [completed]
 
 permissions:
   contents: write
   pull-requests: write
+  statuses: write
+  actions: read
 
-# Allow only one deployment per PR at a time
+# Serialize gh-pages mutations across all preview/cleanup workflows so concurrent
+# pushes don't fail with non-fast-forward errors. Matches the group used by
+# cleanup_pwa_preview.yml and cleanup_coverage_preview.yml.
 concurrency:
-  group: pwa-preview-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  group: gh-pages-mutation
+  cancel-in-progress: false
 
 jobs:
-  deploy-preview:
+  deploy:
+    # Conditions:
+    #  - upstream build must have succeeded
+    #  - allow workflow_dispatch (maintainer triggered) and same-repo pull_request
+    #  - block fork pull_request: maintainer must manually dispatch Build PWA Preview
+    if: |
+      github.event.workflow_run.conclusion == 'success' &&
+      (github.event.workflow_run.event == 'workflow_dispatch' ||
+       (github.event.workflow_run.event == 'pull_request' &&
+        github.event.workflow_run.head_repository.full_name == github.repository))
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
         with:
-          node-version: '22'
-          cache: 'pnpm'
+          name: pwa-preview
+          path: pwa-preview
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build PWA with PR-specific base URL
+      # The artifact came from a job that ran PR code, so the embedded values
+      # are untrusted. Validate format, then cross-check: the PR head SHA the
+      # build recorded must equal the PR's current head SHA. If they differ,
+      # either a new commit was pushed (artifact is stale) or the artifact
+      # was swapped — skip the deploy either way.
+      - name: Read and validate build metadata
+        id: meta
         env:
-          NODE_ENV: production
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: pnpm turbo build --filter=@niivue/pwa --force
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          meta=pwa-preview/.build_meta.json
+          if [ ! -f "$meta" ]; then
+            echo "::error::artifact missing .build_meta.json"
+            exit 1
+          fi
+          pr_number=$(jq -r '.pr_number' "$meta")
+          pr_head_sha=$(jq -r '.pr_head_sha' "$meta")
+          if ! [[ "$pr_number" =~ ^[0-9]+$ ]]; then
+            echo "::error::invalid pr_number '$pr_number'"; exit 1
+          fi
+          if ! [[ "$pr_head_sha" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::invalid pr_head_sha '$pr_head_sha'"; exit 1
+          fi
+          api_sha=$(gh api "repos/${{ github.repository }}/pulls/$pr_number" --jq '.head.sha' 2>/dev/null || echo "")
+          if [ -z "$api_sha" ]; then
+            echo "::warning::could not resolve PR #$pr_number via API; skipping deploy"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          elif [ "$api_sha" != "$pr_head_sha" ]; then
+            echo "::warning::PR #$pr_number current head ($api_sha) does not match artifact head ($pr_head_sha) — artifact is stale or forged, skipping deploy"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+          {
+            echo "number=$pr_number"
+            echo "head_sha=$pr_head_sha"
+          } >> "$GITHUB_OUTPUT"
+          rm -f "$meta"
 
-      - name: Deploy to GitHub Pages (PR Preview)
+      - name: Deploy to gh-pages
+        if: steps.meta.outputs.skip != 'true'
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./apps/pwa/build
-          destination_dir: pr-${{ github.event.pull_request.number }}
+          publish_dir: ./pwa-preview
+          destination_dir: pr-${{ steps.meta.outputs.number }}
           keep_files: true
           user_name: 'github-actions[bot]'
           user_email: 'github-actions[bot]@users.noreply.github.com'
-          commit_message: 'Deploy PR #${{ github.event.pull_request.number }} preview'
+          commit_message: 'Deploy PR #${{ steps.meta.outputs.number }} preview'
 
-      - name: Comment on PR with preview URL
+      - name: Comment preview URL on PR
+        if: steps.meta.outputs.skip != 'true'
         uses: actions/github-script@v7
+        env:
+          PR_NUMBER: ${{ steps.meta.outputs.number }}
         with:
           script: |
-            const prNumber = context.payload.pull_request.number;
-            const previewUrl = `https://niivue.github.io/niivue-vscode/pr-${prNumber}/`;
-            
-            // Find existing preview comment
-            const comments = await github.rest.issues.listComments({
+            const prNumber = Number(process.env.PR_NUMBER);
+            const url = `https://niivue.github.io/niivue-vscode/pr-${prNumber}/`;
+            const marker = '<!-- pwa-preview-comment -->';
+            const body = `${marker}\n## 🚀 PWA Preview Deployment\n\nYour PWA preview has been deployed!\n\n**Preview URL:** ${url}\n\n---\n<sub>This preview will be updated automatically when you push new commits to this PR.</sub>`;
+            const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: prNumber,
             });
-            
-            const previewComment = comments.data.find(comment => 
-              comment.user.type === 'Bot' && 
-              comment.body.includes('PWA Preview Deployment')
-            );
-            
-            const body = `## 🚀 PWA Preview Deployment
-            
-            Your PWA preview has been deployed!
-            
-            **Preview URL:** ${previewUrl}
-            
-            ---
-            <sub>This preview will be updated automatically when you push new commits to this PR.</sub>`;
-            
-            if (previewComment) {
-              // Update existing comment
+            const existing = comments.find(c => c.body?.includes(marker));
+            if (existing) {
               await github.rest.issues.updateComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                comment_id: previewComment.id,
-                body: body
+                comment_id: existing.id,
+                body,
               });
             } else {
-              // Create new comment
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: prNumber,
-                body: body
+                body,
               });
             }
+
+      # Reviewers need a check on the PR's checks tab that links to the preview.
+      # workflow_run workflows don't appear there by default, so we publish a
+      # commit status on the PR head SHA.
+      - name: Surface preview status on PR head commit
+        if: steps.meta.outputs.skip != 'true'
+        uses: actions/github-script@v7
+        env:
+          PR_NUMBER: ${{ steps.meta.outputs.number }}
+          HEAD_SHA: ${{ steps.meta.outputs.head_sha }}
+        with:
+          script: |
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: process.env.HEAD_SHA,
+              state: 'success',
+              context: 'pwa-preview',
+              target_url: `https://niivue.github.io/niivue-vscode/pr-${process.env.PR_NUMBER}/`,
+              description: 'Preview deployed',
+            });

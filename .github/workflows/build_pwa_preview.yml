@@ -1,0 +1,133 @@
+# Builds the PWA from a PR head and uploads the result as an artifact for
+# the trusted "Deploy PWA Preview" workflow to consume.
+#
+# Trust posture: UNTRUSTED.
+#   - `pull_request` runs PR-author code (postinstall scripts, build scripts).
+#   - We hold only `contents: read` and disable credential persistence so the
+#     job has nothing valuable to leak. Fork PRs also have repository secrets
+#     stripped by GitHub automatically.
+#
+# Manual dispatch path: a maintainer can trigger this for a fork PR by clicking
+# Actions → "Build PWA Preview" → Run workflow → entering the PR number. The
+# manual run is treated as trusted (it built what the maintainer asked for),
+# so the downstream deploy auto-fires.
+
+name: Build PWA Preview
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/pwa/**'
+      - 'packages/**'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/build_pwa_preview.yml'
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to build a preview for (used for fork PRs that don''t auto-deploy)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-pwa-preview-${{ github.event.pull_request.number || inputs.pr_number }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # Manual-dispatch path: resolve which PR head we should check out. The
+      # pr_number input goes through env (never directly into a shell command)
+      # and is validated as digits before any use.
+      - name: Resolve PR head (manual dispatch)
+        if: github.event_name == 'workflow_dispatch'
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+        run: |
+          set -euo pipefail
+          if ! [[ "$PR_NUMBER" =~ ^[0-9]+$ ]]; then
+            echo "::error::pr_number must be digits, got '$PR_NUMBER'"
+            exit 1
+          fi
+          info=$(gh pr view "$PR_NUMBER" \
+            --repo "${{ github.repository }}" \
+            --json headRepositoryOwner,headRepository,headRefOid)
+          repo=$(echo "$info" | jq -r '.headRepositoryOwner.login + "/" + .headRepository.name')
+          ref=$(echo "$info" | jq -r '.headRefOid')
+          {
+            echo "repo=$repo"
+            echo "ref=$ref"
+            echo "number=$PR_NUMBER"
+          } >> "$GITHUB_OUTPUT"
+
+      # pull_request: default checkout uses the PR merge ref (refs/pull/N/merge)
+      # which is what reviewers see in the GitHub diff. Repository is implicit.
+      - name: Checkout PR merge ref (pull_request)
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # workflow_dispatch: explicit head OID resolved from the PR. For fork PRs
+      # this checks out the fork repo at the PR's head commit.
+      - name: Checkout PR head (workflow_dispatch)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ steps.pr.outputs.repo }}
+          ref: ${{ steps.pr.outputs.ref }}
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build PWA
+        env:
+          NODE_ENV: production
+          PR_NUMBER: ${{ steps.pr.outputs.number || github.event.pull_request.number }}
+        run: pnpm turbo build --filter=@niivue/pwa --force
+
+      # Embed PR number AND the actual PR head SHA being built alongside the
+      # build. The deploy workflow uses these as the source of truth instead
+      # of inferring from workflow_run.head_sha (which is the merge SHA for
+      # pull_request events and the dispatch-branch SHA for workflow_dispatch
+      # — both wrong for the deploy gate).
+      - name: Embed build metadata in build directory
+        env:
+          PR_NUMBER: ${{ steps.pr.outputs.number || github.event.pull_request.number }}
+          PR_HEAD_SHA: ${{ steps.pr.outputs.ref || github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          if ! [[ "$PR_NUMBER" =~ ^[0-9]+$ ]]; then
+            echo "::error::invalid PR_NUMBER '$PR_NUMBER'"; exit 1
+          fi
+          if ! [[ "$PR_HEAD_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::invalid PR_HEAD_SHA '$PR_HEAD_SHA'"; exit 1
+          fi
+          cat > apps/pwa/build/.build_meta.json <<EOF
+          {
+            "pr_number": $PR_NUMBER,
+            "pr_head_sha": "$PR_HEAD_SHA"
+          }
+          EOF
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pwa-preview
+          path: apps/pwa/build
+          retention-days: 1
+          if-no-files-found: error
