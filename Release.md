@@ -8,7 +8,7 @@ There are **two release tracks**, each fully automated:
 
 | Track | Trigger | Channel |
 | --- | --- | --- |
-| **Pre-release** | Every push to `main` that carries pending changesets | VS Code Marketplace pre-release · PyPI (require `--pre`) |
+| **Pre-release** | Every push to `main` that carries pending changesets | VS Code Marketplace pre-release · PyPI (requires `--pre`) |
 | **Stable** | Merging the auto-generated "Version Packages" PR | VS Code Marketplace stable · PyPI default |
 
 You do **not** need to enter or exit a "pre-release mode" — both tracks coexist permanently.
@@ -81,17 +81,27 @@ pip install --pre niivue-streamlit
 
 ### When no pre-release fires
 
-If `main` advances without any pending `.changeset/*.md` files (e.g. a doc-only commit, or right after the Version Packages PR was merged), the workflow detects this and exits without publishing. This is intentional — there's nothing semantically new on top of the last stable.
+The workflow exits without publishing when any of:
+- The push only touched doc/config files filtered by `paths-ignore` in `prerelease.yml` (e.g. `**.md`, `LICENSE`, `.devcontainer/**`).
+- There are no pending `.changeset/*.md` files (e.g. right after the Version Packages PR was merged).
+- For a given app: no changeset directly or transitively bumped it. Each app is published independently — a PWA-only changeset will not produce a new VS Code / Jupyter / Streamlit pre-release.
 
 ### Cost model
 
-Each pre-release burns one version slot on PyPI per affected package (PyPI does not allow re-uploads of the same version, even after yanking). VS Code Marketplace pre-releases reuse the same channel and do not burn anything user-visible. If pre-release slot consumption on PyPI becomes a concern, the workflow can be switched to TestPyPI by replacing `python -m twine upload dist/*` with `python -m twine upload --repository testpypi dist/*` and providing a `TESTPYPI_API_TOKEN` secret — but doing so requires users to add `--index-url https://test.pypi.org/simple/` when installing pre-releases.
+Each pre-release burns one version slot on PyPI per affected package (PyPI does not allow re-uploads of the same version, even after yanking). VS Code Marketplace pre-releases reuse the same channel and do not burn anything user-visible. If pre-release slot consumption on PyPI becomes a concern, the workflow can be switched to TestPyPI by:
+
+1. Adding a new repo secret `TESTPYPI_API_TOKEN`.
+2. In `prerelease.yml`, changing `TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}` to `TWINE_PASSWORD: ${{ secrets.TESTPYPI_API_TOKEN }}` for both Python publish steps.
+3. Appending `--repository testpypi` to both `python -m twine upload dist/*` commands.
+
+Users would then need `--index-url https://test.pypi.org/simple/` when installing pre-releases.
 
 ---
 
 ## Adding a new published app
 
-When a new app joins the monorepo:
-1. Add a changeset config entry so changesets bumps its version.
-2. Extend `scripts/release/encode-prerelease-versions.mjs` with the target's version-encoding rule.
-3. Add publish steps to `.github/workflows/prerelease.yml` (pre-release lane) and to a new `release_<app>.yml` (stable lane triggered by tag).
+When a new app joins the monorepo (changesets discovers it automatically from the workspace manifest):
+
+1. Extend `scripts/release/encode-prerelease-versions.mjs` with the target's version-encoding rule, and add a corresponding entry to the emitted `prerelease-targets.json`.
+2. Add publish steps to `.github/workflows/prerelease.yml` (pre-release lane), gated on `steps.encode.outputs.<app> == 'true'`.
+3. Add a new `release_<app>.yml` (stable lane triggered by the corresponding tag from Release Coordinator).

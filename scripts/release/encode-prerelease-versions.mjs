@@ -2,18 +2,32 @@
 /**
  * scripts/release/encode-prerelease-versions.mjs
  *
- * Post-processor for `pnpm changeset version --snapshot beta`. Reads the
- * just-bumped per-app versions, strips changeset's "-beta-<id>" suffix, and
- * re-encodes each one for its target's version format using the CI run
- * number as the unique build identifier.
+ * Post-processor for `pnpm changeset version --snapshot beta`. For each
+ * published app whose package.json was bumped by changesets (detected by the
+ * "-beta-<id>" suffix changesets writes), strip the suffix to recover the
+ * intended next-stable version, then re-encode it for its target's version
+ * format using the CI run number as the unique build identifier.
+ *
+ * Packages NOT bumped by changesets are skipped — re-encoding their current
+ * version as `<stable>.dev<run>` would produce a PEP 440 release that sorts
+ * BELOW the already-published stable, which pip would happily install
+ * downgrade-style for users on `--pre`.
  *
  * Conventions:
  *   - VS Code Marketplace requires bare `M.m.p`. Pre-releases live on an
- *     odd minor strictly greater than the latest stable minor. If changesets
- *     plans next-stable `2.10.0`, the pre-release becomes `2.11.<run>`.
+ *     odd minor strictly greater than the next-stable minor:
+ *       next-stable 2.10.0 → pre 2.11.<run>
+ *       next-stable 2.9.0  → pre 2.11.<run>   (skip same-minor collision)
  *   - PyPI requires PEP 440. We use `.devN` (development release) so plain
  *     `pip install <pkg>` ignores it; only `pip install --pre` picks it up.
- *     Next-stable `0.3.0` becomes `0.3.0.dev<run>`.
+ *     Next-stable 0.3.0 → 0.3.0.dev<run>.
+ *   - package.json holds a semver-compatible mirror (`<base>-dev.<run>`) so
+ *     pnpm/turbo/changesets keep parsing the manifest. The authoritative
+ *     PyPI version is written to pyproject.toml.
+ *
+ * Outputs:
+ *   prerelease-targets.json — { vscode, jupyter, streamlit } booleans, used
+ *     by the workflow to gate per-target publish steps.
  *
  * Usage:
  *   node scripts/release/encode-prerelease-versions.mjs <run_number>
@@ -32,6 +46,8 @@ if (!runNumber || !/^\d+$/.test(runNumber)) {
   process.exit(1)
 }
 
+const SNAPSHOT_RE = /-beta-/
+
 const readPkg = (relPath) =>
   JSON.parse(readFileSync(path.join(repoRoot, relPath), 'utf8'))
 
@@ -43,52 +59,86 @@ const writePkgVersion = (relPath, newVersion) => {
   console.log(`  ${relPath}: ${newVersion}`)
 }
 
-// Strip changeset's snapshot suffix to recover the base "next-stable" version.
-//   "0.3.0-beta-20260517abc" → "0.3.0"
-//   "2.10.0-beta-abc" → "2.10.0"
+// Did `changeset version --snapshot beta` actually bump this package?
+// changesets only bumps packages that have a changeset directly or transitively.
+const wasBumped = (relPath) => SNAPSHOT_RE.test(readPkg(relPath).version)
+
 const stripSnapshot = (version) => version.replace(/-beta-.*$/, '')
 
-// VS Code: bump to next odd minor (or stay if already odd), patch = run.
+// Next odd minor STRICTLY greater than the next-stable's minor.
+//   even minor n → n+1   (n=8 → 9)
+//   odd  minor n → n+2   (n=9 → 11)
 const toVscodePreRelease = (nextStable) => {
   const [major, minor] = nextStable.split('.').map(Number)
-  const preMinor = minor % 2 === 0 ? minor + 1 : minor
+  const preMinor = minor + 1 + (minor % 2)
   return `${major}.${preMinor}.${runNumber}`
 }
 
-// PEP 440 development release: "<base>.dev<run>".
 const toPep440Dev = (nextStable) => `${nextStable}.dev${runNumber}`
+const toSemverDev = (nextStable) => `${nextStable}-dev.${runNumber}`
+
+// Override pyproject.toml's version statically. For jupyter, this also
+// removes `version` from `[project].dynamic` so hatch-nodejs-version does
+// not try to derive it from the semver-formatted package.json.
+const overridePyprojectVersion = (relPath, devVersion) => {
+  const abs = path.join(repoRoot, relPath)
+  let toml = readFileSync(abs, 'utf8')
+
+  // Insert or replace the `version = "..."` line under [project].
+  if (/^version\s*=/m.test(toml)) {
+    toml = toml.replace(/^version\s*=.*/m, `version = "${devVersion}"`)
+  } else {
+    toml = toml.replace(
+      /^(name\s*=\s*"[^"]+")/m,
+      `$1\nversion = "${devVersion}"`,
+    )
+  }
+
+  // Remove "version" from `dynamic = [...]` if present.
+  toml = toml.replace(
+    /^dynamic\s*=\s*\[\s*"version"\s*,\s*/m,
+    'dynamic = [',
+  )
+
+  writeFileSync(abs, toml)
+  console.log(`  ${relPath}: ${devVersion}`)
+}
 
 console.log(`Encoding pre-release versions (run #${runNumber}):`)
 
+const targets = { vscode: false, jupyter: false, streamlit: false }
+
 // ── VS Code extension ───────────────────────────────────────────────────────
-{
+if (wasBumped('apps/vscode/package.json')) {
   const nextStable = stripSnapshot(readPkg('apps/vscode/package.json').version)
   writePkgVersion('apps/vscode/package.json', toVscodePreRelease(nextStable))
+  targets.vscode = true
+} else {
+  console.log('  apps/vscode: no changeset bump, skipping')
 }
 
 // ── JupyterLab extension ────────────────────────────────────────────────────
-// hatch-nodejs-version reads package.json and converts to PEP 440 for the
-// Python wheel, so writing the dev version into package.json is enough.
-{
+if (wasBumped('apps/jupyter/package.json')) {
   const nextStable = stripSnapshot(readPkg('apps/jupyter/package.json').version)
-  writePkgVersion('apps/jupyter/package.json', toPep440Dev(nextStable))
+  writePkgVersion('apps/jupyter/package.json', toSemverDev(nextStable))
+  overridePyprojectVersion('apps/jupyter/pyproject.toml', toPep440Dev(nextStable))
+  targets.jupyter = true
+} else {
+  console.log('  apps/jupyter: no changeset bump, skipping')
 }
 
 // ── Streamlit component ─────────────────────────────────────────────────────
-// Version lives in pyproject.toml (hardcoded). Use package.json as the source
-// of truth (changesets bumped it) and rewrite pyproject.toml accordingly.
-{
+if (wasBumped('apps/streamlit/package.json')) {
   const nextStable = stripSnapshot(readPkg('apps/streamlit/package.json').version)
-  const devVersion = toPep440Dev(nextStable)
-  writePkgVersion('apps/streamlit/package.json', devVersion)
-
-  const pyprojectPath = path.join(repoRoot, 'apps/streamlit/pyproject.toml')
-  const updated = readFileSync(pyprojectPath, 'utf8').replace(
-    /^version = .*/m,
-    `version = "${devVersion}"`,
-  )
-  writeFileSync(pyprojectPath, updated)
-  console.log(`  apps/streamlit/pyproject.toml: ${devVersion}`)
+  writePkgVersion('apps/streamlit/package.json', toSemverDev(nextStable))
+  overridePyprojectVersion('apps/streamlit/pyproject.toml', toPep440Dev(nextStable))
+  targets.streamlit = true
+} else {
+  console.log('  apps/streamlit: no changeset bump, skipping')
 }
 
-console.log('Done.')
+writeFileSync(
+  path.join(repoRoot, 'prerelease-targets.json'),
+  JSON.stringify(targets, null, 2) + '\n',
+)
+console.log(`Targets: ${JSON.stringify(targets)}`)

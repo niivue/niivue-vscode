@@ -51,6 +51,9 @@ apps/pwa/public/
 _version.py
 
 
+# Pre-release encoder transient output
+prerelease-targets.json
+
 # Test artifacts
 test-results/
 playwright-report/
