@@ -18,6 +18,7 @@
     "sourceMap": true,
     "strictNullChecks": true,
     "target": "es2018",
+    "lib": ["ES2018", "ES2022.Error", "DOM", "DOM.Iterable"],
     "outDir": "lib",
     "rootDir": "src",
     "skipLibCheck": true,
