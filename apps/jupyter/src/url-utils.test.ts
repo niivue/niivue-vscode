@@ -178,7 +178,8 @@ describe('getMhdPairedRawBasename', () => {
   })
 
   it('finds the field on any line, not just the first', () => {
-    const header = 'NDims = 3\nDimSize = 256 256 128\nElementSpacing = 1 1 1\nElementDataFile = scan.raw\n'
+    const header =
+      'NDims = 3\nDimSize = 256 256 128\nElementSpacing = 1 1 1\nElementDataFile = scan.raw\n'
     expect(getMhdPairedRawBasename(enc(header))).toBe('scan.raw')
   })
 
@@ -232,12 +233,18 @@ function mockResponse(opts: {
     url: opts.url ?? '',
     headers: {
       get: (name: string) =>
-        name.toLowerCase() === 'content-type' ? opts.contentType ?? 'application/octet-stream' : null,
+        name.toLowerCase() === 'content-type'
+          ? (opts.contentType ?? 'application/octet-stream')
+          : null,
     },
     arrayBuffer: async () =>
-      typeof opts.body === 'string' ? new TextEncoder().encode(opts.body).buffer : opts.body ?? new ArrayBuffer(0),
+      typeof opts.body === 'string'
+        ? new TextEncoder().encode(opts.body).buffer
+        : (opts.body ?? new ArrayBuffer(0)),
     text: async () => {
-      if (opts.textThrows) throw new Error('reader closed')
+      if (opts.textThrows) {
+        throw new Error('reader closed')
+      }
       return typeof opts.body === 'string' ? opts.body : ''
     },
     json: async () => (typeof opts.body === 'string' ? JSON.parse(opts.body) : null),
@@ -256,7 +263,9 @@ describe('fetchArrayBuffer', () => {
 
   it('throws with the URL when the network request itself fails', async () => {
     vi.spyOn(ServerConnection, 'makeRequest').mockRejectedValue(new Error('ECONNREFUSED'))
-    await expect(fetchArrayBuffer('http://x/y', settings)).rejects.toThrow(/Request failed \(http:\/\/x\/y\): ECONNREFUSED/)
+    await expect(fetchArrayBuffer('http://x/y', settings)).rejects.toThrow(
+      /Request failed \(http:\/\/x\/y\): ECONNREFUSED/,
+    )
   })
 
   it('throws with status and statusText on a non-OK response', async () => {
@@ -271,7 +280,9 @@ describe('fetchArrayBuffer', () => {
     vi.spyOn(ServerConnection, 'makeRequest').mockResolvedValue(
       mockResponse({ ok: false, status: 500, statusText: 'Server Error', body: bigDetail }),
     )
-    await expect(fetchArrayBuffer('http://x/y', settings)).rejects.toThrow(/HTTP 500 Server Error; X{300}$/)
+    await expect(fetchArrayBuffer('http://x/y', settings)).rejects.toThrow(
+      /HTTP 500 Server Error; X{300}$/,
+    )
   })
 
   it('tolerates a response.text() that throws (no detail, no rethrow)', async () => {
