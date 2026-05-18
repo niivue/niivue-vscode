@@ -79,7 +79,7 @@ jobs:
       # which is what reviewers see in the GitHub diff. Repository is implicit.
       - name: Checkout PR merge ref (pull_request)
         if: github.event_name == 'pull_request'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           persist-credentials: false
 
@@ -87,15 +87,15 @@ jobs:
       # this checks out the fork repo at the PR's head commit.
       - name: Checkout PR head (workflow_dispatch)
         if: github.event_name == 'workflow_dispatch'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ steps.pr.outputs.repo }}
           ref: ${{ steps.pr.outputs.ref }}
           persist-credentials: false
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: '22'
           cache: 'pnpm'
@@ -134,7 +134,7 @@ jobs:
           EOF
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: pwa-preview
           path: apps/pwa/build
