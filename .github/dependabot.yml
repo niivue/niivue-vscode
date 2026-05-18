@@ -26,12 +26,16 @@ updates:
           - '*'
 
   # npm / pnpm workspaces — root pnpm-lock.yaml covers apps/* and packages/*
+  # Keep open-pull-requests-limit low: every npm PR touches the shared
+  # pnpm-lock.yaml, so each merge forces every other open PR to rebase.
+  # Dependabot still tracks the full backlog and surfaces additional PRs
+  # as we merge — lowering the limit reduces churn, not coverage.
   - package-ecosystem: 'npm'
     directory: '/'
     schedule:
       interval: 'weekly'
       day: 'monday'
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 3
     versioning-strategy: 'increase-if-necessary'
     commit-message:
       prefix: 'chore'
@@ -131,6 +135,17 @@ updates:
       changesets:
         patterns:
           - '@changesets/*'
+      # Catch-all for the long tail of minor/patch bumps that don't belong
+      # to a tool-specific group. Folds quiet weekly updates (e.g. workbox-*,
+      # @testing-library/*, concurrent utility libs) into one PR so the
+      # 3-PR limit isn't wasted on individual minor bumps. Major bumps fall
+      # through and get their own PRs — which is what we want for bisecting.
+      minor-and-patch:
+        patterns:
+          - '*'
+        update-types:
+          - 'minor'
+          - 'patch'
 
   # Python — Streamlit component (published to PyPI as niivue-streamlit)
   - package-ecosystem: 'pip'
