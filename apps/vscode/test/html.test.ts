@@ -41,12 +41,15 @@ describe('getHtmlForWebview', () => {
     const csp = cspMatch![1]
     // default-src is locked down...
     expect(csp).toContain("default-src 'none'")
-    // ...all source directives reference the webview's cspSource (no *)...
+    // ...all source directives reference the webview's cspSource (no wildcards)...
     expect(csp).toContain('img-src data: blob: https://test.vscode-cdn.net')
     expect(csp).toContain("style-src https://test.vscode-cdn.net 'unsafe-inline'")
     expect(csp).toContain('connect-src data: blob: https://test.vscode-cdn.net')
-    // ...and there's no `*` in the CSP at all (guards against accidental loosening).
-    expect(csp).not.toMatch(/(\s|=)\*(\s|;|$)/)
+    // ...and there's no `*` anywhere in the CSP. This is intentionally strict:
+    // `https://*`, `*.example.com`, `data: *`, or a bare `*` would all loosen
+    // the policy. The current CSP contains none, and any future change that
+    // introduces a `*` should require explicit reasoning here.
+    expect(csp).not.toContain('*')
   })
 
   it('generates a unique 32-char alphanumeric nonce on each call', async () => {

@@ -1,10 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 /**
- * readyStateManager is a module-level singleton, so importing it after setting
- * up window.vscode would still hand us a fresh state machine. But we don't
- * want one test's writes (.eventListenerReady = true) to leak into the next.
- * Solution: reset module state by re-importing via vi.resetModules() per test.
+ * `readyStateManager` is a module-level singleton: once imported, the same
+ * instance is reused across imports for the lifetime of the module cache.
+ * Without intervention, one test's mutations (`.eventListenerReady = true`)
+ * would leak into the next. `vi.resetModules()` clears the module cache so
+ * the next `import('../readyState')` re-evaluates the module and constructs
+ * a fresh instance.
  */
 
 beforeEach(() => {

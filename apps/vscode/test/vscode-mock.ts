@@ -8,36 +8,78 @@
  */
 import { vi } from 'vitest'
 
+/**
+ * Real vscode.Uri serializes with `://` for hierarchical schemes (file, http,
+ * https, vscode-remote, ...) and with `:` for opaque schemes (command,
+ * mailto, data, ...). We track the form on the instance so `parse('file:///x')`
+ * round-trips back to `file:///x` even though its authority is empty.
+ */
+const HIERARCHICAL_SCHEMES = new Set([
+  'file',
+  'http',
+  'https',
+  'ftp',
+  'vscode-remote',
+  'vscode-webview',
+  'vscode-userdata',
+])
+
 export class Uri {
-  constructor(public scheme: string, public authority: string, public path: string) {}
+  constructor(
+    public scheme: string,
+    public authority: string,
+    public path: string,
+    public query: string = '',
+    private readonly _hierarchical: boolean = HIERARCHICAL_SCHEMES.has(scheme) || authority !== '',
+  ) {}
 
   static parse(value: string): Uri {
-    const match = value.match(/^([a-zA-Z][a-zA-Z0-9+.-]*):\/\/([^/?#]*)(\/[^?#]*)?/)
-    if (match) {
-      return new Uri(match[1], match[2] ?? '', match[3] ?? '/')
+    // Authority-style URIs: <scheme>://<authority><path>?<query>
+    const authorityMatch = value.match(/^([a-zA-Z][a-zA-Z0-9+.-]*):\/\/([^/?#]*)([^?#]*)(?:\?([^#]*))?/)
+    if (authorityMatch) {
+      return new Uri(
+        authorityMatch[1],
+        authorityMatch[2] ?? '',
+        authorityMatch[3] || '/',
+        authorityMatch[4] ?? '',
+        true, // explicit authority form
+      )
     }
-    return new Uri('file', '', value)
+    // Opaque-scheme URIs (no //): <scheme>:<path>?<query>.
+    // Real vscode's `command:foo?args` parses this way: scheme=command,
+    // authority='', path='foo', query='args'.
+    const opaqueMatch = value.match(/^([a-zA-Z][a-zA-Z0-9+.-]*):([^?#]*)(?:\?([^#]*))?/)
+    if (opaqueMatch) {
+      return new Uri(opaqueMatch[1], '', opaqueMatch[2] ?? '', opaqueMatch[3] ?? '', false)
+    }
+    return new Uri('file', '', value, '', true)
   }
 
   static file(p: string): Uri {
-    return new Uri('file', '', p)
+    return new Uri('file', '', p, '', true)
   }
 
   static joinPath(base: Uri, ...parts: string[]): Uri {
     const tail = parts.join('/').replace(/^\/+/, '')
     const joined = `${base.path.replace(/\/+$/, '')}/${tail}`.replace(/\/{2,}/g, '/')
-    return new Uri(base.scheme, base.authority, joined || '/')
+    return new Uri(base.scheme, base.authority, joined || '/', base.query, base._hierarchical)
   }
 
   toString(): string {
-    return `${this.scheme}://${this.authority}${this.path}`
+    const tail = this.query ? `?${this.query}` : ''
+    if (this._hierarchical) {
+      return `${this.scheme}://${this.authority}${this.path}${tail}`
+    }
+    return `${this.scheme}:${this.path}${tail}`
   }
 
-  with(props: { scheme?: string; authority?: string; path?: string }): Uri {
+  with(props: { scheme?: string; authority?: string; path?: string; query?: string }): Uri {
     return new Uri(
       props.scheme ?? this.scheme,
       props.authority ?? this.authority,
       props.path ?? this.path,
+      props.query ?? this.query,
+      this._hierarchical,
     )
   }
 }

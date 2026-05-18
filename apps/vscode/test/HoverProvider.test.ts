@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { LinkHoverProvider } from '../src/HoverProvider'
-import { MarkdownString, Position, Range } from './vscode-mock'
+import { MarkdownString, Position, Range, Uri } from './vscode-mock'
 
 /**
  * The provider runs two regexes against the line at the cursor — one for
@@ -10,40 +10,58 @@ import { MarkdownString, Position, Range } from './vscode-mock'
  */
 
 /**
- * Build a vscode.TextDocument-shaped stub. `getWordRangeAtPosition` is the
- * only method LinkHoverProvider uses besides `getText`. We simulate it by
- * running the supplied regex against `line` and returning a Range if it
- * matches at all (LinkHoverProvider doesn't actually check the cursor offset
- * — it accepts any match on the line).
+ * Build a vscode.TextDocument-shaped stub. `getWordRangeAtPosition` runs the
+ * provided regex against the line and returns a Range pointing at the match
+ * span; `getText(range)` slices that exact substring. This preserves the
+ * real VS Code contract — if the provider passed the wrong range, getText
+ * would return the wrong substring and the assertions below would catch it.
  */
 function makeDocument(line: string) {
   return {
     getWordRangeAtPosition: vi.fn((_pos: Position, regex: RegExp) => {
       const m = line.match(regex)
-      return m ? new Range(new Position(0, m.index ?? 0), new Position(0, (m.index ?? 0) + m[0].length)) : undefined
+      if (!m || m.index === undefined) return undefined
+      return new Range(new Position(0, m.index), new Position(0, m.index + m[0].length))
     }),
-    getText: vi.fn((_range: Range) => {
-      // The provider only calls getText with the range returned above.
-      // Return the matched substring by re-running the relevant regex.
-      // For the test stub, the simplest correct behavior: return the whole line.
-      // LinkHoverProvider then passes it to Uri.parse / Uri.file which is fine.
-      return line
-    }),
+    getText: vi.fn((range: Range) => line.slice(range.start.character, range.end.character)),
   }
+}
+
+/**
+ * Extract the args-bearing command URI (the second argument to MarkdownString
+ * — the link target inside `[Show with NiiVue](...)`).
+ */
+function commandUriFrom(hover: { contents: MarkdownString[] }): {
+  scheme: string
+  command: string
+  args: { resourceUri: { scheme: string; path: string } }
+} {
+  const value = hover.contents[0].value
+  const linkMatch = value.match(/\(([^)]+)\)/)
+  expect(linkMatch).toBeTruthy()
+  const uriString = linkMatch![1]
+  const parsed = Uri.parse(uriString)
+  // command-scheme URIs serialize as `command:<commandId>?<encoded-args>`
+  expect(parsed.scheme).toBe('command')
+  const args = JSON.parse(decodeURIComponent(parsed.query)) as Array<{
+    resourceUri: { scheme: string; path: string }
+  }>
+  return { scheme: parsed.scheme, command: parsed.path, args: args[0] }
 }
 
 async function tryHover(line: string) {
   const provider = new LinkHoverProvider()
   const doc = makeDocument(line)
-  // The position values don't matter — our stub returns the range whenever the
-  // line itself matches the regex.
   try {
-    return (await provider.provideHover(doc as any, new Position(0, 0), {} as any)) as
-      | { contents: MarkdownString[] }
-      | undefined
-  } catch {
-    // The implementation calls `reject()` (no args) when neither pattern matches.
-    return undefined
+    return (await provider.provideHover(doc as any, new Position(0, 0), {} as any)) as {
+      contents: MarkdownString[]
+    }
+  } catch (err) {
+    // The implementation signals "no hover" via `reject()` with no arg, which
+    // rejects the promise with `undefined`. Any other thrown value is an
+    // unexpected error and must fail the test, not be silently swallowed.
+    if (err === undefined) return undefined
+    throw err
   }
 }
 
@@ -83,10 +101,21 @@ describe('LinkHoverProvider — web URLs', () => {
     expect(hover).toBeDefined()
   })
 
-  it('embeds the niiVue.openLink command with the URI as argument', async () => {
-    const hover = await tryHover('https://example.org/scan.nii.gz')
-    const value = (hover!.contents[0] as MarkdownString).value
-    expect(value).toMatch(/command:niiVue\.openLink\?/)
+  it('embeds niiVue.openLink as the command and only the matched URL in args', async () => {
+    const line = 'see this file https://example.org/data/scan.nii.gz here'
+    const hover = await tryHover(line)
+    const { scheme, command, args } = commandUriFrom(hover!)
+    expect(scheme).toBe('command')
+    expect(command).toBe('niiVue.openLink')
+    // resourceUri should be the URL itself, not surrounding context. Our mock
+    // Uri.parse extracts scheme + path; checking those rules out the
+    // "stub returned the full line" trap.
+    expect(args.resourceUri.scheme).toBe('https')
+    expect(args.resourceUri.path).toContain('/data/scan.nii.gz')
+    // And critically, the args must NOT contain the surrounding text.
+    const argsBlob = decodeURIComponent(Uri.parse(hover!.contents[0].value.match(/\(([^)]+)\)/)![1]).query)
+    expect(argsBlob).not.toContain('see this file')
+    expect(argsBlob).not.toContain('here')
   })
 })
 
@@ -103,8 +132,16 @@ describe('LinkHoverProvider — local paths', () => {
 
   it('uses niiVue.openLocal (not openLink) for local paths', async () => {
     const hover = await tryHover('data/scan.nii')
-    const value = (hover!.contents[0] as MarkdownString).value
-    expect(value).toMatch(/command:niiVue\.openLocal\?/)
+    const { command } = commandUriFrom(hover!)
+    expect(command).toBe('niiVue.openLocal')
+  })
+
+  it('puts only the matched path into args (not surrounding text)', async () => {
+    const hover = await tryHover('see data/scan.nrrd here')
+    const argsBlob = decodeURIComponent(Uri.parse(hover!.contents[0].value.match(/\(([^)]+)\)/)![1]).query)
+    expect(argsBlob).toContain('scan.nrrd')
+    expect(argsBlob).not.toContain('see ')
+    expect(argsBlob).not.toContain(' here')
   })
 })
 

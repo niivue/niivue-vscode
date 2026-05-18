@@ -2,25 +2,29 @@ import { describe, expect, it } from 'vitest'
 import { getMetadataString, getNames, getNumberOfPoints, isImageType } from '../utility'
 
 describe('isImageType', () => {
+  // The function returns the matched extension string when supported, or
+  // `undefined` otherwise. Assert the exact return value, not just truthiness,
+  // so a regression that detects "yes it's an image" but returns the wrong
+  // extension would still fail.
   it.each([
-    'scan.nii',
-    'scan.nii.gz',
-    'data.dcm',
-    'image.mha',
-    'image.mhd',
-    'image.nhdr',
-    'image.nrrd',
-    'image.mgh',
-    'image.mgz',
-    'image.npy',
-    'image.npz',
-    'image.v',
-    'image.v16',
-    'image.vmr',
-    'image.mnc',
-    'image.mnc.gz',
-  ])('returns the matched extension for %s', (name) => {
-    expect(isImageType(name)).toBeTruthy()
+    ['scan.nii', '.nii'],
+    ['scan.nii.gz', '.nii.gz'],
+    ['data.dcm', '.dcm'],
+    ['image.mha', '.mha'],
+    ['image.mhd', '.mhd'],
+    ['image.nhdr', '.nhdr'],
+    ['image.nrrd', '.nrrd'],
+    ['image.mgh', '.mgh'],
+    ['image.mgz', '.mgz'],
+    ['image.npy', '.npy'],
+    ['image.npz', '.npz'],
+    ['image.v', '.v'],
+    ['image.v16', '.v16'],
+    ['image.vmr', '.vmr'],
+    ['image.mnc', '.mnc'],
+    ['image.mnc.gz', '.mnc.gz'],
+  ])('returns %s for %s', (name, expected) => {
+    expect(isImageType(name)).toBe(expected)
   })
 
   it('returns undefined for unsupported types', () => {
@@ -31,7 +35,7 @@ describe('isImageType', () => {
 
   it('matches case-sensitively (matches src behavior — extensions are lowercase)', () => {
     expect(isImageType('scan.NII.GZ')).toBeUndefined()
-    expect(isImageType('scan.nii.gz')).toBeTruthy()
+    expect(isImageType('scan.nii.gz')).toBe('.nii.gz')
   })
 
   it('preserves preceding path components — only inspects the suffix', () => {
