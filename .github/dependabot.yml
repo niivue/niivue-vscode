@@ -46,6 +46,13 @@ updates:
       - dependency-name: '@niivue/niivue'
         update-types:
           - 'version-update:semver-major'
+      # @types/vscode is a backwards-compat floor, not a routine type update:
+      # per VS Code extension guidance it must be <= engines.vscode in
+      # apps/vscode/package.json, currently pinned to ^1.70.0 because 1.70 is
+      # the last VS Code release that runs on Windows 7. Bumping the types
+      # forces bumping the engine, which is a deliberate policy decision —
+      # not something to auto-PR. Bump manually when dropping Win7 support.
+      - dependency-name: '@types/vscode'
     groups:
       # Type definitions — almost always safe to batch
       types:
