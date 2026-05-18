@@ -65,7 +65,7 @@
     "coverage": "pnpm run test:coverage"
   },
   "devDependencies": {
-    "@types/vscode": "1.70.0",
+    "@types/vscode": "1.120.0",
     "@vitest/coverage-v8": "^3.2.4",
     "@vscode/vsce": "^3.6.2",
     "autoprefixer": "^10.4.21",
