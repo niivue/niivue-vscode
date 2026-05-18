@@ -39,6 +39,7 @@ export async function fetchArrayBuffer(
   } catch (error) {
     throw new Error(
       `Request failed (${url}): ${error instanceof Error ? error.message : String(error)}`,
+      { cause: error },
     )
   }
 
