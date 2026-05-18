@@ -409,10 +409,14 @@ jobs:
         continue-on-error: true
 
       - name: Download Jupyter coverage artifacts
+        # upload-artifact@v4 strips the parent path for single-path uploads,
+        # so the artifact's files sit at its root. Extract them back under
+        # apps/jupyter/coverage/unit/ so the aggregator's walk (which requires
+        # a `coverage` path segment) picks them up. Same fix as VS Code below.
         uses: actions/download-artifact@v4
         with:
           name: coverage-unit-jupyter
-          path: .
+          path: apps/jupyter/coverage/unit/
         continue-on-error: true
 
       - name: Download VS Code coverage artifacts

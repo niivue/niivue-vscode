@@ -59,6 +59,62 @@ export const window = {
 
 export const ViewColumn = { One: 1 }
 
+/**
+ * Disposable: matches vscode.Disposable shape — just a `dispose()` method.
+ * dispose.ts uses an array of these to register/release resources.
+ */
+export interface Disposable {
+  dispose(): unknown
+}
+
+/**
+ * EventEmitter stub: matches vscode.EventEmitter<T>'s API surface used in src.
+ * Tracks listeners; `event` returns a subscribe function; `fire()` invokes them.
+ */
+export class EventEmitter<T> {
+  private listeners = new Set<(e: T) => unknown>()
+
+  event = (listener: (e: T) => unknown): Disposable => {
+    this.listeners.add(listener)
+    return { dispose: () => this.listeners.delete(listener) }
+  }
+
+  fire(data: T): void {
+    for (const l of this.listeners) l(data)
+  }
+
+  dispose(): void {
+    this.listeners.clear()
+  }
+}
+
+/** Position: minimal stand-in for vscode.Position used by HoverProvider tests. */
+export class Position {
+  constructor(public line: number, public character: number) {}
+}
+
+/** Range: minimal stand-in for vscode.Range. */
+export class Range {
+  constructor(public start: Position, public end: Position) {}
+}
+
+/**
+ * MarkdownString: vscode.MarkdownString — wraps content; `isTrusted` enables
+ * command links. We only assert on `.value` and `.isTrusted` in tests.
+ */
+export class MarkdownString {
+  isTrusted = false
+  constructor(public value: string) {}
+}
+
+/** Hover: vscode.Hover — wraps a MarkdownString contents array. */
+export class Hover {
+  contents: (MarkdownString | string)[]
+  constructor(contents: MarkdownString | string | (MarkdownString | string)[]) {
+    this.contents = Array.isArray(contents) ? contents : [contents]
+  }
+}
+
 /** Reset all mutable state between tests. */
 export function __resetMock() {
   workspace.workspaceFolders = undefined
