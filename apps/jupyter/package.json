@@ -81,7 +81,7 @@
     "@niivue/react": "workspace:*",
     "@preact/signals": "^2.9.0",
     "@vitest/coverage-v8": "^3.2.4",
-    "copy-webpack-plugin": "^13.0.1",
+    "copy-webpack-plugin": "^14.0.0",
     "css-loader": "^7.1.4",
     "eslint-plugin-prettier": "^5.5.5",
     "mkdirp": "^3.0.1",
