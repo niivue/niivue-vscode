@@ -51,7 +51,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download build artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: pwa-preview
           path: pwa-preview
@@ -112,7 +112,7 @@ jobs:
 
       - name: Comment preview URL on PR
         if: steps.meta.outputs.skip != 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           PR_NUMBER: ${{ steps.meta.outputs.number }}
         with:
@@ -148,7 +148,7 @@ jobs:
       # commit status on the PR head SHA.
       - name: Surface preview status on PR head commit
         if: steps.meta.outputs.skip != 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           PR_NUMBER: ${{ steps.meta.outputs.number }}
           HEAD_SHA: ${{ steps.meta.outputs.head_sha }}

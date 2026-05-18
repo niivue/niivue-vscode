@@ -116,7 +116,7 @@ jobs:
 
       - name: Download coverage-publish artifact
         if: steps.check.outputs.skip != 'true'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: coverage-publish
           path: coverage-publish
@@ -201,7 +201,7 @@ jobs:
           steps.meta.outputs.skip == 'false' &&
           steps.meta.outputs.pr_number != '' &&
           steps.meta.outputs.pr_number != 'null'
-        uses: marocchino/sticky-pull-request-comment@v2
+        uses: marocchino/sticky-pull-request-comment@v3
         with:
           number: ${{ steps.meta.outputs.pr_number }}
           path: coverage-publish/summary.md
@@ -211,7 +211,7 @@ jobs:
           steps.meta.outputs.skip == 'false' &&
           steps.meta.outputs.pr_number != '' &&
           steps.meta.outputs.pr_number != 'null'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           DEST: ${{ steps.meta.outputs.dest }}
           HEAD_SHA: ${{ steps.meta.outputs.head_sha }}

@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 2
 
@@ -71,16 +71,16 @@ jobs:
             echo "No pending changesets — skipping pre-release."
           fi
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         if: steps.detect.outputs.has_changesets == 'true'
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         if: steps.detect.outputs.has_changesets == 'true'
         with:
           node-version: '22'
           cache: 'pnpm'
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         if: steps.detect.outputs.has_changesets == 'true'
         with:
           python-version: '3.11'
@@ -195,7 +195,7 @@ jobs:
             (steps.encode.outputs.vscode == 'true' ||
              steps.encode.outputs.jupyter == 'true' ||
              steps.encode.outputs.streamlit == 'true')
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: prerelease-${{ github.sha }}
           prerelease: true
