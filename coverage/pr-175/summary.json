@@ -20,10 +20,10 @@
   "jupyter-glue": {
     "label": "`apps/jupyter`",
     "stats": {
-      "statements": 1.6,
-      "branches": 100,
-      "functions": 44.4,
-      "lines": 1.6
+      "statements": 10.1,
+      "branches": 86.7,
+      "functions": 100,
+      "lines": 10.1
     }
   },
   "streamlit-glue": {
@@ -47,10 +47,10 @@
   "_overall": {
     "label": "Overall",
     "stats": {
-      "statements": 30.5,
-      "branches": 67,
-      "functions": 53.3,
-      "lines": 30.5
+      "statements": 31.6,
+      "branches": 67.4,
+      "functions": 54.3,
+      "lines": 31.5
     }
   }
 }
