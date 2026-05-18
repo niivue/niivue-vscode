@@ -332,7 +332,90 @@ function buildMarkdownTable(summary, opts = {}) {
   return lines.join('\n')
 }
 
-function buildHtmlReport(mergedData) {
+/**
+ * Escape user-controlled strings before they go into HTML.
+ */
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  })[c])
+}
+
+/**
+ * BUCKETS labels are written as Markdown for the PR sticky comment — e.g.
+ * ``Shared core (`packages/niivue-react`)``. For the HTML report we want the
+ * backticked spans to render as `<code>` rather than literal backticks.
+ * Escape first (so any `<`/`>` in a future label is safe), then promote the
+ * surviving backtick pairs to `<code>` tags.
+ */
+function labelToHtml(label) {
+  return escapeHtml(label).replace(/`([^`]+)`/g, '<code>$1</code>')
+}
+
+/**
+ * Render the per-package summary table — same shape as the markdown table
+ * used in PR sticky comments — to embed at the top of the HTML report so
+ * visitors landing on the published page see headline numbers before the
+ * long per-file Istanbul table.
+ */
+function buildHtmlSummarySection(summary, baseline) {
+  const overall = summary._overall?.stats?.lines ?? null
+  const baseOverall = baseline?._overall?.stats?.lines ?? null
+
+  let anyStale = false
+  const rows = BUCKETS.map((b) => {
+    const s = summary[b.id]?.stats ?? {}
+    const baseStats = baseline?.[b.id]?.stats ?? {}
+    const cells = [
+      renderCell(s.statements ?? null, baseStats.statements ?? null),
+      renderCell(s.branches ?? null, baseStats.branches ?? null),
+      renderCell(s.functions ?? null, baseStats.functions ?? null),
+      renderCell(s.lines ?? null, baseStats.lines ?? null),
+    ]
+    if (cells.some((c) => c.stale)) anyStale = true
+    return `      <tr><td>${labelToHtml(b.label)}</td>${cells
+      .map((c) => `<td>${escapeHtml(c.text)}</td>`)
+      .join('')}</tr>`
+  }).join('\n')
+
+  const overallCell = renderCell(overall, baseOverall)
+  let overallLine = ''
+  if (overallCell.text !== 'N/A') {
+    if (overallCell.stale) anyStale = true
+    if (overall !== null) {
+      const delta = deltaStr(overall, baseOverall)
+      overallLine = `<p class="overall"><strong>Overall line coverage: ${pctStr(overall)}${
+        delta ? ` <span class="delta">${escapeHtml(delta.trim())} vs <code>main</code></span>` : ''
+      }</strong></p>`
+    } else {
+      overallLine = `<p class="overall"><strong>Overall line coverage: ${escapeHtml(overallCell.text)}</strong></p>`
+    }
+  }
+
+  const stalenote = anyStale
+    ? '<p class="stale-note"><em>* value carried over from <code>main</code> — this run did not produce coverage for that cell.</em></p>'
+    : ''
+
+  return `  <section class="summary">
+    <h2>Coverage by package</h2>
+    ${overallLine}
+    <table class="summary-table">
+      <thead>
+        <tr><th>Package</th><th>Statements</th><th>Branches</th><th>Functions</th><th>Lines</th></tr>
+      </thead>
+      <tbody>
+${rows}
+      </tbody>
+    </table>
+    ${stalenote}
+  </section>`
+}
+
+function buildHtmlReport(mergedData, summary, baseline) {
   const fileRows = Object.entries(mergedData)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([file, cov]) => {
@@ -340,9 +423,11 @@ function buildHtmlReport(mergedData) {
       const stmtCovered = Object.values(cov.s).filter((c) => c > 0).length
       const pct = stmtTotal === 0 ? 'N/A' : `${Math.round((stmtCovered / stmtTotal) * 100)}%`
       const relPath = file.replace(repoRoot, '').replace(/^[\\/]/, '')
-      return `<tr><td>${relPath}</td><td>${pct} (${stmtCovered}/${stmtTotal})</td></tr>`
+      return `<tr><td>${escapeHtml(relPath)}</td><td>${pct} (${stmtCovered}/${stmtTotal})</td></tr>`
     })
     .join('\n')
+
+  const summarySection = summary ? buildHtmlSummarySection(summary, baseline) : ''
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -350,22 +435,37 @@ function buildHtmlReport(mergedData) {
   <meta charset="UTF-8" />
   <title>NiiVue Coverage Report</title>
   <style>
-    body { font-family: sans-serif; margin: 2rem; }
+    body { font-family: sans-serif; margin: 2rem; max-width: 60rem; }
+    h1 { margin-bottom: 0.25rem; }
+    .generated { color: #666; font-size: 0.85rem; margin: 0 0 1.5rem; }
+    section.summary { margin-bottom: 2.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid #ddd; }
+    section.summary h2 { margin-top: 0; }
+    p.overall { font-size: 1.05rem; }
+    .delta { color: #555; font-weight: normal; }
+    .stale-note { color: #666; font-size: 0.85rem; }
     table { border-collapse: collapse; width: 100%; }
     th, td { border: 1px solid #ccc; padding: 0.4rem 0.8rem; text-align: left; }
     th { background: #f4f4f4; }
     tr:nth-child(even) { background: #fafafa; }
+    table.summary-table td:not(:first-child),
+    table.summary-table th:not(:first-child) { text-align: right; }
+    h2.files-heading { margin-top: 0; }
+    code { background: #f4f4f4; padding: 0 0.25rem; border-radius: 3px; }
   </style>
 </head>
 <body>
   <h1>NiiVue Coverage Report</h1>
-  <p>Generated: ${new Date().toISOString()}</p>
-  <table>
-    <thead><tr><th>File</th><th>Statements</th></tr></thead>
-    <tbody>
+  <p class="generated">Generated: ${new Date().toISOString()}</p>
+${summarySection}
+  <section>
+    <h2 class="files-heading">Per-file coverage</h2>
+    <table>
+      <thead><tr><th>File</th><th>Statements</th></tr></thead>
+      <tbody>
 ${fileRows}
-    </tbody>
-  </table>
+      </tbody>
+    </table>
+  </section>
 </body>
 </html>
 `
@@ -417,7 +517,7 @@ async function main() {
   const badgeUrl = process.env.COVERAGE_BADGE_URL || null
 
   const markdownTable = buildMarkdownTable(summary, { baseline, reportUrl, badgeUrl })
-  const htmlReport = buildHtmlReport(mergedData)
+  const htmlReport = buildHtmlReport(mergedData, summary, baseline)
   const badgeJson = buildBadgeJson(summary)
 
   // Write outputs
