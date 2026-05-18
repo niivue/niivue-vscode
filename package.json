@@ -68,7 +68,7 @@
     "turbo": "^2.9.14",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.59.3",
-    "vite": "^7.1.12",
+    "vite": "^7.3.2",
     "vite-plugin-dts": "^4.5.4"
   },
   "engines": {
@@ -78,5 +78,18 @@
   "packageManager": "pnpm@10.18.3",
   "lint-staged": {
     "*.{js,jsx,ts,tsx,json,css,md}": "prettier --write"
+  },
+  "pnpm": {
+    "overrides": {
+      "fast-uri": "^3.1.2",
+      "undici": "^7.24.0",
+      "serialize-javascript": "^7.0.5",
+      "underscore": "^1.13.8",
+      "@tootallnate/once": "^3.0.1",
+      "postcss": "^8.5.10",
+      "@babel/plugin-transform-modules-systemjs": "^7.29.4",
+      "flatted": "^3.4.2",
+      "effect": "^3.20.0"
+    }
   }
 }
