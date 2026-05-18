@@ -38,6 +38,15 @@ concurrency:
 
 jobs:
   build:
+    # Fork PRs do NOT auto-build. The maintainer triggers the build manually
+    # via workflow_dispatch after reviewing the diff. This saves CI minutes on
+    # drive-by fork PRs and gives the maintainer an explicit consent point
+    # before running PR-author code on our infra (even read-only).
+    # Same-repo PRs and maintainer workflow_dispatch always build.
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' &&
+       github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
     steps:
       # Manual-dispatch path: resolve which PR head we should check out. The
