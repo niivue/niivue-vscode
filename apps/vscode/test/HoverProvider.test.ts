@@ -18,10 +18,18 @@ import { MarkdownString, Position, Range, Uri } from './vscode-mock'
  */
 function makeDocument(line: string) {
   return {
-    getWordRangeAtPosition: vi.fn((_pos: Position, regex: RegExp) => {
+    getWordRangeAtPosition: vi.fn((pos: Position, regex: RegExp) => {
+      // Real getWordRangeAtPosition returns a Range only when the regex
+      // matches a substring that *contains* the cursor position. A mock
+      // that ignored `pos` would pass even if the provider asked about
+      // a position outside any link — exactly the kind of bug VS Code's
+      // hover plumbing would expose.
       const m = line.match(regex)
       if (!m || m.index === undefined) return undefined
-      return new Range(new Position(0, m.index), new Position(0, m.index + m[0].length))
+      const start = m.index
+      const end = start + m[0].length
+      if (pos.character < start || pos.character > end) return undefined
+      return new Range(new Position(0, start), new Position(0, end))
     }),
     getText: vi.fn((range: Range) => line.slice(range.start.character, range.end.character)),
   }
@@ -49,11 +57,17 @@ function commandUriFrom(hover: { contents: MarkdownString[] }): {
   return { scheme: parsed.scheme, command: parsed.path, args: args[0] }
 }
 
-async function tryHover(line: string) {
+async function tryHover(line: string, cursor?: Position) {
   const provider = new LinkHoverProvider()
   const doc = makeDocument(line)
+  // Default to the middle of the line. Every positive test below constructs
+  // the line so its link straddles the middle, so the position-aware mock
+  // returns a real range. Negative tests pass lines whose middle is outside
+  // any match (or has no match), so the mock returns undefined and the
+  // provider rejects.
+  const pos = cursor ?? new Position(0, Math.floor(line.length / 2))
   try {
-    return (await provider.provideHover(doc as any, new Position(0, 0), {} as any)) as {
+    return (await provider.provideHover(doc as any, pos, {} as any)) as {
       contents: MarkdownString[]
     }
   } catch (err) {
@@ -157,5 +171,15 @@ describe('LinkHoverProvider — negative cases', () => {
 
   it('returns nothing for an empty line', async () => {
     expect(await tryHover('')).toBeUndefined()
+  })
+
+  it('returns nothing when the cursor sits outside the link', async () => {
+    // Link occupies positions 14..50; cursor at 0 is in "see " — no hover.
+    const line = 'see this file https://example.org/data/scan.nii.gz here'
+    expect(await tryHover(line, new Position(0, 0))).toBeUndefined()
+    // Same line, cursor at the very end — past the URL — also no hover.
+    expect(await tryHover(line, new Position(0, line.length - 1))).toBeUndefined()
+    // Sanity check: a cursor inside the link does fire.
+    expect(await tryHover(line, new Position(0, 25))).toBeDefined()
   })
 })

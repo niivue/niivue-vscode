@@ -43,6 +43,10 @@ jobs:
 
       # Bail early if there are no pending changesets. Without any, there's
       # nothing semantically new to pre-release on top of the last stable.
+      # Empty-frontmatter changesets (used as test-only / docs-only markers
+      # that satisfy the "every PR touching packages/apps needs a changeset"
+      # rule without bumping a version) are skipped here too — they have no
+      # package bumps so the pre-release would publish nothing.
       - name: Detect pending changesets
         id: detect
         run: |
@@ -50,6 +54,13 @@ jobs:
           count=0
           for f in .changeset/*.md; do
             [ "$(basename "$f")" = "README.md" ] && continue
+            # A changeset is "empty" if its frontmatter (everything between
+            # the first pair of `---` lines) has no non-blank content lines —
+            # i.e. no `"<package>": <bump>` entries.
+            if ! awk '/^---$/{c++; next} c==1 && NF>0' "$f" | grep -q .; then
+              echo "  skipping empty changeset: $(basename "$f")"
+              continue
+            fi
             count=$((count + 1))
           done
           if [ "$count" -gt 0 ]; then

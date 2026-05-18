@@ -23,7 +23,7 @@ describe('isImageType', () => {
     ['image.vmr', '.vmr'],
     ['image.mnc', '.mnc'],
     ['image.mnc.gz', '.mnc.gz'],
-  ])('returns %s for %s', (name, expected) => {
+  ])('given %s, returns %s', (name, expected) => {
     expect(isImageType(name)).toBe(expected)
   })
 

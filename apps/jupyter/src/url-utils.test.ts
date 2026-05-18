@@ -1,4 +1,5 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { PageConfig } from '@jupyterlab/coreutils'
 import { ServerConnection } from '@jupyterlab/services'
 import {
   fetchArrayBuffer,
@@ -120,19 +121,44 @@ describe('URL utilities', () => {
 })
 
 describe('getJupyterUrl', () => {
-  // getJupyterUrl uses PageConfig.getBaseUrl() under the hood. In a Node
-  // test environment with no PageConfig setup, baseUrl is '/' — assertions
-  // here pin the join behavior relative to whatever PageConfig returns.
-  it('joins a path against the configured base URL', () => {
-    expect(getJupyterUrl('api/contents/data')).toMatch(/\/api\/contents\/data$/)
+  // getJupyterUrl wraps URLExt.join(PageConfig.getBaseUrl(), path). We
+  // install a JupyterHub-style base URL via PageConfig.setOption so the
+  // assertions exercise the actual prefix-preserving behavior — an
+  // implementation that ignored PageConfig would fail these.
+  let savedBaseUrl: string
+
+  beforeEach(() => {
+    savedBaseUrl = PageConfig.getOption('baseUrl')
   })
 
-  it('normalizes leading slashes against the base URL', () => {
-    expect(getJupyterUrl('/api/contents/data')).toMatch(/\/api\/contents\/data$/)
+  afterEach(() => {
+    PageConfig.setOption('baseUrl', savedBaseUrl)
   })
 
-  it('returns a string', () => {
-    expect(typeof getJupyterUrl('anything')).toBe('string')
+  it('prepends the configured JupyterHub base URL', () => {
+    PageConfig.setOption('baseUrl', 'http://hub.example.com/user/johndoe/')
+    expect(getJupyterUrl('api/contents/data')).toBe(
+      'http://hub.example.com/user/johndoe/api/contents/data',
+    )
+  })
+
+  it('joins paths cleanly when the configured base URL lacks a trailing slash', () => {
+    PageConfig.setOption('baseUrl', 'http://hub.example.com/user/johndoe')
+    expect(getJupyterUrl('api/contents/data')).toBe(
+      'http://hub.example.com/user/johndoe/api/contents/data',
+    )
+  })
+
+  it('normalizes leading slashes against the base URL (no double slashes)', () => {
+    PageConfig.setOption('baseUrl', 'http://hub.example.com/user/johndoe/')
+    const url = getJupyterUrl('/api/contents/data')
+    expect(url).toBe('http://hub.example.com/user/johndoe/api/contents/data')
+    expect(url).not.toContain('//api')
+  })
+
+  it('falls back to the path under root when no base URL is configured', () => {
+    PageConfig.setOption('baseUrl', '')
+    expect(getJupyterUrl('api/contents/data')).toMatch(/\/?api\/contents\/data$/)
   })
 })
 
