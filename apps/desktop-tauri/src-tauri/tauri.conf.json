@@ -9,7 +9,6 @@
     "beforeBuildCommand": "pnpm build:frontend"
   },
   "app": {
-    "title": "NiiVue Desktop",
     "windows": [
       {
         "title": "NiiVue Desktop",
@@ -20,11 +19,12 @@
         "resizable": true,
         "fullscreen": false,
         "decorations": true,
-        "transparent": false
+        "transparent": false,
+        "dragDropEnabled": false
       }
     ],
     "security": {
-      "csp": "default-src 'self'; script-src 'self' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' asset: blob: data:; connect-src 'self' ipc: http://ipc.localhost asset: https://niivue.github.io; worker-src 'self' blob:; font-src 'self' data:"
+      "csp": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' asset: blob: data:; connect-src 'self' ipc: http://ipc.localhost asset: https://niivue.github.io; worker-src 'self' blob:; font-src 'self' data:"
     }
   },
   "bundle": {

@@ -1,7 +1,7 @@
 import { Container, ImageDrop, Menu, listenToMessages, type AppProps } from '@niivue/react'
 import { computed } from '@preact/signals'
 import { useEffect } from 'preact/hooks'
-import { isTauri, readFileBytes } from '../tauri-bridge'
+import { readFileBytes } from '../tauri-bridge'
 import { addRecentFile } from '../recent-files'
 import { DesktopHomeScreen } from './DesktopHomeScreen'
 
@@ -11,53 +11,35 @@ export const DesktopApp = ({ appProps }: { appProps: AppProps }) => {
 
   useEffect(() => {
     listenToMessages(appProps)
-    setupTauriFileHandler(appProps)
     document.dispatchEvent(new Event('AppReady'))
   }, [])
 
   return (
     <ImageDrop>
       <Menu {...appProps} />
-      {showHomeScreen.value && <DesktopHomeScreen appProps={appProps} />}
+      {showHomeScreen.value && <DesktopHomeScreen />}
       <Container {...appProps} />
       {appProps.hideUI.value > 0 && (
-        <div className="pl-2">{appProps.location?.value || '\u00A0'}</div>
+        <div className="pl-2">{appProps.location?.value || ' '}</div>
       )}
     </ImageDrop>
   )
 }
 
 /**
- * When running inside Tauri, listen for file-open events from the Rust side
- * and load images using the native file bridge.
- */
-function setupTauriFileHandler(appProps: AppProps) {
-  if (!isTauri()) {
-    return
-  }
-
-  // Listen for custom events from the native menu or CLI args
-  window.addEventListener('tauri-open-file', async (event: Event) => {
-    const customEvent = event as CustomEvent<{ path: string; name: string }>
-    const { path, name } = customEvent.detail
-    await loadFileFromPath(appProps, path, name)
-  })
-}
-
-/**
  * Load a local file into NiiVue via the Tauri bridge.
- * This reads raw bytes from the filesystem and posts them
- * to the NiiVue message handler.
+ *
+ * The caller is responsible for posting `initCanvas` to provision canvas
+ * slots before invoking this for the first image of a batch. Decoupling the
+ * canvas-count concern keeps batch loads (e.g. multi-select from the dialog)
+ * correct without races between successive `addImage` posts.
+ *
+ * The path must already be authorised on the Rust side (registered via
+ * `registerOpenedPath` after the dialog plugin returns it, or surfaced
+ * through `listDirectory`).
  */
-export async function loadFileFromPath(
-  appProps: AppProps,
-  filePath: string,
-  fileName: string,
-): Promise<void> {
+export async function loadFileFromPath(filePath: string, fileName: string): Promise<void> {
   const data = await readFileBytes(filePath)
-  // Track in recent files
-  addRecentFile(filePath, fileName).catch(console.error)
-  // Post the image data to NiiVue
   window.postMessage({
     type: 'addImage',
     body: {
@@ -65,11 +47,7 @@ export async function loadFileFromPath(
       uri: fileName,
     },
   })
-  // Ensure at least one canvas exists
-  if (appProps.nvArray.value.length === 0) {
-    window.postMessage({
-      type: 'initCanvas',
-      body: { n: 1 },
-    })
-  }
+  // Persist for a future "recent files" UI. Fire and forget so the next
+  // file in a batch starts loading before the JSON store flushes to disk.
+  addRecentFile(filePath, fileName).catch(console.error)
 }

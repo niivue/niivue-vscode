@@ -3,36 +3,51 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 // Mock @tauri-apps/api/core before importing the bridge
 vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(),
+  isTauri: vi.fn(() => false),
 }))
 
-import { isTauri, readFileBytes, getFileInfo, listDirectory, MEDICAL_IMAGE_EXTENSIONS } from '../src/tauri-bridge'
-import { invoke } from '@tauri-apps/api/core'
+import {
+  isTauri,
+  readFileBytes,
+  getFileInfo,
+  listDirectory,
+  registerOpenedPath,
+  MEDICAL_IMAGE_EXTENSIONS,
+} from '../src/tauri-bridge'
+import { invoke, isTauri as tauriIsTauri } from '@tauri-apps/api/core'
 
 const mockInvoke = vi.mocked(invoke)
+const mockTauriIsTauri = vi.mocked(tauriIsTauri)
 
 describe('tauri-bridge', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockTauriIsTauri.mockReturnValue(false)
   })
 
   describe('isTauri', () => {
-    it('returns false when __TAURI_INTERNALS__ is not in window', () => {
-      // jsdom does not have __TAURI_INTERNALS__
+    it('delegates to the public Tauri API', () => {
+      mockTauriIsTauri.mockReturnValue(true)
+      expect(isTauri()).toBe(true)
+      mockTauriIsTauri.mockReturnValue(false)
       expect(isTauri()).toBe(false)
     })
+  })
 
-    it('returns true when __TAURI_INTERNALS__ is in window', () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ;(window as any).__TAURI_INTERNALS__ = {}
-      expect(isTauri()).toBe(true)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      delete (window as any).__TAURI_INTERNALS__
+  describe('registerOpenedPath', () => {
+    it('invokes register_opened_path with the given path', async () => {
+      mockInvoke.mockResolvedValue(undefined)
+      await registerOpenedPath('/path/to/file.nii')
+      expect(mockInvoke).toHaveBeenCalledWith('register_opened_path', {
+        path: '/path/to/file.nii',
+      })
     })
   })
 
   describe('readFileBytes', () => {
-    it('invokes read_file_bytes command and returns Uint8Array', async () => {
-      mockInvoke.mockResolvedValue([72, 101, 108, 108, 111])
+    it('wraps the ArrayBuffer response in a Uint8Array', async () => {
+      const buf = new Uint8Array([72, 101, 108, 108, 111]).buffer
+      mockInvoke.mockResolvedValue(buf)
       const result = await readFileBytes('/path/to/file.nii')
       expect(mockInvoke).toHaveBeenCalledWith('read_file_bytes', { path: '/path/to/file.nii' })
       expect(result).toBeInstanceOf(Uint8Array)
@@ -40,8 +55,8 @@ describe('tauri-bridge', () => {
     })
 
     it('propagates errors from the Rust command', async () => {
-      mockInvoke.mockRejectedValue(new Error('File not found'))
-      await expect(readFileBytes('/nonexistent')).rejects.toThrow('File not found')
+      mockInvoke.mockRejectedValue(new Error('Path not authorized'))
+      await expect(readFileBytes('/nonexistent')).rejects.toThrow('Path not authorized')
     })
   })
 

@@ -1,13 +1,10 @@
-import { useAppState } from '@niivue/react'
+import { defaultSettings, useAppState } from '@niivue/react'
 import { render } from 'preact'
 import { DesktopApp } from './components/DesktopApp'
 import './index.css'
-import { getSettings } from './settings'
-
-const settings = getSettings()
 
 function Main() {
-  const appProps = useAppState(settings)
+  const appProps = useAppState(defaultSettings)
   return <DesktopApp appProps={appProps} />
 }
 

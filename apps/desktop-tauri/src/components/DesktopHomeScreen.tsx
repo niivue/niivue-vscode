@@ -1,9 +1,21 @@
-import type { AppProps } from '@niivue/react'
 import { open } from '@tauri-apps/plugin-dialog'
-import { isTauri, MEDICAL_IMAGE_EXTENSIONS, getFileInfo } from '../tauri-bridge'
+import {
+  MEDICAL_IMAGE_EXTENSIONS,
+  isTauri,
+  registerOpenedPath,
+} from '../tauri-bridge'
 import { loadFileFromPath } from './DesktopApp'
 
-export const DesktopHomeScreen = ({ appProps }: { appProps: AppProps }) => {
+/**
+ * Extract a basename from a path. Avoids an IPC round-trip just to ask Rust
+ * for `Path::file_name()` - JS can split on the path separator itself, and
+ * the dialog plugin returns absolute paths.
+ */
+function basename(path: string): string {
+  return path.split(/[/\\]/).pop() ?? path
+}
+
+export const DesktopHomeScreen = () => {
   const handleOpenFile = async () => {
     if (!isTauri()) {
       return
@@ -26,15 +38,22 @@ export const DesktopHomeScreen = ({ appProps }: { appProps: AppProps }) => {
       return
     }
     const paths = Array.isArray(selected) ? selected : [selected]
-    if (paths.length > 0) {
-      window.postMessage({
-        type: 'initCanvas',
-        body: { n: paths.length },
-      })
+    if (paths.length === 0) {
+      return
     }
+    // Authorise every user-confirmed path before any read attempt.
+    await Promise.all(paths.map((p) => registerOpenedPath(p)))
+
+    // Provision canvas slots once, before any addImage posts arrive.
+    window.postMessage({
+      type: 'initCanvas',
+      body: { n: paths.length },
+    })
+
+    // Sequence the loads so the recent-files store doesn't race on read-
+    // modify-write of its `recentFiles` key.
     for (const filePath of paths) {
-      const info = await getFileInfo(filePath)
-      await loadFileFromPath(appProps, info.path, info.name)
+      await loadFileFromPath(filePath, basename(filePath))
     }
   }
 
@@ -44,8 +63,8 @@ export const DesktopHomeScreen = ({ appProps }: { appProps: AppProps }) => {
         NiiVue Desktop
       </h2>
       <p className="w-full sm:w-96 mb-4 text-m font-normal text-gray-300 px-4">
-        Open medical images from your local filesystem. Drag and drop files onto
-        this window, or use the button below.
+        Open medical images from your local filesystem. Drag and drop files
+        onto this window, or use the button below.
       </p>
 
       {isTauri() && (
@@ -53,7 +72,7 @@ export const DesktopHomeScreen = ({ appProps }: { appProps: AppProps }) => {
           onClick={handleOpenFile}
           className="mx-4 mb-4 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
         >
-          Open File…
+          Open File...
         </button>
       )}
 

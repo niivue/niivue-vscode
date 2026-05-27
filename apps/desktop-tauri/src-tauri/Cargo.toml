@@ -9,7 +9,7 @@ edition = "2021"
 
 [lib]
 name = "niivue_desktop_lib"
-crate-type = ["lib", "cdylib", "staticlib"]
+crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
