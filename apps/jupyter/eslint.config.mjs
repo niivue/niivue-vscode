@@ -20,6 +20,19 @@ export default [
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
+    // Node scripts (build-assets.mjs, etc.) need Node globals.
+    files: ['**/*.{js,mjs,cjs}'],
+    languageOptions: {
+      globals: {
+        process: 'readonly',
+        console: 'readonly',
+        Buffer: 'readonly',
+        __dirname: 'readonly',
+        __filename: 'readonly',
+      },
+    },
+  },
+  {
     files: ['**/*.{ts,tsx}'],
     rules: {
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
