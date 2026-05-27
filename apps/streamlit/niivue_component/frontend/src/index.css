@@ -1,11 +1,7 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-@layer base {
-  html,
-  body,
-  #root {
-    @apply h-full w-full m-0 p-0 overflow-hidden;
-  }
+html,
+body,
+#root {
+  @apply h-full w-full m-0 p-0 overflow-hidden;
 }
