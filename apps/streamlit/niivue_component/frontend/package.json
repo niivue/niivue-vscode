@@ -14,7 +14,7 @@
     "test:coverage": "vitest run --coverage",
     "coverage": "pnpm run test:coverage",
     "lint": "echo 'Lint passed for niivue_component/frontend'",
-    "clean": "rm -rf build dist"
+    "clean": "node -e \"import('fs').then(fs => { fs.rmSync('build', { recursive: true, force: true }); fs.rmSync('dist', { recursive: true, force: true }); })\""
   },
   "dependencies": {
     "@niivue/dicom-loader": "^1.0.0",
