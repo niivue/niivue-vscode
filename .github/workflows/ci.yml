@@ -71,6 +71,9 @@ jobs:
       - name: Type check
         run: pnpm turbo type-check
 
+      - name: Coverage aggregator unit tests
+        run: pnpm coverage:report:test
+
   build:
     runs-on: ubuntu-latest
     steps:
