@@ -1,0 +1,65 @@
+{
+  "shared-core": {
+    "label": "Shared core (`packages/niivue-react`)",
+    "stats": {
+      "statements": null,
+      "branches": null,
+      "functions": null,
+      "lines": null
+    }
+  },
+  "pwa-glue": {
+    "label": "`apps/pwa`",
+    "stats": {
+      "statements": null,
+      "branches": null,
+      "functions": null,
+      "lines": null
+    }
+  },
+  "jupyter-glue": {
+    "label": "`apps/jupyter`",
+    "stats": {
+      "statements": null,
+      "branches": null,
+      "functions": null,
+      "lines": null
+    }
+  },
+  "streamlit-glue": {
+    "label": "`apps/streamlit`",
+    "stats": {
+      "statements": null,
+      "branches": null,
+      "functions": null,
+      "lines": null
+    }
+  },
+  "vscode-glue": {
+    "label": "`apps/vscode`",
+    "stats": {
+      "statements": null,
+      "branches": null,
+      "functions": null,
+      "lines": null
+    }
+  },
+  "desktop-glue": {
+    "label": "`apps/desktop-tauri`",
+    "stats": {
+      "statements": 81.8,
+      "branches": 59.1,
+      "functions": 78.9,
+      "lines": 84.3
+    }
+  },
+  "_overall": {
+    "label": "Overall",
+    "stats": {
+      "statements": 81.8,
+      "branches": 59.1,
+      "functions": 78.9,
+      "lines": 84.3
+    }
+  }
+}
