@@ -167,9 +167,9 @@ export const Nav4D = ({ nv, nvArray, volumeIndex, vol4D, isPlaying, isEditingVol
   const showSync = num4DVolumes > 1
 
   return (
-    <div className="absolute bottom-1 right-1 flex items-center gap-1 bg-gray-900 bg-opacity-70 rounded-lg p-1 backdrop-blur-sm shadow-lg">
+    <div className="absolute bottom-1 right-1 flex items-center gap-1 bg-gray-900/70 rounded-lg p-1 backdrop-blur-sm shadow-lg">
       <button
-        className="bg-transparent hover:bg-white hover:bg-opacity-20 text-white rounded px-2 py-1 transition-colors text-xl leading-none flex items-center justify-center min-w-[30px]"
+        className="bg-transparent hover:bg-white/20 text-white rounded px-2 py-1 transition-colors text-xl leading-none flex items-center justify-center min-w-[30px]"
         onClick={prevVolume}
         aria-label="Previous frame"
         title="Previous frame"
@@ -194,7 +194,7 @@ export const Nav4D = ({ nv, nvArray, volumeIndex, vol4D, isPlaying, isEditingVol
         />
       ) : (
         <span
-          className="cursor-text text-white text-center w-12 hover:bg-white hover:bg-opacity-10 rounded px-1 transition-colors text-sm font-mono select-none"
+          className="cursor-text text-white text-center w-12 hover:bg-white/10 rounded px-1 transition-colors text-sm font-mono select-none"
           data-testid={`volume-${volumeIndex}`}
           onClick={handleVol4DClick}
           title="Click to edit frame number"
@@ -204,7 +204,7 @@ export const Nav4D = ({ nv, nvArray, volumeIndex, vol4D, isPlaying, isEditingVol
       )}
 
       <button
-        className="bg-transparent hover:bg-white hover:bg-opacity-20 text-white rounded px-2 py-1 transition-colors text-xl leading-none flex items-center justify-center min-w-[30px]"
+        className="bg-transparent hover:bg-white/20 text-white rounded px-2 py-1 transition-colors text-xl leading-none flex items-center justify-center min-w-[30px]"
         onClick={nextVolume}
         aria-label="Next frame"
         title="Next frame"
@@ -215,7 +215,7 @@ export const Nav4D = ({ nv, nvArray, volumeIndex, vol4D, isPlaying, isEditingVol
       <div className="w-px h-4 bg-gray-600 mx-1"></div>
 
       <button
-        className="bg-transparent hover:bg-white hover:bg-opacity-20 text-white rounded px-2 py-1 transition-colors flex items-center justify-center min-w-[30px]"
+        className="bg-transparent hover:bg-white/20 text-white rounded px-2 py-1 transition-colors flex items-center justify-center min-w-[30px]"
         onClick={togglePlay}
         aria-label={isPlaying.value ? 'Pause' : 'Play'}
         title={isPlaying.value ? 'Pause' : 'Play'}
@@ -229,8 +229,8 @@ export const Nav4D = ({ nv, nvArray, volumeIndex, vol4D, isPlaying, isEditingVol
           <div className="w-px h-4 bg-gray-600 mx-1"></div>
           <button
             className={`${
-              isSynced ? 'bg-blue-500 bg-opacity-50' : 'bg-transparent'
-            } hover:bg-white hover:bg-opacity-20 text-white rounded px-2 py-1 transition-colors flex items-center justify-center min-w-[30px]`}
+              isSynced ? 'bg-blue-500/50' : 'bg-transparent'
+            } hover:bg-white/20 text-white rounded px-2 py-1 transition-colors flex items-center justify-center min-w-[30px]`}
             onClick={toggleSync}
             onMouseDown={(e) => e.preventDefault()}
             aria-label={isSynced ? 'Disable sync' : 'Enable sync'}
