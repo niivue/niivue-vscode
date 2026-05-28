@@ -6,6 +6,24 @@
       "branches": null,
       "functions": null,
       "lines": null
+    },
+    "counts": {
+      "statements": {
+        "covered": 0,
+        "total": 0
+      },
+      "branches": {
+        "covered": 0,
+        "total": 0
+      },
+      "functions": {
+        "covered": 0,
+        "total": 0
+      },
+      "lines": {
+        "covered": 0,
+        "total": 0
+      }
     }
   },
   "pwa-glue": {
@@ -15,6 +33,24 @@
       "branches": null,
       "functions": null,
       "lines": null
+    },
+    "counts": {
+      "statements": {
+        "covered": 0,
+        "total": 0
+      },
+      "branches": {
+        "covered": 0,
+        "total": 0
+      },
+      "functions": {
+        "covered": 0,
+        "total": 0
+      },
+      "lines": {
+        "covered": 0,
+        "total": 0
+      }
     }
   },
   "jupyter-glue": {
@@ -24,6 +60,24 @@
       "branches": null,
       "functions": null,
       "lines": null
+    },
+    "counts": {
+      "statements": {
+        "covered": 0,
+        "total": 0
+      },
+      "branches": {
+        "covered": 0,
+        "total": 0
+      },
+      "functions": {
+        "covered": 0,
+        "total": 0
+      },
+      "lines": {
+        "covered": 0,
+        "total": 0
+      }
     }
   },
   "streamlit-glue": {
@@ -33,6 +87,24 @@
       "branches": null,
       "functions": null,
       "lines": null
+    },
+    "counts": {
+      "statements": {
+        "covered": 0,
+        "total": 0
+      },
+      "branches": {
+        "covered": 0,
+        "total": 0
+      },
+      "functions": {
+        "covered": 0,
+        "total": 0
+      },
+      "lines": {
+        "covered": 0,
+        "total": 0
+      }
     }
   },
   "vscode-glue": {
@@ -42,6 +114,24 @@
       "branches": null,
       "functions": null,
       "lines": null
+    },
+    "counts": {
+      "statements": {
+        "covered": 0,
+        "total": 0
+      },
+      "branches": {
+        "covered": 0,
+        "total": 0
+      },
+      "functions": {
+        "covered": 0,
+        "total": 0
+      },
+      "lines": {
+        "covered": 0,
+        "total": 0
+      }
     }
   },
   "desktop-glue": {
@@ -51,6 +141,24 @@
       "branches": 59.1,
       "functions": 78.9,
       "lines": 84.3
+    },
+    "counts": {
+      "statements": {
+        "covered": 45,
+        "total": 55
+      },
+      "branches": {
+        "covered": 13,
+        "total": 22
+      },
+      "functions": {
+        "covered": 15,
+        "total": 19
+      },
+      "lines": {
+        "covered": 43,
+        "total": 51
+      }
     }
   },
   "_overall": {
@@ -60,6 +168,24 @@
       "branches": 59.1,
       "functions": 78.9,
       "lines": 84.3
+    },
+    "counts": {
+      "statements": {
+        "covered": 45,
+        "total": 55
+      },
+      "branches": {
+        "covered": 13,
+        "total": 22
+      },
+      "functions": {
+        "covered": 15,
+        "total": 19
+      },
+      "lines": {
+        "covered": 43,
+        "total": 51
+      }
     }
   }
 }
