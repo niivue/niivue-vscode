@@ -272,3 +272,12 @@ export function reorderImages<T>(array: T[], fromIndex: number, toIndex: number)
   result.splice(toIndex, 0, movedItem)
   return result
 }
+
+// Swap two items in place. Used by the "swap" drop zone (middle third of a
+// Volume); semantically distinct from reorderImages, which is shift-based.
+export function swapImages<T>(array: T[], i: number, j: number): T[] {
+  if (i === j) return array
+  const result = [...array]
+  ;[result[i], result[j]] = [result[j], result[i]]
+  return result
+}

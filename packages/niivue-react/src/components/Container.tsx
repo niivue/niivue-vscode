@@ -2,7 +2,7 @@ import { SLICE_TYPE } from '@niivue/niivue'
 import { computed, effect, useSignal } from '@preact/signals'
 import { useEffect, useRef } from 'preact/hooks'
 import { ExtendedNiivue } from '../events'
-import { differenceInNames, getNames, reorderImages } from '../utility'
+import { differenceInNames, getNames, reorderImages, swapImages } from '../utility'
 import { AppProps } from './AppProps'
 import { Volume } from './Volume'
 
@@ -49,8 +49,25 @@ export const Container = (props: AppProps) => {
   const fullNames = computed(() => getNames(nvArray.value))
   const names = computed(() => differenceInNames(fullNames.value))
 
-  const reorder = (fromIndex: number, toIndex: number) => {
-    nvArray.value = reorderImages(nvArray.value, fromIndex, toIndex)
+  // Shared drag-reorder state. Null when no reorder drag is in flight.
+  const draggingIndex = useSignal<number | null>(null)
+  // The slot the user would insert into if they dropped now. Range is
+  // 0..nvArray.length (inclusive on both ends).
+  const dropInsertPos = useSignal<number | null>(null)
+  // The index they would swap with if they dropped now.
+  const dropSwapIndex = useSignal<number | null>(null)
+
+  const swap = (i: number, j: number) => {
+    nvArray.value = swapImages(nvArray.value, i, j)
+  }
+
+  // Insert fromIndex at insertPosition in the *original* index frame. After
+  // removing the source, indices >= fromIndex shift down by one, so we
+  // compensate when fromIndex < insertPosition.
+  const insertAt = (fromIndex: number, insertPosition: number) => {
+    if (fromIndex === insertPosition || fromIndex + 1 === insertPosition) return
+    const targetIndex = fromIndex < insertPosition ? insertPosition - 1 : insertPosition
+    nvArray.value = reorderImages(nvArray.value, fromIndex, targetIndex)
   }
 
   return (
@@ -66,7 +83,11 @@ export const Container = (props: AppProps) => {
             key={nv.key}
             render={render}
             remove={remove(props, i)}
-            reorder={reorder}
+            draggingIndex={draggingIndex}
+            dropInsertPos={dropInsertPos}
+            dropSwapIndex={dropSwapIndex}
+            swap={swap}
+            insertAt={insertAt}
             {...props}
           />
         ))}
