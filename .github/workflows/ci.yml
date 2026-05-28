@@ -614,7 +614,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        matlab-version: ['R2020b', 'R2024b']
+        matlab-version: ['R2023b', 'R2026a']
     steps:
       - name: Checkout
         uses: actions/checkout@v6
