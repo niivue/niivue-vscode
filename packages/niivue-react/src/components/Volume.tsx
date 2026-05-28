@@ -82,10 +82,14 @@ export const Volume = (props: AppProps & VolumeProps) => {
     }
   }, [canvasRef.current])
 
+  // Custom MIME type identifies our own reorder drags so we ignore file-import
+  // drags (which use 'Files') and drags from outside the app.
+  const REORDER_MIME = 'application/x-niivue-reorder'
+
   const handleDragStart = (e: DragEvent) => {
     isDragging.value = true
     e.dataTransfer!.effectAllowed = 'move'
-    e.dataTransfer!.setData('text/plain', volumeIndex.toString())
+    e.dataTransfer!.setData(REORDER_MIME, volumeIndex.toString())
   }
 
   const handleDragEnd = () => {
@@ -94,8 +98,9 @@ export const Volume = (props: AppProps & VolumeProps) => {
   }
 
   const handleDragOver = (e: DragEvent) => {
+    if (!e.dataTransfer?.types.includes(REORDER_MIME)) return
     e.preventDefault()
-    e.dataTransfer!.dropEffect = 'move'
+    e.dataTransfer.dropEffect = 'move'
     dragOver.value = true
   }
 
@@ -104,13 +109,14 @@ export const Volume = (props: AppProps & VolumeProps) => {
   }
 
   const handleDrop = (e: DragEvent) => {
+    if (!e.dataTransfer?.types.includes(REORDER_MIME)) return
     e.preventDefault()
     dragOver.value = false
 
-    const fromIndex = parseInt(e.dataTransfer!.getData('text/plain'))
+    const fromIndex = parseInt(e.dataTransfer.getData(REORDER_MIME))
     const toIndex = volumeIndex
 
-    if (fromIndex !== toIndex) {
+    if (Number.isInteger(fromIndex) && fromIndex !== toIndex) {
       reorder(fromIndex, toIndex)
     }
   }
@@ -198,7 +204,9 @@ export const Volume = (props: AppProps & VolumeProps) => {
     <div
       className={`relative ${
         selectionMode.value && selected.value ? 'outline outline-blue-500' : ''
-      } ${dragOver.value ? 'outline outline-green-500 outline-2' : ''}`}
+      } ${dragOver.value ? 'outline outline-green-500 outline-2' : ''} ${
+        isDragging.value ? 'opacity-50' : ''
+      }`}
       onClick={selectClick}
       ref={canvasRef}
       draggable={hideUI.value > 2}
@@ -239,8 +247,9 @@ export const Volume = (props: AppProps & VolumeProps) => {
       )}
       {hideUI.value > 2 && (
         <>
+          {/* Drag handle: thin strip so canvas clicks reach niivue everywhere else. */}
           <div
-            className="absolute top-0 left-0 right-0 h-8 cursor-move bg-gradient-to-b from-black/30 to-transparent"
+            className="absolute top-0 left-0 right-0 h-4 cursor-move bg-gradient-to-b from-black/30 to-transparent"
             title="Drag to reorder"
           />
           <button
