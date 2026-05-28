@@ -53,6 +53,7 @@ _version.py
 
 # Pre-release encoder transient output
 prerelease-targets.json
+changeset-status.json
 
 # Test artifacts
 test-results/
