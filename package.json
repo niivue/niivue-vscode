@@ -48,7 +48,8 @@
     "changeset": "changeset",
     "version": "changeset version && node scripts/release/sync-pyproject-versions.mjs && pnpm install --no-frozen-lockfile",
     "release": "changeset publish",
-    "coverage:report": "node scripts/coverage/aggregate.mjs"
+    "coverage:report": "node scripts/coverage/aggregate.mjs",
+    "coverage:report:test": "node scripts/coverage/aggregate.test.mjs"
   },
   "devDependencies": {
     "@changesets/cli": "^2.31.0",
