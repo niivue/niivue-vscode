@@ -260,3 +260,24 @@ export function getNumberOfPoints(nv: Niivue) {
   const matrixString = 'Number of Points: ' + mesh.pts.length / 3
   return matrixString
 }
+
+// Reorder an array by moving an item from one index to another
+export function reorderImages<T>(array: T[], fromIndex: number, toIndex: number): T[] {
+  if (fromIndex === toIndex) {
+    return array
+  }
+
+  const result = [...array]
+  const [movedItem] = result.splice(fromIndex, 1)
+  result.splice(toIndex, 0, movedItem)
+  return result
+}
+
+// Swap two items in place. Used by the "swap" drop zone (middle third of a
+// Volume); semantically distinct from reorderImages, which is shift-based.
+export function swapImages<T>(array: T[], i: number, j: number): T[] {
+  if (i === j) return array
+  const result = [...array]
+  ;[result[i], result[j]] = [result[j], result[i]]
+  return result
+}

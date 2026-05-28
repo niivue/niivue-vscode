@@ -6,9 +6,13 @@ export const ImageDrop = ({ children }: { children: ComponentChildren }) => {
   const isDrag = useSignal(false)
 
   const handleDragOver = (e: DragEvent) => {
+    // Only react to external file drags. Internal reorder drags carry the
+    // custom MIME below and must pass through so per-Volume drop zones can
+    // claim them.
+    if (!e.dataTransfer?.types.includes('Files')) return
     e.stopPropagation()
     e.preventDefault()
-    e.dataTransfer!.dropEffect = 'link'
+    e.dataTransfer.dropEffect = 'link'
     isDrag.value = true
   }
 
@@ -17,10 +21,11 @@ export const ImageDrop = ({ children }: { children: ComponentChildren }) => {
   }
 
   const handleDrop = (e: DragEvent) => {
+    if (!e.dataTransfer?.types.includes('Files')) return
     isDrag.value = false
     e.stopPropagation()
     e.preventDefault()
-    const files = e.dataTransfer!.files
+    const files = e.dataTransfer.files
     const fileArray = Array.from(files)
     if (e.shiftKey) {
       // shift+drop adds files as overlays to the last loaded canvas
