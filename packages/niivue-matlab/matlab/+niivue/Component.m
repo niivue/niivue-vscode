@@ -17,7 +17,6 @@ classdef Component < matlab.ui.componentcontainer.ComponentContainer
     
     properties (Access = private, Transient, NonCopyable)
         HTMLComponent        % uihtml component
-        Controller          % Internal controller
         Grid                % Grid layout
         ViewerReady = false % Flag indicating viewer is ready
     end

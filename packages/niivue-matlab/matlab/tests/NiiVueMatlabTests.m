@@ -23,9 +23,11 @@ classdef NiiVueMatlabTests < matlab.unittest.TestCase
         end
         
         function testViewerFunctionExists(testCase)
-            % Verify Viewer function exists
-            testCase.verifyTrue(exist('niivue.Viewer', 'file') > 0, ...
-                'niivue.Viewer function should exist');
+            % Verify Viewer function exists. `exist('niivue.Viewer', 'file')`
+            % returns 0 for package-namespaced functions in modern MATLAB
+            % releases (verified on R2026a); use `which` instead.
+            testCase.verifyNotEmpty(which('niivue.Viewer'), ...
+                'niivue.Viewer function should exist on the path');
         end
         
         function testComponentClassExists(testCase)

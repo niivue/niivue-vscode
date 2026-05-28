@@ -6,7 +6,7 @@ This directory contains unit tests for the NiiVue MATLAB integration package.
 
 ### Prerequisites
 
-- MATLAB R2020b or later (R2023b+ recommended)
+- MATLAB R2021a or later (the floor of `matlab-actions/setup-matlab@v2`, which is what CI uses)
 - The niivue-matlab package built (run `pnpm build` in `packages/niivue-matlab`)
 
 ### Running All Tests
