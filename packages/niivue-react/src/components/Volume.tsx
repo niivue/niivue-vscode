@@ -254,6 +254,15 @@ export const Volume = (props: AppProps & VolumeProps) => {
   const showLeftBar = dropInsertPos.value === volumeIndex
   const showRightBar = dropInsertPos.value === volumeIndex + 1
 
+  // When the source is adjacent, the gap between us and the source is a no-op
+  // insert (insert-before-self or insert-after-self). Hide that side's insert
+  // zone and let the swap zone absorb its width so the user can still target
+  // this volume from the full 2/3.
+  const sourceIsRightNeighbor = draggingIndex.value === volumeIndex + 1
+  const sourceIsLeftNeighbor = draggingIndex.value === volumeIndex - 1
+  const hideLeftZone = sourceIsLeftNeighbor
+  const hideRightZone = sourceIsRightNeighbor
+
   return (
     <div
       className={`relative ${
@@ -315,30 +324,38 @@ export const Volume = (props: AppProps & VolumeProps) => {
       {/* Drop-zone overlays. Only rendered while a reorder drag is in flight
           and never on the source itself. Three columns: left third "insert
           before this volume", middle third "swap with this volume", right
-          third "insert after this volume". */}
+          third "insert after this volume". When the source is the adjacent
+          volume, that side's insert is a no-op so we skip rendering it and
+          let the swap zone expand to fill the freed third. */}
       {isDragInProgress && !isSource && hideUI.value > 2 && (
         <>
+          {!hideLeftZone && (
+            <div
+              className="absolute top-0 bottom-0 left-0 w-1/3"
+              onDragOver={onZoneOver('insert-before')}
+              onDragLeave={onZoneLeave('insert-before')}
+              onDrop={onZoneDrop('insert-before')}
+              data-testid={`drop-insert-before-${volumeIndex}`}
+            />
+          )}
           <div
-            className="absolute top-0 bottom-0 left-0 w-1/3"
-            onDragOver={onZoneOver('insert-before')}
-            onDragLeave={onZoneLeave('insert-before')}
-            onDrop={onZoneDrop('insert-before')}
-            data-testid={`drop-insert-before-${volumeIndex}`}
-          />
-          <div
-            className="absolute top-0 bottom-0 left-1/3 w-1/3"
+            className={`absolute top-0 bottom-0 ${hideLeftZone ? 'left-0' : 'left-1/3'} ${
+              hideRightZone ? 'right-0' : 'right-1/3'
+            }`}
             onDragOver={onZoneOver('swap')}
             onDragLeave={onZoneLeave('swap')}
             onDrop={onZoneDrop('swap')}
             data-testid={`drop-swap-${volumeIndex}`}
           />
-          <div
-            className="absolute top-0 bottom-0 right-0 w-1/3"
-            onDragOver={onZoneOver('insert-after')}
-            onDragLeave={onZoneLeave('insert-after')}
-            onDrop={onZoneDrop('insert-after')}
-            data-testid={`drop-insert-after-${volumeIndex}`}
-          />
+          {!hideRightZone && (
+            <div
+              className="absolute top-0 bottom-0 right-0 w-1/3"
+              onDragOver={onZoneOver('insert-after')}
+              onDragLeave={onZoneLeave('insert-after')}
+              onDrop={onZoneDrop('insert-after')}
+              data-testid={`drop-insert-after-${volumeIndex}`}
+            />
+          )}
         </>
       )}
       {/* Insert-position bars sit on the edges and fill into the inter-volume
