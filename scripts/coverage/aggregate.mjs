@@ -110,6 +110,11 @@ const BUCKETS = [
     label: '`apps/vscode`',
     match: (f) => f.includes('apps/vscode/src'),
   },
+  {
+    id: 'desktop-glue',
+    label: '`apps/desktop-tauri`',
+    match: (f) => f.includes('apps/desktop-tauri/src'),
+  },
 ]
 
 // ---------------------------------------------------------------------------

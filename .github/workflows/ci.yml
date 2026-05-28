@@ -26,6 +26,7 @@ jobs:
       jupyter: ${{ steps.filter.outputs.jupyter }}
       vscode: ${{ steps.filter.outputs.vscode }}
       streamlit: ${{ steps.filter.outputs.streamlit }}
+      desktop: ${{ steps.filter.outputs.desktop }}
     steps:
       - uses: actions/checkout@v6
       - uses: dorny/paths-filter@v4
@@ -45,6 +46,9 @@ jobs:
               - 'packages/**'
             streamlit:
               - 'apps/streamlit/**'
+              - 'packages/**'
+            desktop:
+              - 'apps/desktop-tauri/**'
               - 'packages/**'
 
   lint-and-typecheck:
@@ -326,6 +330,48 @@ jobs:
           if-no-files-found: ignore
           retention-days: 1
 
+  test-desktop:
+    needs: [changes, build]
+    if: needs.changes.outputs.desktop == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Restore build artifacts
+        uses: actions/cache@v5
+        with:
+          path: |
+            apps/*/dist
+            apps/*/build
+            apps/*/lib
+            packages/*/dist
+          key: build-artifacts-${{ github.sha }}
+
+      - name: Run Desktop vitest coverage
+        run: pnpm --filter=@niivue/desktop test:coverage
+
+      - name: Upload Desktop vitest coverage artifacts
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: coverage-unit-desktop
+          path: apps/desktop-tauri/coverage/unit/
+          if-no-files-found: ignore
+          retention-days: 1
+
   e2e-tests:
     needs: [changes, build]
     if: needs.changes.outputs.pwa == 'true'
@@ -389,7 +435,7 @@ jobs:
     # which is the only place that holds write permissions. This split keeps
     # the trust boundary clean: this job runs after PR code has executed in
     # the upstream test jobs and must not have any write access.
-    needs: [test-pwa, test-jupyter, test-vscode, test-streamlit, e2e-tests]
+    needs: [test-pwa, test-jupyter, test-vscode, test-streamlit, test-desktop, e2e-tests]
     if: |
       always() &&
       !contains(needs.*.result, 'failure') &&
@@ -438,6 +484,17 @@ jobs:
         with:
           name: coverage-streamlit
           path: .
+        continue-on-error: true
+
+      - name: Download Desktop coverage artifacts
+        # upload-artifact@v4 strips the parent path for single-path uploads,
+        # so the artifact's files sit at its root. Extract them back under
+        # apps/desktop-tauri/coverage/unit/ so the aggregator's walk (which
+        # requires a `coverage` path segment) picks them up.
+        uses: actions/download-artifact@v8
+        with:
+          name: coverage-unit-desktop
+          path: apps/desktop-tauri/coverage/unit/
         continue-on-error: true
 
       - name: Download e2e coverage artifacts
