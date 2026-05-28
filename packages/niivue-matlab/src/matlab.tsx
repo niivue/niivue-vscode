@@ -239,41 +239,27 @@ function MatlabApp() {
     zoomDragMode: false,
     defaultVolumeColormap: 'gray',
     defaultOverlayColormap: 'redyell',
+    defaultOverlayOpacity: 0.5,
     defaultMeshOverlayColormap: 'hsv',
   })
 
   useEffect(() => {
     appPropsGlobal = appProps
     setIsReady(true)
-
-    // Track previous crosshair position to avoid sending duplicate updates
-    let lastCrosshairPos: number[] | null = null
-
-    // Listen for crosshair changes in the NiiVue instance
-    const interval = setInterval(() => {
-      if (appProps.nvArray.value.length > 0) {
-        const nv = appProps.nvArray.value[0]
-        if (nv.scene && nv.scene.crosshairPos) {
-          const currentPos = nv.scene.crosshairPos
-          // Only send if position has changed
-          if (
-            !lastCrosshairPos ||
-            lastCrosshairPos[0] !== currentPos[0] ||
-            lastCrosshairPos[1] !== currentPos[1] ||
-            lastCrosshairPos[2] !== currentPos[2]
-          ) {
-            lastCrosshairPos = [...currentPos]
-            sendToMatlab({
-              type: 'crosshairUpdate',
-              position: Array.from(currentPos) as [number, number, number],
-            })
-          }
-        }
-      }
-    }, 100) // Check every 100ms
-
-    return () => clearInterval(interval)
   }, [appProps])
+
+  useEffect(() => {
+    const nv = appProps.nvArray.value[0]
+    if (!nv) {
+      return
+    }
+    nv.onLocationChange = () => {
+      sendToMatlab({
+        type: 'crosshairUpdate',
+        position: Array.from(nv.scene.crosshairPos) as [number, number, number],
+      })
+    }
+  }, [appProps.nvArray.value])
 
   if (!isReady) {
     return <div>Initializing NiiVue...</div>
