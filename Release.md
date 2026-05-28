@@ -72,7 +72,10 @@ Stable versions ship as-is — whatever changesets computed. No re-encoding is n
 
 ### How versions are computed
 
-The workflow uses Changesets' `--snapshot` mode to compute "what would the next stable be if I merged the version-packages PR right now?", then re-encodes that base version for each target:
+The workflow asks Changesets for the pending release plan via `pnpm changeset status --output=changeset-status.json` — that file lists `{name, oldVersion, newVersion, type}` for every package that would be bumped if the Version Packages PR merged right now. The encoder reads that plan and rewrites each affected app's manifest to the per-target format:
+
+> **Why not `changeset version --snapshot`?** Changesets' snapshot mode discards the next-stable computation and always writes `0.0.0-<tag>-<datetime>` as the base (see [changesets docs](https://github.com/changesets/changesets/blob/main/docs/snapshot-releases.md)). Driving the pre-release encoder off that string yielded `0.1.<run>` for VS Code (the only `niivue` pre-release that ever shipped under the broken path was `0.1.46` from PR #107). The `status --output` flow recovers the real next-stable and is also non-mutating, so the changeset files survive for the eventual stable release.
+
 
 | Target | Format | Example (next stable = `2.10.0`, run #42) |
 | --- | --- | --- |

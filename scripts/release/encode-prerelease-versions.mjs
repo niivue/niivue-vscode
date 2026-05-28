@@ -2,25 +2,25 @@
 /**
  * scripts/release/encode-prerelease-versions.mjs
  *
- * Post-processor for `pnpm changeset version --snapshot beta`. For each
- * published app whose package.json was bumped by changesets (detected by the
- * "-beta-<id>" suffix changesets writes), strip the suffix to recover the
- * intended next-stable version, then re-encode it for its target's version
- * format using the CI run number as the unique build identifier.
+ * Reads the changeset release plan (`changeset-status.json`, produced by
+ * `pnpm changeset status --output=...` in the prerelease workflow) and, for
+ * each published app whose package was bumped, rewrites package.json (and
+ * pyproject.toml where relevant) with the per-target pre-release version
+ * derived from the plan's `newVersion`.
  *
- * Packages NOT bumped by changesets are skipped — re-encoding their current
- * version as `<stable>.dev<run>` would produce a PEP 440 release that sorts
- * BELOW the already-published stable, which pip would happily install
- * downgrade-style for users on `--pre`.
+ * Packages NOT in the release plan are skipped — re-encoding their current
+ * version would produce a release that ranks ambiguously (e.g. PyPI dev
+ * releases sort below the matching stable, so pip --pre would happily
+ * "downgrade" a user back to the dev cycle of an already-shipped stable).
  *
  * Conventions:
  *   - VS Code Marketplace requires bare `M.m.p`. Pre-releases live on an
- *     odd minor strictly greater than the next-stable minor:
+ *     odd minor strictly greater than the next-stable's minor:
  *       next-stable 2.10.0 → pre 2.11.<run>
  *       next-stable 2.9.0  → pre 2.11.<run>   (skip same-minor collision)
  *   - PyPI requires PEP 440. We use `.devN` (development release) so plain
  *     `pip install <pkg>` ignores it; only `pip install --pre` picks it up.
- *     Next-stable 0.3.0 → 0.3.0.dev<run>.
+ *     Next-stable 0.3.1 → 0.3.1.dev<run>.
  *   - package.json holds a semver-compatible mirror (`<base>-dev.<run>`) so
  *     pnpm/turbo/changesets keep parsing the manifest. The authoritative
  *     PyPI version is written to pyproject.toml.
@@ -46,10 +46,14 @@ if (!runNumber || !/^\d+$/.test(runNumber)) {
   process.exit(1)
 }
 
-const SNAPSHOT_RE = /-beta-/
-
-const readPkg = (relPath) =>
-  JSON.parse(readFileSync(path.join(repoRoot, relPath), 'utf8'))
+const planPath = path.join(repoRoot, 'changeset-status.json')
+const plan = JSON.parse(readFileSync(planPath, 'utf8'))
+if (!Array.isArray(plan.releases)) {
+  throw new Error(
+    `${planPath}: expected \`releases\` array (changesets ReleasePlan); got ${typeof plan.releases}`,
+  )
+}
+const releases = new Map(plan.releases.map((r) => [r.name, r]))
 
 const writePkgVersion = (relPath, newVersion) => {
   const abs = path.join(repoRoot, relPath)
@@ -58,12 +62,6 @@ const writePkgVersion = (relPath, newVersion) => {
   writeFileSync(abs, JSON.stringify(pkg, null, 2) + '\n')
   console.log(`  ${relPath}: ${newVersion}`)
 }
-
-// Did `changeset version --snapshot beta` actually bump this package?
-// changesets only bumps packages that have a changeset directly or transitively.
-const wasBumped = (relPath) => SNAPSHOT_RE.test(readPkg(relPath).version)
-
-const stripSnapshot = (version) => version.replace(/-beta-.*$/, '')
 
 // Next odd minor STRICTLY greater than the next-stable's minor.
 //   even minor n → n+1   (n=8 → 9)
@@ -105,36 +103,44 @@ const overridePyprojectVersion = (relPath, devVersion) => {
 }
 
 console.log(`Encoding pre-release versions (run #${runNumber}):`)
+if (releases.size === 0) {
+  console.log('  release plan is empty; nothing to encode')
+}
+
+const nextStable = (pkgName) => releases.get(pkgName)?.newVersion
 
 const targets = { vscode: false, jupyter: false, streamlit: false }
 
 // ── VS Code extension ───────────────────────────────────────────────────────
-if (wasBumped('apps/vscode/package.json')) {
-  const nextStable = stripSnapshot(readPkg('apps/vscode/package.json').version)
-  writePkgVersion('apps/vscode/package.json', toVscodePreRelease(nextStable))
+const vscodeNext = nextStable('niivue')
+if (vscodeNext) {
+  writePkgVersion('apps/vscode/package.json', toVscodePreRelease(vscodeNext))
   targets.vscode = true
 } else {
-  console.log('  apps/vscode: no changeset bump, skipping')
+  console.log('  apps/vscode: not in release plan, skipping')
 }
 
 // ── JupyterLab extension ────────────────────────────────────────────────────
-if (wasBumped('apps/jupyter/package.json')) {
-  const nextStable = stripSnapshot(readPkg('apps/jupyter/package.json').version)
-  writePkgVersion('apps/jupyter/package.json', toSemverDev(nextStable))
-  overridePyprojectVersion('apps/jupyter/pyproject.toml', toPep440Dev(nextStable))
+const jupyterNext = nextStable('@niivue/jupyter')
+if (jupyterNext) {
+  writePkgVersion('apps/jupyter/package.json', toSemverDev(jupyterNext))
+  overridePyprojectVersion('apps/jupyter/pyproject.toml', toPep440Dev(jupyterNext))
   targets.jupyter = true
 } else {
-  console.log('  apps/jupyter: no changeset bump, skipping')
+  console.log('  apps/jupyter: not in release plan, skipping')
 }
 
 // ── Streamlit component ─────────────────────────────────────────────────────
-if (wasBumped('apps/streamlit/package.json')) {
-  const nextStable = stripSnapshot(readPkg('apps/streamlit/package.json').version)
-  writePkgVersion('apps/streamlit/package.json', toSemverDev(nextStable))
-  overridePyprojectVersion('apps/streamlit/pyproject.toml', toPep440Dev(nextStable))
+const streamlitNext = nextStable('@niivue/streamlit')
+if (streamlitNext) {
+  writePkgVersion('apps/streamlit/package.json', toSemverDev(streamlitNext))
+  overridePyprojectVersion(
+    'apps/streamlit/pyproject.toml',
+    toPep440Dev(streamlitNext),
+  )
   targets.streamlit = true
 } else {
-  console.log('  apps/streamlit: no changeset bump, skipping')
+  console.log('  apps/streamlit: not in release plan, skipping')
 }
 
 writeFileSync(
