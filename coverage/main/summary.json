@@ -6,6 +6,24 @@
       "branches": 43,
       "functions": 44.3,
       "lines": 38.5
+    },
+    "counts": {
+      "statements": {
+        "covered": 744,
+        "total": 1931
+      },
+      "branches": {
+        "covered": 600,
+        "total": 1396
+      },
+      "functions": {
+        "covered": 266,
+        "total": 600
+      },
+      "lines": {
+        "covered": 703,
+        "total": 1824
+      }
     }
   },
   "pwa-glue": {
@@ -15,6 +33,24 @@
       "branches": 30.6,
       "functions": 52.9,
       "lines": 35.6
+    },
+    "counts": {
+      "statements": {
+        "covered": 16,
+        "total": 47
+      },
+      "branches": {
+        "covered": 11,
+        "total": 36
+      },
+      "functions": {
+        "covered": 9,
+        "total": 17
+      },
+      "lines": {
+        "covered": 16,
+        "total": 45
+      }
     }
   },
   "jupyter-glue": {
@@ -24,6 +60,24 @@
       "branches": 15.9,
       "functions": 14.6,
       "lines": 14.3
+    },
+    "counts": {
+      "statements": {
+        "covered": 32,
+        "total": 225
+      },
+      "branches": {
+        "covered": 20,
+        "total": 126
+      },
+      "functions": {
+        "covered": 7,
+        "total": 48
+      },
+      "lines": {
+        "covered": 32,
+        "total": 223
+      }
     }
   },
   "streamlit-glue": {
@@ -33,6 +87,24 @@
       "branches": 5.3,
       "functions": 18.5,
       "lines": 17.7
+    },
+    "counts": {
+      "statements": {
+        "covered": 32,
+        "total": 180
+      },
+      "branches": {
+        "covered": 8,
+        "total": 150
+      },
+      "functions": {
+        "covered": 5,
+        "total": 27
+      },
+      "lines": {
+        "covered": 31,
+        "total": 175
+      }
     }
   },
   "vscode-glue": {
@@ -42,6 +114,24 @@
       "branches": 21.4,
       "functions": 16.4,
       "lines": 26.8
+    },
+    "counts": {
+      "statements": {
+        "covered": 64,
+        "total": 240
+      },
+      "branches": {
+        "covered": 22,
+        "total": 103
+      },
+      "functions": {
+        "covered": 10,
+        "total": 61
+      },
+      "lines": {
+        "covered": 63,
+        "total": 235
+      }
     }
   },
   "_overall": {
@@ -51,6 +141,24 @@
       "branches": 36.5,
       "functions": 39.4,
       "lines": 33.8
+    },
+    "counts": {
+      "statements": {
+        "covered": 888,
+        "total": 2623
+      },
+      "branches": {
+        "covered": 661,
+        "total": 1811
+      },
+      "functions": {
+        "covered": 297,
+        "total": 753
+      },
+      "lines": {
+        "covered": 845,
+        "total": 2502
+      }
     }
   }
 }
