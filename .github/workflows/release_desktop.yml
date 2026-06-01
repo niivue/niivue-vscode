@@ -85,10 +85,27 @@ jobs:
 
       # Pre-release lane: overwrite the version in package.json,
       # tauri.conf.json and Cargo.toml so the bundle/installer metadata matches
-      # the computed beta version. No-op for the stable tag lane.
+      # the computed beta version. The stable tag lane derives its version from
+      # package.json in the next step instead.
       - name: Stamp pre-release version
         if: ${{ inputs.version }}
         run: node scripts/release/set-desktop-version.mjs "${{ inputs.version }}"
+
+      # Stable tag lane: changesets bumps only apps/desktop-tauri/package.json
+      # in the "Version Packages" PR; it never touches tauri.conf.json or
+      # Cargo.toml, which `tauri build` reads for the bundle/installer version.
+      # Derive the version from package.json and stamp all three so the built
+      # installer matches the @niivue/desktop@<version> tag this run was
+      # dispatched for. Skipped on the pre-release lane (handled above). Uses
+      # bash explicitly so the command substitution works on the Windows runner
+      # too (its default shell is pwsh).
+      - name: Stamp stable version from package.json
+        if: ${{ ! inputs.version }}
+        shell: bash
+        run: |
+          version=$(node -p "require('./apps/desktop-tauri/package.json').version")
+          echo "Stable lane: stamping desktop manifests with $version (from package.json)"
+          node scripts/release/set-desktop-version.mjs "$version"
 
       - name: Build Tauri app
         run: pnpm exec tauri build --target ${{ matrix.target }}

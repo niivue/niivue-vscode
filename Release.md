@@ -55,6 +55,8 @@ The Release Coordinator then:
 
    The per-app workflows also accept a matching tag push and `workflow_dispatch`, so a maintainer can manually trigger a re-release or hotfix without going through Release Coordinator.
 
+4. **The desktop app** (`release_desktop.yml`) is dispatched the same way when a `@niivue/desktop@<version>` tag is created, but instead of publishing to a registry it builds native installers with Tauri and attaches them to a GitHub Release created from the tag. One wrinkle: Tauri reads the bundle/installer version from `src-tauri/tauri.conf.json` (which overrides `Cargo.toml`), while changesets only bumps `apps/desktop-tauri/package.json` and never touches the Tauri manifests. So before `tauri build`, the stable lane re-stamps all three (`package.json`, `tauri.conf.json`, `Cargo.toml`) from `package.json`'s version via `scripts/release/set-desktop-version.mjs`, so the installer is labeled with the tagged version rather than whatever was last committed to `tauri.conf.json`. (The pre-release lane stamps the same three manifests, but from the explicit beta version `prerelease.yml` passes in via the `version` input; see [Pre-releases](#-pre-releases).)
+
 *(Note: The **PWA** is deployed to GitHub Pages directly from `main`, outside the tag workflow.)*
 
 ### Version format conventions
@@ -168,3 +170,4 @@ When a new app joins the monorepo (changesets discovers it automatically from th
    dispatch <app-dir> release_<app>.yml
    ```
 6. If the app is a Python app using setuptools (or any backend without dynamic versioning), add it to the `targets` array in `scripts/release/sync-pyproject-versions.mjs` so its `pyproject.toml` stays in sync with `package.json`.
+7. If the app's build reads its version from a manifest changesets does **not** bump (e.g. Tauri reads `src-tauri/tauri.conf.json` / `Cargo.toml`, not `package.json`), add a stamping step to `release_<app>.yml` for the **stable** lane: derive the version from `package.json` and rewrite the build manifests before building, mirroring `scripts/release/set-desktop-version.mjs`. Otherwise the stable build ships whatever version was last committed to that manifest rather than the tagged one. The pre-release lane already passes an explicit `version`, so only the stable lane (empty `version` input) needs the package.json-derived fallback.
