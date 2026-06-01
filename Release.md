@@ -8,7 +8,7 @@ There are **two release tracks**, each fully automated:
 
 | Track | Trigger | Channel |
 | --- | --- | --- |
-| **Pre-release** | Every push to `main` that carries pending changesets | VS Code Marketplace pre-release · PyPI (requires `--pre`) |
+| **Pre-release** | Daily at 03:00 UTC, if `main` carries pending changesets (max one per day) | VS Code Marketplace pre-release · PyPI (requires `--pre`) · GitHub Releases (desktop installers) |
 | **Stable** | Merging the auto-generated "Version Packages" PR | VS Code Marketplace stable · PyPI default |
 
 You do **not** need to enter or exit a "pre-release mode" — both tracks coexist permanently.
@@ -68,7 +68,9 @@ Stable versions ship as-is — whatever changesets computed. No re-encoding is n
 
 ## 🧪 Pre-releases
 
-`.github/workflows/prerelease.yml` runs on every push to `main` and, if there are pending changeset files, publishes a pre-release across all three published apps. **No manual flag, no mode switch, no remembering to merge anything.**
+`.github/workflows/prerelease.yml` runs on a daily schedule (03:00 UTC) and, if there are pending changeset files, publishes a pre-release across all four published apps (VS Code, JupyterLab, Streamlit, and the Tauri desktop app). Running on a timer rather than on every push caps pre-releases at **one per day**, regardless of how many times `main` is pushed (frequent dependabot merges previously produced a beta each). **No manual flag, no mode switch, no remembering to merge anything** — and you can trigger the workflow manually (`workflow_dispatch`) to force an off-schedule beta.
+
+The desktop app is the exception to the "one workflow does everything" rule: because its installers need a per-OS build matrix and Rust toolchains, `prerelease.yml` delegates to the reusable `release_desktop.yml` (`workflow_call`) when a changeset bumped `@niivue/desktop`. That job stamps the computed beta version into the desktop manifests, builds the Linux/macOS/Windows installers, and attaches them to the same GitHub pre-release. The bundles land a few minutes after the rest, once the cross-platform build finishes.
 
 ### How versions are computed
 
@@ -82,6 +84,9 @@ The workflow asks Changesets for the pending release plan via `pnpm changeset st
 | VS Code Marketplace | `<major>.<next-odd-minor>.<run>` | `2.11.42` |
 | Open VSX | same as VS Code | `2.11.42` |
 | PyPI (jupyter / streamlit) | `<next-stable>.dev<run>` (PEP 440) | `0.3.0.dev42` |
+| Desktop (Tauri) | `<major>.<minor>.<run>` (plain numeric) | `0.2.42` (next stable `0.2.0`) |
+
+Desktop uses a plain numeric version rather than a `-beta.<run>` suffix because the Windows MSI and macOS bundlers reject SemVer pre-release identifiers. The beta is marked solely by living on the GitHub pre-release; the installer metadata stays a valid `M.m.p`.
 
 The odd-minor convention for VS Code follows Microsoft's recommended pattern: pre-release minors are always one greater than the next stable's minor (and odd). Pre-releases share the major but are unambiguously distinct from any stable.
 
@@ -103,12 +108,13 @@ pip install --pre jupyterlab_niivue
 pip install --pre niivue-streamlit
 ```
 
+For the **desktop app**, download the installer for your platform (`.dmg`, `.msi`/`.exe`, `.deb`/`.AppImage`) from the latest pre-release on the [Releases page](https://github.com/niivue/niivue-vscode/releases).
+
 ### When no pre-release fires
 
 The workflow exits without publishing when any of:
-- The push only touched doc/config files filtered by `paths-ignore` in `prerelease.yml` (e.g. `**.md`, `LICENSE`, `.devcontainer/**`).
-- There are no pending `.changeset/*.md` files (e.g. right after the Version Packages PR was merged).
-- For a given app: no changeset directly or transitively bumped it. Each app is published independently — a PWA-only changeset will not produce a new VS Code / Jupyter / Streamlit pre-release.
+- There are no pending `.changeset/*.md` files at the scheduled run (e.g. right after the Version Packages PR was merged, or a day of doc-only commits that added no changeset).
+- For a given app: no changeset directly or transitively bumped it. Each app is published independently — a PWA-only changeset will not produce a new VS Code / Jupyter / Streamlit / desktop pre-release. The desktop installers only build when `@niivue/desktop` itself was bumped.
 
 ### Cost model
 
@@ -119,6 +125,8 @@ Each pre-release burns one version slot on PyPI per affected package (PyPI does 
 3. Appending `--repository testpypi` to both `python -m twine upload dist/*` commands.
 
 Users would then need `--index-url https://test.pypi.org/simple/` when installing pre-releases.
+
+Desktop pre-releases burn no registry slots (the installers are just GitHub release assets), but each one runs a full four-platform Tauri build, so they only run on days a `@niivue/desktop` changeset is pending — not on every scheduled run.
 
 ---
 
@@ -154,7 +162,7 @@ When a new app joins the monorepo (changesets discovers it automatically from th
 1. Mark `apps/<new>/package.json` as `"private": true` if it ships to a non-npm registry, so `changeset publish` skips npm but still tags it (thanks to `privatePackages.tag: true`).
 2. Add a new `.github/workflows/release_<app>.yml` triggered by `<package-name>@*` tag push and by `workflow_dispatch`. Be careful to use the package's *npm name*, not its directory name — that's what changesets puts in the tag.
 3. Extend `scripts/release/encode-prerelease-versions.mjs` with the target's version-encoding rule, and add a corresponding entry to the emitted `prerelease-targets.json`.
-4. Add publish steps to `.github/workflows/prerelease.yml` (pre-release lane), gated on `steps.encode.outputs.<app> == 'true'`.
+4. Add publish steps to `.github/workflows/prerelease.yml` (pre-release lane), gated on `steps.encode.outputs.<app> == 'true'`. If the app needs a multi-platform build (like the Tauri desktop app), follow the desktop pattern instead: expose the version as a `prerelease` job output, make `release_<app>.yml` reusable via `workflow_call`, and add a `needs: prerelease` job in `prerelease.yml` that calls it and attaches the artifacts to the `prerelease-<sha>` release.
 5. Add a dispatch line to `release-coordinator.yml`'s "Dispatch per-app release workflows" step so the stable lane fires when the version bumps:
    ```bash
    dispatch <app-dir> release_<app>.yml
