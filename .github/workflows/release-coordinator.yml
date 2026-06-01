@@ -93,4 +93,4 @@ jobs:
           dispatch 'niivue'             release_vscode.yml
           dispatch '@niivue/jupyter'    release_jupyterlab.yml
           dispatch '@niivue/streamlit'  release_streamlit.yml
-          dispatch '@niivue/desktop'    release_desktop.yml
+          dispatch '@niivue/tauri'      release_desktop.yml

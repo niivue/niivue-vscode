@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    niivue_desktop_lib::run()
+    niivue_tauri_lib::run()
 }

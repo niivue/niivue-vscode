@@ -1,4 +1,4 @@
-# NiiVue Desktop
+# NiiVue Tauri
 
 A standalone desktop application for viewing medical images (NIfTI, DICOM, and more), built with [Tauri](https://tauri.app/) and the shared `@niivue/react` component library.
 
@@ -26,13 +26,13 @@ A standalone desktop application for viewing medical images (NIfTI, DICOM, and m
 pnpm install
 
 # Run in development mode (Vite dev server + Tauri window)
-pnpm --filter @niivue/desktop dev
+pnpm --filter @niivue/tauri dev
 ```
 
 ## Building
 
 ```bash
-pnpm --filter @niivue/desktop build
+pnpm --filter @niivue/tauri build
 # Output: src-tauri/target/release/bundle/
 ```
 
@@ -40,7 +40,7 @@ pnpm --filter @niivue/desktop build
 
 ```bash
 # TypeScript unit tests
-pnpm --filter @niivue/desktop test
+pnpm --filter @niivue/tauri test
 
 # Rust unit tests
 cd apps/desktop-tauri/src-tauri && cargo test
@@ -83,7 +83,7 @@ apps/desktop-tauri/
 
 ## Known limitations / planned work
 
-- **OS file association / CLI args** are not yet wired. Double-clicking a `.nii` file in Finder/Explorer or running `niivue-desktop /path/to/scan.nii` does not currently open the file in this app. Needs `tauri-plugin-single-instance` + `tauri-plugin-cli` integration.
+- **OS file association / CLI args** are not yet wired. Double-clicking a `.nii` file in Finder/Explorer or running `niivue-tauri /path/to/scan.nii` does not currently open the file in this app. Needs `tauri-plugin-single-instance` + `tauri-plugin-cli` integration.
 - **Recent files** are persisted to disk but there is no UI surface to re-open them yet. The plumbing is in place; the home-screen list is a follow-up.
 
 Both items are tracked as follow-up issues.

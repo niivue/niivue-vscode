@@ -169,7 +169,7 @@ if (streamlitNext) {
 // prerelease.yml) with its own checkout, so we only COMPUTE the version here
 // and pass it through prerelease-targets.json; that workflow stamps the
 // manifests via set-desktop-version.mjs before building.
-const desktopNext = nextStable('@niivue/desktop')
+const desktopNext = nextStable('@niivue/tauri')
 if (desktopNext) {
   targets.desktop = true
   targets.desktopVersion = toDesktopPreRelease(desktopNext)

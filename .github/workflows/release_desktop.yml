@@ -3,7 +3,7 @@ name: Release Desktop (Tauri)
 on:
   push:
     tags:
-      - '@niivue/desktop@*'
+      - '@niivue/tauri@*'
   workflow_dispatch:
   # Reusable entry point for the pre-release lane (prerelease.yml). When
   # `version` is set, the build stamps it into the manifests; when
@@ -95,7 +95,7 @@ jobs:
       # in the "Version Packages" PR; it never touches tauri.conf.json or
       # Cargo.toml, which `tauri build` reads for the bundle/installer version.
       # Derive the version from package.json and stamp all three so the built
-      # installer matches the @niivue/desktop@<version> tag this run was
+      # installer matches the @niivue/tauri@<version> tag this run was
       # dispatched for. Skipped on the pre-release lane (handled above). Uses
       # bash explicitly so the command substitution works on the Windows runner
       # too (its default shell is pwsh).
@@ -156,7 +156,7 @@ jobs:
       # Pre-release lane: attach the installers to the rolling pre-release
       # created by prerelease.yml (do NOT recreate it, so the release body
       # listing the other apps survives). Bundle filenames contain spaces
-      # ("NiiVue Desktop_..."), so collect them null-delimited. Only the
+      # ("NiiVue Tauri_..."), so collect them null-delimited. Only the
       # distributable installers are uploaded — the raw macOS `.app` bundle
       # directory is skipped.
       - name: Attach bundles to existing pre-release

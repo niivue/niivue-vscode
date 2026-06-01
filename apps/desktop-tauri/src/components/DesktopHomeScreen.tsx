@@ -60,7 +60,7 @@ export const DesktopHomeScreen = () => {
   return (
     <>
       <h2 className="text-2xl sm:text-3xl font-bold text-gray-200 p-2 px-4">
-        NiiVue Desktop
+        NiiVue Tauri
       </h2>
       <p className="w-full sm:w-96 mb-4 text-m font-normal text-gray-300 px-4">
         Open medical images from your local filesystem. Drag and drop files
