@@ -1,31 +1,26 @@
 name: Pre-release
 
-# Auto-publish pre-releases on every push to main that carries pending
-# changesets. Versions are derived from the same source of truth as the next
-# stable (the queued changesets), so beta numbers always reflect what the
-# next stable will be. Scheme:
+# Auto-publish pre-releases on a daily schedule (03:00 UTC) whenever main has
+# pending changesets. Running on a timer instead of on every push caps beta
+# releases at a maximum of one per day, no matter how many times main is
+# pushed (frequent dependabot merges previously produced a beta each).
+# Versions are derived from the same source of truth as the next stable (the
+# queued changesets), so beta numbers always reflect what the next stable
+# will be. Scheme:
 #   - VS Code: <major>.<next-odd-minor>.<run>  (e.g. stable 2.10.0 → pre 2.11.<run>)
 #   - PyPI:    <next-stable>.dev<run>          (PEP 440 development release)
 #
-# Doc-only commits are filtered at the trigger level (paths-ignore), and the
-# job also skips publish for any individual app that changesets did not bump.
-# Stable releases stay on the Release Coordinator path (merge the
-# "Version Packages" PR).
+# The job no-ops when there are no pending changesets (e.g. after a day of
+# doc-only commits), and also skips publish for any individual app that
+# changesets did not bump. Use the workflow_dispatch trigger to force an
+# off-schedule beta. Stable releases stay on the Release Coordinator path
+# (merge the "Version Packages" PR).
 
 on:
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - '**.md'
-      - 'LICENSE'
-      - '.gitignore'
-      - '.prettierrc.json'
-      - '.prettierignore'
-      - '.codespellrc'
-      - '.eslintignore'
-      - '.devcontainer/**'
-      - '.vscode/**'
+  schedule:
+    # Daily at 03:00 UTC. Caps pre-releases at one per day; GitHub runs
+    # scheduled workflows against the latest commit on the default branch.
+    - cron: '0 3 * * *'
   workflow_dispatch:
 
 permissions:
@@ -35,6 +30,11 @@ jobs:
   prerelease:
     name: Build and publish pre-releases
     runs-on: ubuntu-latest
+    # Exposed for the desktop job below: whether @niivue/desktop was bumped and
+    # the beta version to stamp into its cross-platform build.
+    outputs:
+      desktop: ${{ steps.encode.outputs.desktop }}
+      desktop_version: ${{ steps.encode.outputs.desktop_version }}
 
     steps:
       - uses: actions/checkout@v6
@@ -111,6 +111,8 @@ jobs:
           echo "vscode=$(node -p "require('./prerelease-targets.json').vscode")"       >> "$GITHUB_OUTPUT"
           echo "jupyter=$(node -p "require('./prerelease-targets.json').jupyter")"     >> "$GITHUB_OUTPUT"
           echo "streamlit=$(node -p "require('./prerelease-targets.json').streamlit")" >> "$GITHUB_OUTPUT"
+          echo "desktop=$(node -p "require('./prerelease-targets.json').desktop")"     >> "$GITHUB_OUTPUT"
+          echo "desktop_version=$(node -p "require('./prerelease-targets.json').desktopVersion || ''")" >> "$GITHUB_OUTPUT"
 
       # ── Build everything ───────────────────────────────────────────────────
       - name: Build all apps
@@ -172,7 +174,8 @@ jobs:
         if: steps.detect.outputs.has_changesets == 'true' &&
             (steps.encode.outputs.vscode == 'true' ||
              steps.encode.outputs.jupyter == 'true' ||
-             steps.encode.outputs.streamlit == 'true')
+             steps.encode.outputs.streamlit == 'true' ||
+             steps.encode.outputs.desktop == 'true')
         id: notes
         run: |
           {
@@ -191,6 +194,9 @@ jobs:
               v=$(node -p "require('./apps/streamlit/package.json').version")
               echo "- **Streamlit**: \`$v\` — \`pip install --pre niivue-streamlit\`"
             fi
+            if [ "${{ steps.encode.outputs.desktop }}" = "true" ]; then
+              echo "- **Desktop (Tauri)**: \`${{ steps.encode.outputs.desktop_version }}\` — download the installer for your platform from the assets below (built separately; appears a few minutes after this release is published)"
+            fi
             echo 'EOF'
           } >> "$GITHUB_OUTPUT"
 
@@ -198,7 +204,8 @@ jobs:
         if: steps.detect.outputs.has_changesets == 'true' &&
             (steps.encode.outputs.vscode == 'true' ||
              steps.encode.outputs.jupyter == 'true' ||
-             steps.encode.outputs.streamlit == 'true')
+             steps.encode.outputs.streamlit == 'true' ||
+             steps.encode.outputs.desktop == 'true')
         uses: softprops/action-gh-release@v3
         with:
           tag_name: prerelease-${{ github.sha }}
@@ -211,3 +218,22 @@ jobs:
             apps/vscode/*.vsix
             apps/jupyter/dist/*
             apps/streamlit/dist/*
+
+  # ── Desktop (Tauri) ────────────────────────────────────────────────────────
+  # The cross-platform Tauri installers (Linux/macOS/Windows) are built by the
+  # reusable release_desktop.yml. It runs only when a changeset bumped
+  # @niivue/desktop, stamps the computed beta version into the manifests, and
+  # attaches the installers to the pre-release created above. Kept as a separate
+  # job because the desktop build needs a platform matrix and Rust toolchains
+  # the single-runner publish job above cannot provide.
+  desktop:
+    name: Build and publish desktop pre-release
+    needs: prerelease
+    if: needs.prerelease.outputs.desktop == 'true'
+    permissions:
+      contents: write
+    uses: ./.github/workflows/release_desktop.yml
+    with:
+      version: ${{ needs.prerelease.outputs.desktop_version }}
+      release_tag: prerelease-${{ github.sha }}
+    secrets: inherit

@@ -24,10 +24,18 @@
  *   - package.json holds a semver-compatible mirror (`<base>-dev.<run>`) so
  *     pnpm/turbo/changesets keep parsing the manifest. The authoritative
  *     PyPI version is written to pyproject.toml.
+ *   - Desktop (Tauri): plain numeric `<major>.<minor>.<run>`. Windows MSI and
+ *     macOS bundlers reject SemVer pre-release identifiers, so we mirror the
+ *     VS Code style (bare numeric, run number as the distinguishing part).
  *
  * Outputs:
- *   prerelease-targets.json — { vscode, jupyter, streamlit } booleans, used
- *     by the workflow to gate per-target publish steps.
+ *   prerelease-targets.json — { vscode, jupyter, streamlit, desktop } booleans
+ *     plus desktopVersion (string), used by the workflow to gate per-target
+ *     publish steps. The desktop bundle is built in a separate workflow
+ *     (release_desktop.yml via workflow_call) with its own checkout, so its
+ *     version is only COMPUTED here and passed through — this script does not
+ *     rewrite the desktop manifests (that workflow stamps them itself via
+ *     set-desktop-version.mjs).
  *
  * Usage:
  *   node scripts/release/encode-prerelease-versions.mjs <run_number>
@@ -75,6 +83,13 @@ const toVscodePreRelease = (nextStable) => {
 const toPep440Dev = (nextStable) => `${nextStable}.dev${runNumber}`
 const toSemverDev = (nextStable) => `${nextStable}-dev.${runNumber}`
 
+// Desktop (Tauri) bundles use a plain numeric M.m.p version (see header):
+// keep the next-stable major.minor and use the run number as the patch.
+const toDesktopPreRelease = (nextStable) => {
+  const [major, minor] = nextStable.split('.').map(Number)
+  return `${major}.${minor}.${runNumber}`
+}
+
 // Override pyproject.toml's version statically. For jupyter, this also
 // removes `version` from `[project].dynamic` so hatch-nodejs-version does
 // not try to derive it from the semver-formatted package.json.
@@ -109,7 +124,13 @@ if (releases.size === 0) {
 
 const nextStable = (pkgName) => releases.get(pkgName)?.newVersion
 
-const targets = { vscode: false, jupyter: false, streamlit: false }
+const targets = {
+  vscode: false,
+  jupyter: false,
+  streamlit: false,
+  desktop: false,
+  desktopVersion: '',
+}
 
 // ── VS Code extension ───────────────────────────────────────────────────────
 const vscodeNext = nextStable('niivue')
@@ -141,6 +162,20 @@ if (streamlitNext) {
   targets.streamlit = true
 } else {
   console.log('  apps/streamlit: not in release plan, skipping')
+}
+
+// ── Desktop (Tauri) ───────────────────────────────────────────────────────
+// Built in a separate workflow (release_desktop.yml, called from
+// prerelease.yml) with its own checkout, so we only COMPUTE the version here
+// and pass it through prerelease-targets.json; that workflow stamps the
+// manifests via set-desktop-version.mjs before building.
+const desktopNext = nextStable('@niivue/desktop')
+if (desktopNext) {
+  targets.desktop = true
+  targets.desktopVersion = toDesktopPreRelease(desktopNext)
+  console.log(`  apps/desktop-tauri: ${targets.desktopVersion} (built in release_desktop.yml)`)
+} else {
+  console.log('  apps/desktop-tauri: not in release plan, skipping')
 }
 
 writeFileSync(

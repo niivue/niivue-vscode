@@ -75,4 +75,4 @@ High-level overview:
   - **Jupyter & Streamlit**: PyPI
   - **PWA**: GitHub Pages (deployed directly from `main`, no tag involved)
   - **Desktop (Tauri)**: Cross-platform binaries published to GitHub Releases (Linux .deb/.AppImage, macOS .dmg, Windows .msi/.exe)
-- Every push to `main` with pending changesets also publishes a per-commit pre-release (Marketplace pre-release channel / PyPI `--pre`).
+- A daily scheduled job (03:00 UTC) publishes a pre-release when `main` has pending changesets — capped at one per day (Marketplace pre-release channel / PyPI `--pre` / desktop installers on GitHub Releases).
