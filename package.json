@@ -58,7 +58,7 @@
     "@types/node": "^25.8.0",
     "@typescript-eslint/eslint-plugin": "^8.59.3",
     "@typescript-eslint/parser": "^8.59.3",
-    "@vitejs/plugin-legacy": "^7.2.1",
+    "@vitejs/plugin-legacy": "^8.0.2",
     "concurrently": "^9.2.1",
     "eslint": "^10.4.0",
     "eslint-config-prettier": "^10.1.8",
@@ -70,8 +70,8 @@
     "turbo": "^2.9.14",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.59.3",
-    "vite": "^7.3.2",
-    "vite-plugin-dts": "^4.5.4"
+    "vite": "^8.0.16",
+    "vite-plugin-dts": "^5.0.2"
   },
   "engines": {
     "node": ">=18.0.0",
