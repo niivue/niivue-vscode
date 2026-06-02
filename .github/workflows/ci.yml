@@ -27,6 +27,7 @@ jobs:
       vscode: ${{ steps.filter.outputs.vscode }}
       streamlit: ${{ steps.filter.outputs.streamlit }}
       desktop: ${{ steps.filter.outputs.desktop }}
+      matlab: ${{ steps.filter.outputs.matlab }}
     steps:
       - uses: actions/checkout@v6
       - uses: dorny/paths-filter@v4
@@ -50,6 +51,8 @@ jobs:
             desktop:
               - 'apps/desktop-tauri/**'
               - 'packages/**'
+            matlab:
+              - 'packages/niivue-matlab/**'
 
   lint-and-typecheck:
     runs-on: ubuntu-latest
@@ -604,3 +607,61 @@ jobs:
           name: coverage-publish
           path: coverage/publish/
           retention-days: 7
+
+  test-matlab:
+    needs: [changes, build]
+    if: needs.changes.outputs.matlab == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        matlab-version: ['R2021a', 'R2026a']
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Restore build artifacts
+        uses: actions/cache@v5
+        with:
+          path: |
+            apps/*/dist
+            apps/*/build
+            apps/*/lib
+            packages/*/dist
+          key: build-artifacts-${{ github.sha }}
+
+      - name: Setup MATLAB
+        uses: matlab-actions/setup-matlab@v2
+        with:
+          release: ${{ matrix.matlab-version }}
+
+      - name: Run MATLAB tests
+        uses: matlab-actions/run-command@v2
+        with:
+          command: |
+            cd('packages/niivue-matlab/matlab/tests');
+            try
+              results = runTests();
+            catch e
+              disp(getReport(e));
+              exit(1);
+            end
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: matlab-test-results
+          path: test-results/
+          retention-days: 30
