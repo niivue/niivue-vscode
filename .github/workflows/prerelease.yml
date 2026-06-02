@@ -30,7 +30,7 @@ jobs:
   prerelease:
     name: Build and publish pre-releases
     runs-on: ubuntu-latest
-    # Exposed for the desktop job below: whether @niivue/desktop was bumped and
+    # Exposed for the desktop job below: whether @niivue/tauri was bumped and
     # the beta version to stamp into its cross-platform build.
     outputs:
       desktop: ${{ steps.encode.outputs.desktop }}
@@ -222,7 +222,7 @@ jobs:
   # ── Desktop (Tauri) ────────────────────────────────────────────────────────
   # The cross-platform Tauri installers (Linux/macOS/Windows) are built by the
   # reusable release_desktop.yml. It runs only when a changeset bumped
-  # @niivue/desktop, stamps the computed beta version into the manifests, and
+  # @niivue/tauri, stamps the computed beta version into the manifests, and
   # attaches the installers to the pre-release created above. Kept as a separate
   # job because the desktop build needs a platform matrix and Rust toolchains
   # the single-runner publish job above cannot provide.

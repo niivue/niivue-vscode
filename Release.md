@@ -55,7 +55,7 @@ The Release Coordinator then:
 
    The per-app workflows also accept a matching tag push and `workflow_dispatch`, so a maintainer can manually trigger a re-release or hotfix without going through Release Coordinator.
 
-4. **The desktop app** (`release_desktop.yml`) is dispatched the same way when a `@niivue/desktop@<version>` tag is created, but instead of publishing to a registry it builds native installers with Tauri and attaches them to a GitHub Release created from the tag. One wrinkle: Tauri reads the bundle/installer version from `src-tauri/tauri.conf.json` (which overrides `Cargo.toml`), while changesets only bumps `apps/desktop-tauri/package.json` and never touches the Tauri manifests. So before `tauri build`, the stable lane re-stamps all three (`package.json`, `tauri.conf.json`, `Cargo.toml`) from `package.json`'s version via `scripts/release/set-desktop-version.mjs`, so the installer is labeled with the tagged version rather than whatever was last committed to `tauri.conf.json`. (The pre-release lane stamps the same three manifests, but from the explicit beta version `prerelease.yml` passes in via the `version` input; see [Pre-releases](#-pre-releases).)
+4. **The desktop app** (`release_desktop.yml`) is dispatched the same way when a `@niivue/tauri@<version>` tag is created, but instead of publishing to a registry it builds native installers with Tauri and attaches them to a GitHub Release created from the tag. One wrinkle: Tauri reads the bundle/installer version from `src-tauri/tauri.conf.json` (which overrides `Cargo.toml`), while changesets only bumps `apps/desktop-tauri/package.json` and never touches the Tauri manifests. So before `tauri build`, the stable lane re-stamps all three (`package.json`, `tauri.conf.json`, `Cargo.toml`) from `package.json`'s version via `scripts/release/set-desktop-version.mjs`, so the installer is labeled with the tagged version rather than whatever was last committed to `tauri.conf.json`. (The pre-release lane stamps the same three manifests, but from the explicit beta version `prerelease.yml` passes in via the `version` input; see [Pre-releases](#-pre-releases).)
 
 *(Note: The **PWA** is deployed to GitHub Pages directly from `main`, outside the tag workflow.)*
 
@@ -72,7 +72,7 @@ Stable versions ship as-is — whatever changesets computed. No re-encoding is n
 
 `.github/workflows/prerelease.yml` runs on a daily schedule (03:00 UTC) and, if there are pending changeset files, publishes a pre-release across all four published apps (VS Code, JupyterLab, Streamlit, and the Tauri desktop app). Running on a timer rather than on every push caps pre-releases at **one per day**, regardless of how many times `main` is pushed (frequent dependabot merges previously produced a beta each). **No manual flag, no mode switch, no remembering to merge anything** — and you can trigger the workflow manually (`workflow_dispatch`) to force an off-schedule beta.
 
-The desktop app is the exception to the "one workflow does everything" rule: because its installers need a per-OS build matrix and Rust toolchains, `prerelease.yml` delegates to the reusable `release_desktop.yml` (`workflow_call`) when a changeset bumped `@niivue/desktop`. That job stamps the computed beta version into the desktop manifests, builds the Linux/macOS/Windows installers, and attaches them to the same GitHub pre-release. The bundles land a few minutes after the rest, once the cross-platform build finishes.
+The desktop app is the exception to the "one workflow does everything" rule: because its installers need a per-OS build matrix and Rust toolchains, `prerelease.yml` delegates to the reusable `release_desktop.yml` (`workflow_call`) when a changeset bumped `@niivue/tauri`. That job stamps the computed beta version into the desktop manifests, builds the Linux/macOS/Windows installers, and attaches them to the same GitHub pre-release. The bundles land a few minutes after the rest, once the cross-platform build finishes.
 
 ### How versions are computed
 
@@ -116,7 +116,7 @@ For the **desktop app**, download the installer for your platform (`.dmg`, `.msi
 
 The workflow exits without publishing when any of:
 - There are no pending `.changeset/*.md` files at the scheduled run (e.g. right after the Version Packages PR was merged, or a day of doc-only commits that added no changeset).
-- For a given app: no changeset directly or transitively bumped it. Each app is published independently — a PWA-only changeset will not produce a new VS Code / Jupyter / Streamlit / desktop pre-release. The desktop installers only build when `@niivue/desktop` itself was bumped.
+- For a given app: no changeset directly or transitively bumped it. Each app is published independently — a PWA-only changeset will not produce a new VS Code / Jupyter / Streamlit / desktop pre-release. The desktop installers only build when `@niivue/tauri` itself was bumped.
 
 ### Cost model
 
@@ -128,7 +128,7 @@ Each pre-release burns one version slot on PyPI per affected package (PyPI does 
 
 Users would then need `--index-url https://test.pypi.org/simple/` when installing pre-releases.
 
-Desktop pre-releases burn no registry slots (the installers are just GitHub release assets), but each one runs a full four-platform Tauri build, so they only run on days a `@niivue/desktop` changeset is pending — not on every scheduled run.
+Desktop pre-releases burn no registry slots (the installers are just GitHub release assets), but each one runs a full four-platform Tauri build, so they only run on days a `@niivue/tauri` changeset is pending — not on every scheduled run.
 
 ---
 

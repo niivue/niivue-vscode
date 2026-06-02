@@ -1,6 +1,6 @@
 {
   "identifier": "default",
-  "description": "Default capability for NiiVue Desktop",
+  "description": "Default capability for NiiVue Tauri",
   "windows": ["main"],
   "permissions": [
     "core:default",

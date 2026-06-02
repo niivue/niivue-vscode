@@ -1,14 +1,14 @@
 [package]
-name = "niivue-desktop"
+name = "niivue-tauri"
 version = "0.1.0"
-description = "NiiVue Desktop - Medical image viewer"
+description = "NiiVue Tauri - Medical image viewer"
 authors = ["Korbinian Eckstein <korbinian90@gmail.com>"]
 license = "BSD-2-Clause"
 repository = "https://github.com/niivue/niivue-vscode"
 edition = "2021"
 
 [lib]
-name = "niivue_desktop_lib"
+name = "niivue_tauri_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

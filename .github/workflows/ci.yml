@@ -361,7 +361,7 @@ jobs:
           key: build-artifacts-${{ github.sha }}
 
       - name: Run Desktop vitest coverage
-        run: pnpm --filter=@niivue/desktop test:coverage
+        run: pnpm --filter=@niivue/tauri test:coverage
 
       - name: Upload Desktop vitest coverage artifacts
         uses: actions/upload-artifact@v7

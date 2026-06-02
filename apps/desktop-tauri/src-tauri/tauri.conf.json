@@ -1,7 +1,7 @@
 {
-  "productName": "NiiVue Desktop",
+  "productName": "NiiVue Tauri",
   "version": "0.1.0",
-  "identifier": "org.niivue.desktop",
+  "identifier": "org.niivue.tauri",
   "build": {
     "frontendDist": "../build",
     "devUrl": "http://localhost:4001",
@@ -11,7 +11,7 @@
   "app": {
     "windows": [
       {
-        "title": "NiiVue Desktop",
+        "title": "NiiVue Tauri",
         "width": 1280,
         "height": 800,
         "minWidth": 800,
@@ -39,7 +39,7 @@
     ],
     "category": "Medical",
     "shortDescription": "Medical image viewer for NIfTI and DICOM files",
-    "longDescription": "NiiVue Desktop is a high-performance medical image viewer built with Tauri and WebGL2. It supports NIfTI, DICOM, and many other neuroimaging formats with direct filesystem access for fast loading of large datasets.",
+    "longDescription": "NiiVue Tauri is a high-performance medical image viewer built with Tauri and WebGL2. It supports NIfTI, DICOM, and many other neuroimaging formats with direct filesystem access for fast loading of large datasets.",
     "linux": {
       "deb": {
         "depends": ["libwebkit2gtk-4.1-0", "libgtk-3-0"]

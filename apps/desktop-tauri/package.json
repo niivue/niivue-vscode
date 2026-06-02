@@ -1,9 +1,9 @@
 {
-  "name": "@niivue/desktop",
+  "name": "@niivue/tauri",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "NiiVue Desktop - Tauri-based standalone medical image viewer",
+  "description": "NiiVue Tauri - standalone medical image viewer built with Tauri",
   "license": "BSD-2-Clause",
   "author": {
     "name": "Korbinian Eckstein",
