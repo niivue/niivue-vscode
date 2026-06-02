@@ -1,5 +1,6 @@
-@import 'tailwindcss';
-@config '../tailwind.config.js';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 * {
   margin: 0;
@@ -7,11 +8,17 @@
   box-sizing: border-box;
 }
 
+/* Force a consistent dark theme regardless of CEF / browser default UA
+ * styles. The niivue-react Menu uses hardcoded `bg-gray-900` only on the
+ * menu items themselves - everything around them inherits from `body`. */
 html,
 body {
   width: 100%;
   height: 100%;
   overflow: hidden;
+  background: #111827; /* tailwind gray-900 */
+  color: #ffffff;
+  color-scheme: dark;
 }
 
 #app {

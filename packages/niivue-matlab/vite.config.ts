@@ -69,13 +69,10 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
-      // Alias @niivue/react to its source so the matlab build does not
-      // depend on the niivue-react package being pre-built. Same pattern
-      // as apps/pwa/vite.config.ts. Without this, turbo's parallel
-      // scheduler can dispatch matlab's build before niivue-react's
-      // `dist/index.js` is on disk, and vite's commonjs--resolver fails
-      // with "Failed to resolve entry for package '@niivue/react'".
-      '@niivue/react': resolve(__dirname, '../niivue-react/src'),
+      // EXPERIMENT: source alias removed so matlab consumes niivue-react's
+      // pre-built dist (which has its v4 CSS already compiled and extracted),
+      // avoiding the v3-vs-v4 PostCSS conflict in this matlab Tailwind-v3
+      // diagnostic build. Restore the source alias before merging.
       // Stub @niivue/dcm2niix so vite's static analysis never sees the
       // `new Worker(new URL('./worker.js', import.meta.url))` call in the
       // real package and therefore does not emit a sibling worker chunk
