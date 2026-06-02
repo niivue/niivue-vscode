@@ -87,8 +87,10 @@ export default defineConfig({
   build: {
     outDir: 'build',
     sourcemap: true,
-    // Tauri uses Chromium on Windows/Linux and WebKit on macOS
-    target: process.env.TAURI_PLATFORM === 'windows' ? 'chrome105' : 'safari14',
+    // Tauri uses Chromium on Windows/Linux and WebKit on macOS.
+    // safari15 is the floor: Vite 8's worker bundler (esbuild) cannot lower
+    // the inlined dcm2niix worker to safari14, and macOS 12+ ships Safari 15+.
+    target: process.env.TAURI_PLATFORM === 'windows' ? 'chrome105' : 'safari15',
     // Don't minify for debug builds
     minify: !process.env.TAURI_DEBUG ? 'esbuild' : false,
     chunkSizeWarningLimit: 1000,
@@ -97,8 +99,11 @@ export default defineConfig({
         entryFileNames: 'assets/[name]-[hash].js',
         chunkFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash].[ext]',
-        manualChunks: {
-          vendor: ['preact', '@preact/signals'],
+        // Rolldown (Vite 8) requires manualChunks to be a function, not an object
+        manualChunks: (id) => {
+          if (id.includes('/preact/') || id.includes('/@preact/signals')) {
+            return 'vendor'
+          }
         },
       },
       onwarn: (warning, warn) => {
