@@ -11,10 +11,13 @@ name: Pre-release
 #   - PyPI:    <next-stable>.dev<run>          (PEP 440 development release)
 #
 # The job no-ops when there are no pending changesets (e.g. after a day of
-# doc-only commits), and also skips publish for any individual app that
-# changesets did not bump. Use the workflow_dispatch trigger to force an
-# off-schedule beta. Stable releases stay on the Release Coordinator path
-# (merge the "Version Packages" PR).
+# doc-only commits), when main has not advanced since the previous beta (a
+# commit already pre-released is recognised by its `prerelease-<sha>` tag, so
+# an unchanged main does not republish on the timer), and skips publish for
+# any individual app that changesets did not bump. Use the workflow_dispatch
+# trigger to force an off-schedule beta (it bypasses the unchanged-main check).
+# Stable releases stay on the Release Coordinator path (merge the "Version
+# Packages" PR).
 
 on:
   schedule:
@@ -47,9 +50,25 @@ jobs:
       # that satisfy the "every PR touching packages/apps needs a changeset"
       # rule without bumping a version) are skipped here too — they have no
       # package bumps so the pre-release would publish nothing.
-      - name: Detect pending changesets
+      - name: Detect whether a pre-release is needed
         id: detect
         run: |
+          # Scheduled runs fire daily against the latest commit on main, and
+          # each run stamps a fresh beta version from the run number. Without a
+          # guard a new beta would publish every day even when main has not
+          # moved since the previous beta (the "new release every day" bug).
+          # Each pre-release is tagged `prerelease-<sha>`, so if origin already
+          # has that tag for HEAD this exact commit was already pre-released and
+          # there is nothing new to ship. Only the schedule trigger is guarded;
+          # workflow_dispatch still force-publishes a beta on the same commit.
+          if [ "${{ github.event_name }}" = "schedule" ] \
+             && git ls-remote --exit-code --tags origin \
+                  "refs/tags/prerelease-${{ github.sha }}" >/dev/null; then
+            echo "has_changesets=false" >> "$GITHUB_OUTPUT"
+            echo "Commit ${{ github.sha }} was already pre-released; skipping."
+            exit 0
+          fi
+
           shopt -s nullglob
           count=0
           for f in .changeset/*.md; do
