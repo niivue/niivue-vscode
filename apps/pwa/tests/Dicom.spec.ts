@@ -46,6 +46,67 @@ test.describe('Loading DICOM images', () => {
     expect(bodyText).not.toContain('failed')
   })
 
+  test('loads an extension-less DICOM file via magic-byte detection', async ({ page }) => {
+    // Scanner exports often have no extension (IM_0001) or a bare UID as the
+    // name. The viewer must detect DICOM content from the "DICM" magic bytes
+    // and route the file through the DICOM loader.
+    await page.goto(BASE_URL)
+
+    const dicomPath = path.join(__dirname, '..', 'test', 'assets', 'enh.dcm')
+    const dicomBuffer = fs.readFileSync(dicomPath)
+
+    const message = {
+      type: 'addImage',
+      body: {
+        data: Array.from(new Uint8Array(dicomBuffer)),
+        uri: 'IM_0001',
+      },
+    }
+
+    await page.evaluate((m) => window.postMessage(m, '*'), message)
+    await waitForImageLoad(page)
+
+    const canvases = await page.$$('canvas')
+    expect(canvases.length).toBeGreaterThanOrEqual(1)
+
+    await page.waitForTimeout(2000)
+
+    const bodyText = await page.textContent('body')
+    expect(bodyText).not.toContain('error')
+    expect(bodyText).not.toContain('failed')
+  })
+
+  test('loads a DICOM series passed as an array of files', async ({ page }) => {
+    // Multi-file series arrive as `uri: string[]` + `data: ArrayBuffer[]`
+    // (VS Code series expansion, PWA folder drop). This path previously threw
+    // because loadVolume called string methods on the array uri. dcm2niix
+    // assembles the array into one volume per series.
+    await page.goto(BASE_URL)
+
+    const dicomPath = path.join(__dirname, '..', 'test', 'assets', 'enh.dcm')
+    const dicomBuffer = fs.readFileSync(dicomPath)
+
+    const message = {
+      type: 'addImage',
+      body: {
+        data: [Array.from(new Uint8Array(dicomBuffer))],
+        uri: ['enh.dcm'],
+      },
+    }
+
+    await page.evaluate((m) => window.postMessage(m, '*'), message)
+    await waitForImageLoad(page)
+
+    const canvases = await page.$$('canvas')
+    expect(canvases.length).toBeGreaterThanOrEqual(1)
+
+    await page.waitForTimeout(2000)
+
+    const bodyText = await page.textContent('body')
+    expect(bodyText).not.toContain('error')
+    expect(bodyText).not.toContain('failed')
+  })
+
   test('loads DICOM from URL', async ({ page }) => {
     await page.goto(BASE_URL)
 

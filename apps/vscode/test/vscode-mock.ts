@@ -101,6 +101,9 @@ export const window = {
 
 export const ViewColumn = { One: 1 }
 
+/** FileType: vscode.FileType bitmask used by readDirectory results. */
+export const FileType = { Unknown: 0, File: 1, Directory: 2, SymbolicLink: 64 }
+
 /**
  * Disposable: matches vscode.Disposable shape — just a `dispose()` method.
  * dispose.ts uses an array of these to register/release resources.
