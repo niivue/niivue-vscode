@@ -1,0 +1,131 @@
+/* Top bar + menu primitives. Global stylesheet; the `nv-` prefix provides scoping. */
+
+.nv-topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 var(--pad-x);
+  background: linear-gradient(180deg, var(--bg-2), var(--bg-1));
+  border-bottom: 1px solid var(--line);
+  gap: 16px;
+  min-width: 0;
+  min-height: var(--topbar-h);
+}
+.nv-topbar-left { display: flex; align-items: center; gap: 20px; min-width: 0; flex: 1; }
+.nv-topbar-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+
+/* Adaptive menu bar: a single non-wrapping row that overflows into a "More"
+   menu instead of wrapping to a second line. */
+.nv-bar { position: relative; flex: 1 1 auto; min-width: 0; }
+.nv-bar-row { display: flex; align-items: center; gap: 4px; }
+/* Off-screen twin used only to measure each item's natural width. */
+.nv-bar-measure {
+  position: absolute; top: 0; left: 0;
+  visibility: hidden; pointer-events: none;
+  white-space: nowrap;
+}
+
+.nv-more-toggle { padding: 6px 8px; }
+.nv-more-panel {
+  min-width: 210px;
+  max-height: min(70vh, 520px);
+  overflow-y: auto;
+}
+.nv-more-caret { transition: transform 0.15s ease; }
+.nv-more-caret.is-open { transform: rotate(180deg); }
+/* Inline accordion: a collapsed dropdown expands its entries in place. */
+.nv-more-sub {
+  margin: 2px 0 4px 9px;
+  padding-left: 7px;
+  border-left: 1px solid var(--line-2);
+}
+
+.nv-brand { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.nv-brand-mark {
+  width: 26px; height: 26px; border-radius: 7px;
+  display: grid; place-items: center;
+  color: #0a0e13;
+  font-weight: 600; font-size: 14px;
+  background: var(--accent);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset,
+    0 2px 8px color-mix(in oklab, var(--accent) 40%, transparent);
+}
+.nv-brand-text { display: flex; flex-direction: column; line-height: 1; }
+.nv-brand-name { font-weight: 600; font-size: 13px; letter-spacing: -0.01em; color: var(--fg-0); }
+.nv-brand-sub {
+  font-family: var(--font-mono);
+  font-size: 9.5px; color: var(--fg-3);
+  text-transform: uppercase; letter-spacing: 0.08em;
+  margin-top: 2px;
+}
+
+.nv-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  border-radius: 7px;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.nv-btn-ghost { color: var(--fg-1); border: 1px solid var(--line); background: transparent; }
+.nv-btn-ghost:hover { background: var(--bg-3); color: var(--fg-0); border-color: var(--line-2); }
+
+.nv-topbtn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 10px;
+  border-radius: 7px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--fg-1);
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.nv-topbtn:hover { background: var(--bg-3); color: var(--fg-0); }
+.nv-topbtn.is-active { background: var(--bg-3); color: var(--fg-0); }
+
+.nv-iconbtn {
+  width: 30px; height: 30px;
+  display: grid; place-items: center;
+  border-radius: 6px;
+  color: var(--fg-1);
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.nv-iconbtn:hover { background: var(--bg-3); color: var(--fg-0); }
+.nv-iconbtn-ghost { width: 24px; height: 24px; color: var(--fg-2); }
+.nv-iconbtn-ghost:hover { background: var(--bg-5); color: var(--fg-0); }
+
+.nv-menu-panel {
+  background: var(--bg-4);
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius);
+  padding: 6px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  animation: nv-menu-fade-in 0.15s ease;
+}
+.nv-menu-item {
+  display: flex; width: 100%;
+  align-items: center; justify-content: space-between;
+  padding: 7px 10px; border-radius: 5px;
+  font-size: 12px; color: var(--fg-1);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.nv-menu-item:hover { background: var(--bg-5); color: var(--fg-0); }
+.nv-menu-item.is-active { background: var(--bg-3); color: var(--fg-0); }
+.nv-menu-item-shortcut {
+  color: var(--fg-3);
+  font-size: 11px;
+  margin-left: 16px;
+  font-family: var(--font-mono);
+}
+.nv-menu-div,
+.nv-menu-panel hr { height: 1px; background: var(--line); margin: 4px 6px; border: 0; }
+
+@keyframes nv-menu-fade-in {
+  from { opacity: 0; transform: translateY(-6px); }
+}
