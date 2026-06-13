@@ -7,6 +7,7 @@ export interface MenuItems {
   overlay: boolean
   header: boolean
   navigation?: boolean
+  saveScene?: boolean
 }
 
 export interface NiiVueSettings {
@@ -41,5 +42,6 @@ export const defaultSettings: NiiVueSettings = {
     overlay: true,
     header: true,
     navigation: true,
+    saveScene: true,
   },
 }

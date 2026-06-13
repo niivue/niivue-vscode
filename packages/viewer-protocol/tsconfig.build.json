@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "composite": false,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    // Emitting real JS, so the .ts-extension import allowance (enabled in the
+    // base config for noEmit type-checking) must be turned off here.
+    "allowImportingTsExtensions": false
+  },
+  "include": ["src"]
+}

@@ -50,6 +50,11 @@ export default defineConfig({
     alias: {
       // Point directly to source files for hot reload
       '@niivue/react': resolve(__dirname, '../../packages/niivue-react/src'),
+      // viewer-protocol is consumed transitively via @niivue/react (above);
+      // alias it to source too so it resolves without a dist build. v1 uses it
+      // type-only (erased at build), but the alias keeps any future runtime use
+      // working in dev and the E2E production build.
+      '@niivue/viewer-protocol': resolve(__dirname, '../../packages/viewer-protocol/src'),
     },
     // react-router-dom specifies "module" field in package.json for ESM entry
     // if it's not mapped, it uses the "main" field which is CommonJS that redirects to CJS preact

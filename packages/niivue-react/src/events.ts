@@ -1,6 +1,7 @@
-import { Niivue, NVImage, NVMesh, NVMeshLoaders, SLICE_TYPE } from '@niivue/niivue'
+import { Niivue, NVImage, NVMesh, NVMeshLoaders, SLICE_TYPE, type DocumentData } from '@niivue/niivue'
 import { Signal } from '@preact/signals'
 import { AppProps } from './components/AppProps'
+import { isNvdFile, readNvdFile } from './document'
 import { readyStateManager } from './readyState'
 import { NiiVueSettings } from './settings'
 import { buildImageMessageBodies, isImageType } from './utility'
@@ -52,6 +53,17 @@ export async function handleMessage(message: any, appProps: AppProps) {
         } else {
           nv.body = body
         }
+      }
+      break
+    case 'loadDocument':
+      {
+        // Import a niivue scene document (.nvd) into a fresh canvas. The actual
+        // nv.loadDocument call is deferred to NiiVueCanvas, which fires once the
+        // canvas (and its GL context) is attached - mirroring the addImage path.
+        const nv = getUnitinializedNvInstance(nvArray)
+        nv.uri = body.name || 'document.nvd'
+        nv.isNew = false
+        nv.documentData = body.document
       }
       break
     case 'initCanvas':
@@ -322,16 +334,27 @@ export function addImagesEvent() {
 
     input.onchange = async (e) => {
       const files = Array.from((e.target as HTMLInputElement)?.files ?? [])
-      if (files.length > 0) {
-        const bodies = await buildImageMessageBodies(files)
-        if (bodies.length === 0) return
-        window.postMessage({
-          type: 'initCanvas',
-          body: { n: bodies.length },
-        })
-        for (const body of bodies) {
-          window.postMessage({ type: 'addImage', body })
+      if (files.length === 0) return
+      // Scene documents (.nvd) load a whole scene; route them to the document
+      // importer and let the rest flow through the image pipeline.
+      for (const file of files.filter((f) => isNvdFile(f.name))) {
+        try {
+          const document = await readNvdFile(file)
+          window.postMessage({ type: 'loadDocument', body: { document, name: file.name } })
+        } catch (err) {
+          console.error(`Failed to read .nvd file ${file.name}:`, err)
         }
+      }
+      const imageFiles = files.filter((f) => !isNvdFile(f.name))
+      if (imageFiles.length === 0) return
+      const bodies = await buildImageMessageBodies(imageFiles)
+      if (bodies.length === 0) return
+      window.postMessage({
+        type: 'initCanvas',
+        body: { n: bodies.length },
+      })
+      for (const body of bodies) {
+        window.postMessage({ type: 'addImage', body })
       }
     }
     input.click()
@@ -391,6 +414,7 @@ export class ExtendedNiivue extends Niivue {
   uri = ''
   key = NaN
   body = null
+  documentData: DocumentData | null = null // pending .nvd import, consumed by NiiVueCanvas
   onVolumeUpdated = () => { }
   onFrameUpdate = (frame: number) => { }
   setFrame4D(volumeOrId: any, frame: number) {

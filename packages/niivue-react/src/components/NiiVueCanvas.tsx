@@ -25,7 +25,7 @@ Dcm2niix.prototype.init = function () {
 
 import { dicomLoader } from '@niivue/dicom-loader'
 import { mnc2nii } from '@niivue/minc-loader'
-import { NVImage, NVMesh } from '@niivue/niivue'
+import { NVDocument, NVImage, NVMesh } from '@niivue/niivue'
 import { Signal } from '@preact/signals'
 import { useEffect, useRef } from 'preact/hooks'
 import { ExtendedNiivue, notifyImageLoaded } from '../events'
@@ -79,6 +79,35 @@ export const NiiVueCanvas = ({
         nvArray.value = [...nvArray.value] // trigger react signal for changes
       })
   }, [nv.body])
+
+  // Import a niivue scene document (.nvd). Mirrors the nv.body path above: runs
+  // after the canvas/GL is attached, so nv.loadDocument has a context to use.
+  useEffect(() => {
+    if (!nv.documentData || nv.isLoading) {
+      return
+    }
+    const docData = nv.documentData
+    nv.isLoading = true
+    NVDocument.loadFromJSON(docData)
+      .then((doc) => nv.loadDocument(doc))
+      .then(() => {
+        nv.isLoaded = true
+        nv.isLoading = false
+        nv.documentData = null
+        render.value++ // required to update the names
+        nvArray.value = [...nvArray.value] // trigger react signal for changes
+        nv.createOnLocationChange()
+        nv.onVolumeUpdated()
+        notifyImageLoaded()
+      })
+      .catch((error) => {
+        console.error('Load Document Error:', error)
+        nv.loadError = error.message || 'Unknown error loading document'
+        nv.isLoading = false
+        nv.documentData = null
+        nvArray.value = [...nvArray.value] // trigger react signal for changes
+      })
+  }, [nv.documentData])
 
   if (nv.isLoaded && nv.volumes.length > 0) {
     nv.setSliceType(sliceType.value)
