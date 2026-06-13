@@ -46,7 +46,9 @@
     "dist",
     "src"
   ],
-  "sideEffects": false,
+  "sideEffects": [
+    "**/*.css"
+  ],
   "scripts": {
     "dev": "concurrently \"vite build --watch\" \"tsc --emitDeclarationOnly --declaration --outDir dist --watch\"",
     "dev:vscode-sync": "concurrently \"cross-env BUILD_TARGET=vscode vite build --mode development --watch\" \"node scripts/watch-and-sync.mjs\"",
@@ -63,6 +65,8 @@
     "coverage": "pnpm run test:coverage"
   },
   "dependencies": {
+    "@fontsource/inter": "^5.0.0",
+    "@fontsource/jetbrains-mono": "^5.0.0",
     "@niivue/dcm2niix": "^1.2.0",
     "@niivue/minc-loader": "^1.0.0",
     "@niivue/viewer-protocol": "workspace:*"

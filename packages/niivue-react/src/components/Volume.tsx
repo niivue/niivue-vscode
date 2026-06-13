@@ -1,3 +1,5 @@
+import '../styles/tokens.css'
+import './Volume.css'
 import { computed, Signal, useSignal } from '@preact/signals'
 import { useEffect, useRef } from 'preact/hooks'
 import { ExtendedNiivue } from '../events'
@@ -265,11 +267,9 @@ export const Volume = (props: AppProps & VolumeProps) => {
 
   return (
     <div
-      className={`relative ${
-        selectionMode.value && selected.value ? 'outline outline-blue-500' : ''
-      } ${isSwapTarget ? 'outline outline-green-500 outline-2' : ''} ${
-        isSource ? 'opacity-50' : ''
-      }`}
+      className={`nv-pane${selectionMode.value && selected.value ? ' is-selected' : ''}${
+        isSwapTarget ? ' outline outline-green-500 outline-2' : ''
+      }${isSource ? ' opacity-50' : ''}`}
       onClick={selectClick}
       ref={canvasRef}
       draggable={hideUI.value > 2}
@@ -295,12 +295,15 @@ export const Volume = (props: AppProps & VolumeProps) => {
       )}
       {hideUI.value > 0 && !nv.loadError && (
         <>
-          <div className="absolute pointer-events-none text-xl text-outline left-1 top-0">
-            {dispName}
+          <div className="nv-pane-label">
+            <span className="nv-pane-label-text">{dispName}</span>
           </div>
-          <div className="pointer-events-none absolute bottom-1 left-1">
-            <span className="text-outline" data-testid={`intensity-${volumeIndex}`}>
-              {location_local.value}: {intensity.value}
+          <div className="nv-readout">
+            <span className="nv-readout-k">POS</span>
+            <span className="nv-readout-v">{location_local.value}</span>
+            <span className="nv-readout-k">VAL</span>
+            <span className="nv-readout-v" data-testid={`intensity-${volumeIndex}`}>
+              {intensity.value}
             </span>
           </div>
         </>
@@ -313,11 +316,11 @@ export const Volume = (props: AppProps & VolumeProps) => {
             title="Drag to reorder"
           />
           <button
-            className="absolute bg-transparent text-xl cursor-pointer opacity-80 border-none text-outline top-0 right-1"
+            className="nv-iconbtn nv-iconbtn-ghost absolute top-1.5 right-1.5 z-10"
             onClick={props.remove}
-            aria-label="Remove image"
+            aria-label="Close"
           >
-            X
+            ×
           </button>
         </>
       )}
