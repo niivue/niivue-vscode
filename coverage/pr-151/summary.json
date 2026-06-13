@@ -2,55 +2,190 @@
   "shared-core": {
     "label": "Shared core (`packages/niivue-react`)",
     "stats": {
-      "statements": 34.5,
-      "branches": 64.6,
-      "functions": 50.3,
-      "lines": 34.4
+      "statements": 39.2,
+      "branches": 42.7,
+      "functions": 45.6,
+      "lines": 39.5
+    },
+    "counts": {
+      "statements": {
+        "covered": 863,
+        "total": 2201
+      },
+      "branches": {
+        "covered": 703,
+        "total": 1646
+      },
+      "functions": {
+        "covered": 306,
+        "total": 671
+      },
+      "lines": {
+        "covered": 814,
+        "total": 2060
+      }
     }
   },
   "pwa-glue": {
     "label": "`apps/pwa`",
     "stats": {
-      "statements": 53.1,
-      "branches": 55,
-      "functions": 69.2,
-      "lines": 53.1
+      "statements": 29.5,
+      "branches": 33.3,
+      "functions": 52.9,
+      "lines": 31
+    },
+    "counts": {
+      "statements": {
+        "covered": 13,
+        "total": 44
+      },
+      "branches": {
+        "covered": 12,
+        "total": 36
+      },
+      "functions": {
+        "covered": 9,
+        "total": 17
+      },
+      "lines": {
+        "covered": 13,
+        "total": 42
+      }
     }
   },
   "jupyter-glue": {
     "label": "`apps/jupyter`",
     "stats": {
-      "statements": null,
-      "branches": null,
-      "functions": null,
-      "lines": null
+      "statements": 14.4,
+      "branches": 15.9,
+      "functions": 14.9,
+      "lines": 14.5
+    },
+    "counts": {
+      "statements": {
+        "covered": 32,
+        "total": 222
+      },
+      "branches": {
+        "covered": 20,
+        "total": 126
+      },
+      "functions": {
+        "covered": 7,
+        "total": 47
+      },
+      "lines": {
+        "covered": 32,
+        "total": 220
+      }
     }
   },
   "streamlit-glue": {
     "label": "`apps/streamlit`",
     "stats": {
-      "statements": 15.9,
-      "branches": 70.6,
-      "functions": 55.6,
-      "lines": 15.9
+      "statements": 17.8,
+      "branches": 5.3,
+      "functions": 18.5,
+      "lines": 17.7
+    },
+    "counts": {
+      "statements": {
+        "covered": 32,
+        "total": 180
+      },
+      "branches": {
+        "covered": 8,
+        "total": 150
+      },
+      "functions": {
+        "covered": 5,
+        "total": 27
+      },
+      "lines": {
+        "covered": 31,
+        "total": 175
+      }
     }
   },
   "vscode-glue": {
     "label": "`apps/vscode`",
     "stats": {
-      "statements": 7.8,
-      "branches": 70,
-      "functions": 30.8,
-      "lines": 7.8
+      "statements": 38.7,
+      "branches": 39.6,
+      "functions": 18.9,
+      "lines": 38.1
+    },
+    "counts": {
+      "statements": {
+        "covered": 115,
+        "total": 297
+      },
+      "branches": {
+        "covered": 57,
+        "total": 144
+      },
+      "functions": {
+        "covered": 14,
+        "total": 74
+      },
+      "lines": {
+        "covered": 110,
+        "total": 289
+      }
+    }
+  },
+  "desktop-glue": {
+    "label": "`apps/desktop-tauri`",
+    "stats": {
+      "statements": 81.8,
+      "branches": 59.1,
+      "functions": 78.9,
+      "lines": 84.3
+    },
+    "counts": {
+      "statements": {
+        "covered": 45,
+        "total": 55
+      },
+      "branches": {
+        "covered": 13,
+        "total": 22
+      },
+      "functions": {
+        "covered": 15,
+        "total": 19
+      },
+      "lines": {
+        "covered": 43,
+        "total": 51
+      }
     }
   },
   "_overall": {
     "label": "Overall",
     "stats": {
-      "statements": 30.3,
-      "branches": 64.6,
-      "functions": 50.4,
-      "lines": 30.3
+      "statements": 36.8,
+      "branches": 38.6,
+      "functions": 41.9,
+      "lines": 36.8
+    },
+    "counts": {
+      "statements": {
+        "covered": 1106,
+        "total": 3005
+      },
+      "branches": {
+        "covered": 827,
+        "total": 2143
+      },
+      "functions": {
+        "covered": 360,
+        "total": 860
+      },
+      "lines": {
+        "covered": 1044,
+        "total": 2838
+      }
     }
   }
 }
