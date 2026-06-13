@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getMetadataString, getNames, getNumberOfPoints, isImageType } from '../utility'
+import { getMetadataString, getNames, getNumberOfPoints, isDicomData, isImageType } from '../utility'
 
 describe('isImageType', () => {
   // The function returns the matched extension string when supported, or
@@ -41,6 +41,55 @@ describe('isImageType', () => {
   it('preserves preceding path components — only inspects the suffix', () => {
     expect(isImageType('/some/path/scan.nii.gz')).toBe('.nii.gz')
     expect(isImageType('http://host/img.nrrd')).toBe('.nrrd')
+  })
+})
+
+describe('isDicomData', () => {
+  // DICOM Part 10: 128-byte preamble, then the magic bytes "DICM". Files
+  // exported by scanners often have no extension, so this content sniff is
+  // what routes them to the DICOM loader.
+  function dicomBytes(extra = 8): Uint8Array {
+    const bytes = new Uint8Array(128 + 4 + extra)
+    bytes.set([0x44, 0x49, 0x43, 0x4d], 128) // "DICM"
+    return bytes
+  }
+
+  it('detects the DICM magic in an ArrayBuffer', () => {
+    expect(isDicomData(dicomBytes().buffer)).toBe(true)
+  })
+
+  it('detects the DICM magic in a Uint8Array view with a byte offset', () => {
+    const padded = new Uint8Array(16 + 140)
+    padded.set(dicomBytes(), 16)
+    const view = new Uint8Array(padded.buffer, 16, 140)
+    expect(isDicomData(view)).toBe(true)
+  })
+
+  it('detects the DICM magic in a plain number array (postMessage-serialized)', () => {
+    expect(isDicomData(Array.from(dicomBytes()))).toBe(true)
+  })
+
+  it('rejects buffers shorter than preamble + magic', () => {
+    expect(isDicomData(new ArrayBuffer(131))).toBe(false)
+    expect(isDicomData(new ArrayBuffer(0))).toBe(false)
+  })
+
+  it('rejects data with "DICM" at the wrong offset', () => {
+    const bytes = new Uint8Array(140)
+    bytes.set([0x44, 0x49, 0x43, 0x4d], 0)
+    expect(isDicomData(bytes.buffer)).toBe(false)
+  })
+
+  it('rejects non-DICOM binary data of sufficient length', () => {
+    const bytes = new Uint8Array(200).fill(0xff)
+    expect(isDicomData(bytes.buffer)).toBe(false)
+  })
+
+  it('rejects non-binary inputs', () => {
+    expect(isDicomData(undefined)).toBe(false)
+    expect(isDicomData(null)).toBe(false)
+    expect(isDicomData('DICM')).toBe(false)
+    expect(isDicomData([new ArrayBuffer(140)])).toBe(false) // array of buffers (folder payload)
   })
 })
 

@@ -138,6 +138,32 @@ export function differenceInNames(names: string[], rec = true) {
   return diffNames
 }
 
+// DICOM Part 10 files start with a 128-byte preamble followed by the
+// magic bytes "DICM". Scanner exports often have no file extension (or a
+// bare UID as the name), so content sniffing is the only reliable check.
+const DICM_OFFSET = 128
+
+export function isDicomData(data: unknown): boolean {
+  let bytes: Uint8Array | number[]
+  if (data instanceof ArrayBuffer) {
+    bytes = new Uint8Array(data)
+  } else if (ArrayBuffer.isView(data)) {
+    bytes = new Uint8Array(data.buffer, data.byteOffset, data.byteLength)
+  } else if (Array.isArray(data) && typeof data[0] === 'number') {
+    // postMessage across some bridges serializes buffers to number arrays
+    bytes = data
+  } else {
+    return false
+  }
+  return (
+    bytes.length >= DICM_OFFSET + 4 &&
+    bytes[DICM_OFFSET] === 0x44 && // D
+    bytes[DICM_OFFSET + 1] === 0x49 && // I
+    bytes[DICM_OFFSET + 2] === 0x43 && // C
+    bytes[DICM_OFFSET + 3] === 0x4d // M
+  )
+}
+
 export function isImageType(item: string) {
   return [
     '.nii',
