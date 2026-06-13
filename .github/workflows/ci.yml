@@ -26,9 +26,10 @@ jobs:
       jupyter: ${{ steps.filter.outputs.jupyter }}
       vscode: ${{ steps.filter.outputs.vscode }}
       streamlit: ${{ steps.filter.outputs.streamlit }}
+      desktop: ${{ steps.filter.outputs.desktop }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
+      - uses: actions/checkout@v6
+      - uses: dorny/paths-filter@v4
         id: filter
         with:
           filters: |
@@ -46,18 +47,21 @@ jobs:
             streamlit:
               - 'apps/streamlit/**'
               - 'packages/**'
+            desktop:
+              - 'apps/desktop-tauri/**'
+              - 'packages/**'
 
   lint-and-typecheck:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '22'
           cache: 'pnpm'
@@ -71,23 +75,26 @@ jobs:
       - name: Type check
         run: pnpm turbo type-check
 
+      - name: Coverage aggregator unit tests
+        run: pnpm coverage:report:test
+
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '22'
           cache: 'pnpm'
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
@@ -101,7 +108,7 @@ jobs:
         run: pnpm turbo build
 
       - name: Cache build artifacts
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             apps/*/dist
@@ -116,13 +123,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '22'
           cache: 'pnpm'
@@ -131,7 +138,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Restore build artifacts
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             apps/*/dist
@@ -146,7 +153,7 @@ jobs:
           pnpm --filter=@niivue/pwa test:coverage
 
       - name: Upload unit coverage artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: coverage-unit-pwa
@@ -162,19 +169,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '22'
           cache: 'pnpm'
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
@@ -182,7 +189,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Restore build artifacts
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             apps/*/dist
@@ -206,7 +213,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload Jupyter vitest coverage artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: coverage-unit-jupyter
@@ -220,13 +227,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '22'
           cache: 'pnpm'
@@ -235,7 +242,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Restore build artifacts
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             apps/*/dist
@@ -248,7 +255,7 @@ jobs:
         run: pnpm --filter=niivue test:coverage
 
       - name: Upload VS Code vitest coverage artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: coverage-unit-vscode
@@ -262,19 +269,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '22'
           cache: 'pnpm'
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
@@ -282,7 +289,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Restore build artifacts
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             apps/*/dist
@@ -313,13 +320,55 @@ jobs:
         continue-on-error: true
 
       - name: Upload Streamlit coverage artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: coverage-streamlit
           path: |
             apps/streamlit/niivue_component/frontend/coverage/
             apps/streamlit/coverage/python/
+          if-no-files-found: ignore
+          retention-days: 1
+
+  test-desktop:
+    needs: [changes, build]
+    if: needs.changes.outputs.desktop == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Restore build artifacts
+        uses: actions/cache@v5
+        with:
+          path: |
+            apps/*/dist
+            apps/*/build
+            apps/*/lib
+            packages/*/dist
+          key: build-artifacts-${{ github.sha }}
+
+      - name: Run Desktop vitest coverage
+        run: pnpm --filter=@niivue/tauri test:coverage
+
+      - name: Upload Desktop vitest coverage artifacts
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: coverage-unit-desktop
+          path: apps/desktop-tauri/coverage/unit/
           if-no-files-found: ignore
           retention-days: 1
 
@@ -330,13 +379,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '22'
           cache: 'pnpm'
@@ -345,7 +394,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Restore build artifacts
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             apps/*/dist
@@ -363,7 +412,7 @@ jobs:
         working-directory: ./apps/pwa
 
       - name: Upload test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: playwright-report
@@ -371,7 +420,7 @@ jobs:
           retention-days: 30
 
       - name: Upload e2e coverage artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: coverage-e2e-pwa
@@ -386,7 +435,7 @@ jobs:
     # which is the only place that holds write permissions. This split keeps
     # the trust boundary clean: this job runs after PR code has executed in
     # the upstream test jobs and must not have any write access.
-    needs: [test-pwa, test-jupyter, test-vscode, test-streamlit, e2e-tests]
+    needs: [test-pwa, test-jupyter, test-vscode, test-streamlit, test-desktop, e2e-tests]
     if: |
       always() &&
       !contains(needs.*.result, 'failure') &&
@@ -394,25 +443,29 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '22'
 
       - name: Download pwa/react coverage artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: coverage-unit-pwa
           path: .
         continue-on-error: true
 
       - name: Download Jupyter coverage artifacts
-        uses: actions/download-artifact@v4
+        # upload-artifact@v4 strips the parent path for single-path uploads,
+        # so the artifact's files sit at its root. Extract them back under
+        # apps/jupyter/coverage/unit/ so the aggregator's walk (which requires
+        # a `coverage` path segment) picks them up. Same fix as VS Code below.
+        uses: actions/download-artifact@v8
         with:
           name: coverage-unit-jupyter
-          path: .
+          path: apps/jupyter/coverage/unit/
         continue-on-error: true
 
       - name: Download VS Code coverage artifacts
@@ -420,21 +473,32 @@ jobs:
         # so the artifact's files sit at its root. Extract them back under
         # apps/vscode/coverage/unit/ so the aggregator's walk (which requires
         # a `coverage` path segment) picks them up.
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: coverage-unit-vscode
           path: apps/vscode/coverage/unit/
         continue-on-error: true
 
       - name: Download Streamlit coverage artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: coverage-streamlit
           path: .
         continue-on-error: true
 
+      - name: Download Desktop coverage artifacts
+        # upload-artifact@v4 strips the parent path for single-path uploads,
+        # so the artifact's files sit at its root. Extract them back under
+        # apps/desktop-tauri/coverage/unit/ so the aggregator's walk (which
+        # requires a `coverage` path segment) picks them up.
+        uses: actions/download-artifact@v8
+        with:
+          name: coverage-unit-desktop
+          path: apps/desktop-tauri/coverage/unit/
+        continue-on-error: true
+
       - name: Download e2e coverage artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: coverage-e2e-pwa
           path: apps/pwa/coverage/e2e/
@@ -476,14 +540,14 @@ jobs:
         run: node scripts/coverage/aggregate.mjs
 
       - name: Upload merged coverage report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-merged
           path: coverage/merged/
           retention-days: 30
 
       - name: Upload coverage summary
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-summary
           path: |
@@ -535,7 +599,7 @@ jobs:
 
       - name: Upload publishable coverage artifact
         if: hashFiles('coverage/publish/index.html') != ''
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-publish
           path: coverage/publish/

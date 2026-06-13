@@ -1,10 +1,8 @@
+@import 'tailwindcss';
 @import './styles/tokens.css';
 @import './components/Menu.css' layer(components);
 @import './components/Volume.css' layer(components);
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@config '../tailwind.config.js';
 
 .text-outline {
   text-shadow:

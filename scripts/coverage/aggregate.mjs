@@ -110,6 +110,11 @@ const BUCKETS = [
     label: '`apps/vscode`',
     match: (f) => f.includes('apps/vscode/src'),
   },
+  {
+    id: 'desktop-glue',
+    label: '`apps/desktop-tauri`',
+    match: (f) => f.includes('apps/desktop-tauri/src'),
+  },
 ]
 
 // ---------------------------------------------------------------------------
@@ -155,6 +160,10 @@ function mergeCoverageFinal(files) {
 // 4. Compute per-bucket percentages from merged Istanbul data
 // ---------------------------------------------------------------------------
 
+function pctOf(n) {
+  return n.total === 0 ? null : Math.round((n.covered / n.total) * 1000) / 10
+}
+
 function computeStats(istanbulData) {
   const totals = {
     statements: { covered: 0, total: 0 },
@@ -196,12 +205,22 @@ function computeStats(istanbulData) {
     totals.lines.covered += coveredLines.size
   }
 
-  const pct = (n) => (n.total === 0 ? null : Math.round((n.covered / n.total) * 1000) / 10)
   return {
-    statements: pct(totals.statements),
-    branches: pct(totals.branches),
-    functions: pct(totals.functions),
-    lines: pct(totals.lines),
+    // Percentages: the existing shape, kept for backward compatibility
+    // with consumers that only read `.stats.lines` etc.
+    stats: {
+      statements: pctOf(totals.statements),
+      branches: pctOf(totals.branches),
+      functions: pctOf(totals.functions),
+      lines: pctOf(totals.lines),
+    },
+    // Raw covered/total counts per metric. Persisted in summary.json so that
+    // a partial coverage run (only some apps' tests ran) can synthesise a
+    // honest overall by folding in baseline counts for the buckets this run
+    // didn't measure — see `synthesiseOverall` below. Without raw counts,
+    // the only thing we could compare is "this-run-mean" vs "baseline-mean",
+    // which mixes different denominators and produces large fake deltas.
+    counts: totals,
   }
 }
 
@@ -212,10 +231,69 @@ function bucketData(istanbulData) {
     for (const [key, value] of Object.entries(istanbulData)) {
       if (bucket.match(key)) subset[key] = value
     }
-    result[bucket.id] = { label: bucket.label, stats: computeStats(subset) }
+    const { stats, counts } = computeStats(subset)
+    result[bucket.id] = { label: bucket.label, stats, counts }
   }
-  result._overall = { label: 'Overall', stats: computeStats(istanbulData) }
+  const { stats, counts } = computeStats(istanbulData)
+  result._overall = { label: 'Overall', stats, counts }
   return result
+}
+
+/**
+ * Construct a fair overall for the current run by folding in baseline counts
+ * for any bucket this run did not measure. Without this, a PR that only ran
+ * one app's tests would emit an "overall" computed from that single app —
+ * misleadingly compared against main's whole-codebase overall (e.g. the
+ * desktop-only +50% delta that prompted this fix).
+ *
+ * Returns `{ stats, counts, partial }` where `partial` is true iff at least
+ * one bucket's counts came from the baseline rather than this run. Returns
+ * `null` if the baseline lacks per-bucket counts (old schema) — in that case
+ * the caller should suppress the delta.
+ */
+function synthesiseOverall(summary, baseline) {
+  if (!baseline) return null
+  // Detect old-schema baseline (percentages only, no counts): we can't
+  // synthesise without raw counts, so the caller falls back to the partial
+  // run's own overall (and suppresses the delta).
+  const baselineHasCounts = BUCKETS.some((b) => baseline[b.id]?.counts)
+  if (!baselineHasCounts) return null
+
+  const totals = {
+    statements: { covered: 0, total: 0 },
+    branches: { covered: 0, total: 0 },
+    functions: { covered: 0, total: 0 },
+    lines: { covered: 0, total: 0 },
+  }
+  let partial = false
+
+  for (const bucket of BUCKETS) {
+    const here = summary[bucket.id]?.counts
+    const ranThisTime = here && here.lines.total > 0
+    // Mark partial whenever this run skipped a bucket, regardless of whether
+    // the baseline could fill in for it. Without this, "summary measured one
+    // bucket, baseline also only knows about that one bucket" would emit a
+    // single-bucket overall *without* the partial disclosure — the exact
+    // misleading-overall problem this function exists to prevent.
+    if (!ranThisTime) partial = true
+    const source = ranThisTime ? here : baseline[bucket.id]?.counts
+    if (!source) continue
+    for (const metric of ['statements', 'branches', 'functions', 'lines']) {
+      totals[metric].covered += source[metric]?.covered ?? 0
+      totals[metric].total += source[metric]?.total ?? 0
+    }
+  }
+
+  return {
+    stats: {
+      statements: pctOf(totals.statements),
+      branches: pctOf(totals.branches),
+      functions: pctOf(totals.functions),
+      lines: pctOf(totals.lines),
+    },
+    counts: totals,
+    partial,
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -246,8 +324,12 @@ function badgeColor(pct) {
   return 'red'
 }
 
-function buildBadgeJson(summary) {
-  const overall = summary._overall?.stats?.lines
+function buildBadgeJson(summary, baseline = null) {
+  // Prefer the synthesised whole-codebase overall so the badge tracks
+  // codebase-wide coverage even on PRs that only ran one app's tests.
+  // Falls back to this run's bare overall when no baseline counts exist.
+  const synth = synthesiseOverall(summary, baseline)
+  const overall = synth ? synth.stats.lines : summary._overall?.stats?.lines
   return {
     schemaVersion: 1,
     label: 'coverage',
@@ -270,11 +352,51 @@ function renderCell(curr, prev) {
   return { text: 'N/A', stale: false }
 }
 
+/**
+ * Resolve the line coverage to display as "Overall" and the value to delta
+ * against the baseline. Three cases:
+ *
+ *   1. Full run + new-schema baseline → synthesis is a no-op (every bucket
+ *      ran here, so `source` is always `here`). Display this run's overall;
+ *      delta against baseline's overall.
+ *   2. Partial run + new-schema baseline → synthesis folds in baseline
+ *      counts for buckets that didn't run here, producing a "what would
+ *      the codebase overall be if only the parts we measured had changed?"
+ *      number. Apples-to-apples vs the baseline overall.
+ *   3. Partial run + old-schema baseline (no counts) → no honest comparison
+ *      possible. Display this run's overall, suppress the delta with a note.
+ */
+function resolveOverall(summary, baseline) {
+  const thisRun = summary._overall?.stats?.lines ?? null
+  const baseOverall = baseline?._overall?.stats?.lines ?? null
+  const synth = synthesiseOverall(summary, baseline)
+
+  if (synth) {
+    return {
+      display: synth.stats.lines,
+      deltaAgainst: baseOverall,
+      partial: synth.partial,
+      synthesised: synth.partial, // partial run that we patched up
+      deltaSuppressed: false,
+    }
+  }
+  // No new-schema baseline. If the current run is partial (any bucket
+  // missing), we can't honestly compare against main's full overall.
+  const isPartial = BUCKETS.some((b) => {
+    const c = summary[b.id]?.counts
+    return !c || c.lines.total === 0
+  })
+  return {
+    display: thisRun,
+    deltaAgainst: baseOverall,
+    partial: isPartial,
+    synthesised: false,
+    deltaSuppressed: isPartial,
+  }
+}
+
 function buildMarkdownTable(summary, opts = {}) {
   const { baseline = null, reportUrl = null, badgeUrl = null } = opts
-
-  const overall = summary._overall?.stats?.lines ?? null
-  const baseOverall = baseline?._overall?.stats?.lines ?? null
 
   let anyStale = false
   const rows = BUCKETS.map((b) => {
@@ -304,15 +426,18 @@ function buildMarkdownTable(summary, opts = {}) {
     lines.push('')
   }
 
-  const overallCell = renderCell(overall, baseOverall)
-  if (overallCell.text !== 'N/A') {
-    if (overallCell.stale) anyStale = true
-    if (overall !== null) {
-      const delta = deltaStr(overall, baseOverall)
-      lines.push(`**Overall line coverage: ${pctStr(overall)}${delta ? ` ${delta.trim()} vs \`main\`` : ''}**`)
-    } else {
-      lines.push(`**Overall line coverage: ${overallCell.text}**`)
-    }
+  const { display, deltaAgainst, synthesised, deltaSuppressed } = resolveOverall(summary, baseline)
+  if (display !== null) {
+    const delta = deltaSuppressed ? '' : deltaStr(display, deltaAgainst)
+    const suffix = deltaSuppressed
+      ? ' _(partial run — delta unavailable until baseline includes per-bucket counts)_'
+      : delta
+        ? ` ${delta.trim()} vs \`main\``
+        : ''
+    const note = synthesised
+      ? ' _(includes carried-over baseline for unmeasured packages)_'
+      : ''
+    lines.push(`**Overall line coverage: ${pctStr(display)}${suffix}${note}**`)
     lines.push('')
   }
 
@@ -332,7 +457,88 @@ function buildMarkdownTable(summary, opts = {}) {
   return lines.join('\n')
 }
 
-function buildHtmlReport(mergedData) {
+/**
+ * Escape user-controlled strings before they go into HTML.
+ */
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  })[c])
+}
+
+/**
+ * BUCKETS labels are written as Markdown for the PR sticky comment — e.g.
+ * ``Shared core (`packages/niivue-react`)``. For the HTML report we want the
+ * backticked spans to render as `<code>` rather than literal backticks.
+ * Escape first (so any `<`/`>` in a future label is safe), then promote the
+ * surviving backtick pairs to `<code>` tags.
+ */
+function labelToHtml(label) {
+  return escapeHtml(label).replace(/`([^`]+)`/g, '<code>$1</code>')
+}
+
+/**
+ * Render the per-package summary table — same shape as the markdown table
+ * used in PR sticky comments — to embed at the top of the HTML report so
+ * visitors landing on the published page see headline numbers before the
+ * long per-file Istanbul table.
+ */
+function buildHtmlSummarySection(summary, baseline) {
+  let anyStale = false
+  const rows = BUCKETS.map((b) => {
+    const s = summary[b.id]?.stats ?? {}
+    const baseStats = baseline?.[b.id]?.stats ?? {}
+    const cells = [
+      renderCell(s.statements ?? null, baseStats.statements ?? null),
+      renderCell(s.branches ?? null, baseStats.branches ?? null),
+      renderCell(s.functions ?? null, baseStats.functions ?? null),
+      renderCell(s.lines ?? null, baseStats.lines ?? null),
+    ]
+    if (cells.some((c) => c.stale)) anyStale = true
+    return `      <tr><td>${labelToHtml(b.label)}</td>${cells
+      .map((c) => `<td>${escapeHtml(c.text)}</td>`)
+      .join('')}</tr>`
+  }).join('\n')
+
+  const { display, deltaAgainst, synthesised, deltaSuppressed } = resolveOverall(summary, baseline)
+  let overallLine = ''
+  if (display !== null) {
+    const delta = deltaSuppressed ? '' : deltaStr(display, deltaAgainst)
+    const suffix = deltaSuppressed
+      ? ' <span class="delta">(partial run — delta unavailable until baseline includes per-bucket counts)</span>'
+      : delta
+        ? ` <span class="delta">${escapeHtml(delta.trim())} vs <code>main</code></span>`
+        : ''
+    const note = synthesised
+      ? ' <span class="delta">(includes carried-over baseline for unmeasured packages)</span>'
+      : ''
+    overallLine = `<p class="overall"><strong>Overall line coverage: ${pctStr(display)}</strong>${suffix}${note}</p>`
+  }
+
+  const stalenote = anyStale
+    ? '<p class="stale-note"><em>* value carried over from <code>main</code> — this run did not produce coverage for that cell.</em></p>'
+    : ''
+
+  return `  <section class="summary">
+    <h2>Coverage by package</h2>
+    ${overallLine}
+    <table class="summary-table">
+      <thead>
+        <tr><th>Package</th><th>Statements</th><th>Branches</th><th>Functions</th><th>Lines</th></tr>
+      </thead>
+      <tbody>
+${rows}
+      </tbody>
+    </table>
+    ${stalenote}
+  </section>`
+}
+
+function buildHtmlReport(mergedData, summary, baseline) {
   const fileRows = Object.entries(mergedData)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([file, cov]) => {
@@ -340,9 +546,11 @@ function buildHtmlReport(mergedData) {
       const stmtCovered = Object.values(cov.s).filter((c) => c > 0).length
       const pct = stmtTotal === 0 ? 'N/A' : `${Math.round((stmtCovered / stmtTotal) * 100)}%`
       const relPath = file.replace(repoRoot, '').replace(/^[\\/]/, '')
-      return `<tr><td>${relPath}</td><td>${pct} (${stmtCovered}/${stmtTotal})</td></tr>`
+      return `<tr><td>${escapeHtml(relPath)}</td><td>${pct} (${stmtCovered}/${stmtTotal})</td></tr>`
     })
     .join('\n')
+
+  const summarySection = summary ? buildHtmlSummarySection(summary, baseline) : ''
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -350,22 +558,37 @@ function buildHtmlReport(mergedData) {
   <meta charset="UTF-8" />
   <title>NiiVue Coverage Report</title>
   <style>
-    body { font-family: sans-serif; margin: 2rem; }
+    body { font-family: sans-serif; margin: 2rem; max-width: 60rem; }
+    h1 { margin-bottom: 0.25rem; }
+    .generated { color: #666; font-size: 0.85rem; margin: 0 0 1.5rem; }
+    section.summary { margin-bottom: 2.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid #ddd; }
+    section.summary h2 { margin-top: 0; }
+    p.overall { font-size: 1.05rem; }
+    .delta { color: #555; font-weight: normal; }
+    .stale-note { color: #666; font-size: 0.85rem; }
     table { border-collapse: collapse; width: 100%; }
     th, td { border: 1px solid #ccc; padding: 0.4rem 0.8rem; text-align: left; }
     th { background: #f4f4f4; }
     tr:nth-child(even) { background: #fafafa; }
+    table.summary-table td:not(:first-child),
+    table.summary-table th:not(:first-child) { text-align: right; }
+    h2.files-heading { margin-top: 0; }
+    code { background: #f4f4f4; padding: 0 0.25rem; border-radius: 3px; }
   </style>
 </head>
 <body>
   <h1>NiiVue Coverage Report</h1>
-  <p>Generated: ${new Date().toISOString()}</p>
-  <table>
-    <thead><tr><th>File</th><th>Statements</th></tr></thead>
-    <tbody>
+  <p class="generated">Generated: ${new Date().toISOString()}</p>
+${summarySection}
+  <section>
+    <h2 class="files-heading">Per-file coverage</h2>
+    <table>
+      <thead><tr><th>File</th><th>Statements</th></tr></thead>
+      <tbody>
 ${fileRows}
-    </tbody>
-  </table>
+      </tbody>
+    </table>
+  </section>
 </body>
 </html>
 `
@@ -417,8 +640,8 @@ async function main() {
   const badgeUrl = process.env.COVERAGE_BADGE_URL || null
 
   const markdownTable = buildMarkdownTable(summary, { baseline, reportUrl, badgeUrl })
-  const htmlReport = buildHtmlReport(mergedData)
-  const badgeJson = buildBadgeJson(summary)
+  const htmlReport = buildHtmlReport(mergedData, summary, baseline)
+  const badgeJson = buildBadgeJson(summary, baseline)
 
   // Write outputs
   const outDir = path.join(repoRoot, 'coverage')
@@ -438,7 +661,14 @@ async function main() {
   console.log(`   coverage/badge.json`)
 }
 
-main().catch((err) => {
-  console.error('❌ aggregate.mjs failed:', err)
-  process.exit(1)
-})
+// Run main() only when invoked as a script; importable for unit tests.
+const invokedDirectly = process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])
+if (invokedDirectly) {
+  main().catch((err) => {
+    console.error('❌ aggregate.mjs failed:', err)
+    process.exit(1)
+  })
+}
+
+// Exported for unit tests in aggregate.test.mjs.
+export { synthesiseOverall, resolveOverall, buildBadgeJson, buildMarkdownTable, computeStats, BUCKETS }

@@ -10,13 +10,31 @@ export interface VolumeProps {
   volumeIndex: number
   nv: ExtendedNiivue
   remove: () => void
+  swap: (i: number, j: number) => void
+  insertAt: (fromIndex: number, insertPosition: number) => void
+  draggingIndex: Signal<number | null>
+  dropInsertPos: Signal<number | null>
+  dropSwapIndex: Signal<number | null>
   width: number
   height: number
   render: Signal<number>
 }
 
 export const Volume = (props: AppProps & VolumeProps) => {
-  const { name, volumeIndex, hideUI, selection, selectionMode, nv, location } = props
+  const {
+    name,
+    volumeIndex,
+    hideUI,
+    selection,
+    selectionMode,
+    nv,
+    location,
+    swap,
+    insertAt,
+    draggingIndex,
+    dropInsertPos,
+    dropSwapIndex,
+  } = props
   const intensity = useSignal('')
   const location_local = useSignal('')
   const vol4D = useSignal(0)
@@ -79,6 +97,71 @@ export const Volume = (props: AppProps & VolumeProps) => {
     }
   }, [canvasRef.current])
 
+  // Custom MIME type identifies our own reorder drags so the file-import path
+  // (which carries 'Files') and other drags from outside the app are ignored.
+  const REORDER_MIME = 'application/x-niivue-reorder'
+
+  const resetDragSignals = () => {
+    draggingIndex.value = null
+    dropInsertPos.value = null
+    dropSwapIndex.value = null
+  }
+
+  const handleDragStart = (e: DragEvent) => {
+    e.dataTransfer!.effectAllowed = 'move'
+    e.dataTransfer!.setData(REORDER_MIME, volumeIndex.toString())
+    draggingIndex.value = volumeIndex
+  }
+
+  const handleDragEnd = () => {
+    resetDragSignals()
+  }
+
+  const isReorderDrag = (e: DragEvent) =>
+    e.dataTransfer?.types.includes(REORDER_MIME) ?? false
+
+  // Helpers for the three drop zones. Each zone sets a highlight signal on
+  // dragover and performs the matching operation on drop. dragleave clears
+  // only this zone's signal so a fast move into another zone doesn't flicker.
+  const onZoneOver = (mode: 'insert-before' | 'swap' | 'insert-after') => (e: DragEvent) => {
+    if (!isReorderDrag(e)) return
+    e.preventDefault()
+    e.dataTransfer!.dropEffect = 'move'
+    if (mode === 'swap') {
+      dropSwapIndex.value = volumeIndex
+      dropInsertPos.value = null
+    } else {
+      dropInsertPos.value = mode === 'insert-before' ? volumeIndex : volumeIndex + 1
+      dropSwapIndex.value = null
+    }
+  }
+
+  const onZoneLeave = (mode: 'insert-before' | 'swap' | 'insert-after') => () => {
+    if (mode === 'swap') {
+      if (dropSwapIndex.value === volumeIndex) dropSwapIndex.value = null
+    } else {
+      const pos = mode === 'insert-before' ? volumeIndex : volumeIndex + 1
+      if (dropInsertPos.value === pos) dropInsertPos.value = null
+    }
+  }
+
+  const onZoneDrop = (mode: 'insert-before' | 'swap' | 'insert-after') => (e: DragEvent) => {
+    if (!isReorderDrag(e)) return
+    e.preventDefault()
+    const fromIndex = parseInt(e.dataTransfer!.getData(REORDER_MIME))
+    if (!Number.isInteger(fromIndex)) {
+      resetDragSignals()
+      return
+    }
+    if (mode === 'swap') {
+      if (fromIndex !== volumeIndex) swap(fromIndex, volumeIndex)
+    } else {
+      const insertPosition = mode === 'insert-before' ? volumeIndex : volumeIndex + 1
+      insertAt(fromIndex, insertPosition)
+    }
+    resetDragSignals()
+  }
+
   const selectClick = () => {
     if (selectionMode.value == SelectionMode.SINGLE) {
       selection.value = [volumeIndex]
@@ -99,16 +182,23 @@ export const Volume = (props: AppProps & VolumeProps) => {
     const el = canvasRef.current
     if (!el) return
 
+    // Only intercept FILE drags here. For reorder drags (custom MIME) we must
+    // not stopPropagation, because that would also kill the bubble-phase
+    // handlers on the drop-zone overlays below: the target of a reorder drag
+    // is a descendant of this element, so capture-phase stopPropagation
+    // prevents the bubble from ever reaching them.
     const handleCanvasDragOver = (e: DragEvent) => {
+      if (!e.dataTransfer?.types.includes('Files')) return
       e.stopPropagation()
       e.preventDefault()
-      if (e.dataTransfer) e.dataTransfer.dropEffect = 'link'
+      e.dataTransfer.dropEffect = 'link'
     }
 
     const handleCanvasDrop = (e: DragEvent) => {
+      if (!e.dataTransfer?.types.includes('Files')) return
       e.stopPropagation()
       e.preventDefault()
-      const files = Array.from(e.dataTransfer?.files ?? [])
+      const files = Array.from(e.dataTransfer.files ?? [])
       if (files.length === 0) return
 
       if (e.shiftKey) {
@@ -158,11 +248,31 @@ export const Volume = (props: AppProps & VolumeProps) => {
     }
   }, [canvasRef.current, volumeIndex])
 
+  const isSource = draggingIndex.value === volumeIndex
+  const isDragInProgress = draggingIndex.value !== null
+  const isSwapTarget = dropSwapIndex.value === volumeIndex
+  const showLeftBar = dropInsertPos.value === volumeIndex
+  const showRightBar = dropInsertPos.value === volumeIndex + 1
+
+  // When the source is adjacent, the gap between us and the source is a no-op
+  // insert (insert-before-self or insert-after-self). Hide that side's insert
+  // zone and let the swap zone absorb its width so the user can still target
+  // this volume from the full 2/3.
+  const sourceIsRightNeighbor = draggingIndex.value === volumeIndex + 1
+  const sourceIsLeftNeighbor = draggingIndex.value === volumeIndex - 1
+  const hideLeftZone = sourceIsLeftNeighbor
+  const hideRightZone = sourceIsRightNeighbor
+
   return (
     <div
-      className={`nv-pane${selectionMode.value && selected.value ? ' is-selected' : ''}`}
+      className={`nv-pane${selectionMode.value && selected.value ? ' is-selected' : ''}${
+        isSwapTarget ? ' outline outline-green-500 outline-2' : ''
+      }${isSource ? ' opacity-50' : ''}`}
       onClick={selectClick}
       ref={canvasRef}
+      draggable={hideUI.value > 2}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
     >
       {nv.loadError ? (
         <div
@@ -197,13 +307,72 @@ export const Volume = (props: AppProps & VolumeProps) => {
         </>
       )}
       {hideUI.value > 2 && (
-        <button
-          className="nv-iconbtn nv-iconbtn-ghost absolute top-1.5 right-1.5 z-10"
-          onClick={props.remove}
-          aria-label="Close"
-        >
-          ×
-        </button>
+        <>
+          {/* Drag handle: thin strip so canvas clicks reach niivue everywhere else. */}
+          <div
+            className="absolute top-0 left-0 right-0 h-4 cursor-move bg-gradient-to-b from-black/30 to-transparent"
+            title="Drag to reorder"
+          />
+          <button
+            className="nv-iconbtn nv-iconbtn-ghost absolute top-1.5 right-1.5 z-10"
+            onClick={props.remove}
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </>
+      )}
+      {/* Drop-zone overlays. Only rendered while a reorder drag is in flight
+          and never on the source itself. Three columns: left third "insert
+          before this volume", middle third "swap with this volume", right
+          third "insert after this volume". When the source is the adjacent
+          volume, that side's insert is a no-op so we skip rendering it and
+          let the swap zone expand to fill the freed third. */}
+      {isDragInProgress && !isSource && hideUI.value > 2 && (
+        <>
+          {!hideLeftZone && (
+            <div
+              className="absolute top-0 bottom-0 left-0 w-1/3"
+              onDragOver={onZoneOver('insert-before')}
+              onDragLeave={onZoneLeave('insert-before')}
+              onDrop={onZoneDrop('insert-before')}
+              data-testid={`drop-insert-before-${volumeIndex}`}
+            />
+          )}
+          <div
+            className={`absolute top-0 bottom-0 ${hideLeftZone ? 'left-0' : 'left-1/3'} ${
+              hideRightZone ? 'right-0' : 'right-1/3'
+            }`}
+            onDragOver={onZoneOver('swap')}
+            onDragLeave={onZoneLeave('swap')}
+            onDrop={onZoneDrop('swap')}
+            data-testid={`drop-swap-${volumeIndex}`}
+          />
+          {!hideRightZone && (
+            <div
+              className="absolute top-0 bottom-0 right-0 w-1/3"
+              onDragOver={onZoneOver('insert-after')}
+              onDragLeave={onZoneLeave('insert-after')}
+              onDrop={onZoneDrop('insert-after')}
+              data-testid={`drop-insert-after-${volumeIndex}`}
+            />
+          )}
+        </>
+      )}
+      {/* Insert-position bars sit on the edges and fill into the inter-volume
+          gap. When inserting between K and K+1, K's right bar and K+1's left
+          bar appear at the same time, visually merging across the gap. */}
+      {showLeftBar && (
+        <div
+          className="absolute -left-0.5 top-0 bottom-0 w-1 bg-green-500 pointer-events-none z-10"
+          data-testid={`drop-bar-left-${volumeIndex}`}
+        />
+      )}
+      {showRightBar && (
+        <div
+          className="absolute -right-0.5 top-0 bottom-0 w-1 bg-green-500 pointer-events-none z-10"
+          data-testid={`drop-bar-right-${volumeIndex}`}
+        />
       )}
       {hideUI.value > 2 && is4D.value && (
         <Nav4D

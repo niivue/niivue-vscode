@@ -33,10 +33,16 @@ concurrency:
 
 jobs:
   deploy:
-    # Conditions:
-    #  - upstream build must have succeeded
-    #  - allow workflow_dispatch (maintainer triggered) and same-repo pull_request
-    #  - block fork pull_request: maintainer must manually dispatch Build PWA Preview
+    # No standalone workflow_dispatch here: the only entry point for previews
+    # is "Build PWA Preview" (which has its own workflow_dispatch). Re-deploys
+    # without rebuilding turned out rare enough to not justify a second button
+    # — if a deploy fails, re-running Build PWA Preview rebuilds and re-deploys
+    # in one step.
+    #
+    # Fork-PR gating: the primary gate is on Build PWA Preview's job-level if;
+    # fork PRs skip the build, so the workflow_run conclusion isn't 'success'
+    # and this if naturally filters them out. The same-repo check below is
+    # defense-in-depth in case the build's gate is ever loosened.
     if: |
       github.event.workflow_run.conclusion == 'success' &&
       (github.event.workflow_run.event == 'workflow_dispatch' ||
@@ -45,7 +51,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download build artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: pwa-preview
           path: pwa-preview
@@ -106,7 +112,7 @@ jobs:
 
       - name: Comment preview URL on PR
         if: steps.meta.outputs.skip != 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           PR_NUMBER: ${{ steps.meta.outputs.number }}
         with:
@@ -142,7 +148,7 @@ jobs:
       # commit status on the PR head SHA.
       - name: Surface preview status on PR head commit
         if: steps.meta.outputs.skip != 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           PR_NUMBER: ${{ steps.meta.outputs.number }}
           HEAD_SHA: ${{ steps.meta.outputs.head_sha }}

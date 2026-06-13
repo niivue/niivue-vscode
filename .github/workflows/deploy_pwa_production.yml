@@ -1,5 +1,7 @@
-# Modern workflow for deploying PWA to GitHub Pages
-name: Deploy PWA to Github Pages
+# Deploys the production PWA build (main branch) to the gh-pages root.
+# Counterpart to deploy_pwa_preview.yml, which deploys per-PR previews
+# under gh-pages/pr-N/.
+name: Deploy PWA Production
 
 on:
   workflow_run:
@@ -22,13 +24,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '22'
           cache: 'pnpm'

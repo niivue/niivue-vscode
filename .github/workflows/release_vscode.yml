@@ -14,13 +14,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '22'
           cache: 'pnpm'
@@ -66,7 +66,7 @@ jobs:
         run: echo "tag=niivue@$(node -p "require('./apps/vscode/package.json').version")" >> "$GITHUB_OUTPUT"
 
       - name: Attach VSIX to GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.release_tag.outputs.tag }}
           files: apps/vscode/*.vsix
@@ -74,7 +74,7 @@ jobs:
           prerelease: ${{ steps.prerelease.outputs.is_prerelease == 'true' }}
 
       - name: Upload extension artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: vscode-extension
           path: apps/vscode/*.vsix
