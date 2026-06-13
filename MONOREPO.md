@@ -10,6 +10,7 @@ A modern monorepo containing multiple NiiVue applications and packages for neuro
 - **`pwa/`** - Progressive Web App (slim wrapper around niivue-react)
 - **`jupyter/`** - JupyterLab extension
 - **`streamlit/`** - Streamlit component
+- **`desktop-tauri/`** - Standalone desktop app built with Tauri (native file I/O, cross-platform)
 
 ### Packages (`packages/`)
 
@@ -73,4 +74,5 @@ High-level overview:
   - **VS Code**: VS Code Marketplace & Open VSX
   - **Jupyter & Streamlit**: PyPI
   - **PWA**: GitHub Pages (deployed directly from `main`, no tag involved)
-- Every push to `main` with pending changesets also publishes a per-commit pre-release (Marketplace pre-release channel / PyPI `--pre`).
+  - **Desktop (Tauri)**: Cross-platform binaries published to GitHub Releases (Linux .deb/.AppImage, macOS .dmg, Windows .msi/.exe)
+- A daily scheduled job (03:00 UTC) publishes a pre-release when `main` has pending changesets — capped at one per day (Marketplace pre-release channel / PyPI `--pre` / desktop installers on GitHub Releases).

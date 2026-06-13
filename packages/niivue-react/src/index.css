@@ -1,6 +1,10 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+@config '../tailwind.config.js';
+
+/* Component chrome (tokens, top bar, tile chrome) is imported directly by the
+   components that use it (Menu.tsx, Volume.tsx) rather than here. A bare
+   side-effect import of this file is tree-shaken out of consumers' production
+   bundles, so co-locating the CSS with its component is what reliably ships it. */
 
 .text-outline {
   text-shadow:

@@ -36,5 +36,6 @@ test('probe: addImage with body.pairedData renders MHD pair (Streamlit shape)', 
 
   const bodyText = await page.evaluate(() => (document.body.innerText || '').slice(0, 500))
   expect(bodyText).toContain('64 x 64 x 64')
-  expect(bodyText).toContain('32 x 32 x 32: 255')
+  expect(bodyText).toContain('32 x 32 x 32')
+  expect(bodyText).toMatch(/VAL\s+255/)
 })

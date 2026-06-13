@@ -1,6 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { NiiVueEditorProvider } from '../src/editorProvider'
-import { __resetMock, Uri, workspace } from './vscode-mock'
+import { __resetMock, FileType, Uri, workspace } from './vscode-mock'
+
+/** 140-byte buffer with the DICOM Part 10 magic ("DICM" at offset 128). */
+function dicomBytes(): Uint8Array {
+  const bytes = new Uint8Array(140)
+  bytes.set([0x44, 0x49, 0x43, 0x4d], 128)
+  return bytes
+}
+
+/** 140-byte buffer without the DICOM magic. */
+function nonDicomBytes(): Uint8Array {
+  return new Uint8Array(140)
+}
 
 /**
  * These tests pin down the URL-vs-binary decision made by
@@ -158,6 +170,62 @@ describe('NiiVueEditorProvider.uriToImageBody', () => {
     expect(webview.asWebviewUri).not.toHaveBeenCalled()
   })
 
+  it('ships binary for an extension-less file whose content is DICOM', async () => {
+    // Scanner exports often have no extension (IM_0001) or a bare UID as the
+    // name. The custom-editor selector can't match those, but "NiiVue: Open"
+    // can still target them; the provider must sniff the DICOM magic
+    // (128-byte preamble + "DICM") and ship bytes so the webview routes the
+    // file through the DICOM loader.
+    workspace.workspaceFolders = [{ uri: Uri.parse('file:///home/user/proj') }]
+    const payload = new Uint8Array(140)
+    payload.set([0x44, 0x49, 0x43, 0x4d], 128) // "DICM"
+    workspace.fs.readFile.mockResolvedValueOnce(payload)
+    const webview = makeWebview()
+    const uri = Uri.parse('file:///home/user/proj/IM_0001')
+
+    const body = await NiiVueEditorProvider.uriToImageBody(uri, webview as any)
+
+    expect(body.data).toBeInstanceOf(ArrayBuffer)
+    expect(body.uri).toBe('file:///home/user/proj/IM_0001')
+    expect(webview.asWebviewUri).not.toHaveBeenCalled()
+  })
+
+  it('ships binary for a UID-named DICOM file (dots but no real extension)', async () => {
+    workspace.workspaceFolders = [{ uri: Uri.parse('file:///home/user/proj') }]
+    const payload = new Uint8Array(140)
+    payload.set([0x44, 0x49, 0x43, 0x4d], 128)
+    workspace.fs.readFile.mockResolvedValueOnce(payload)
+    const uri = Uri.parse('file:///home/user/proj/1.2.840.113619.2.5.1762583153.101')
+
+    const body = await NiiVueEditorProvider.uriToImageBody(uri, makeWebview() as any)
+
+    expect(body.data).toBeInstanceOf(ArrayBuffer)
+  })
+
+  it('falls back to a webview URL for an extension-less file that is not DICOM', async () => {
+    workspace.workspaceFolders = [{ uri: Uri.parse('file:///home/user/proj') }]
+    workspace.fs.readFile.mockResolvedValueOnce(new Uint8Array(200)) // no magic
+    const webview = makeWebview()
+    const uri = Uri.parse('file:///home/user/proj/Makefile')
+
+    const body = await NiiVueEditorProvider.uriToImageBody(uri, webview as any)
+
+    expect(body.data).toBeUndefined()
+    expect(body.uri).toContain('vscode-cdn.net')
+    expect(webview.asWebviewUri).toHaveBeenCalledOnce()
+  })
+
+  it('does not sniff files with a recognized extension', async () => {
+    workspace.workspaceFolders = [{ uri: Uri.parse('file:///home/user/proj') }]
+    const webview = makeWebview()
+    const uri = Uri.parse('file:///home/user/proj/mesh.gii')
+
+    const body = await NiiVueEditorProvider.uriToImageBody(uri, webview as any)
+
+    expect(body.data).toBeUndefined()
+    expect(workspace.fs.readFile).not.toHaveBeenCalled()
+  })
+
   it('produces a fresh ArrayBuffer (not a view onto a pooled Node Buffer)', async () => {
     // VS Code returns Uint8Array views that on Node are backed by a shared
     // ArrayBuffer pool — handing that to postMessage would leak unrelated
@@ -174,5 +242,167 @@ describe('NiiVueEditorProvider.uriToImageBody', () => {
     expect(body.data!.byteLength).toBe(4)
     expect(body.data).not.toBe(shared)
     expect(new Uint8Array(body.data!)).toEqual(new Uint8Array([1, 2, 3, 4]))
+  })
+})
+
+describe('NiiVueEditorProvider.isDicomCandidateName', () => {
+  it.each([
+    ['scan.dcm', true],
+    ['SCAN.DCM', true],
+    ['image.ima', true],
+    ['IM_0001', true], // extension-less scanner export
+    ['1.2.840.113619.2.5.1762583153.101', true], // bare DICOM UID
+    ['scan.nii', false],
+    ['scan.nii.gz', false],
+    ['readme.md', false],
+    ['mesh.gii', false],
+  ])('given %s, returns %s', (name, expected) => {
+    expect(NiiVueEditorProvider.isDicomCandidateName(name)).toBe(expected)
+  })
+})
+
+describe('NiiVueEditorProvider.collectDicomFolder', () => {
+  // Mirror the way VS Code's fs returns per-URI bytes.
+  function readFileByName(map: Record<string, Uint8Array>) {
+    return async (uri: Uri) => {
+      const name = uri.path.split('/').pop() ?? ''
+      const bytes = map[name]
+      if (!bytes) throw new Error(`ENOENT ${name}`)
+      return bytes
+    }
+  }
+
+  it('collects only files that sniff as DICOM, sorted by URI', async () => {
+    workspace.fs.readDirectory.mockResolvedValue([
+      ['slice2.dcm', FileType.File],
+      ['slice1.dcm', FileType.File],
+      ['notes.txt', FileType.File], // skipped: not a DICOM candidate name
+      ['nested', FileType.Directory], // skipped: not a file
+    ])
+    workspace.fs.readFile.mockImplementation(
+      readFileByName({ 'slice1.dcm': dicomBytes(), 'slice2.dcm': dicomBytes() }),
+    )
+
+    const result = await NiiVueEditorProvider.collectDicomFolder(
+      Uri.parse('file:///proj/series'),
+    )
+
+    expect(result.uris).toEqual([
+      'file:///proj/series/slice1.dcm',
+      'file:///proj/series/slice2.dcm',
+    ])
+    expect(result.datas).toHaveLength(2)
+    // notes.txt is name-filtered before any read
+    expect(workspace.fs.readFile).not.toHaveBeenCalledWith(
+      expect.objectContaining({ path: '/proj/series/notes.txt' }),
+    )
+  })
+
+  it('drops extension-less candidates whose content is not DICOM', async () => {
+    workspace.fs.readDirectory.mockResolvedValue([
+      ['IM_0001', FileType.File],
+      ['IM_0002', FileType.File],
+      ['Makefile', FileType.File], // candidate by name, but not DICOM content
+    ])
+    workspace.fs.readFile.mockImplementation(
+      readFileByName({
+        IM_0001: dicomBytes(),
+        IM_0002: dicomBytes(),
+        Makefile: nonDicomBytes(),
+      }),
+    )
+
+    const result = await NiiVueEditorProvider.collectDicomFolder(Uri.parse('file:///scan'))
+
+    expect(result.uris).toEqual(['file:///scan/IM_0001', 'file:///scan/IM_0002'])
+  })
+
+  it('returns empty when the directory cannot be read', async () => {
+    workspace.fs.readDirectory.mockRejectedValue(new Error('EACCES'))
+    const result = await NiiVueEditorProvider.collectDicomFolder(Uri.parse('file:///x'))
+    expect(result).toEqual({ uris: [], datas: [] })
+  })
+})
+
+describe('NiiVueEditorProvider.collectDicomFolderImages', () => {
+  it('expands a clicked DICOM file to every DICOM in its folder', async () => {
+    workspace.fs.readDirectory.mockResolvedValue([
+      ['001.dcm', FileType.File],
+      ['002.dcm', FileType.File],
+    ])
+    workspace.fs.readFile.mockResolvedValue(dicomBytes())
+
+    const series = await NiiVueEditorProvider.collectDicomFolderImages(
+      Uri.parse('file:///study/001.dcm'),
+    )
+
+    expect(series).not.toBeNull()
+    expect(series!.uris).toEqual(['file:///study/001.dcm', 'file:///study/002.dcm'])
+  })
+
+  it('returns null when the clicked file is not DICOM (caller loads it singly)', async () => {
+    workspace.fs.readFile.mockResolvedValueOnce(nonDicomBytes())
+    const series = await NiiVueEditorProvider.collectDicomFolderImages(
+      Uri.parse('file:///study/IM_0001'),
+    )
+    expect(series).toBeNull()
+  })
+})
+
+describe('NiiVueEditorProvider.sendInitialImage', () => {
+  function makeWebviewWithPost() {
+    return {
+      asWebviewUri: vi.fn((uri: Uri) => ({
+        toString: () => `https://cdn.vscode-cdn.net${uri.path}?scheme=${uri.scheme}`,
+      })),
+      postMessage: vi.fn(),
+    }
+  }
+
+  it('sends the whole DICOM series when a single DICOM file is opened', async () => {
+    workspace.fs.readDirectory.mockResolvedValue([
+      ['001.dcm', FileType.File],
+      ['002.dcm', FileType.File],
+      ['003.dcm', FileType.File],
+    ])
+    workspace.fs.readFile.mockResolvedValue(dicomBytes())
+    const webview = makeWebviewWithPost()
+
+    await NiiVueEditorProvider.sendInitialImage(Uri.parse('file:///study/001.dcm'), webview as any)
+
+    expect(webview.postMessage).toHaveBeenCalledTimes(1)
+    const message = webview.postMessage.mock.calls[0][0]
+    expect(message.type).toBe('addImage')
+    expect(Array.isArray(message.body.uri)).toBe(true)
+    expect(message.body.uri).toHaveLength(3)
+    expect(message.body.data).toHaveLength(3)
+  })
+
+  it('expands an extension-less DICOM file (right-click "NiiVue: Open")', async () => {
+    workspace.fs.readDirectory.mockResolvedValue([
+      ['IM_0001', FileType.File],
+      ['IM_0002', FileType.File],
+    ])
+    workspace.fs.readFile.mockResolvedValue(dicomBytes())
+    const webview = makeWebviewWithPost()
+
+    await NiiVueEditorProvider.sendInitialImage(Uri.parse('file:///scan/IM_0001'), webview as any)
+
+    const message = webview.postMessage.mock.calls[0][0]
+    expect(message.body.uri).toEqual(['file:///scan/IM_0001', 'file:///scan/IM_0002'])
+  })
+
+  it('loads a single image (not a series) for non-DICOM files', async () => {
+    workspace.workspaceFolders = [{ uri: Uri.parse('file:///proj') }]
+    const webview = makeWebviewWithPost()
+
+    await NiiVueEditorProvider.sendInitialImage(Uri.parse('file:///proj/brain.nii.gz'), webview as any)
+
+    const message = webview.postMessage.mock.calls[0][0]
+    expect(message.type).toBe('addImage')
+    expect(message.body.uri).toBe('https://cdn.vscode-cdn.net/proj/brain.nii.gz?scheme=file')
+    // .nii.gz is never read for DICOM sniffing
+    expect(workspace.fs.readDirectory).not.toHaveBeenCalled()
+    expect(workspace.fs.readFile).not.toHaveBeenCalled()
   })
 })

@@ -30,7 +30,7 @@ import { Signal } from '@preact/signals'
 import { useEffect, useRef } from 'preact/hooks'
 import { ExtendedNiivue, notifyImageLoaded } from '../events'
 import { NiiVueSettings } from '../settings'
-import { isImageType } from '../utility'
+import { isDicomData, isImageType } from '../utility'
 import { AppProps } from './AppProps'
 
 export interface NiiVueCanvasProps {
@@ -163,7 +163,62 @@ const ensureArrayBuffer = (data: any) => {
   return data
 }
 
+// True for names without any extension ("IM_0001") or DICOM UID-style names
+// made of digits and dots ("1.2.840.113619...101"). Used to decide whether a
+// URL without data is worth fetching for a DICOM magic-byte sniff; mesh
+// names like "lh.pial" or "brain.obj" stay on the streaming URL path.
+const looksExtensionless = (uri: string) => {
+  const basename = uri.split('?')[0].split('/').pop() ?? ''
+  return !basename.includes('.') || /^[\d.]+$/.test(basename)
+}
+
+// Load one or more DICOM files as a single series. dcm2niix groups the
+// slices and returns one NIfTI per series; the first series fills this canvas
+// and any further series (a folder holding multiple acquisitions) are
+// re-emitted through the normal pipeline so each opens on its own canvas.
+async function loadDicomSeries(
+  nv: ExtendedNiivue,
+  uris: string[],
+  datas: any,
+  settings: NiiVueSettings,
+) {
+  const names = uris.map((u) => String(u).replace('.ima', '.dcm').replace('.IMA', '.dcm'))
+  const data = Array.isArray(datas) ? [...datas] : [datas]
+  // Fetch any missing buffers (e.g. plain URLs without inlined data).
+  for (let i = 0; i < names.length; i++) {
+    if (!data[i] && names[i].startsWith('http')) {
+      const response = await fetch(names[i])
+      data[i] = await response.arrayBuffer()
+    }
+  }
+  const dicomInput = names.map((name, i) => ({ data: ensureArrayBuffer(data[i]), name }))
+  const loadedFiles = await dicomLoader(dicomInput)
+  if (!loadedFiles || loadedFiles.length === 0) {
+    throw new Error('No DICOM volume could be decoded from the provided files')
+  }
+  const [first, ...rest] = loadedFiles
+  const volume = await NVImage.loadFromUrl({
+    url: first.data,
+    name: first.name,
+    colormap: settings.defaultVolumeColormap,
+  })
+  nv.addVolume(volume)
+  // Extra series are already-decoded NIfTI buffers; route them back through
+  // the image pipeline so each gets its own canvas.
+  for (const file of rest) {
+    window.postMessage({ type: 'addImage', body: { data: file.data, uri: file.name } })
+  }
+}
+
 async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSettings) {
+  // Multi-file DICOM series: item.uri is an array of slice names with
+  // item.data an array of buffers. Handle this first, because the single-file
+  // string heuristics below call string methods on item.uri and would throw
+  // on an array.
+  if (Array.isArray(item.uri)) {
+    await loadDicomSeries(nv, item.uri, item.data, settings)
+    return
+  }
   const isMincFile = (uri: string) => {
     const lowerUri = uri.toLowerCase()
     return lowerUri.endsWith('.mnc') || lowerUri.endsWith('.mnc.gz')
@@ -194,38 +249,31 @@ async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSetting
     return
   }
 
-  // Read .ima and .IMA as dicom files
-  if (Array.isArray(item.uri)) {
-    item.uri = item.uri.map((uri: any) => uri.replace('.ima', '.dcm').replace('.IMA', '.dcm'))
-  } else if (item.uri.endsWith('.ima') || item.uri.endsWith('.IMA')) {
+  // Read .ima and .IMA as dicom files (array form handled by loadDicomSeries)
+  if (item.uri.endsWith('.ima') || item.uri.endsWith('.IMA')) {
     item.uri = item.uri.replace('.ima', '.dcm').replace('.IMA', '.dcm')
   }
-  // Handle different file types
-  if (Array.isArray(item.uri) || item.uri.endsWith('.dcm')) {
-    if (!Array.isArray(item.uri)) {
-      item.uri = [item.uri]
-      item.data = [item.data]
-    }
-    
-    // Fetch data if missing for any DICOM URL
-    for (let i = 0; i < item.uri.length; i++) {
-      if (!item.data[i] && typeof item.uri[i] === 'string' && item.uri[i].startsWith('http')) {
-        const response = await fetch(item.uri[i])
-        item.data[i] = await response.arrayBuffer()
+  // DICOM files often have no extension (scanner exports may use bare
+  // numbers or UIDs as names). When the name matches no known image format,
+  // sniff the DICOM magic bytes and route matches through the DICOM loader.
+  if (!item.uri.endsWith('.dcm') && !isImageType(item.uri)) {
+    if (!item.data && item.uri.startsWith('http') && looksExtensionless(item.uri)) {
+      // No bytes to sniff (e.g. webview resource URL), so fetch them. The
+      // buffer is reused below; the file is not downloaded twice.
+      try {
+        const response = await fetch(item.uri)
+        item.data = await response.arrayBuffer()
+      } catch {
+        // leave item.data unset; the fallback paths report the failure
       }
     }
-
-    const dicomInput = item.uri.map((uri: any, i: number) => ({
-      data: ensureArrayBuffer(item.data[i]),
-      name: uri,
-    }))
-    const loadedFiles = await dicomLoader(dicomInput)
-    const volume = await NVImage.loadFromUrl({
-      url: loadedFiles[0].data,
-      name: loadedFiles[0].name,
-      colormap: settings.defaultVolumeColormap,
-    })
-    nv.addVolume(volume)
+    if (isDicomData(item.data)) {
+      item.uri += '.dcm'
+    }
+  }
+  // Handle different file types
+  if (item.uri.endsWith('.dcm')) {
+    await loadDicomSeries(nv, [item.uri], [item.data], settings)
   } else if (item.uri.endsWith('.raw')) {
     const header = await getMinimalHeaderMHA()
     if (!header) {

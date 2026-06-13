@@ -92,9 +92,8 @@ test.describe('4D Sync', () => {
     // Remove the second volume
     // We need a more reliable way to remove volume or just load 1 in a separate test context.
     // However, since beforeEach loads 2, let's remove one using the UI or just execute script.
-    // Click the X button to remove the second volume
-    // The X button is part of the UI, let's target it specifically.
-    const closeButton1 = page.locator('button', { hasText: 'X' }).nth(1)
+    // Click the close button on the second volume to remove it.
+    const closeButton1 = page.getByRole('button', { name: 'Close' }).nth(1)
 
     // Ensure visibility before clicking
     await expect(closeButton1).toBeVisible()

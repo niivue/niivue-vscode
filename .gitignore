@@ -35,6 +35,10 @@ static/
 build/
 apps/vscode/niivue/
 
+# Tauri Rust build output
+apps/desktop-tauri/src-tauri/target/
+apps/desktop-tauri/src-tauri/gen/
+
 # VS Code extension generated files
 apps/vscode/vscode-styles.css
 
@@ -55,6 +59,7 @@ _version.py
 
 # Pre-release encoder transient output
 prerelease-targets.json
+changeset-status.json
 
 # Test artifacts
 test-results/

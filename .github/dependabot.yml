@@ -1,0 +1,184 @@
+# Dependabot config for the niivue-vscode monorepo.
+# - npm at the repo root covers all pnpm workspaces (apps/*, packages/*) via the shared pnpm-lock.yaml
+# - Updates are grouped to avoid PR sprawl in a 4-app monorepo
+# - @niivue/niivue is intentionally pinned to ^0.68.x while the mono (1.x) migration is planned;
+#   ignore major bumps so they don't surface as auto-PRs
+
+version: 2
+
+updates:
+  # GitHub Actions used by the workflows in .github/workflows
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: 'ci'
+      include: 'scope'
+    labels:
+      - 'dependencies'
+      - 'github-actions'
+    groups:
+      actions:
+        patterns:
+          - '*'
+
+  # npm / pnpm workspaces — root pnpm-lock.yaml covers apps/* and packages/*
+  # Keep open-pull-requests-limit low: every npm PR touches the shared
+  # pnpm-lock.yaml, so each merge forces every other open PR to rebase.
+  # Dependabot still tracks the full backlog and surfaces additional PRs
+  # as we merge — lowering the limit reduces churn, not coverage.
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+    open-pull-requests-limit: 3
+    versioning-strategy: 'increase-if-necessary'
+    commit-message:
+      prefix: 'chore'
+      prefix-development: 'chore'
+      include: 'scope'
+    labels:
+      - 'dependencies'
+      - 'javascript'
+    ignore:
+      # @niivue/niivue 0.68.x → 1.x is a deliberate, planned migration (mono rewrite).
+      # Bump manually; don't open auto-PRs for major bumps in the meantime.
+      - dependency-name: '@niivue/niivue'
+        update-types:
+          - 'version-update:semver-major'
+      # @types/vscode is a backwards-compat floor, not a routine type update:
+      # per VS Code extension guidance it must be <= engines.vscode in
+      # apps/vscode/package.json, currently pinned to ^1.70.0 because 1.70 is
+      # the last VS Code release that runs on Windows 7. Bumping the types
+      # forces bumping the engine, which is a deliberate policy decision —
+      # not something to auto-PR. Bump manually when dropping Win7 support.
+      - dependency-name: '@types/vscode'
+    groups:
+      # Type definitions — almost always safe to batch
+      types:
+        patterns:
+          - '@types/*'
+      # Prettier + format tooling — must be declared BEFORE the eslint group
+      # so that eslint-config-prettier / eslint-plugin-prettier match here
+      # (Dependabot assigns each dep to its first matching group).
+      prettier:
+        patterns:
+          - 'prettier'
+          - 'prettier-*'
+          - 'eslint-config-prettier'
+          - 'eslint-plugin-prettier'
+      # ESLint + linting stack (eslint-plugin-prettier already grabbed above)
+      eslint:
+        patterns:
+          - 'eslint'
+          - '@eslint/*'
+          - '@typescript-eslint/*'
+          - 'typescript-eslint'
+          - 'eslint-plugin-*'
+      # Vitest unit tests
+      vitest:
+        patterns:
+          - 'vitest'
+          - '@vitest/*'
+      # Playwright E2E
+      playwright:
+        patterns:
+          - 'playwright'
+          - '@playwright/*'
+      # Vite + plugins
+      vite:
+        patterns:
+          - 'vite'
+          - '@vitejs/*'
+          - 'vite-plugin-*'
+          - 'vite-tsconfig-paths'
+      # Turborepo
+      turbo:
+        patterns:
+          - 'turbo'
+          - '@turbo/*'
+      # JupyterLab extension framework (apps/jupyter)
+      jupyterlab:
+        patterns:
+          - '@jupyterlab/*'
+          - '@jupyter/*'
+          - '@lumino/*'
+      # React/Preact core only. Intentionally NOT using `react-*` so that
+      # unrelated React-ecosystem packages (e.g. react-router-dom v7) get
+      # their own ungrouped PRs and aren't bundled with a core React bump.
+      react-preact:
+        patterns:
+          - 'react'
+          - 'react-dom'
+          - 'preact'
+          - '@preact/*'
+      # Tailwind + PostCSS
+      tailwind:
+        patterns:
+          - 'tailwindcss'
+          - 'tailwindcss-*'
+          - '@tailwindcss/*'
+          - 'postcss'
+          - 'postcss-*'
+          - 'autoprefixer'
+      # esbuild (used by apps/vscode)
+      esbuild:
+        patterns:
+          - 'esbuild'
+          - 'esbuild-*'
+          - '@esbuild/*'
+      # Changesets
+      changesets:
+        patterns:
+          - '@changesets/*'
+      # Catch-all for the long tail of minor/patch bumps that don't belong
+      # to a tool-specific group. Folds quiet weekly updates (e.g. workbox-*,
+      # @testing-library/*, concurrent utility libs) into one PR so the
+      # 3-PR limit isn't wasted on individual minor bumps. Major bumps fall
+      # through and get their own PRs — which is what we want for bisecting.
+      minor-and-patch:
+        patterns:
+          - '*'
+        update-types:
+          - 'minor'
+          - 'patch'
+
+  # Python — Streamlit component (published to PyPI as niivue-streamlit)
+  - package-ecosystem: 'pip'
+    directory: '/apps/streamlit'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: 'chore'
+      include: 'scope'
+    labels:
+      - 'dependencies'
+      - 'python'
+    groups:
+      streamlit-python:
+        patterns:
+          - '*'
+
+  # Python — JupyterLab extension (published to PyPI as jupyterlab_niivue)
+  - package-ecosystem: 'pip'
+    directory: '/apps/jupyter'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: 'chore'
+      include: 'scope'
+    labels:
+      - 'dependencies'
+      - 'python'
+    groups:
+      jupyter-python:
+        patterns:
+          - '*'

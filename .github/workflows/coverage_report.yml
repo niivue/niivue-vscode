@@ -1,0 +1,229 @@
+# Publishes the aggregated coverage report produced by the CI workflow.
+#
+# Trust posture: TRUSTED.
+#   - Triggered by workflow_run (always runs the default-branch version of
+#     this file) or by maintainer workflow_dispatch.
+#   - Never runs PR code. Only consumes the coverage-publish artifact CI
+#     uploaded (a static directory of HTML + JSON files) and deploys it.
+#
+# Fork-PR policy: auto-publish for everyone, including forks.
+#   The coverage report is a passive, generated artifact (Istanbul HTML + a
+#   markdown table). Unlike the PWA preview — which deploys a runnable SPA
+#   on the same origin as the rest of niivue.github.io and could in principle
+#   embed attacker scripts — the coverage report has bounded HTML rendered
+#   by istanbul-lib-report from structured numeric inputs, so we accept the
+#   smaller risk in exchange for letting fork contributors see their coverage
+#   delta automatically.
+#
+#   workflow_dispatch is still provided as a recovery path (re-publish after
+#   a failed deploy, or republish a stale fork PR after fixes).
+
+name: Coverage Report
+
+on:
+  workflow_run:
+    workflows: ['CI']
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number (for fork PRs that did not auto-deploy)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+  statuses: write
+  actions: read
+
+# Serialize gh-pages mutations so concurrent pushes don't collide.
+concurrency:
+  group: gh-pages-mutation
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    # Auto-publish for every successful CI run (push to main, same-repo PR,
+    # fork PR, or maintainer workflow_dispatch) — see the file header for the
+    # asymmetry vs. deploy_pwa_preview.yml. workflow_dispatch is always
+    # allowed (only maintainers can dispatch).
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       (github.event.workflow_run.event == 'workflow_dispatch' ||
+        github.event.workflow_run.event == 'push' ||
+        github.event.workflow_run.event == 'pull_request'))
+    runs-on: ubuntu-latest
+    steps:
+      # workflow_dispatch path: maintainer entered a PR number. Resolve the
+      # PR's head SHA, then ask the API for the most recent successful CI
+      # workflow run whose head_sha matches. Filtering by SHA (not branch
+      # name) avoids the cross-fork branch-name collision problem: two fork
+      # PRs called "feature/foo" have different SHAs, so we always pick the
+      # right run.
+      - name: Resolve CI run for manual dispatch
+        if: github.event_name == 'workflow_dispatch'
+        id: dispatch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+        run: |
+          set -euo pipefail
+          if ! [[ "$PR_NUMBER" =~ ^[0-9]+$ ]]; then
+            echo "::error::pr_number must be digits, got '$PR_NUMBER'"
+            exit 1
+          fi
+          head_sha=$(gh pr view "$PR_NUMBER" \
+            --repo "${{ github.repository }}" \
+            --json headRefOid --jq '.headRefOid')
+          if ! [[ "$head_sha" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::could not resolve head SHA for PR #$PR_NUMBER"
+            exit 1
+          fi
+          runs=$(gh api \
+            "repos/${{ github.repository }}/actions/workflows/ci.yml/runs?per_page=50&status=success&head_sha=$head_sha")
+          run_id=$(echo "$runs" | jq -r '.workflow_runs[0].id // empty')
+          if [ -z "$run_id" ]; then
+            echo "::error::no successful CI run found for PR #$PR_NUMBER at head $head_sha"
+            echo "    Push a new commit or re-run CI on the PR, then retry."
+            exit 1
+          fi
+          {
+            echo "run_id=$run_id"
+            echo "head_sha=$head_sha"
+          } >> "$GITHUB_OUTPUT"
+
+      # CI's coverage job exits 0 without uploading the artifact for paths-only
+      # commits where all `test-*` jobs were skipped (no source-code coverage to
+      # report). Treat that as a clean "nothing to publish" rather than a
+      # failure, otherwise every workflow-only commit on main reds the dashboard.
+      - name: Check for upstream coverage artifact
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          UPSTREAM_RUN_ID: ${{ steps.dispatch.outputs.run_id || github.event.workflow_run.id }}
+        run: |
+          set -euo pipefail
+          found=$(gh api "repos/${{ github.repository }}/actions/runs/$UPSTREAM_RUN_ID/artifacts?per_page=100" \
+            --jq '[.artifacts[] | select(.name == "coverage-publish")] | length')
+          if [ "$found" = "0" ]; then
+            echo "::notice::No coverage-publish artifact in upstream CI run $UPSTREAM_RUN_ID — likely a paths-filtered commit with all test jobs skipped. Nothing to publish."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download coverage-publish artifact
+        if: steps.check.outputs.skip != 'true'
+        uses: actions/download-artifact@v8
+        with:
+          name: coverage-publish
+          path: coverage-publish
+          run-id: ${{ steps.dispatch.outputs.run_id || github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Read and validate the metadata CI embedded in the artifact. The
+      # artifact contains the explicit PR head SHA the build was for; cross-
+      # check that against the PR's current head SHA via the API. Mismatch
+      # means a new commit was pushed (stale artifact) or the artifact was
+      # forged — skip either way.
+      - name: Read coverage metadata
+        if: steps.check.outputs.skip != 'true'
+        id: meta
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          meta_file=coverage-publish/coverage-meta.json
+          if [ ! -f "$meta_file" ]; then
+            echo "::error::artifact missing coverage-meta.json"
+            exit 1
+          fi
+          event=$(jq -r '.event' "$meta_file")
+          dest=$(jq -r '.dest' "$meta_file")
+          pr_number=$(jq -r '.pr_number // ""' "$meta_file")
+          pr_head_sha=$(jq -r '.pr_head_sha // ""' "$meta_file")
+
+          # Validate dest path: only allow coverage/main or coverage/pr-N
+          if ! [[ "$dest" =~ ^coverage/(main|pr-[0-9]+)$ ]]; then
+            echo "::error::invalid dest path '$dest'"
+            exit 1
+          fi
+
+          # PR-context validation
+          if [ -n "$pr_number" ] && [ "$pr_number" != "null" ]; then
+            if ! [[ "$pr_number" =~ ^[0-9]+$ ]]; then
+              echo "::error::invalid pr_number '$pr_number'"
+              exit 1
+            fi
+            if ! [[ "$pr_head_sha" =~ ^[0-9a-f]{40}$ ]]; then
+              echo "::error::invalid pr_head_sha '$pr_head_sha' for PR build"
+              exit 1
+            fi
+            api_sha=$(gh api "repos/${{ github.repository }}/pulls/$pr_number" --jq '.head.sha' 2>/dev/null || echo "")
+            if [ -z "$api_sha" ]; then
+              echo "::warning::could not resolve PR #$pr_number; skipping deploy"
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+            elif [ "$api_sha" != "$pr_head_sha" ]; then
+              echo "::warning::PR #$pr_number current head ($api_sha) does not match artifact head ($pr_head_sha) — stale or forged, skipping"
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "skip=false" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            # No PR number = push to main path. No PR to comment on.
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          {
+            echo "event=$event"
+            echo "dest=$dest"
+            echo "pr_number=$pr_number"
+            echo "head_sha=$pr_head_sha"
+          } >> "$GITHUB_OUTPUT"
+          rm -f "$meta_file"
+
+      - name: Deploy coverage report to gh-pages
+        if: steps.meta.outputs.skip == 'false'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./coverage-publish
+          destination_dir: ${{ steps.meta.outputs.dest }}
+          keep_files: true
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+          commit_message: 'Publish coverage report to ${{ steps.meta.outputs.dest }}'
+
+      - name: Comment coverage summary on PR
+        if: |
+          steps.meta.outputs.skip == 'false' &&
+          steps.meta.outputs.pr_number != '' &&
+          steps.meta.outputs.pr_number != 'null'
+        uses: marocchino/sticky-pull-request-comment@v3
+        with:
+          number: ${{ steps.meta.outputs.pr_number }}
+          path: coverage-publish/summary.md
+
+      - name: Surface coverage status on PR head commit
+        if: |
+          steps.meta.outputs.skip == 'false' &&
+          steps.meta.outputs.pr_number != '' &&
+          steps.meta.outputs.pr_number != 'null'
+        uses: actions/github-script@v9
+        env:
+          DEST: ${{ steps.meta.outputs.dest }}
+          HEAD_SHA: ${{ steps.meta.outputs.head_sha }}
+        with:
+          script: |
+            const url = `https://niivue.github.io/niivue-vscode/${process.env.DEST}/`;
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: process.env.HEAD_SHA,
+              state: 'success',
+              context: 'coverage-report',
+              target_url: url,
+              description: 'Coverage report published',
+            });

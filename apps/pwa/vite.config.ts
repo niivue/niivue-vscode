@@ -31,7 +31,7 @@ const gitRepoUrl = getGitRepoUrl()
 const isProd = process.env.NODE_ENV === 'production'
 // Support PR previews with PR_NUMBER environment variable
 const prNumber = process.env.PR_NUMBER
-const baseUrl = isProd 
+const baseUrl = isProd
   ? (prNumber ? `/niivue-vscode/pr-${prNumber}/` : '/niivue-vscode/')
   : '/'
 
@@ -131,7 +131,10 @@ export default defineConfig({
       workbox: {
         maximumFileSizeToCacheInBytes: 3000000,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,wasm}'],
-        navigateFallbackDenylist: [/\/pr-\d+\//], // Don't intercept PR preview navigations
+        // Don't intercept navigations that aren't part of the PWA. `/pr-N/`
+        // is the per-PR PWA preview; `/coverage/` is the Istanbul report,
+        // which has its own index.html and must not be served the PWA shell.
+        navigateFallbackDenylist: [/\/pr-\d+\//, /\/coverage\//],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/niivue\.github\.io\//,
@@ -204,8 +207,11 @@ export default defineConfig({
         entryFileNames: 'assets/[name]-[hash].js',
         chunkFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash].[ext]',
-        manualChunks: {
-          vendor: ['preact', '@preact/signals'],
+        // Rolldown (Vite 8) requires manualChunks to be a function, not an object
+        manualChunks: (id) => {
+          if (id.includes('/preact/') || id.includes('/@preact/signals')) {
+            return 'vendor'
+          }
         },
       },
       // Ensure virtual modules are properly handled
