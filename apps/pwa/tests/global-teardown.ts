@@ -22,7 +22,7 @@ async function globalTeardown(config: FullConfig) {
         } catch { /* may not exist; fine */ }
       }
     }
-    try { await fs.rmdir(path.join(pwaRoot, 'public')) } catch { /* not empty / missing */ }
+    // public/ now holds the committed logo.png — don't rmdir it.
   } catch (error) {
     console.error('Error cleaning up test assets:', error)
   }

@@ -1,5 +1,6 @@
 import '../styles/tokens.css'
 import './Menu.css'
+import { niivueLogo } from '../assets/niivue-logo'
 import { SLICE_TYPE } from '@niivue/niivue'
 import { Signal, computed, effect, useSignal } from '@preact/signals'
 import { useMemo } from 'preact/hooks'
@@ -701,7 +702,7 @@ export const Menu = (props: AppProps) => {
       <div className="nv-topbar">
         <div className="nv-topbar-left">
           <div className="nv-brand">
-            <div className="nv-brand-mark">N</div>
+            <img className="nv-brand-mark" src={niivueLogo} alt="" width={26} height={26} />
             <div className="nv-brand-text">
               <span className="nv-brand-name">niivue</span>
               {!isVscode && <span className="nv-brand-sub">Viewer</span>}

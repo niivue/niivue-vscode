@@ -41,13 +41,11 @@
 .nv-brand { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 .nv-brand-mark {
   width: 26px; height: 26px; border-radius: 7px;
-  display: grid; place-items: center;
-  color: #0a0e13;
-  font-weight: 600; font-size: 14px;
-  background: var(--accent);
+  object-fit: cover;
+  background: #0a0e13;
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.1) inset,
-    0 2px 8px color-mix(in oklab, var(--accent) 40%, transparent);
+    0 2px 8px color-mix(in oklab, var(--accent) 25%, transparent);
 }
 .nv-brand-text { display: flex; flex-direction: column; line-height: 1; }
 .nv-brand-name { font-weight: 600; font-size: 13px; letter-spacing: -0.01em; color: var(--fg-0); }

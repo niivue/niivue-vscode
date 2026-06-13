@@ -5,7 +5,7 @@
   "description": "View NIfTI images (and a lot of other medical imaging formats)",
   "version": "2.9.0",
   "publisher": "KorbinianEckstein",
-  "icon": "niivue_icon.png",
+  "icon": "icon.png",
   "bugs": {
     "url": "https://github.com/niivue/niivue-vscode/issues",
     "email": "korbinian90+niivue@gmail.com"
@@ -373,8 +373,8 @@
           ".npz"
         ],
         "icon": {
-          "light": "./niivue_icon_transparent_contrast.png",
-          "dark": "./niivue_icon_transparent_contrast.png"
+          "light": "./language-icon.png",
+          "dark": "./language-icon.png"
         }
       }
     ],
