@@ -124,6 +124,33 @@
 .nv-menu-div,
 .nv-menu-panel hr { height: 1px; background: var(--line); margin: 4px 6px; border: 0; }
 
+/* Numeric stepper row (StepperEntry): label on the left, − value + on the right.
+   The row mirrors .nv-menu-item spacing but is not itself clickable. */
+.nv-stepper {
+  display: flex; width: 100%;
+  align-items: center; justify-content: space-between;
+  padding: 5px 10px; border-radius: 5px;
+  font-size: 12px; color: var(--fg-1);
+}
+.nv-stepper-controls { display: inline-flex; align-items: center; gap: 6px; }
+.nv-stepper-btn {
+  width: 22px; height: 22px;
+  display: grid; place-items: center;
+  border-radius: 5px;
+  border: 1px solid var(--line-2);
+  background: var(--bg-3);
+  color: var(--fg-1);
+  font-size: 15px; line-height: 1;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.nv-stepper-btn:hover:not(:disabled) { background: var(--bg-5); color: var(--fg-0); }
+.nv-stepper-btn:disabled { opacity: 0.4; cursor: default; }
+.nv-stepper-value {
+  min-width: 46px; text-align: center;
+  font-family: var(--font-mono); font-size: 11.5px; color: var(--fg-0);
+}
+
 @keyframes nv-menu-fade-in {
   from { opacity: 0; transform: translateY(-6px); }
 }
