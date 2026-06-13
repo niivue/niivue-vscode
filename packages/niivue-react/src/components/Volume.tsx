@@ -1,3 +1,5 @@
+import '../styles/tokens.css'
+import './Volume.css'
 import { computed, Signal, useSignal } from '@preact/signals'
 import { useEffect, useRef } from 'preact/hooks'
 import { ExtendedNiivue } from '../events'

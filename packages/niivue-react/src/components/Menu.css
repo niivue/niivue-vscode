@@ -9,8 +9,34 @@
   min-width: 0;
   min-height: var(--topbar-h);
 }
-.nv-topbar-left { display: flex; align-items: center; gap: 20px; min-width: 0; flex: 1; flex-wrap: wrap; }
+.nv-topbar-left { display: flex; align-items: center; gap: 20px; min-width: 0; flex: 1; }
 .nv-topbar-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+
+/* Adaptive menu bar: a single non-wrapping row that overflows into a "More"
+   menu instead of wrapping to a second line. */
+.nv-bar { position: relative; flex: 1 1 auto; min-width: 0; }
+.nv-bar-row { display: flex; align-items: center; gap: 4px; }
+/* Off-screen twin used only to measure each item's natural width. */
+.nv-bar-measure {
+  position: absolute; top: 0; left: 0;
+  visibility: hidden; pointer-events: none;
+  white-space: nowrap;
+}
+
+.nv-more-toggle { padding: 6px 8px; }
+.nv-more-panel {
+  min-width: 210px;
+  max-height: min(70vh, 520px);
+  overflow-y: auto;
+}
+.nv-more-caret { transition: transform 0.15s ease; }
+.nv-more-caret.is-open { transform: rotate(180deg); }
+/* Inline accordion: a collapsed dropdown expands its entries in place. */
+.nv-more-sub {
+  margin: 2px 0 4px 9px;
+  padding-left: 7px;
+  border-left: 1px solid var(--line-2);
+}
 
 .nv-brand { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 .nv-brand-mark {

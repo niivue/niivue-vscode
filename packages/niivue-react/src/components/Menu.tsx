@@ -1,3 +1,5 @@
+import '../styles/tokens.css'
+import './Menu.css'
 import { SLICE_TYPE } from '@niivue/niivue'
 import { Signal, computed, effect, useSignal } from '@preact/signals'
 import { useMemo } from 'preact/hooks'
@@ -16,13 +18,11 @@ import { HeaderBox } from './HeaderBox'
 import {
     HeaderDialog,
     ImageSelect,
-    MenuButton,
     MenuEntry,
-    MenuItem,
-    MenuToggle,
     ToggleEntry,
     toggle,
 } from './MenuElements'
+import { BarItem, MenuBar } from './MenuBar'
 import { ScalingBox } from './ScalingBox'
 
 export const Menu = (props: AppProps) => {
@@ -451,6 +451,251 @@ export const Menu = (props: AppProps) => {
 
   useKeyboardShortcuts(handlers)
 
+  // Top-level bar items, expressed as data so the adaptive <MenuBar> can render
+  // each either inline or inside the overflow ("More") menu. Visibility folds in
+  // both the per-item settings flag and the data-dependent conditions that used
+  // to live on the JSX (e.g. isVolume / isVolumeOrMesh).
+  const barItems: BarItem[] = [
+    {
+      key: 'home',
+      type: 'button',
+      label: 'Home',
+      visible: !isVscode && !!settings.value.menuItems?.home,
+      onClick: homeEvent,
+    },
+    {
+      key: 'addImage',
+      type: 'menu',
+      label: 'Add Image',
+      visible: !!settings.value.menuItems?.addImage,
+      onClick: addImagesEvent,
+      shortcut: formatShortcut(UI_SHORTCUTS.ADD_IMAGE),
+      children: (
+        <>
+          <MenuEntry label="File(s)" onClick={addImagesEvent} />
+          <MenuEntry label="DICOM Folder" onClick={addDcmFolderEvent} />
+          <MenuEntry
+            label="Example Image"
+            onClick={() =>
+              openImageFromURL('https://niivue.github.io/niivue-demo-images/mni152.nii.gz')
+            }
+          />
+        </>
+      ),
+    },
+    {
+      key: 'view',
+      type: 'menu',
+      label: 'View',
+      visible: !!settings.value.menuItems?.view,
+      onClick: resetZoom,
+      shortcut: formatShortcut(UI_SHORTCUTS.RESET_VIEW),
+      children: (
+        <>
+          <MenuEntry
+            label="Axial"
+            onClick={() => (sliceType.value = SLICE_TYPE.AXIAL)}
+            shortcut={formatShortcut(UI_SHORTCUTS.VIEW_AXIAL)}
+          />
+          <MenuEntry
+            label="Sagittal"
+            onClick={() => (sliceType.value = SLICE_TYPE.SAGITTAL)}
+            shortcut={formatShortcut(UI_SHORTCUTS.VIEW_SAGITTAL)}
+          />
+          <MenuEntry
+            label="Coronal"
+            onClick={() => (sliceType.value = SLICE_TYPE.CORONAL)}
+            shortcut={formatShortcut(UI_SHORTCUTS.VIEW_CORONAL)}
+          />
+          <MenuEntry
+            label="Render"
+            onClick={() => (sliceType.value = SLICE_TYPE.RENDER)}
+            shortcut={formatShortcut(UI_SHORTCUTS.VIEW_RENDER)}
+          />
+          <MenuEntry
+            label="Multiplanar + Render"
+            onClick={setMultiplanar}
+            shortcut={formatShortcut(UI_SHORTCUTS.VIEW_MULTIPLANAR)}
+          />
+          <MenuEntry
+            label="Multiplanar + Timeseries"
+            onClick={setTimeSeries}
+            shortcut={formatShortcut(UI_SHORTCUTS.VIEW_MULTIPLANAR_TIMESERIES)}
+            visible={isMultiEcho}
+          />
+          <hr />
+          <MenuEntry
+            label="Cycle View Mode"
+            onClick={cycleViewMode}
+            shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CYCLE_VIEW_MODE)}
+            keepOpen={true}
+          />
+          <MenuEntry
+            label="Cycle Clip Plane (3D)"
+            onClick={cycleClipPlane}
+            shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CYCLE_CLIP_PLANE)}
+            keepOpen={true}
+          />
+          <hr />
+          <MenuEntry label="Show All" onClick={() => (hideUI.value = 3)} keepOpen={true} />
+          <MenuEntry
+            label="Hide UI"
+            onClick={() => (hideUI.value = 2)}
+            shortcut={formatShortcut(UI_SHORTCUTS.HIDE_UI)}
+            keepOpen={true}
+          />
+          <MenuEntry label="Hide All" onClick={() => (hideUI.value = 0)} keepOpen={true} />
+          <hr />
+          <MenuEntry
+            label="Reset View"
+            onClick={resetZoom}
+            shortcut={formatShortcut(UI_SHORTCUTS.RESET_VIEW)}
+          />
+          <hr />
+          <ToggleEntry
+            label="Interpolation"
+            state={interpolation}
+            shortcut={formatShortcut(UI_SHORTCUTS.TOGGLE_INTERPOLATION)}
+          />
+          <ToggleEntry
+            label="Colorbar"
+            state={colorbar}
+            shortcut={formatShortcut(UI_SHORTCUTS.TOGGLE_COLORBAR)}
+          />
+          <ToggleEntry
+            label="Radiological"
+            state={radiologicalConvention}
+            shortcut={formatShortcut(UI_SHORTCUTS.TOGGLE_RADIOLOGICAL)}
+          />
+          <ToggleEntry
+            label="Crosshair"
+            state={crosshair}
+            shortcut={formatShortcut(UI_SHORTCUTS.TOGGLE_CROSSHAIR)}
+          />
+          <hr />
+          {!isVscode && <MenuEntry label="Save Settings" onClick={saveSettings} />}
+        </>
+      ),
+    },
+    {
+      key: 'zoom',
+      type: 'toggle',
+      label: 'Zoom',
+      visible: !!settings.value.menuItems?.zoom,
+      state: zoomDragMode,
+      shortcut: formatShortcut(UI_SHORTCUTS.TOGGLE_ZOOM_MODE),
+    },
+    {
+      key: 'colorScale',
+      type: 'menu',
+      label: 'ColorScale',
+      visible: !!settings.value.menuItems?.colorScale && isVolumeOrMesh.value,
+      onClick: openColorScaleLastOverlay,
+      shortcut: formatShortcut(UI_SHORTCUTS.COLORSCALE),
+      children: (
+        <>
+          <MenuEntry label="Volume" onClick={openColorScale(0)} visible={isVolume} />
+          {Array.from({ length: nOverlays.value }, (_, i) => (
+            <MenuEntry key={i} label={`Overlay ${i + 1}`} onClick={openColorScale(i + 1)} />
+          ))}
+        </>
+      ),
+    },
+    {
+      key: 'overlay',
+      type: 'menu',
+      label: 'Overlay',
+      visible: !!settings.value.menuItems?.overlay && isVolumeOrMesh.value,
+      onClick: overlayButtonOnClick,
+      shortcut: formatShortcut(UI_SHORTCUTS.ADD_OVERLAY),
+      children: (
+        <>
+          <MenuEntry label="Add" onClick={addOverlay} visible={isVolume} />
+          <MenuEntry label="MeshOverlay" onClick={addMeshOverlay} visible={isMesh} />
+          <MenuEntry label="Curvature" onClick={addCurvature} visible={isMesh} />
+          <MenuEntry label="ImageOverlay" onClick={addOverlay} visible={isMesh} />
+          <MenuEntry label="Replace" onClick={replaceLastVolume} visible={isOverlay} />
+          <MenuEntry label="Remove" onClick={removeLastVolume} visible={isOverlay} />
+        </>
+      ),
+    },
+    {
+      key: 'header',
+      type: 'menu',
+      label: 'Header',
+      visible: !!settings.value.menuItems?.header && isVolume.value,
+      onClick: toggle(headerDialog),
+      shortcut: formatShortcut(UI_SHORTCUTS.SHOW_HEADER),
+      children: (
+        <>
+          <MenuEntry label="Set Headers to 1" onClick={setVoxelSize1AndOrigin0} />
+          <MenuEntry label="Set Header" onClick={toggle(setHeaderMenu)} />
+        </>
+      ),
+    },
+    {
+      key: 'navigation',
+      type: 'menu',
+      label: 'Navigation',
+      visible: !!settings.value.menuItems?.navigation && isVolume.value,
+      children: (
+        <>
+          <MenuEntry
+            label="Next Volume (4D)"
+            onClick={volumeNext}
+            shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.VOLUME_NEXT)}
+            keepOpen={true}
+            visible={has4D}
+          />
+          <MenuEntry
+            label="Previous Volume (4D)"
+            onClick={volumePrev}
+            shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.VOLUME_PREV)}
+            keepOpen={true}
+            visible={has4D}
+          />
+          <hr />
+          <MenuEntry
+            label="Crosshair: Right"
+            onClick={crosshairRight}
+            shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CROSSHAIR_RIGHT)}
+            keepOpen={true}
+          />
+          <MenuEntry
+            label="Crosshair: Left"
+            onClick={crosshairLeft}
+            shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CROSSHAIR_LEFT)}
+            keepOpen={true}
+          />
+          <MenuEntry
+            label="Crosshair: Anterior"
+            onClick={crosshairAnterior}
+            shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CROSSHAIR_ANTERIOR)}
+            keepOpen={true}
+          />
+          <MenuEntry
+            label="Crosshair: Posterior"
+            onClick={crosshairPosterior}
+            shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CROSSHAIR_POSTERIOR)}
+            keepOpen={true}
+          />
+          <MenuEntry
+            label="Crosshair: Superior"
+            onClick={crosshairSuperior}
+            shortcut={formatShortcut(UI_SHORTCUTS.CROSSHAIR_SUPERIOR)}
+            keepOpen={true}
+          />
+          <MenuEntry
+            label="Crosshair: Inferior"
+            onClick={crosshairInferior}
+            shortcut={formatShortcut(UI_SHORTCUTS.CROSSHAIR_INFERIOR)}
+            keepOpen={true}
+          />
+        </>
+      ),
+    },
+  ]
+
   return (
     <>
       <div className="nv-topbar">
@@ -462,216 +707,7 @@ export const Menu = (props: AppProps) => {
               {!isVscode && <span className="nv-brand-sub">Viewer</span>}
             </div>
           </div>
-          {!isVscode && settings.value.menuItems?.home && (
-            <MenuButton label="Home" onClick={homeEvent} />
-          )}
-        {settings.value.menuItems?.addImage && (
-          <MenuItem
-            label="Add Image"
-            onClick={addImagesEvent}
-            shortcut={formatShortcut(UI_SHORTCUTS.ADD_IMAGE)}
-          >
-            <MenuEntry label="File(s)" onClick={addImagesEvent} />
-            <MenuEntry label="DICOM Folder" onClick={addDcmFolderEvent} />
-            <MenuEntry
-              label="Example Image"
-              onClick={() =>
-                openImageFromURL('https://niivue.github.io/niivue-demo-images/mni152.nii.gz')
-              }
-            />
-          </MenuItem>
-        )}
-        {settings.value.menuItems?.view && (
-          <MenuItem
-            label="View"
-            onClick={resetZoom}
-            shortcut={formatShortcut(UI_SHORTCUTS.RESET_VIEW)}
-          >
-            <MenuEntry
-              label="Axial"
-              onClick={() => (sliceType.value = SLICE_TYPE.AXIAL)}
-              shortcut={formatShortcut(UI_SHORTCUTS.VIEW_AXIAL)}
-            />
-            <MenuEntry
-              label="Sagittal"
-              onClick={() => (sliceType.value = SLICE_TYPE.SAGITTAL)}
-              shortcut={formatShortcut(UI_SHORTCUTS.VIEW_SAGITTAL)}
-            />
-            <MenuEntry
-              label="Coronal"
-              onClick={() => (sliceType.value = SLICE_TYPE.CORONAL)}
-              shortcut={formatShortcut(UI_SHORTCUTS.VIEW_CORONAL)}
-            />
-            <MenuEntry
-              label="Render"
-              onClick={() => (sliceType.value = SLICE_TYPE.RENDER)}
-              shortcut={formatShortcut(UI_SHORTCUTS.VIEW_RENDER)}
-            />
-            <MenuEntry
-              label="Multiplanar + Render"
-              onClick={setMultiplanar}
-              shortcut={formatShortcut(UI_SHORTCUTS.VIEW_MULTIPLANAR)}
-            />
-            <MenuEntry
-              label="Multiplanar + Timeseries"
-              onClick={setTimeSeries}
-              shortcut={formatShortcut(UI_SHORTCUTS.VIEW_MULTIPLANAR_TIMESERIES)}
-              visible={isMultiEcho}
-            />
-            <hr />
-            <MenuEntry
-              label="Cycle View Mode"
-              onClick={cycleViewMode}
-              shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CYCLE_VIEW_MODE)}
-              keepOpen={true}
-            />
-            <MenuEntry
-              label="Cycle Clip Plane (3D)"
-              onClick={cycleClipPlane}
-              shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CYCLE_CLIP_PLANE)}
-              keepOpen={true}
-            />
-            <hr />
-            <MenuEntry label="Show All" onClick={() => (hideUI.value = 3)} keepOpen={true} />
-            <MenuEntry
-              label="Hide UI"
-              onClick={() => (hideUI.value = 2)}
-              shortcut={formatShortcut(UI_SHORTCUTS.HIDE_UI)}
-              keepOpen={true}
-            />
-            <MenuEntry label="Hide All" onClick={() => (hideUI.value = 0)} keepOpen={true} />
-            <hr />
-            <MenuEntry
-              label="Reset View"
-              onClick={resetZoom}
-              shortcut={formatShortcut(UI_SHORTCUTS.RESET_VIEW)}
-            />
-            <hr />
-            <ToggleEntry
-              label="Interpolation"
-              state={interpolation}
-              shortcut={formatShortcut(UI_SHORTCUTS.TOGGLE_INTERPOLATION)}
-            />
-            <ToggleEntry
-              label="Colorbar"
-              state={colorbar}
-              shortcut={formatShortcut(UI_SHORTCUTS.TOGGLE_COLORBAR)}
-            />
-            <ToggleEntry
-              label="Radiological"
-              state={radiologicalConvention}
-              shortcut={formatShortcut(UI_SHORTCUTS.TOGGLE_RADIOLOGICAL)}
-            />
-            <ToggleEntry
-              label="Crosshair"
-              state={crosshair}
-              shortcut={formatShortcut(UI_SHORTCUTS.TOGGLE_CROSSHAIR)}
-            />
-            <hr />
-            {!isVscode && <MenuEntry label="Save Settings" onClick={saveSettings} />}
-          </MenuItem>
-        )}
-        {settings.value.menuItems?.zoom && (
-          <MenuToggle
-            label="Zoom"
-            state={zoomDragMode}
-            shortcut={formatShortcut(UI_SHORTCUTS.TOGGLE_ZOOM_MODE)}
-          />
-        )}
-        {settings.value.menuItems?.colorScale && (
-          <MenuItem
-            label="ColorScale"
-            visible={isVolumeOrMesh}
-            onClick={openColorScaleLastOverlay}
-            shortcut={formatShortcut(UI_SHORTCUTS.COLORSCALE)}
-          >
-            <MenuEntry label="Volume" onClick={openColorScale(0)} visible={isVolume} />
-            {Array.from({ length: nOverlays.value }, (_, i) => (
-              <MenuEntry key={i} label={`Overlay ${i + 1}`} onClick={openColorScale(i + 1)} />
-            ))}
-          </MenuItem>
-        )}
-        {settings.value.menuItems?.overlay && (
-          <MenuItem
-            label="Overlay"
-            onClick={overlayButtonOnClick}
-            visible={isVolumeOrMesh}
-            shortcut={formatShortcut(UI_SHORTCUTS.ADD_OVERLAY)}
-          >
-            <MenuEntry label="Add" onClick={addOverlay} visible={isVolume} />
-            <MenuEntry label="MeshOverlay" onClick={addMeshOverlay} visible={isMesh} />
-            <MenuEntry label="Curvature" onClick={addCurvature} visible={isMesh} />
-            <MenuEntry label="ImageOverlay" onClick={addOverlay} visible={isMesh} />
-            <MenuEntry label="Replace" onClick={replaceLastVolume} visible={isOverlay} />
-            <MenuEntry label="Remove" onClick={removeLastVolume} visible={isOverlay} />
-          </MenuItem>
-        )}
-        {settings.value.menuItems?.header && (
-          <MenuItem
-            label="Header"
-            onClick={toggle(headerDialog)}
-            visible={isVolume}
-            shortcut={formatShortcut(UI_SHORTCUTS.SHOW_HEADER)}
-          >
-            <MenuEntry label="Set Headers to 1" onClick={setVoxelSize1AndOrigin0} />
-            <MenuEntry label="Set Header" onClick={toggle(setHeaderMenu)} />
-          </MenuItem>
-        )}
-        {settings.value.menuItems?.navigation && (
-          <MenuItem label="Navigation" visible={isVolume}>
-            <MenuEntry
-              label="Next Volume (4D)"
-              onClick={volumeNext}
-              shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.VOLUME_NEXT)}
-              keepOpen={true}
-              visible={has4D}
-            />
-            <MenuEntry
-              label="Previous Volume (4D)"
-              onClick={volumePrev}
-              shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.VOLUME_PREV)}
-              keepOpen={true}
-              visible={has4D}
-            />
-            <hr />
-            <MenuEntry
-              label="Crosshair: Right"
-              onClick={crosshairRight}
-              shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CROSSHAIR_RIGHT)}
-              keepOpen={true}
-            />
-            <MenuEntry
-              label="Crosshair: Left"
-              onClick={crosshairLeft}
-              shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CROSSHAIR_LEFT)}
-              keepOpen={true}
-            />
-            <MenuEntry
-              label="Crosshair: Anterior"
-              onClick={crosshairAnterior}
-              shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CROSSHAIR_ANTERIOR)}
-              keepOpen={true}
-            />
-            <MenuEntry
-              label="Crosshair: Posterior"
-              onClick={crosshairPosterior}
-              shortcut={formatShortcut(NIIVUE_CORE_SHORTCUTS.CROSSHAIR_POSTERIOR)}
-              keepOpen={true}
-            />
-            <MenuEntry
-              label="Crosshair: Superior"
-              onClick={crosshairSuperior}
-              shortcut={formatShortcut(UI_SHORTCUTS.CROSSHAIR_SUPERIOR)}
-              keepOpen={true}
-            />
-            <MenuEntry
-              label="Crosshair: Inferior"
-              onClick={crosshairInferior}
-              shortcut={formatShortcut(UI_SHORTCUTS.CROSSHAIR_INFERIOR)}
-              keepOpen={true}
-            />
-          </MenuItem>
-        )}
+          <MenuBar items={barItems} />
         </div>
         <div className="nv-topbar-right">
           <ImageSelect label="Select" state={selectionActive} visible={multipleVolumes}>

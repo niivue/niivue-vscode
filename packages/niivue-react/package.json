@@ -46,7 +46,9 @@
     "dist",
     "src"
   ],
-  "sideEffects": false,
+  "sideEffects": [
+    "**/*.css"
+  ],
   "scripts": {
     "dev": "concurrently \"vite build --watch\" \"tsc --emitDeclarationOnly --declaration --outDir dist --watch\"",
     "dev:vscode-sync": "concurrently \"cross-env BUILD_TARGET=vscode vite build --mode development --watch\" \"node scripts/watch-and-sync.mjs\"",
