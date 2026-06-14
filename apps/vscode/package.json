@@ -172,95 +172,95 @@
       {
         "command": "niivue.viewAxial",
         "key": "1",
-        "when": "activeCustomEditorId == niiVue.default"
+        "when": "activeCustomEditorId == niiVue.default && !inputFocus"
       },
       {
         "command": "niivue.viewSagittal",
         "key": "2",
-        "when": "activeCustomEditorId == niiVue.default"
+        "when": "activeCustomEditorId == niiVue.default && !inputFocus"
       },
       {
         "command": "niivue.viewCoronal",
         "key": "3",
-        "when": "activeCustomEditorId == niiVue.default"
+        "when": "activeCustomEditorId == niiVue.default && !inputFocus"
       },
       {
         "command": "niivue.viewRender",
         "key": "4",
-        "when": "activeCustomEditorId == niiVue.default"
+        "when": "activeCustomEditorId == niiVue.default && !inputFocus"
       },
       {
         "command": "niivue.viewMultiplanar",
         "key": "5",
-        "when": "activeCustomEditorId == niiVue.default"
+        "when": "activeCustomEditorId == niiVue.default && !inputFocus"
       },
       {
         "command": "niivue.resetView",
         "key": "r",
-        "when": "activeCustomEditorId == niiVue.default"
+        "when": "activeCustomEditorId == niiVue.default && !inputFocus"
       },
       {
         "command": "niivue.toggleInterpolation",
         "key": "i",
-        "when": "activeCustomEditorId == niiVue.default"
+        "when": "activeCustomEditorId == niiVue.default && !inputFocus"
       },
       {
         "command": "niivue.toggleColorbar",
         "key": "b",
-        "when": "activeCustomEditorId == niiVue.default"
+        "when": "activeCustomEditorId == niiVue.default && !inputFocus"
       },
       {
         "command": "niivue.toggleRadiological",
         "key": "x",
-        "when": "activeCustomEditorId == niiVue.default"
+        "when": "activeCustomEditorId == niiVue.default && !inputFocus"
       },
       {
         "command": "niivue.toggleCrosshair",
         "key": "m",
-        "when": "activeCustomEditorId == niiVue.default"
+        "when": "activeCustomEditorId == niiVue.default && !inputFocus"
       },
       {
         "command": "niivue.toggleZoomMode",
         "key": "z",
-        "when": "activeCustomEditorId == niiVue.default"
+        "when": "activeCustomEditorId == niiVue.default && !inputFocus"
       },
       {
         "command": "niivue.addImage",
         "key": "ctrl+shift+o",
         "mac": "cmd+shift+o",
-        "when": "activeCustomEditorId == niiVue.default"
+        "when": "activeCustomEditorId == niiVue.default && !inputFocus"
       },
       {
         "command": "niivue.addOverlay",
         "key": "ctrl+l",
         "mac": "cmd+l",
-        "when": "activeCustomEditorId == niiVue.default"
+        "when": "activeCustomEditorId == niiVue.default && !inputFocus"
       },
       {
         "command": "niivue.colorscale",
         "key": "s",
-        "when": "activeCustomEditorId == niiVue.default"
+        "when": "activeCustomEditorId == niiVue.default && !inputFocus"
       },
       {
         "command": "niivue.hideUI",
         "key": "u",
-        "when": "activeCustomEditorId == niiVue.default"
+        "when": "activeCustomEditorId == niiVue.default && !inputFocus"
       },
       {
         "command": "niivue.showHeader",
         "key": "ctrl+h",
         "mac": "cmd+shift+h",
-        "when": "activeCustomEditorId == niiVue.default"
+        "when": "activeCustomEditorId == niiVue.default && !inputFocus"
       },
       {
         "command": "niivue.crosshairSuperior",
         "key": "shift+u",
-        "when": "activeCustomEditorId == niiVue.default"
+        "when": "activeCustomEditorId == niiVue.default && !inputFocus"
       },
       {
         "command": "niivue.crosshairInferior",
         "key": "shift+d",
-        "when": "activeCustomEditorId == niiVue.default"
+        "when": "activeCustomEditorId == niiVue.default && !inputFocus"
       }
     ],
     "customEditors": [
