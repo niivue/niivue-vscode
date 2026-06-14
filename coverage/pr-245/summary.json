@@ -1,0 +1,191 @@
+{
+  "shared-core": {
+    "label": "Shared core (`packages/niivue-react`)",
+    "stats": {
+      "statements": 40.9,
+      "branches": 42.5,
+      "functions": 45.5,
+      "lines": 41.4
+    },
+    "counts": {
+      "statements": {
+        "covered": 972,
+        "total": 2375
+      },
+      "branches": {
+        "covered": 752,
+        "total": 1771
+      },
+      "functions": {
+        "covered": 332,
+        "total": 730
+      },
+      "lines": {
+        "covered": 914,
+        "total": 2208
+      }
+    }
+  },
+  "pwa-glue": {
+    "label": "`apps/pwa`",
+    "stats": {
+      "statements": 28.9,
+      "branches": 33.3,
+      "functions": 52.9,
+      "lines": 30.2
+    },
+    "counts": {
+      "statements": {
+        "covered": 13,
+        "total": 45
+      },
+      "branches": {
+        "covered": 12,
+        "total": 36
+      },
+      "functions": {
+        "covered": 9,
+        "total": 17
+      },
+      "lines": {
+        "covered": 13,
+        "total": 43
+      }
+    }
+  },
+  "jupyter-glue": {
+    "label": "`apps/jupyter`",
+    "stats": {
+      "statements": null,
+      "branches": null,
+      "functions": null,
+      "lines": null
+    },
+    "counts": {
+      "statements": {
+        "covered": 0,
+        "total": 0
+      },
+      "branches": {
+        "covered": 0,
+        "total": 0
+      },
+      "functions": {
+        "covered": 0,
+        "total": 0
+      },
+      "lines": {
+        "covered": 0,
+        "total": 0
+      }
+    }
+  },
+  "streamlit-glue": {
+    "label": "`apps/streamlit`",
+    "stats": {
+      "statements": null,
+      "branches": null,
+      "functions": null,
+      "lines": null
+    },
+    "counts": {
+      "statements": {
+        "covered": 0,
+        "total": 0
+      },
+      "branches": {
+        "covered": 0,
+        "total": 0
+      },
+      "functions": {
+        "covered": 0,
+        "total": 0
+      },
+      "lines": {
+        "covered": 0,
+        "total": 0
+      }
+    }
+  },
+  "vscode-glue": {
+    "label": "`apps/vscode`",
+    "stats": {
+      "statements": null,
+      "branches": null,
+      "functions": null,
+      "lines": null
+    },
+    "counts": {
+      "statements": {
+        "covered": 0,
+        "total": 0
+      },
+      "branches": {
+        "covered": 0,
+        "total": 0
+      },
+      "functions": {
+        "covered": 0,
+        "total": 0
+      },
+      "lines": {
+        "covered": 0,
+        "total": 0
+      }
+    }
+  },
+  "desktop-glue": {
+    "label": "`apps/desktop-tauri`",
+    "stats": {
+      "statements": null,
+      "branches": null,
+      "functions": null,
+      "lines": null
+    },
+    "counts": {
+      "statements": {
+        "covered": 0,
+        "total": 0
+      },
+      "branches": {
+        "covered": 0,
+        "total": 0
+      },
+      "functions": {
+        "covered": 0,
+        "total": 0
+      },
+      "lines": {
+        "covered": 0,
+        "total": 0
+      }
+    }
+  },
+  "_overall": {
+    "label": "Overall",
+    "stats": {
+      "statements": 40.8,
+      "branches": 42.6,
+      "functions": 45.9,
+      "lines": 41.2
+    },
+    "counts": {
+      "statements": {
+        "covered": 991,
+        "total": 2426
+      },
+      "branches": {
+        "covered": 778,
+        "total": 1826
+      },
+      "functions": {
+        "covered": 345,
+        "total": 752
+      },
+      "lines": {
+        "covered": 928,
+        "total": 2252
+      }
+    }
+  }
+}
