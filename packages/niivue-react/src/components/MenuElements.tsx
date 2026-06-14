@@ -42,7 +42,7 @@ export const MenuItem = ({ label, onClick, children, visible, shortcut }: any) =
   return (
     <div className="relative group">
       <button
-        className="nv-topbtn"
+        className="nv-topbtn nv-topbtn-label"
         onClick={() => {
           activeMenu.value = null
           if (onClick) onClick()
@@ -52,7 +52,7 @@ export const MenuItem = ({ label, onClick, children, visible, shortcut }: any) =
         {label}
       </button>
       <button
-        className="nv-topbtn"
+        className="nv-topbtn nv-topbtn-caret"
         onClick={(e) => {
           e.stopPropagation()
           activeMenu.value = activeMenu.value === label ? null : label
@@ -210,7 +210,7 @@ export const ImageSelect = ({ label, state, children, visible }: any) => {
   return (
     <div className="relative group">
       <button
-        className={`nv-topbtn${state.value ? ' is-active' : ''}`}
+        className={`nv-topbtn nv-topbtn-label${state.value ? ' is-active' : ''}`}
         onClick={() => {
           activeMenu.value = null
           state.value = !state.value
@@ -219,7 +219,7 @@ export const ImageSelect = ({ label, state, children, visible }: any) => {
         {label}
       </button>
       <button
-        className="nv-topbtn"
+        className="nv-topbtn nv-topbtn-caret"
         onClick={(e) => {
           e.stopPropagation()
           activeMenu.value = activeMenu.value === label ? null : label
@@ -237,7 +237,7 @@ export const ImageSelect = ({ label, state, children, visible }: any) => {
 
 const DownArrow = () => (
   <svg
-    className="w-2.5 h-2.5 ms-1"
+    className="w-2.5 h-2.5"
     xmlns="http://www.w3.org/2000/svg"
     fill="none"
     viewBox="0 0 10 6"
