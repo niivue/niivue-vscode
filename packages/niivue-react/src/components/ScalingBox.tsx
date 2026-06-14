@@ -8,6 +8,13 @@ export interface ScalingOpts {
   max: number
 }
 
+// Niivue COLORMAP_TYPE values. MIN_TO_MAX is the default opaque mapping;
+// ZERO_TO_MAX_TRANSPARENT_BELOW_MIN scales the colormap from zero and renders
+// zero/background voxels as transparent (#237). Mirrored here to avoid importing
+// the enum, keeping the toggle a plain numeric property write.
+const MIN_TO_MAX = 0
+const ZERO_TRANSPARENT = 1
+
 export const ScalingBox = (props: any) => {
   const { nvArraySelected, selectedOverlayNumber, overlayMenu, visible } = props
   if (visible && !visible.value) return null
@@ -16,6 +23,9 @@ export const ScalingBox = (props: any) => {
     getOverlay(nvArraySelected.value[0], selectedOverlayNumber.value),
   )
   const invertState = useSignal(selectedOverlay.value.colormapInvert)
+  // colormapType === 1 (ZERO_TO_MAX_TRANSPARENT_BELOW_MIN) renders zero/background
+  // voxels as transparent. Works for any colormap, range or float/int data (#237).
+  const hideZeroState = useSignal(selectedOverlay.value.colormapType === ZERO_TRANSPARENT)
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -61,6 +71,14 @@ export const ScalingBox = (props: any) => {
     })
   }
 
+  const changeHideZero = () => {
+    hideZeroState.value = selectedOverlay.value.colormapType !== ZERO_TRANSPARENT
+    const colormapType = hideZeroState.value ? ZERO_TRANSPARENT : MIN_TO_MAX
+    nvArraySelected.value.forEach((nv: ExtendedNiivue) => {
+      handleOverlayColormapType(nv, selectedOverlayNumber.value, colormapType)
+    })
+  }
+
   return (
     <div className="absolute left-8 top-8 bg-gray-500 rounded-md z-50 space-y-1 space-x-1 p-1">
       <Scaling setScaling={setScaling} init={selectedOverlay.value} />
@@ -91,6 +109,15 @@ export const ScalingBox = (props: any) => {
         onClick={changeInverted}
       >
         Invert
+      </button>
+      <button
+        title="Render zero values as transparent"
+        className={`border-2 border-gray-600 rounded-md w-16 ${
+          hideZeroState.value ? 'bg-white text-gray-600' : 'bg-gray-600'
+        }`}
+        onClick={changeHideZero}
+      >
+        Hide 0
       </button>
       <button
         className="bg-gray-600 border-2 border-gray-600 rounded-md w-16 float-right"
@@ -172,6 +199,18 @@ function handleOverlayInvert(nv: ExtendedNiivue, layerNumber: number, invert: bo
     }
   } else {
     nv.setMeshLayerProperty(nv.meshes[0].id as any, layerNumber, 'colormapInvert', invert ? 1 : 0)
+  }
+  nv.updateGLVolume()
+}
+
+function handleOverlayColormapType(nv: ExtendedNiivue, layerNumber: number, colormapType: number) {
+  if (isVolumeOverlay(nv)) {
+    const overlay = nv.volumes[layerNumber]
+    if (overlay) {
+      overlay.colormapType = colormapType
+    }
+  } else {
+    nv.setMeshLayerProperty(nv.meshes[0].id as any, layerNumber, 'colormapType' as any, colormapType)
   }
   nv.updateGLVolume()
 }
