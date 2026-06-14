@@ -56,7 +56,13 @@ export function getCanvasSize(
   windowSize: Size,
   gap: number,
 ): Layout {
-  const aspectRatio = getAspectRatio(meta, sliceType)
+  let aspectRatio = getAspectRatio(meta, sliceType)
+  // A zero/negative/NaN aspect ratio (e.g. a volume with a zero voxel spacing)
+  // would make every derived tile size NaN; fall back to square so the packing
+  // loop stays well-defined.
+  if (!Number.isFinite(aspectRatio) || aspectRatio <= 0) {
+    aspectRatio = 1
+  }
   if (nCanvas < 1) {
     nCanvas = 1
   }

@@ -86,9 +86,10 @@ export const ToggleEntry = ({ label, state, shortcut }: any) => {
 }
 
 // A compact numeric stepper for menu panels (e.g. tile spacing). The row itself
-// is non-interactive; only the − / + buttons act, and they keep the menu open so
-// the value can be nudged repeatedly. stopPropagation prevents the outside-click
-// handler from closing the panel.
+// is non-interactive; only the -/+ buttons act. The menu stays open while
+// nudging because the buttons render inside the menu's `.group` wrapper (the
+// outside-click handler ignores clicks there); stopPropagation is belt-and-
+// suspenders against any future listener higher up.
 export const StepperEntry = ({ label, value, min = 0, max = 100, step = 1, onChange, format }: any) => {
   const clamp = (v: number) => Math.min(max, Math.max(min, v))
   const nudge = (delta: number) => (e: MouseEvent) => {
@@ -106,9 +107,13 @@ export const StepperEntry = ({ label, value, min = 0, max = 100, step = 1, onCha
           disabled={value.value <= min}
           aria-label={`Decrease ${label}`}
         >
-          −
+          -
         </button>
-        <span className="nv-stepper-value" data-testid={`stepper-value-${label}`}>
+        <span
+          className="nv-stepper-value"
+          data-testid={`stepper-value-${label}`}
+          aria-live="polite"
+        >
           {format ? format(value.value) : value.value}
         </span>
         <button

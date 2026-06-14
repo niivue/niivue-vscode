@@ -5,7 +5,9 @@ import { BASE_URL, loadTestImage } from './utils'
 test.use({ viewport: { width: 1600, height: 900 } })
 
 // Each case spins up several WebGL canvases; running them concurrently against
-// the single preview server starves the image loads. Keep them sequential.
+// the single preview server starves the image loads. Keep them sequential and
+// load only as many images as each assertion needs (the exhaustive size math is
+// covered by the layout unit tests, not here).
 test.describe.configure({ mode: 'serial' })
 
 type Box = { left: number; top: number; right: number; bottom: number; width: number; height: number }
@@ -44,21 +46,16 @@ function expectAllTilesFit(g: { panes: Box[]; clip: Box }) {
 }
 
 test.describe('Tile layout', () => {
-  test('tiles fit without overflow or a clipped row', async ({ page }) => {
+  test('tiles fit, and the tileSpacing setting drives the gap while staying fit', async ({
+    page,
+  }) => {
     await page.goto(BASE_URL)
-    for (let i = 0; i < 6; i++) await loadTestImage(page)
-    expect(await page.$$('canvas')).toHaveLength(6)
-
-    const g = await readTiles(page)
-    expect(g.count).toBe(6)
-    expectAllTilesFit(g)
-  })
-
-  test('tileSpacing setting drives the gap and tiles still fit', async ({ page }) => {
-    await page.goto(BASE_URL)
-    for (let i = 0; i < 4; i++) await loadTestImage(page)
+    for (let i = 0; i < 5; i++) await loadTestImage(page)
+    expect(await page.$$('canvas')).toHaveLength(5)
 
     const before = await readTiles(page)
+    expect(before.count).toBe(5)
+    expectAllTilesFit(before)
 
     // Drive the setting directly. The menu button's position depends on the
     // adaptive overflow state; the setting -> layout wiring is what matters here.
