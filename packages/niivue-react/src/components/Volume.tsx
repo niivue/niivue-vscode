@@ -298,11 +298,7 @@ export const Volume = (props: AppProps & VolumeProps) => {
           <div className="nv-pane-label">
             <span className="nv-pane-label-text">{dispName}</span>
           </div>
-          <div
-            className={`nv-readout${
-              hideUI.value > 2 && is4D.value ? ' nv-readout--stacked' : ''
-            }`}
-          >
+          <div className="nv-readout">
             <span className="nv-readout-k">POS</span>
             <span className="nv-readout-v">{location_local.value}</span>
             <span className="nv-readout-k">VAL</span>
@@ -438,12 +434,20 @@ function arrayToStringFixed(array: number[], precision = 2) {
   return str.slice(0, -3)
 }
 
-// If < 0.01 or larger than 10000, use scientific notation
 function arrayToStringFlexible(array: number[]) {
   let str = ''
   for (const val of array) {
-    const num = val.toPrecision(5).replace(/\.?0+$/, '') // Remove trailing zeros
-    str += num + ', '
+    str += formatVoxelValue(val) + ', '
   }
   return str.slice(0, -2)
+}
+
+// Integers print verbatim (e.g. "1044"). Floats keep a fixed width by showing 5
+// significant figures *without* trimming trailing zeros, so the readout doesn't
+// jitter between e.g. "15.533" and "15.54" as the crosshair moves — it stays
+// "15.540". Non-finite values (NaN/Infinity) print as-is.
+function formatVoxelValue(val: number): string {
+  if (!Number.isFinite(val)) return String(val)
+  if (Number.isInteger(val)) return String(val)
+  return val.toPrecision(5)
 }
