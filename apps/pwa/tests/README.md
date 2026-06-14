@@ -7,6 +7,38 @@ should assert that things are *wired up* (a load reaches a canvas, a setting
 drives a computed style, a shortcut flips a signal), never re-prove math and
 never read pixels.
 
+## What belongs in an e2e test (vs a unit test)
+
+**Default to a unit test. Reach for e2e only when the integration *is* the thing
+under test** — something a unit test cannot exercise without mocking away the very
+part that could break. e2e is the slowest, flakiest, most expensive layer (real
+browser, software WebGL, serial); spend it only where it earns its keep.
+
+Keep in **e2e** (real browser genuinely required):
+
+- A real image/DICOM/mesh load decodes and reaches a `<canvas>` (the load
+  pipeline + GL attach).
+- DOM geometry that depends on real layout/CSS — tiles fit their container, menus
+  overflow at a real viewport width.
+- Cross-component wiring through the real `postMessage` bus + signals — e.g. 4D
+  frame sync across two real niivue instances.
+
+Push to a **unit test** (`packages/niivue-react/src/test/**`):
+
+- Pure functions / math — layout sizing (already there), DICOM magic-byte
+  sniffing, filename classification, URL-param parsing.
+- A handler/reducer mapping an input to a state change — e.g. "key `v` advances
+  `sliceType`" is logic on the keydown handler, not something that needs a real
+  GPU load to verify.
+- Settings reducers, image reordering, document round-trip serialization.
+
+**Smell test:** if a spec loads a real image only to then assert a *pure-logic*
+outcome (a key flips a signal, a filename is classified, a count is computed), the
+logic belongs in a unit test — only the "a real load reaches a canvas" part, if
+any, stays in e2e. (Today `keyboard-shortcuts.spec.ts` is the clearest example: it
+pays for a real WebGL load per test to assert handler logic that a component test
+could cover far faster.)
+
 ## Why the suite is built the way it is
 
 The suite used to fail on CI under load — on **timeouts, not assertions**. Two
@@ -48,8 +80,11 @@ things caused that, and both are now designed out:
   emulated in `fixtures.ts`, so visibility/layout assertions never race
   animation timing.
 
-Because correctness no longer depends on timing, the suite passes at any worker
-count — including an over-subscribed `--workers=4` locally.
+Because correctness no longer depends on timing, contention affects only
+*speed*, not pass/fail. (At extreme oversubscription on software WebGL — say
+`--workers=4` — a single real load can still exceed even a generous failsafe;
+that is a *throughput* limit, not a correctness one, and is exactly what the
+serial heavy lane below prevents on CI.)
 
 ### 2. The heavy lane is bounded (defense in depth)
 
