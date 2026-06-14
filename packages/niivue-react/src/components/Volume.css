@@ -44,6 +44,11 @@
   z-index: 2;
   pointer-events: none;
 }
+/* When the 4D navigator occupies the bottom-right corner (≈40px tall, anchored
+   4px from the bottom), lift the readout above it so the two stack vertically
+   instead of overlapping. Stacking keeps both bars right-aligned and full-width
+   safe on narrow tiles, where neither would fit beside the other on one edge. */
+.nv-readout--stacked { bottom: 48px; }
 .nv-readout-k {
   color: var(--fg-3);
   text-transform: uppercase;

@@ -298,7 +298,11 @@ export const Volume = (props: AppProps & VolumeProps) => {
           <div className="nv-pane-label">
             <span className="nv-pane-label-text">{dispName}</span>
           </div>
-          <div className="nv-readout">
+          <div
+            className={`nv-readout${
+              hideUI.value > 2 && is4D.value ? ' nv-readout--stacked' : ''
+            }`}
+          >
             <span className="nv-readout-k">POS</span>
             <span className="nv-readout-v">{location_local.value}</span>
             <span className="nv-readout-k">VAL</span>
