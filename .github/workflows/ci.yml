@@ -410,8 +410,26 @@ jobs:
         run: pnpm exec playwright install --with-deps
         working-directory: ./apps/pwa
 
-      - name: Run Playwright tests
-        run: pnpm test:e2e
+      # The e2e build is self-contained from source (vite aliases the workspace
+      # packages to their src/) and uses --base / to override the GitHub Pages
+      # base. Building once here lets both lanes below share it — the webServer
+      # only runs `vite preview`, so the two separate Playwright invocations do
+      # not each rebuild.
+      - name: Build PWA for e2e
+        run: pnpm run test:e2e:build
+        working-directory: ./apps/pwa
+
+      # Fast lane: DOM-only specs tagged @dom, run in parallel.
+      - name: Run e2e — fast lane (DOM-only, parallel)
+        run: pnpm run test:e2e:fast
+        working-directory: ./apps/pwa
+
+      # WebGL lane: everything else, serial (--workers=1) so heavy software-WebGL
+      # renders never contend across workers. Pass/fail is already time-independent
+      # (state waits + generous failsafe timeouts); serializing bounds wall-clock
+      # variance so the failsafes are rarely even approached.
+      - name: Run e2e — WebGL lane (serial, --workers=1)
+        run: pnpm run test:e2e:webgl
         working-directory: ./apps/pwa
 
       - name: Upload test results

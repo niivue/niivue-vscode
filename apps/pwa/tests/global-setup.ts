@@ -12,10 +12,11 @@ async function globalSetup(config: FullConfig) {
 
   const testAssetsDir = path.resolve(__dirname, '..', 'test', 'assets')
   const pwaRoot = path.resolve(__dirname, '..')
-  // public/ for vite dev server; build/ for vite preview. Playwright starts
-  // webServer (which runs vite build) before globalSetup, so by the time we
-  // run, build/ already exists — we just have to drop the test images into
-  // it so vite preview can serve them.
+  // public/ for vite dev server; build/ for vite preview. The build runs as a
+  // separate step (`test:e2e:build`) before Playwright so the two e2e lanes can
+  // share one build; the webServer only runs `vite preview`. By the time this
+  // setup runs, build/ already exists — we just drop the test images into it so
+  // vite preview can serve them.
   const targets = ['public', 'build']
 
   try {

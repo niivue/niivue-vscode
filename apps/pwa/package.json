@@ -44,7 +44,10 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "coverage": "pnpm run test:coverage",
-    "test:e2e": "playwright test",
+    "test:e2e:build": "vite build --base /",
+    "test:e2e:fast": "playwright test --grep @dom",
+    "test:e2e:webgl": "playwright test --grep-invert @dom --workers=1",
+    "test:e2e": "pnpm run test:e2e:build && pnpm run test:e2e:fast && pnpm run test:e2e:webgl",
     "test:e2e:ui": "playwright test --ui",
     "ci": "pnpm run lint && pnpm run type-check && pnpm run test:coverage && pnpm run test:e2e"
   },

@@ -2,7 +2,7 @@ import { expect, test } from './fixtures'
 import { BASE_URL, waitForImageLoad } from './utils'
 
 test.describe('Menu overflow', () => {
-  test('wide viewport keeps top-level menus inline (no More button)', async ({ page }) => {
+  test('wide viewport keeps top-level menus inline (no More button)', { tag: '@dom' }, async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto(BASE_URL)
 
@@ -10,7 +10,7 @@ test.describe('Menu overflow', () => {
     await expect(page.getByTestId('menu-overflow')).toHaveCount(0)
   })
 
-  test('narrow viewport collapses overflowing menus into the More menu', async ({ page }) => {
+  test('narrow viewport collapses overflowing menus into the More menu', { tag: '@dom' }, async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 800 })
     await page.goto(BASE_URL)
 
