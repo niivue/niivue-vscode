@@ -54,6 +54,13 @@ export const ScalingBox = (props: any) => {
     const colormap = e.target.value
     nvArraySelected.value.forEach((nv: ExtendedNiivue) => {
       handleOverlayColormap(nv, selectedOverlayNumber.value, colormap)
+      // Hide 0 anchors the colormap at zero; if it is active on signed data, make
+      // sure the freshly chosen colormap still keeps a negative colormap so the
+      // negative half stays visible (#237).
+      if (hideZeroState.value) {
+        reconcileHideZeroNegative(nv, selectedOverlayNumber.value)
+        nv.updateGLVolume()
+      }
     })
   }
 
@@ -73,9 +80,8 @@ export const ScalingBox = (props: any) => {
 
   const changeHideZero = () => {
     hideZeroState.value = selectedOverlay.value.colormapType !== ZERO_TRANSPARENT
-    const colormapType = hideZeroState.value ? ZERO_TRANSPARENT : MIN_TO_MAX
     nvArraySelected.value.forEach((nv: ExtendedNiivue) => {
-      handleOverlayColormapType(nv, selectedOverlayNumber.value, colormapType)
+      handleOverlayHideZero(nv, selectedOverlayNumber.value, hideZeroState.value!)
     })
   }
 
@@ -203,7 +209,57 @@ function handleOverlayInvert(nv: ExtendedNiivue, layerNumber: number, invert: bo
   nv.updateGLVolume()
 }
 
-function handleOverlayColormapType(nv: ExtendedNiivue, layerNumber: number, colormapType: number) {
+// Colormap used for the negative half when Hide 0 is auto-applied to signed data.
+const NEGATIVE_COLORMAP = 'winter'
+
+// Overlays we auto-assigned a negative colormap to (because Hide 0 would
+// otherwise drop their negative half). Tracked so toggling Hide 0 off — or
+// switching to a colormap that brings its own negative map — cleanly removes our
+// addition without ever clobbering a user-chosen negative/symmetric colormap.
+const autoNegativeOverlays = new WeakSet<object>()
+
+function handleOverlayHideZero(nv: ExtendedNiivue, layerNumber: number, enable: boolean) {
+  setOverlayColormapType(nv, layerNumber, enable ? ZERO_TRANSPARENT : MIN_TO_MAX)
+  if (enable) {
+    reconcileHideZeroNegative(nv, layerNumber)
+  } else {
+    removeAutoNegative(nv, layerNumber)
+  }
+  nv.updateGLVolume()
+}
+
+// Hide 0 (colormapType 1) re-anchors the colormap at zero, which renders every
+// negative voxel transparent unless a negative colormap is present. For a signed
+// overlay that has none, add one so the negative half stays visible; if the
+// overlay already carries a negative/symmetric colormap, leave it untouched (#237).
+function reconcileHideZeroNegative(nv: ExtendedNiivue, layerNumber: number) {
+  const overlay = getOverlay(nv, layerNumber)
+  if (!overlay) {
+    return
+  }
+  const hasNegativeColormap = (overlay.colormapNegative?.length ?? 0) > 0
+  if (overlayHasNegativeRange(overlay) && !hasNegativeColormap) {
+    setOverlayNegativeColormap(nv, layerNumber, NEGATIVE_COLORMAP)
+    autoNegativeOverlays.add(overlay)
+  } else if (hasNegativeColormap) {
+    // A colormap choice (e.g. symmetric) now owns the negative map; stop tracking it.
+    autoNegativeOverlays.delete(overlay)
+  }
+}
+
+function removeAutoNegative(nv: ExtendedNiivue, layerNumber: number) {
+  const overlay = getOverlay(nv, layerNumber)
+  if (overlay && autoNegativeOverlays.has(overlay)) {
+    setOverlayNegativeColormap(nv, layerNumber, '')
+    autoNegativeOverlays.delete(overlay)
+  }
+}
+
+function overlayHasNegativeRange(overlay: any) {
+  return (overlay?.cal_min ?? 0) < 0
+}
+
+function setOverlayColormapType(nv: ExtendedNiivue, layerNumber: number, colormapType: number) {
   if (isVolumeOverlay(nv)) {
     const overlay = nv.volumes[layerNumber]
     if (overlay) {
@@ -212,7 +268,19 @@ function handleOverlayColormapType(nv: ExtendedNiivue, layerNumber: number, colo
   } else {
     nv.setMeshLayerProperty(nv.meshes[0].id as any, layerNumber, 'colormapType', colormapType)
   }
-  nv.updateGLVolume()
+}
+
+function setOverlayNegativeColormap(nv: ExtendedNiivue, layerNumber: number, colormapNegative: string) {
+  if (isVolumeOverlay(nv)) {
+    const overlay = nv.volumes[layerNumber]
+    if (overlay) {
+      overlay.colormapNegative = colormapNegative
+    }
+  } else {
+    const id = nv.meshes[0].id
+    nv.setMeshLayerProperty(id as any, layerNumber, 'useNegativeCmap', (colormapNegative.length > 0) as any)
+    nv.setMeshLayerProperty(id as any, layerNumber, 'colormapNegative', colormapNegative as any)
+  }
 }
 
 function handleOverlayScaling(nv: ExtendedNiivue, layerNumber: number, scaling: ScalingOpts) {
