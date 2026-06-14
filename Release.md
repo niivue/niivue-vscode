@@ -63,7 +63,7 @@ The Release Coordinator then:
 
 Stable versions ship as-is — whatever changesets computed. No re-encoding is needed:
 
-- **VS Code Marketplace / Open VSX**: bare semver `M.m.p`. The Marketplace recommends (but does not enforce) that **stable releases use an even minor and pre-releases use an odd minor**. Changesets does not enforce this, so when you write a changeset, prefer a `minor` bump that lands on an even minor. If you happen to ship a stable with an odd minor it still works — the Marketplace orders by version string, so the next pre-release scheme will skip ahead to the next odd minor automatically (see `encode-prerelease-versions.mjs`).
+- **VS Code Marketplace / Open VSX**: bare semver `M.m.p`. The Marketplace recommends (but does not enforce) that **stable releases use an even minor and pre-releases use an odd minor**. Changesets does plain sequential semver and is unaware of this, so a `minor` bump can land stable on an odd minor (that is how `niivue@2.9.0` shipped). You no longer need to hand-pick bumps to stay even: the root `version` script normalizes the VS Code version to the next even minor automatically (see [VS Code even-minor normalization](#vs-code-even-minor-normalization)). The pre-release encoder rounds the same next-stable up to the next *odd* minor, so pre-release minors stay exactly one above stable and never collide (see `encode-prerelease-versions.mjs`).
 - **PyPI** (jupyter and streamlit): bare PEP 440 `M.m.p`. Pre-releases use `.devN` (see below) which `pip install` ignores by default.
 
 ---
@@ -92,7 +92,7 @@ Desktop uses a plain numeric version rather than a `-beta.<run>` suffix because 
 
 The odd-minor convention for VS Code follows Microsoft's recommended pattern: pre-release minors are always one greater than the next stable's minor (and odd). Pre-releases share the major but are unambiguously distinct from any stable.
 
-If the previous stable already used an odd minor (e.g. you accidentally shipped stable `2.9.0`), the encoder skips ahead one more step (`2.11.<run>`) to avoid collision with prior pre-releases on the same minor.
+If the changesets next-stable lands on an odd minor, the encoder skips ahead one more step (e.g. next-stable `2.9.0` → pre `2.11.<run>`) to avoid collision with prior pre-releases on the same minor. The stable lane now [normalizes itself to an even minor](#vs-code-even-minor-normalization), so new odd-minor stables are no longer created; `niivue@2.9.0` (shipped before that normalization existed) is the one legacy case.
 
 `.devN` versions on PyPI are ignored by plain `pip install <pkg>` — only `pip install --pre <pkg>` resolves them. This matches the VS Code Marketplace separation of stable vs pre-release channels.
 
@@ -142,13 +142,28 @@ All three published apps (`apps/vscode`, `apps/jupyter`, `apps/streamlit`) are m
 
 ---
 
+## VS Code even-minor normalization
+
+The VS Code Marketplace recommends stable releases on an **even** minor and pre-releases on an **odd** minor. Changesets does plain sequential semver, so a `minor` bump can land stable on an odd minor; this is how `niivue@2.9.0` shipped, an odd-minor stable sitting in the pre-release lane. Left unfixed it is a latent collision: the next stable minor bump (`2.10.0 → 2.11.0`) would land on a minor that pre-releases have already published as `2.11.<run>`, and the Marketplace (which keeps a single strictly-increasing version line shared by both channels) would reject the lower stable.
+
+`scripts/release/normalize-vscode-even-minor.mjs`, run by the root `version` script immediately after `changeset version`, enforces the convention. If the freshly bumped `apps/vscode/package.json` is on an odd minor, it rounds up to the next even minor (patch reset to 0) and retitles the matching `apps/vscode/CHANGELOG.md` heading so the two agree. The diff is committed into the Version Packages PR, so the even minor is what you review and ship.
+
+```jsonc
+// package.json
+"version": "changeset version && node scripts/release/normalize-vscode-even-minor.mjs && node scripts/release/sync-pyproject-versions.mjs && pnpm install --no-frozen-lockfile"
+```
+
+The script is idempotent: a version already on an even minor (or any `patch` bump, which never changes the minor) is a no-op, so on most releases it does nothing. Only the VS Code extension is normalized; PyPI (jupyter/streamlit) and the Tauri desktop bundles have no even/odd convention. The pure parity transform is unit-tested via `pnpm versions:normalize:test` (run in CI), which also pins the invariant that the pre-release minor stays exactly one above the normalized stable minor.
+
+---
+
 ## Streamlit pyproject.toml version sync
 
 `apps/streamlit/pyproject.toml` uses setuptools with a static `version = "<X>"` line, while changesets bumps `apps/streamlit/package.json`. The two are kept in lock-step by `scripts/release/sync-pyproject-versions.mjs`, which the root `version` script runs after `changeset version`:
 
 ```jsonc
 // package.json
-"version": "changeset version && node scripts/release/sync-pyproject-versions.mjs && pnpm install --no-frozen-lockfile"
+"version": "changeset version && node scripts/release/normalize-vscode-even-minor.mjs && node scripts/release/sync-pyproject-versions.mjs && pnpm install --no-frozen-lockfile"
 ```
 
 The script is idempotent — running it when versions are already in sync is a no-op. The resulting `pyproject.toml` diff is committed to the Version Packages PR.
