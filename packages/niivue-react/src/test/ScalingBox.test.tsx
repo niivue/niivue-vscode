@@ -26,7 +26,26 @@ function makeVolumeNv() {
   }
 }
 
-function renderBox(nv: ReturnType<typeof makeVolumeNv>) {
+function makeMeshNv() {
+  const layer = {
+    colormap: 'hsv',
+    colormapInvert: false,
+    colormapType: 0,
+    opacity: 1,
+    cal_min: 0,
+    cal_max: 1,
+  }
+  return {
+    volumes: [],
+    meshes: [{ id: 'mesh-1', layers: [layer] }],
+    setMeshLayerProperty: vi.fn((_id: string, _layer: number, key: string, val: number) => {
+      ;(layer as Record<string, unknown>)[key] = val
+    }),
+    updateGLVolume: vi.fn(),
+  }
+}
+
+function renderBox(nv: ReturnType<typeof makeVolumeNv> | ReturnType<typeof makeMeshNv>) {
   return render(
     <ScalingBox
       nvArraySelected={signal([nv])}
@@ -61,5 +80,20 @@ describe('ScalingBox "Hide 0" toggle (#237)', () => {
     // Active state uses the white background highlight, matching the Invert button.
     const button = screen.getByText('Hide 0')
     expect(button.className).toContain('bg-white')
+  })
+
+  it('routes mesh-layer overlays through setMeshLayerProperty', () => {
+    const nv = makeMeshNv()
+    renderBox(nv)
+
+    const button = screen.getByText('Hide 0')
+
+    fireEvent.click(button)
+    expect(nv.setMeshLayerProperty).toHaveBeenLastCalledWith('mesh-1', 0, 'colormapType', 1)
+    expect(nv.updateGLVolume).toHaveBeenCalledTimes(1)
+
+    fireEvent.click(button)
+    expect(nv.setMeshLayerProperty).toHaveBeenLastCalledWith('mesh-1', 0, 'colormapType', 0)
+    expect(nv.updateGLVolume).toHaveBeenCalledTimes(2)
   })
 })

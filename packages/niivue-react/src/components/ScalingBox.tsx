@@ -210,7 +210,7 @@ function handleOverlayColormapType(nv: ExtendedNiivue, layerNumber: number, colo
       overlay.colormapType = colormapType
     }
   } else {
-    nv.setMeshLayerProperty(nv.meshes[0].id as any, layerNumber, 'colormapType' as any, colormapType)
+    nv.setMeshLayerProperty(nv.meshes[0].id as any, layerNumber, 'colormapType', colormapType)
   }
   nv.updateGLVolume()
 }
