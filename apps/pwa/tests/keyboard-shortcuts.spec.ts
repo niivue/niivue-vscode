@@ -9,9 +9,9 @@ import { BASE_URL, loadTestImage } from './utils'
 //
 // What a unit test cannot prove is that the hook is actually mounted in the
 // running app and that a real keypress flips real app state. That single
-// integration claim is all this spec keeps - replacing 16 specs that each paid
-// for a full WebGL load to assert pure handler logic. See tests/README.md for
-// the unit-first test-placement policy.
+// integration claim is all this spec keeps - replacing the full per-key e2e
+// matrix that each paid for a WebGL load to assert pure handler logic. See
+// tests/README.md for the unit-first test-placement policy.
 test.describe('Keyboard shortcuts (smoke)', () => {
   test('a real keypress drives app state; a focused text field suppresses it', async ({ page }) => {
     await page.goto(BASE_URL)
