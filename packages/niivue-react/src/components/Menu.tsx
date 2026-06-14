@@ -1,9 +1,12 @@
 import '../styles/tokens.css'
 import './Menu.css'
+import { niivueLogo } from '../assets/niivue-logo'
 import { SLICE_TYPE } from '@niivue/niivue'
+import type { SceneDocument } from '@niivue/viewer-protocol'
 import { Signal, computed, effect, useSignal } from '@preact/signals'
 import { useMemo } from 'preact/hooks'
 import { NIIVUE_CORE_SHORTCUTS, UI_SHORTCUTS, formatShortcut } from '../constants/keyboardShortcuts'
+import { downloadNvd } from '../document'
 import {
     ExtendedNiivue,
     addDcmFolderEvent,
@@ -253,6 +256,22 @@ export const Menu = (props: AppProps) => {
     alert('Settings saved!')
   }
 
+  // Export the active canvas as a niivue scene document (.nvd). v1 scope is a
+  // single canvas: the last selected one (VHP plan section 10).
+  const saveScene = () => {
+    const list = nvArraySelected.value
+    const nv = list[list.length - 1]
+    if (!nv) return
+    const doc = nv.json() as unknown as SceneDocument
+    const rawName = nv.volumes?.[0]?.name || nv.meshes?.[0]?.name || (nv as any).uri || 'scene'
+    const base =
+      (decodeURIComponent(String(rawName)).split('/').pop() || 'scene').replace(
+        /\.(nii\.gz|nii|gz|mgz|mgh|mz3|gii|dcm|mhd|mha|nrrd|nhdr|nvd)$/i,
+        '',
+      ) || 'scene'
+    downloadNvd(doc, `${base}.nvd`)
+  }
+
   const cycleUIVisibility = () => {
     if (hideUI.value === 3) hideUI.value = 2
     else if (hideUI.value === 2) hideUI.value = 0
@@ -496,6 +515,13 @@ export const Menu = (props: AppProps) => {
       ),
     },
     {
+      key: 'saveScene',
+      type: 'button',
+      label: 'Save Scene',
+      visible: !!settings.value.menuItems?.saveScene && !isVscode && isVolumeOrMesh.value,
+      onClick: saveScene,
+    },
+    {
       key: 'view',
       type: 'menu',
       label: 'View',
@@ -723,7 +749,7 @@ export const Menu = (props: AppProps) => {
       <div className="nv-topbar">
         <div className="nv-topbar-left">
           <div className="nv-brand">
-            <div className="nv-brand-mark">N</div>
+            <img className="nv-brand-mark" src={niivueLogo} alt="" width={26} height={26} />
             <div className="nv-brand-text">
               <span className="nv-brand-name">niivue</span>
               {!isVscode && <span className="nv-brand-sub">Viewer</span>}

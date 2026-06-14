@@ -30,7 +30,7 @@
   ],
   "scripts": {
     "dev": "vite",
-    "build": "node copy-assets.mjs && vite build",
+    "build": "vite build",
     "build:analyze": "pnpm run build && npx vite-bundle-analyzer",
     "preview": "vite preview",
     "watch": "vite build --watch",
@@ -67,6 +67,7 @@
     "@types/node": "^25.8.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@vite-pwa/assets-generator": "^1.0.2",
     "@vitest/coverage-v8": "^4.1.6",
     "@vitest/ui": "^4.1.6",
     "autoprefixer": "^10.5.0",

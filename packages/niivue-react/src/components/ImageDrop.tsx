@@ -1,5 +1,6 @@
 import { useSignal } from '@preact/signals'
 import { ComponentChildren } from 'preact'
+import { isNvdFile, readNvdFile } from '../document'
 import { buildImageMessageBodies } from '../utility'
 
 export const ImageDrop = ({ children }: { children: ComponentChildren }) => {
@@ -25,12 +26,24 @@ export const ImageDrop = ({ children }: { children: ComponentChildren }) => {
     isDrag.value = false
     e.stopPropagation()
     e.preventDefault()
-    const files = e.dataTransfer.files
-    const fileArray = Array.from(files)
+    const fileArray = Array.from(e.dataTransfer.files)
+
+    // Scene documents (.nvd) import a whole scene into a new canvas, regardless
+    // of the shift modifier. Everything else flows through the image pipeline.
+    for (const file of fileArray.filter((f) => isNvdFile(f.name))) {
+      readNvdFile(file)
+        .then((document) =>
+          window.postMessage({ type: 'loadDocument', body: { document, name: file.name } }),
+        )
+        .catch((err) => console.error(`Failed to read .nvd file ${file.name}:`, err))
+    }
+    const otherFiles = fileArray.filter((f) => !isNvdFile(f.name))
+    if (otherFiles.length === 0) return
+
     if (e.shiftKey) {
       // shift+drop adds files as overlays to the last loaded canvas
       const readOverlays = async () => {
-        for (const file of fileArray) {
+        for (const file of otherFiles) {
           const buffer = await file.arrayBuffer()
           window.postMessage({
             type: 'overlay',
@@ -45,7 +58,7 @@ export const ImageDrop = ({ children }: { children: ComponentChildren }) => {
       readOverlays()
     } else {
       const readimages = async () => {
-        const bodies = await buildImageMessageBodies(fileArray)
+        const bodies = await buildImageMessageBodies(otherFiles)
         if (bodies.length === 0) return
         window.postMessage({
           type: 'initCanvas',
@@ -61,6 +74,7 @@ export const ImageDrop = ({ children }: { children: ComponentChildren }) => {
 
   return (
     <div
+      data-testid="image-drop"
       className={`flex flex-col h-full ${isDrag.value ? 'bg-gray-700' : 'bg-gray-800'}`}
       onDragOver={handleDragOver}
       onDrop={handleDrop}

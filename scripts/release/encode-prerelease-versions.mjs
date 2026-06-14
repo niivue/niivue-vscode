@@ -18,6 +18,10 @@
  *     odd minor strictly greater than the next-stable's minor:
  *       next-stable 2.10.0 → pre 2.11.<run>
  *       next-stable 2.9.0  → pre 2.11.<run>   (skip same-minor collision)
+ *     The stable lane normalizes its own version to an EVEN minor (see
+ *     scripts/release/normalize-vscode-even-minor.mjs), so the pre-release
+ *     minor computed here is always exactly one above the stable minor and
+ *     the two channels never collide. Keep the two parity rules in step.
  *   - PyPI requires PEP 440. We use `.devN` (development release) so plain
  *     `pip install <pkg>` ignores it; only `pip install --pre` picks it up.
  *     Next-stable 0.3.1 → 0.3.1.dev<run>.

@@ -50,6 +50,11 @@ export default defineConfig({
     alias: {
       // Point directly to source files for hot reload
       '@niivue/react': resolve(__dirname, '../../packages/niivue-react/src'),
+      // viewer-protocol is consumed transitively via @niivue/react (above);
+      // alias it to source too so it resolves without a dist build. v1 uses it
+      // type-only (erased at build), but the alias keeps any future runtime use
+      // working in dev and the E2E production build.
+      '@niivue/viewer-protocol': resolve(__dirname, '../../packages/viewer-protocol/src'),
     },
     // react-router-dom specifies "module" field in package.json for ESM entry
     // if it's not mapped, it uses the "main" field which is CommonJS that redirects to CJS preact
@@ -120,6 +125,13 @@ export default defineConfig({
     VitePWA({
       disable: !!prNumber, // Disable service worker for PR previews (temporary, no offline needed)
       registerType: 'prompt',
+      // Auto-generates PWA icons from public/logo.png via pwa-assets.config.ts
+      // and injects them into the manifest. Experimental API (since
+      // vite-plugin-pwa v0.19), may need adjustment on a future minor bump.
+      pwaAssets: {
+        config: true,
+        overrideManifestIcons: true,
+      },
       includeAssets: ['favicon.ico', '*.png'],
       workbox: {
         maximumFileSizeToCacheInBytes: 3000000,
@@ -152,26 +164,14 @@ export default defineConfig({
         theme_color: '#2563eb',
         orientation: 'any',
         categories: ['medical', 'productivity', 'utilities'],
-        icons: [
-          {
-            src: 'niivue_icon_transparent_contrast.png',
-            sizes: '200x200',
-            type: 'image/png',
-            purpose: 'any maskable',
-          },
-          {
-            src: 'niivue_icon.png',
-            sizes: '512x512',
-            type: 'image/png',
-          },
-        ],
+        // icons[] is injected by pwaAssets above (overrideManifestIcons: true).
         shortcuts: [
           {
             name: 'Open Example Image',
             short_name: 'Example',
             description: 'Load MNI152 example image',
             url: `${baseUrl}?example=mni152`,
-            icons: [{ src: 'niivue_icon_transparent_contrast.png', sizes: '200x200' }],
+            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }],
           },
         ],
         file_handlers: [

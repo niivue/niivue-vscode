@@ -92,8 +92,7 @@ export default defineConfig({
    * reuseExistingServer.
    */
   webServer: {
-    command:
-      'node copy-assets.mjs && vite build --base / && vite preview --base / --port 4000',
+    command: 'vite build --base / && vite preview --base / --port 4000',
     url: 'http://localhost:4000',
     reuseExistingServer: !process.env.CI,
     timeout: 5 * 60 * 1000, // 5 minutes — production build can take a while

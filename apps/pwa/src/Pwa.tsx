@@ -1,4 +1,11 @@
-import { Container, ImageDrop, Menu, listenToMessages, type AppProps } from '@niivue/react'
+import {
+  Container,
+  ImageDrop,
+  Menu,
+  createViewerClient,
+  listenToMessages,
+  type AppProps,
+} from '@niivue/react'
 import { computed } from '@preact/signals'
 import { useEffect } from 'preact/hooks'
 import { HomeScreen } from './components/HomeScreen'
@@ -9,9 +16,12 @@ export const Pwa = ({ appProps }: { appProps: AppProps }) => {
 
   useEffect(() => {
     listenToMessages(appProps)
-    // Expose appProps to window for E2E testing
+    // Expose appProps + the Viewer-Host Protocol client to window for E2E
+    // testing and programmatic use. The UI's drop/menu paths share the same
+    // message bus the client wraps.
     if (import.meta.env.DEV || (window as any).PLAYWRIGHT_TEST) {
       ;(window as any).appProps = appProps
+      ;(window as any).viewerClient = createViewerClient(appProps)
     }
 
     if ('launchQueue' in window) {

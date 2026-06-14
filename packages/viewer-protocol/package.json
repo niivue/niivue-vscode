@@ -1,0 +1,51 @@
+{
+  "name": "@niivue/viewer-protocol",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Transport-agnostic Viewer-Host Protocol (VHP) contract for niivue-based viewers: capability handshake, call/result/event envelope, the ViewerClient facade interface, and the NVDocument-based scene document type.",
+  "license": "BSD-2-Clause",
+  "author": {
+    "name": "Korbinian Eckstein",
+    "email": "korbinian90@gmail.com"
+  },
+  "homepage": "https://github.com/niivue/niivue-vscode",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/niivue/niivue-vscode.git",
+    "directory": "packages/viewer-protocol"
+  },
+  "bugs": {
+    "url": "https://github.com/niivue/niivue-vscode/issues"
+  },
+  "keywords": [
+    "niivue",
+    "protocol",
+    "nvdocument",
+    "neuroimaging",
+    "viewer-host-protocol"
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rimraf dist",
+    "lint": "eslint src --ext ts --report-unused-disable-directives --max-warnings 0",
+    "type-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "rimraf": "^6.1.3"
+  }
+}
