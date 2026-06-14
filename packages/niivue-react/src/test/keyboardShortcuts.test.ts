@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { KeyboardShortcut } from '../constants/keyboardShortcuts'
-import { matchesShortcut } from '../constants/keyboardShortcuts'
+import { formatShortcut, matchesShortcut, UI_SHORTCUTS } from '../constants/keyboardShortcuts'
 
 /** Build a KeyboardEvent-shaped object — only the four fields matchesShortcut inspects. */
 function evt(opts: { key: string; ctrl?: boolean; meta?: boolean; shift?: boolean; alt?: boolean }) {
@@ -66,5 +66,29 @@ describe('matchesShortcut', () => {
 
   it('matches named keys like ArrowRight', () => {
     expect(matchesShortcut(evt({ key: 'ArrowRight' }), arrow)).toBe(true)
+  })
+
+  it('disambiguates the real "u" shortcuts (HIDE_UI vs Shift+CROSSHAIR_SUPERIOR)', () => {
+    // Two registry entries share the "u" key; only Shift separates them. Guard
+    // against a regression that lets a plain "u" trigger crosshair movement.
+    expect(matchesShortcut(evt({ key: 'u' }), UI_SHORTCUTS.HIDE_UI)).toBe(true)
+    expect(matchesShortcut(evt({ key: 'u', shift: true }), UI_SHORTCUTS.HIDE_UI)).toBe(false)
+    expect(matchesShortcut(evt({ key: 'u', shift: true }), UI_SHORTCUTS.CROSSHAIR_SUPERIOR)).toBe(true)
+    expect(matchesShortcut(evt({ key: 'u' }), UI_SHORTCUTS.CROSSHAIR_SUPERIOR)).toBe(false)
+  })
+})
+
+describe('formatShortcut', () => {
+  it('capitalizes single letters', () => {
+    expect(formatShortcut({ key: 'v', description: '' })).toBe('V')
+  })
+
+  it('joins modifiers in Ctrl+Shift+Alt order', () => {
+    expect(formatShortcut({ key: 'o', ctrl: true, shift: true, description: '' })).toBe('Ctrl+Shift+O')
+    expect(formatShortcut({ key: 'u', shift: true, description: '' })).toBe('Shift+U')
+  })
+
+  it('strips the Arrow prefix from named keys', () => {
+    expect(formatShortcut({ key: 'ArrowRight', description: '' })).toBe('Right')
   })
 })
