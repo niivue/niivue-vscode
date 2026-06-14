@@ -18,7 +18,12 @@ export async function stopCoverage(page: Page, testInfo: TestInfo) {
   await addCoverageReport([...js, ...css], testInfo)
 }
 
-export async function waitForImageLoad(page: Page, timeout = 10000) {
+// Default failsafe is generous (30 s): this is a STATE wait on
+// `window.__niivue.loadedCount`, so it resolves the instant a load completes.
+// The timeout only bounds a genuinely hung load on a CPU-contended CI runner —
+// it is never part of the happy path. Callers may pass a larger value for loads
+// that fetch over the network.
+export async function waitForImageLoad(page: Page, timeout = 30000) {
   // Snapshot the current loaded count before we start waiting.
   // NiiVueCanvas increments window.__niivue.loadedCount after each successful
   // volume load. This is more reliable than waiting for <canvas> to appear,

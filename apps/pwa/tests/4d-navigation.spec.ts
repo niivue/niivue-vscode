@@ -65,10 +65,9 @@ test.describe('4D Navigation', () => {
     await playButton.click()
     await expect(playButton).toHaveAttribute('aria-label', 'Pause')
 
-    // Wait for a few iterations (animation happens every 200ms)
-    await page.waitForTimeout(1000)
-
-    // Frame should have changed
+    // Cine playback advances the frame (~every 200ms). Wait on the frame
+    // leaving 0 rather than sleeping a fixed amount.
+    await expect(volumeIndicator).not.toHaveText('0')
     const currentFrame = await volumeIndicator.innerText()
     expect(parseInt(currentFrame)).toBeGreaterThan(0)
 
@@ -76,9 +75,11 @@ test.describe('4D Navigation', () => {
     await playButton.click()
     await expect(playButton).toHaveAttribute('aria-label', 'Play')
 
-    // Frame should stay the same
+    // Verifying the ABSENCE of further advance is the one thing a state wait
+    // can't express, so allow a bounded settle longer than the ~200ms cine
+    // period: if playback were still running, the frame would change.
     const frameAfterPause = await volumeIndicator.innerText()
-    await page.waitForTimeout(500)
+    await page.waitForTimeout(600)
     await expect(volumeIndicator).toHaveText(frameAfterPause)
   })
 })
