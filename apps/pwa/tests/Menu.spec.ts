@@ -2,7 +2,7 @@ import { expect, test } from './fixtures'
 import { BASE_URL, loadTestImage, waitForImageLoad } from './utils'
 
 test.describe('Menu', () => {
-  test('displays home screen', async ({ page }) => {
+  test('displays home screen', { tag: '@dom' }, async ({ page }) => {
     await page.goto(BASE_URL)
 
     expect(await page.textContent('text=/Home/i')).toBeTruthy()

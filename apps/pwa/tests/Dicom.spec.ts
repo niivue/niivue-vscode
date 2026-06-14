@@ -7,6 +7,15 @@ import { BASE_URL, waitForImageLoad } from './utils'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
+// A successful load resolves `waitForImageLoad` (state wait on loadedCount), so
+// the only thing left to verify is that no failure overlay surfaced. Assert that
+// directly and deterministically instead of sleeping for an arbitrary "settle"
+// window and grepping body text. `Volume.tsx` renders "Failed to load image" on
+// error; its absence is the real signal.
+async function expectNoLoadError(page) {
+  await expect(page.getByText(/Failed to load image/i)).toHaveCount(0)
+}
+
 test.describe('Loading DICOM images', () => {
   test('loads DICOM file from local test assets', async ({ page }) => {
     await page.goto(BASE_URL)
@@ -29,7 +38,7 @@ test.describe('Loading DICOM images', () => {
     }
 
     await page.evaluate((m) => window.postMessage(m, '*'), message)
-    
+
     // Wait for canvas to appear - this verifies NiiVue successfully loaded the DICOM
     await waitForImageLoad(page)
 
@@ -37,13 +46,8 @@ test.describe('Loading DICOM images', () => {
     const canvases = await page.$$('canvas')
     expect(canvases.length).toBeGreaterThanOrEqual(1)
 
-    // Wait for NiiVue to fully process the DICOM
-    await page.waitForTimeout(2000)
-
-    // Verify no error messages appeared
-    const bodyText = await page.textContent('body')
-    expect(bodyText).not.toContain('error')
-    expect(bodyText).not.toContain('failed')
+    // Verify no error overlay appeared
+    await expectNoLoadError(page)
   })
 
   test('loads an extension-less DICOM file via magic-byte detection', async ({ page }) => {
@@ -69,11 +73,7 @@ test.describe('Loading DICOM images', () => {
     const canvases = await page.$$('canvas')
     expect(canvases.length).toBeGreaterThanOrEqual(1)
 
-    await page.waitForTimeout(2000)
-
-    const bodyText = await page.textContent('body')
-    expect(bodyText).not.toContain('error')
-    expect(bodyText).not.toContain('failed')
+    await expectNoLoadError(page)
   })
 
   test('loads a DICOM series passed as an array of files', async ({ page }) => {
@@ -100,18 +100,14 @@ test.describe('Loading DICOM images', () => {
     const canvases = await page.$$('canvas')
     expect(canvases.length).toBeGreaterThanOrEqual(1)
 
-    await page.waitForTimeout(2000)
-
-    const bodyText = await page.textContent('body')
-    expect(bodyText).not.toContain('error')
-    expect(bodyText).not.toContain('failed')
+    await expectNoLoadError(page)
   })
 
   test('loads DICOM from URL', async ({ page }) => {
     await page.goto(BASE_URL)
 
     const testLink = BASE_URL + 'enh.dcm' // Re-using enh.dcm as a "remote" url test
-    
+
     const message = {
       type: 'addImage',
       body: {
@@ -126,13 +122,9 @@ test.describe('Loading DICOM images', () => {
     // Verify canvas loaded
     const canvases = await page.$$('canvas')
     expect(canvases).toHaveLength(1)
-    
-    // Wait for processing
-    await page.waitForTimeout(1000)
 
-    // Verify volume loaded
-    const bodyText = await page.textContent('body')
-    expect(bodyText).toBeTruthy()
+    // Verify volume loaded without error
+    await expectNoLoadError(page)
   })
 
   test('handles multiple DICOM files', async ({ page }) => {
@@ -151,20 +143,24 @@ test.describe('Loading DICOM images', () => {
     await page.evaluate((m) => window.postMessage(m, '*'), message1)
     await waitForImageLoad(page)
 
-    // Load second DICOM (using enh.dcm as second one too)
+    // Load a second DICOM. NOTE: no `?v=2` query — a query string makes the URL
+    // miss the `.dcm` routing in loadVolume and fall through to the mesh loader,
+    // which fails. (The old test hid that by only sleeping then asserting ≥1
+    // canvas, so the second load was never actually verified.) A second addImage
+    // already spins up a fresh canvas, so the same URL is genuinely a second load.
     const message2 = {
       type: 'addImage',
       body: {
         data: '',
-        uri: testLink + '?v=2', // dummy param to make it "new"
+        uri: testLink,
       },
     }
 
     await page.evaluate((m) => window.postMessage(m, '*'), message2)
-    
-    // Should have 2 canvases now
-    await page.waitForTimeout(1000)
-    const canvases = await page.$$('canvas')
-    expect(canvases.length).toBeGreaterThanOrEqual(1) // At least one canvas (may share)
+
+    // Wait for the second load to complete (loadedCount increments to 2) rather
+    // than guessing with a fixed delay, then confirm both canvases are present.
+    await waitForImageLoad(page)
+    await expect(page.locator('canvas')).toHaveCount(2)
   })
 })

@@ -9,14 +9,24 @@ export default defineConfig({
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
-  /* Retry on CI only */
-  retries: process.env.CI ? 1 : 0, // Reduced retries to save time
-  /* Opt out of parallel tests on CI. */
-  workers: process.env.CI ? 2 : undefined, // 2 workers for faster execution
-  /* Global timeout for all tests - 5 minutes total */
-  globalTimeout: 5 * 60 * 1000, // 5 minutes total for entire test suite
-  /* Timeout for each test - shorter default */
-  timeout: 30 * 1000, // 30 seconds per test - should be enough for most tests
+  /* Retry on CI only — a net, not a crutch. */
+  retries: process.env.CI ? 1 : 0,
+  /*
+   * Worker count is GLOBAL in Playwright (there is no per-project worker cap),
+   * so true serialization of the heavy WebGL lane is done by a separate
+   * `--workers=1` invocation (see package.json `test:e2e:webgl`), not here.
+   * This default applies to the parallel `@dom` fast lane and to ad-hoc runs.
+   */
+  workers: process.env.CI ? 2 : undefined,
+  /*
+   * No `globalTimeout`. A suite-wide wall-clock cap turns contention or a
+   * (deliberately serial) heavy lane into a nondeterministic failure of the
+   * whole run. The CI job's `timeout-minutes` is the real outer bound; per-test
+   * `timeout` below bounds individual hangs.
+   */
+  /* Per-test failsafe — generous so software-WebGL renders under CPU contention
+   * never make a correct test time out. Not a happy-path budget. */
+  timeout: 60 * 1000,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [
     ['html', { open: 'never' }], // Don't auto-open browser with report
@@ -52,10 +62,14 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     /* Record video on failure */
     video: 'retain-on-failure',
-    /* Action timeout - aggressive for CI */
-    actionTimeout: 5 * 1000, // 5 seconds for clicks, typing, etc.
-    /* Navigation timeout - aggressive for CI */
-    navigationTimeout: 10 * 1000, // 10 seconds for page.goto()
+    /*
+     * Generous failsafes, NOT correctness budgets. The old 5 s actionTimeout
+     * was the direct cause of the #238 flakiness: a click on a visible, correct
+     * button can exceed 5 s while a parallel worker pegs CPU on software WebGL.
+     * Waits key on app state (see tests/utils.ts); these only bound a genuine hang.
+     */
+    actionTimeout: 15 * 1000,
+    navigationTimeout: 30 * 1000,
   },
 
   /* Configure projects for major browsers */
@@ -85,17 +99,22 @@ export default defineConfig({
   ],
 
   /*
-   * Build the app and serve it via `vite preview` so source maps have full
+   * Serve the production build via `vite preview` so source maps have full
    * paths (e.g. `apps/pwa/src/Pwa.tsx`, `packages/niivue-react/src/...`).
    * `--base /` overrides the GitHub Pages base so tests can hit the root.
-   * For local iteration, run `pnpm dev` separately and playwright will
-   * reuseExistingServer.
+   *
+   * The build is intentionally NOT part of this command: the two e2e lanes
+   * (fast + serial webgl) are separate Playwright invocations that must share
+   * ONE build, so `vite build --base /` runs once up front (see package.json
+   * `test:e2e:build`; `test:e2e` and CI run it before the lanes). `vite preview`
+   * here is cheap to (re)start per invocation. For local iteration, `pnpm dev`
+   * on :4000 is reused via reuseExistingServer.
    */
   webServer: {
-    command: 'vite build --base / && vite preview --base / --port 4000',
+    command: 'vite preview --base / --port 4000',
     url: 'http://localhost:4000',
     reuseExistingServer: !process.env.CI,
-    timeout: 5 * 60 * 1000, // 5 minutes — production build can take a while
+    timeout: 2 * 60 * 1000,
   },
 
   /* Global setup and teardown */

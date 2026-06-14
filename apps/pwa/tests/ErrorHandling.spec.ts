@@ -17,7 +17,7 @@ test.describe('Error Handling', () => {
 
     // Verify error message appears
     await expect(page.locator('text=Failed to load image')).toBeVisible({ timeout: 15000 })
-    await page.waitForTimeout(1000)
+    // The detail line auto-retries via toBeVisible; no fixed settle needed.
     await expect(page.locator('div').filter({ hasText: /nonexistent|fetch/i }).first()).toBeVisible()
 
     // Close with the close button
