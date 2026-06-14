@@ -2,11 +2,11 @@
 
 ![coverage](https://img.shields.io/endpoint?url=https://niivue.github.io/niivue-vscode/coverage/pr-247/badge.json)
 
-**Overall line coverage: 40.1% (−1.1) vs `main`**
+**Overall line coverage: 40.5% (−0.7) vs `main`**
 
 | Package | Statements | Branches | Functions | Lines |
 | --- | --- | --- | --- | --- |
-| Shared core (`packages/niivue-react`) | 43.2% (+2.3) | 45.3% (+2.8) | 43.3% (−2.2) | 43.8% (+2.4) |
+| Shared core (`packages/niivue-react`) | 43.8% (+2.9) | 45.6% (+3.1) | 44.4% (−1.1) | 44.4% (+3) |
 | `apps/pwa` | 28.9% | 33.3% | 52.9% | 30.2% |
 | `apps/jupyter` | 14.4% | 15.9% | 14.9% | 14.5% |
 | `apps/streamlit` | 17.8% | 5.3% | 18.5% | 17.7% |
