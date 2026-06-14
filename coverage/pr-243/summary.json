@@ -13,8 +13,8 @@
         "total": 2375
       },
       "branches": {
-        "covered": 752,
-        "total": 1771
+        "covered": 756,
+        "total": 1779
       },
       "functions": {
         "covered": 332,
@@ -165,7 +165,7 @@
     "label": "Overall",
     "stats": {
       "statements": 38.2,
-      "branches": 38.6,
+      "branches": 38.7,
       "functions": 42,
       "lines": 38.3
     },
@@ -175,8 +175,8 @@
         "total": 3180
       },
       "branches": {
-        "covered": 876,
-        "total": 2268
+        "covered": 880,
+        "total": 2276
       },
       "functions": {
         "covered": 386,
