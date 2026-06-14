@@ -22,10 +22,12 @@ import {
     HeaderDialog,
     ImageSelect,
     MenuEntry,
+    StepperEntry,
     ToggleEntry,
     toggle,
 } from './MenuElements'
 import { BarItem, MenuBar } from './MenuBar'
+import { DEFAULT_TILE_SPACING } from '../settings'
 import { ScalingBox } from './ScalingBox'
 
 export const Menu = (props: AppProps) => {
@@ -42,6 +44,7 @@ export const Menu = (props: AppProps) => {
   const radiologicalConvention = useSignal(settings.value.radiologicalConvention)
   const colorbar = useSignal(settings.value.colorbar)
   const zoomDragMode = useSignal(settings.value.zoomDragMode)
+  const tileSpacing = useSignal(settings.value.tileSpacing ?? DEFAULT_TILE_SPACING)
   const selectionActive = useSignal(false)
   const selectMultiple = useSignal(false)
 
@@ -100,6 +103,7 @@ export const Menu = (props: AppProps) => {
     radiologicalConvention.value = settings.value.radiologicalConvention
     colorbar.value = settings.value.colorbar
     zoomDragMode.value = settings.value.zoomDragMode
+    tileSpacing.value = settings.value.tileSpacing ?? DEFAULT_TILE_SPACING
   })
 
   // Sync local signal changes back to global settings
@@ -109,7 +113,8 @@ export const Menu = (props: AppProps) => {
       settings.value.showCrosshairs !== crosshair.value ||
       settings.value.radiologicalConvention !== radiologicalConvention.value ||
       settings.value.colorbar !== colorbar.value ||
-      settings.value.zoomDragMode !== zoomDragMode.value
+      settings.value.zoomDragMode !== zoomDragMode.value ||
+      settings.value.tileSpacing !== tileSpacing.value
     ) {
       settings.value = {
         ...settings.value,
@@ -118,6 +123,7 @@ export const Menu = (props: AppProps) => {
         radiologicalConvention: radiologicalConvention.value,
         colorbar: colorbar.value,
         zoomDragMode: zoomDragMode.value,
+        tileSpacing: tileSpacing.value,
       }
     }
   })
@@ -244,6 +250,7 @@ export const Menu = (props: AppProps) => {
       radiologicalConvention: radiologicalConvention.value,
       colorbar: colorbar.value,
       zoomDragMode: zoomDragMode.value,
+      tileSpacing: tileSpacing.value,
     }
     localStorage.setItem('userSettings', JSON.stringify(currentSettings))
     alert('Settings saved!')
@@ -417,6 +424,11 @@ export const Menu = (props: AppProps) => {
     settings.value = { ...settings.value, zoomDragMode: zoomDragMode.value }
   }
 
+  const setTileSpacing = (value: number) => {
+    tileSpacing.value = value
+    settings.value = { ...settings.value, tileSpacing: value }
+  }
+
   // No-op function for informational menu entries
   const noOp = () => {}
 
@@ -571,6 +583,16 @@ export const Menu = (props: AppProps) => {
             keepOpen={true}
           />
           <MenuEntry label="Hide All" onClick={() => (hideUI.value = 0)} keepOpen={true} />
+          <hr />
+          <StepperEntry
+            label="Tile Spacing"
+            value={tileSpacing}
+            min={0}
+            max={32}
+            step={2}
+            onChange={setTileSpacing}
+            format={(v: number) => `${v} px`}
+          />
           <hr />
           <MenuEntry
             label="Reset View"

@@ -1,15 +1,11 @@
-import { SLICE_TYPE } from '@niivue/niivue'
 import { computed, effect, useSignal } from '@preact/signals'
 import { useEffect, useRef } from 'preact/hooks'
 import { ExtendedNiivue } from '../events'
+import { getCanvasSize } from '../layout'
+import { DEFAULT_TILE_SPACING } from '../settings'
 import { differenceInNames, getNames, reorderImages, swapImages } from '../utility'
 import { AppProps } from './AppProps'
 import { Volume } from './Volume'
-
-type Size = {
-  height: number
-  width: number
-}
 
 export const Container = (props: AppProps) => {
   const { nvArray } = props
@@ -41,6 +37,7 @@ export const Container = (props: AppProps) => {
       nvArray.value?.[0]?.volumes?.[0]?.getImageMetadata() ?? {},
       props.sliceType.value,
       windowInnerSize.value,
+      props.settings.value.tileSpacing ?? DEFAULT_TILE_SPACING,
     ),
   )
 
@@ -70,9 +67,11 @@ export const Container = (props: AppProps) => {
     nvArray.value = reorderImages(nvArray.value, fromIndex, targetIndex)
   }
 
+  const spacing = props.settings.value.tileSpacing ?? DEFAULT_TILE_SPACING
+
   return (
     <div className="flex-grow h-full overflow-hidden" ref={sizeRef}>
-      <div className="flex flex-wrap w-full gap-1 m-1">
+      <div className="flex flex-wrap w-full m-1" style={{ gap: `${spacing}px` }}>
         {nvArray.value.map((nv, i) => (
           <Volume
             nv={nv}
@@ -105,44 +104,6 @@ function remove(props: AppProps, i: number) {
       location.value = ''
     }
   }
-}
-
-function getAspectRatio(meta: any, sliceType: number) {
-  if (!meta.nx) {
-    return 1
-  }
-  const xSize = meta.nx * meta.dx
-  const ySize = meta.ny * meta.dy
-  const zSize = meta.nz * meta.dz
-  if (sliceType === SLICE_TYPE.AXIAL) {
-    return xSize / ySize
-  } else if (sliceType === SLICE_TYPE.CORONAL) {
-    return xSize / zSize
-  } else if (sliceType === SLICE_TYPE.SAGITTAL) {
-    return ySize / zSize
-  } else if (sliceType === SLICE_TYPE.MULTIPLANAR) {
-    return (xSize + ySize) / (zSize + ySize)
-  }
-  return 1
-}
-
-function getCanvasSize(nCanvas: number, meta: any, sliceType: number, windowSize: Size) {
-  const gap = 4
-  const aspectRatio = getAspectRatio(meta, sliceType)
-  if (nCanvas === 0) {
-    nCanvas = 1
-  }
-
-  let bestWidth = 0
-  for (let nrow = 1; nrow <= nCanvas; nrow++) {
-    const ncol = Math.ceil(nCanvas / nrow)
-    const maxHeight = Math.floor(windowSize.height / nrow - gap)
-    const maxWidth = Math.floor(Math.min(windowSize.width / ncol - gap, maxHeight * aspectRatio))
-    if (maxWidth > bestWidth) {
-      bestWidth = maxWidth
-    }
-  }
-  return { width: bestWidth, height: bestWidth / aspectRatio }
 }
 
 function syncVolumes(nvArray: ExtendedNiivue[]) {
