@@ -28,6 +28,8 @@ async function getDebugValue(page, request) {
         return appProps.hideUI.value;
       case 'getCrosshairPos':
         return appProps.nvArray.value[0]?.scene?.crosshairPos;
+      case 'getClipPlaneIndex':
+        return appProps.nvArray.value[0]?.currentClipPlaneIndex;
       case 'getPan':
         return appProps.nvArray.value[0]?.scene?.pan2Dxyzmm;
       default:
@@ -57,6 +59,19 @@ test.describe('Keyboard Shortcuts', () => {
     const newSliceType = await getDebugValue(page, 'getSliceType');
     expect(newSliceType).toBeGreaterThanOrEqual(0);
     expect(newSliceType).toBeLessThanOrEqual(4);
+  });
+
+  test('should cycle the clip plane exactly once per "c" press', async ({ page }) => {
+    // Regression test for #224. The app's keyboard handler advances the clip
+    // plane for every selected canvas on keydown. NiiVue's own canvas handler
+    // used to advance it a second time for the focused canvas on keyup, so a
+    // single "c" landed on index 2 instead of 1. With NiiVue's clipPlaneHotKey
+    // disabled the app is the only handler, so one press == one step.
+    const canvas = page.locator('canvas').first();
+    await canvas.click();
+
+    await page.keyboard.press('c');
+    await poll(page, 'getClipPlaneIndex').toBe(1);
   });
 
   test('should change view to Axial with "1"', async ({ page }) => {
