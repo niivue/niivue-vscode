@@ -31,7 +31,9 @@
 .nv-pane-label-text { font-weight: 600; color: var(--fg-0); }
 
 .nv-readout {
-  position: absolute; bottom: 10px; right: 10px;
+  /* Anchored bottom-left so it never collides with the 4D navigator (bottom-
+     right) or the timeseries graph NiiVue draws in the bottom-right quadrant. */
+  position: absolute; bottom: 10px; left: 10px;
   display: flex; align-items: center; gap: 6px;
   padding: 4px 9px;
   background: rgba(10, 14, 20, 0.78);
