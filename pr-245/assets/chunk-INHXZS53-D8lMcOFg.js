@@ -1,2 +1,0 @@
-var r=(()=>{for(var r=new Uint8Array(128),a=0;a<64;a++)r[a<26?a+65:a<52?a+71:a<62?a-4:4*a-205]=a;return a=>{for(var t=a.length,e=new Uint8Array(3*(t-("="==a[t-1])-("="==a[t-2]))/4|0),n=0,o=0;n<t;){var A=r[a.charCodeAt(n++)],h=r[a.charCodeAt(n++)],c=r[a.charCodeAt(n++)],d=r[a.charCodeAt(n++)];e[o++]=A<<2|h>>4,e[o++]=h<<4|c>>2,e[o++]=c<<6|d}return e}})();export{r as t};
-//# sourceMappingURL=chunk-INHXZS53-D8lMcOFg.js.map
