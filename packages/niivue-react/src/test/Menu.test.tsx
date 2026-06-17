@@ -1,7 +1,7 @@
 import { SLICE_TYPE } from '@niivue/niivue'
 import { signal } from '@preact/signals'
-import { fireEvent, render, screen } from '@testing-library/preact'
-import { describe, expect, it, vi } from 'vitest'
+import { cleanup, fireEvent, render, screen } from '@testing-library/preact'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AppProps, SelectionMode } from '../components/AppProps'
 import { Menu } from '../components/Menu'
 
@@ -68,5 +68,87 @@ describe('Menu', () => {
     // Test initial -> index 1 -> [0, 270, 0]
     fireEvent.click(cycleClipButton)
     expect(mockNiivue.setClipPlane).toHaveBeenCalledWith([0, 270, 0])
+  })
+})
+
+// Keyboard -> Menu WIRING. useKeyboardShortcuts.test.tsx proves each key calls
+// the right handler; this proves <Menu>'s handlers map those keys to the correct
+// concrete sliceType / hideUI VALUES (incl. the cycle math) - the value mapping
+// the old keyboard e2e asserted, now covered here with no WebGL load.
+afterEach(() => cleanup())
+
+function makeKbNv() {
+  return {
+    volumes: [],
+    meshes: [],
+    graph: { autoSizeMultiplanar: true },
+    scene: { pan2Dxyzmm: [1, 1, 1, 1] },
+    opts: {},
+    updateGLVolume: vi.fn(),
+    drawScene: vi.fn(),
+    getRadiologicalConvention: vi.fn(() => false),
+    setInterpolation: vi.fn(),
+    setRadiologicalConvention: vi.fn(),
+    setCrosshairWidth: vi.fn(),
+    dragModes: { slicer3D: 1, contrast: 2 },
+  }
+}
+
+function makeKbProps(over: Record<string, unknown> = {}) {
+  return {
+    nvArray: signal([makeKbNv()]),
+    selection: signal([0]),
+    selectionMode: signal(SelectionMode.SINGLE),
+    sliceType: signal(SLICE_TYPE.MULTIPLANAR),
+    hideUI: signal(3),
+    settings: signal({
+      interpolation: true,
+      showCrosshairs: true,
+      radiologicalConvention: false,
+      colorbar: false,
+      zoomDragMode: false,
+      menuItems: { view: true, navigation: true },
+    }),
+    ...over,
+  }
+}
+
+function pressKey(key: string) {
+  window.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }))
+}
+
+describe('Menu keyboard wiring (key -> view / UI value)', () => {
+  it('number keys select the matching slice type', () => {
+    const props = makeKbProps()
+    render(<Menu {...(props as unknown as AppProps)} />)
+
+    pressKey('1')
+    expect(props.sliceType.value).toBe(SLICE_TYPE.AXIAL)
+    pressKey('3')
+    expect(props.sliceType.value).toBe(SLICE_TYPE.CORONAL)
+    pressKey('4')
+    expect(props.sliceType.value).toBe(SLICE_TYPE.RENDER)
+    pressKey('5')
+    expect(props.sliceType.value).toBe(SLICE_TYPE.MULTIPLANAR)
+  })
+
+  it('"v" cycles the view mode and wraps modulo 5 (RENDER -> AXIAL)', () => {
+    const props = makeKbProps({ sliceType: signal(SLICE_TYPE.RENDER) })
+    render(<Menu {...(props as unknown as AppProps)} />)
+
+    pressKey('v')
+    expect(props.sliceType.value).toBe(SLICE_TYPE.AXIAL) // (4 + 1) % 5
+  })
+
+  it('"u" cycles UI visibility 3 -> 2 -> 0 -> 3', () => {
+    const props = makeKbProps({ hideUI: signal(3) })
+    render(<Menu {...(props as unknown as AppProps)} />)
+
+    pressKey('u')
+    expect(props.hideUI.value).toBe(2)
+    pressKey('u')
+    expect(props.hideUI.value).toBe(0)
+    pressKey('u')
+    expect(props.hideUI.value).toBe(3)
   })
 })

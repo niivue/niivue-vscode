@@ -1,240 +1,59 @@
-import { expect, test } from './fixtures';
-import { BASE_URL, loadTestImage } from './utils';
+import { expect, test } from './fixtures'
+import { BASE_URL, loadTestImage } from './utils'
 
-test.beforeEach(async ({ page }) => {
-  page.on('console', msg => console.log('BROWSER:', msg.text()));
-  await page.goto(BASE_URL);
-  await loadTestImage(page);
-});
+// Keyboard-shortcut LOGIC - the key->action mapping, modifier disambiguation, and
+// the input-field guard - is covered exhaustively and in milliseconds by unit
+// tests, with no WebGL load:
+//   packages/niivue-react/src/test/keyboardShortcuts.test.ts    (matchesShortcut / formatShortcut)
+//   packages/niivue-react/src/test/useKeyboardShortcuts.test.tsx (the hook: every mapping, guard, cleanup)
+//
+// What a unit test cannot prove is that the hook is actually mounted in the
+// running app, that a real keypress flips real app state, and that NiiVue's own
+// built-in canvas hotkeys stay out of the way. Those integration claims are all
+// this spec keeps - replacing the full per-key e2e matrix that each paid for a
+// WebGL load to assert pure handler logic. See tests/README.md for the
+// unit-first test-placement policy.
+test.describe('Keyboard shortcuts (smoke)', () => {
+  test('a real keypress drives app state; a focused text field suppresses it', async ({ page }) => {
+    await page.goto(BASE_URL)
+    await loadTestImage(page)
+    await page.locator('canvas').first().click()
 
-async function getDebugValue(page, request) {
-  return page.evaluate((req) => {
-    const appProps = (window as any).appProps;
-    if (!appProps) return undefined;
-    switch (req) {
-      case 'getSliceType':
-        return appProps.sliceType.value;
-      case 'getInterpolation':
-        return appProps.settings.value.interpolation;
-      case 'getColorbar':
-        return appProps.settings.value.colorbar;
-      case 'getRadiological':
-        return appProps.settings.value.radiologicalConvention;
-      case 'getCrosshair':
-        return appProps.settings.value.showCrosshairs;
-      case 'getZoomMode':
-        return appProps.settings.value.zoomDragMode;
-      case 'getHideUI':
-        return appProps.hideUI.value;
-      case 'getCrosshairPos':
-        return appProps.nvArray.value[0]?.scene?.crosshairPos;
-      case 'getClipPlaneIndex':
-        return appProps.nvArray.value[0]?.currentClipPlaneIndex;
-      case 'getPan':
-        return appProps.nvArray.value[0]?.scene?.pan2Dxyzmm;
-      default:
-        return undefined;
-    }
-  }, request);
-}
+    const sliceType = () => page.evaluate(() => (window as any).appProps?.sliceType.value)
 
-// Each shortcut updates a Preact signal in the keydown handler. Rather than
-// sleep a fixed amount and hope the signal has propagated (flaky under CI CPU
-// contention), poll the same app-state read until it reflects the change.
-function poll(page, request) {
-  return expect.poll(() => getDebugValue(page, request));
-}
+    // '2' (sagittal) then '1' (axial): the UI hook is wired to the sliceType signal.
+    await page.keyboard.press('2')
+    await page.keyboard.press('1')
+    await expect.poll(sliceType).toBe(0) // AXIAL
 
-test.describe('Keyboard Shortcuts', () => {
-  test('should cycle view modes with "v"', async ({ page }) => {
-    const canvas = page.locator('canvas').first();
-    await canvas.click();
-
-    const initialSliceType = await getDebugValue(page, 'getSliceType');
-    await page.keyboard.press('v');
-    // Slice type should change when cycling
-    await poll(page, 'getSliceType').not.toBe(initialSliceType);
-
-    // Cycle should wrap around eventually (0 to 4)
-    const newSliceType = await getDebugValue(page, 'getSliceType');
-    expect(newSliceType).toBeGreaterThanOrEqual(0);
-    expect(newSliceType).toBeLessThanOrEqual(4);
-  });
-
-  test('should cycle the clip plane exactly once per "c" press', async ({ page }) => {
-    // Regression test for #224. The app's keyboard handler advances the clip
-    // plane for every selected canvas on keydown. NiiVue's own canvas handler
-    // used to advance it a second time for the focused canvas on keyup, so a
-    // single "c" landed on index 2 instead of 1. With NiiVue's clipPlaneHotKey
-    // disabled the app is the only handler, so one press == one step.
-    const canvas = page.locator('canvas').first();
-    await canvas.click();
-
-    await page.keyboard.press('c');
-    await poll(page, 'getClipPlaneIndex').toBe(1);
-  });
-
-  test('should change view to Axial with "1"', async ({ page }) => {
-    const canvas = page.locator('canvas').first();
-    await canvas.click();
-
-    await page.keyboard.press('2'); // First switch away from Axial
-    await page.keyboard.press('1');
-    await poll(page, 'getSliceType').toBe(0); // Axial
-  });
-
-  test('should change view to Coronal with "3"', async ({ page }) => {
-    const canvas = page.locator('canvas').first();
-    await canvas.click();
-
-    await page.keyboard.press('3');
-    await poll(page, 'getSliceType').toBe(1); // Coronal
-  });
-
-  test('should change view to Render with "4"', async ({ page }) => {
-    const canvas = page.locator('canvas').first();
-    await canvas.click();
-
-    await page.keyboard.press('4');
-    await poll(page, 'getSliceType').toBe(4); // Render (SLICE_TYPE.RENDER is 4)
-  });
-
-  test('should change view to Multiplanar+Render with "5"', async ({ page }) => {
-    const canvas = page.locator('canvas').first();
-    await canvas.click();
-
-    await page.keyboard.press('5');
-    await poll(page, 'getSliceType').toBe(3); // Multiplanar (SLICE_TYPE.MULTIPLANAR is 3)
-  });
-
-  test('should toggle interpolation with "i"', async ({ page }) => {
-    const canvas = page.locator('canvas').first();
-    await canvas.click();
-
-    const initial = await getDebugValue(page, 'getInterpolation');
-    await page.keyboard.press('i');
-    await poll(page, 'getInterpolation').toBe(!initial);
-  });
-
-  test('should toggle colorbar with "b"', async ({ page }) => {
-    const canvas = page.locator('canvas').first();
-    await canvas.click();
-
-    const initial = await getDebugValue(page, 'getColorbar');
-    await page.keyboard.press('b');
-    await poll(page, 'getColorbar').toBe(!initial);
-  });
-
-  test('should toggle radiological convention with "x"', async ({ page }) => {
-    const canvas = page.locator('canvas').first();
-    await canvas.click();
-
-    const initial = await getDebugValue(page, 'getRadiological');
-    await page.keyboard.press('x');
-    await poll(page, 'getRadiological').toBe(!initial);
-  });
-
-  test('should toggle crosshairs with "m"', async ({ page }) => {
-    const canvas = page.locator('canvas').first();
-    await canvas.click();
-
-    const initial = await getDebugValue(page, 'getCrosshair');
-    await page.keyboard.press('m');
-    await poll(page, 'getCrosshair').toBe(!initial);
-  });
-
-  test('should toggle zoom mode with "z"', async ({ page }) => {
-    const canvas = page.locator('canvas').first();
-    await canvas.click();
-
-    const initial = await getDebugValue(page, 'getZoomMode');
-    await page.keyboard.press('z');
-    await poll(page, 'getZoomMode').toBe(!initial);
-  });
-
-  test('should toggle UI visibility with "u"', async ({ page }) => {
-    const canvas = page.locator('canvas').first();
-    await canvas.click();
-
-    const initial = await getDebugValue(page, 'getHideUI');
-    await page.keyboard.press('u');
-    // hideUI cycles: 3 -> 2 -> 0 -> 3
-    await poll(page, 'getHideUI').not.toBe(initial);
-  });
-
-  test('should reset view with "r"', async ({ page }) => {
-    const canvas = page.locator('canvas').first();
-    await canvas.click();
-
-    // Press 'r' to reset pan/zoom
-    await page.keyboard.press('r');
-    await poll(page, 'getPan').toEqual([0, 0, 0, 1]); // Reset to default pan
-  });
-
-  test('should move crosshair with "h", "j", "k", "l"', async ({ page }) => {
-    const canvas = page.locator('canvas').first();
-    await canvas.click();
-
-    const initialPos = await getDebugValue(page, 'getCrosshairPos');
-
-    await page.keyboard.press('l'); // Right
-    await expect
-      .poll(async () => (await getDebugValue(page, 'getCrosshairPos'))[0])
-      .toBeGreaterThan(initialPos[0]);
-
-    await page.keyboard.press('h'); // Left
-    await expect
-      .poll(async () => (await getDebugValue(page, 'getCrosshairPos'))[0])
-      .toBeCloseTo(initialPos[0]);
-
-    await page.keyboard.press('j'); // Posterior (Y increases in NiiVue vox space for posterior? Actually depends on orientation, but it should change)
-    await expect
-      .poll(async () => (await getDebugValue(page, 'getCrosshairPos'))[1])
-      .not.toBe(initialPos[1]);
-
-    await page.keyboard.press('k'); // Anterior
-    await expect
-      .poll(async () => (await getDebugValue(page, 'getCrosshairPos'))[1])
-      .toBeCloseTo(initialPos[1]);
-  });
-
-  test('should move crosshair superior/inferior with "Shift+U" and "Shift+D"', async ({ page }) => {
-    const canvas = page.locator('canvas').first();
-    await canvas.click();
-
-    const initialPos = await getDebugValue(page, 'getCrosshairPos');
-
-    await page.keyboard.press('Shift+U');
-    await expect
-      .poll(async () => (await getDebugValue(page, 'getCrosshairPos'))[2])
-      .toBeGreaterThan(initialPos[2]);
-
-    await page.keyboard.press('Shift+D');
-    await expect
-      .poll(async () => (await getDebugValue(page, 'getCrosshairPos'))[2])
-      .toBeCloseTo(initialPos[2]);
-  });
-
-  test('should NOT trigger shortcuts when typing in input fields', async ({ page }) => {
-    // If there's an input field, focus it and press 'v'
-    // Let's create an input field for testing if none exists
+    // With focus in a text input the shortcut must be ignored: the input receives
+    // the character and the view does not change.
     await page.evaluate(() => {
-      const input = document.createElement('input');
-      input.id = 'test-input';
-      document.body.appendChild(input);
-    });
+      const input = document.createElement('input')
+      input.id = 'smoke-input'
+      document.body.appendChild(input)
+    })
+    await page.locator('#smoke-input').focus()
+    await page.keyboard.press('3') // would switch to coronal if not suppressed
+    await expect(page.locator('#smoke-input')).toHaveValue('3')
+    expect(await sliceType()).toBe(0) // still axial
+  })
 
-    const input = page.locator('#test-input');
-    await input.focus();
+  test('clip plane advances exactly once per "c" press (#224)', async ({ page }) => {
+    // Regression for #224. The app's keydown handler advances the clip plane for
+    // every selected canvas; NiiVue's own canvas handler used to advance the
+    // focused canvas again on keyup, so a single "c" landed on index 2 instead of
+    // 1. That NiiVue's clipPlaneHotKey is actually disabled in the running app is
+    // an integration claim a jsdom unit test can't make (it has no real NiiVue
+    // canvas) - the hook test only proves the app fires onCycleClipPlane once - so
+    // the one-press-one-step guarantee is verified here against the real viewer.
+    await page.goto(BASE_URL)
+    await loadTestImage(page)
+    await page.locator('canvas').first().click()
 
-    const initialSliceType = await getDebugValue(page, 'getSliceType');
-    await page.keyboard.press('v');
-    // Awaiting the input value (web-first, auto-retrying) proves the keypress
-    // was consumed by the input rather than dropped — without a fixed sleep.
-    // Once the input shows the char, the shortcut, if it were going to fire,
-    // already would have; the slice type must be unchanged.
-    await expect(input).toHaveValue('v');
-    const newSliceType = await getDebugValue(page, 'getSliceType');
-    expect(newSliceType).toBe(initialSliceType);
-  });
-});
+    const clipPlaneIndex = () =>
+      page.evaluate(() => (window as any).appProps?.nvArray.value[0]?.currentClipPlaneIndex)
+    await page.keyboard.press('c')
+    await expect.poll(clipPlaneIndex).toBe(1)
+  })
+})
