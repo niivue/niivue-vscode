@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { getMetadataString, getNames, getNumberOfPoints, isDicomData, isImageType } from '../utility'
+import {
+  buildImageMessageBodies,
+  getMetadataString,
+  getNames,
+  getNumberOfPoints,
+  isDicomData,
+  isImageType,
+} from '../utility'
 
 describe('isImageType', () => {
   // The function returns the matched extension string when supported, or
@@ -194,5 +201,113 @@ describe('getNames', () => {
   it('falls back to uri when neither volumes nor meshes exist', () => {
     const nv = { volumes: [], meshes: [], uri: 'http://example.org/scan.nii' } as any
     expect(getNames([nv])).toEqual(['http://example.org/scan.nii'])
+  })
+})
+
+describe('buildImageMessageBodies (MHD / .raw pairing)', () => {
+  // MHD is a detached format: the .mhd header's `ElementDataFile` names a
+  // sibling .raw holding the voxels. This is the pure pairing brain behind the
+  // probe-mhd "drop" e2e specs - exercised here with no WebGL load.
+  //
+  // buildImageMessageBodies only reads `file.name` and `file.arrayBuffer()`, and
+  // jsdom's File does not implement arrayBuffer(), so a minimal File-like double
+  // is both sufficient and clearer than polyfilling Blob.
+  function fakeFile(name: string, bytes: Uint8Array): File {
+    const buf = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
+    return { name, arrayBuffer: async () => buf } as unknown as File
+  }
+  function mhdFile(name: string, elementDataFile: string | null) {
+    const header =
+      'ObjectType = Image\nNDims = 3\nDimSize = 4 4 4\nElementType = MET_UCHAR\n' +
+      (elementDataFile === null ? '' : `ElementDataFile = ${elementDataFile}\n`)
+    return fakeFile(name, new TextEncoder().encode(header))
+  }
+  function binFile(name: string, bytes: number[]) {
+    return fakeFile(name, new Uint8Array(bytes))
+  }
+  async function bytesOf(buf?: ArrayBuffer) {
+    return buf ? Array.from(new Uint8Array(buf)) : undefined
+  }
+
+  it('pairs an .mhd with its .raw and drops the .raw as its own image', async () => {
+    const bodies = await buildImageMessageBodies([
+      mhdFile('sphere.mhd', 'sphere.raw'),
+      binFile('sphere.raw', [9, 8, 7, 6]),
+    ])
+    expect(bodies).toHaveLength(1) // the .raw collapses into the .mhd body
+    expect(bodies[0].uri).toBe('sphere.mhd')
+    expect(await bytesOf(bodies[0].pairedData)).toEqual([9, 8, 7, 6])
+    expect(bodies[0].loadError).toBeUndefined()
+  })
+
+  it('pairs regardless of order (the .raw listed first - the drop-reversed case)', async () => {
+    const bodies = await buildImageMessageBodies([
+      binFile('sphere.raw', [9, 8, 7, 6]),
+      mhdFile('sphere.mhd', 'sphere.raw'),
+    ])
+    expect(bodies).toHaveLength(1)
+    expect(bodies[0].uri).toBe('sphere.mhd')
+    expect(await bytesOf(bodies[0].pairedData)).toEqual([9, 8, 7, 6])
+  })
+
+  it('matches the paired file case-insensitively', async () => {
+    const bodies = await buildImageMessageBodies([
+      mhdFile('sphere.mhd', 'SPHERE.RAW'),
+      binFile('sphere.raw', [1]),
+    ])
+    expect(bodies).toHaveLength(1)
+    expect(bodies[0].pairedData).toBeDefined()
+  })
+
+  it('strips surrounding quotes from the ElementDataFile value', async () => {
+    const bodies = await buildImageMessageBodies([
+      mhdFile('sphere.mhd', '"sphere.raw"'),
+      binFile('sphere.raw', [1]),
+    ])
+    expect(bodies).toHaveLength(1)
+    expect(bodies[0].pairedData).toBeDefined()
+  })
+
+  it('uses only the basename when ElementDataFile carries a path', async () => {
+    const bodies = await buildImageMessageBodies([
+      mhdFile('sphere.mhd', 'data\\sub\\sphere.raw'),
+      binFile('sphere.raw', [1]),
+    ])
+    expect(bodies).toHaveLength(1)
+    expect(bodies[0].pairedData).toBeDefined()
+  })
+
+  it('treats ElementDataFile = LOCAL as attached (no pairing, no error)', async () => {
+    const bodies = await buildImageMessageBodies([mhdFile('embedded.mhd', 'LOCAL')])
+    expect(bodies).toHaveLength(1)
+    expect(bodies[0].pairedData).toBeUndefined()
+    expect(bodies[0].loadError).toBeUndefined()
+  })
+
+  it('reports a loadError when the referenced .raw is absent (the unpaired case)', async () => {
+    const bodies = await buildImageMessageBodies([mhdFile('sphere.mhd', 'sphere.raw')])
+    expect(bodies).toHaveLength(1)
+    expect(bodies[0].pairedData).toBeUndefined()
+    expect(bodies[0].loadError).toMatch(/missing paired data file/i)
+    expect(bodies[0].loadError).toContain('sphere.raw')
+  })
+
+  it('deduplicates a .raw shared by two .mhd files', async () => {
+    const bodies = await buildImageMessageBodies([
+      mhdFile('a.mhd', 'shared.raw'),
+      mhdFile('b.mhd', 'shared.raw'),
+      binFile('shared.raw', [5, 5]),
+    ])
+    expect(bodies.map((b) => b.uri).sort()).toEqual(['a.mhd', 'b.mhd'])
+    expect(bodies.every((b) => b.pairedData)).toBe(true)
+    expect(await bytesOf(bodies[0].pairedData)).toEqual([5, 5])
+  })
+
+  it('passes a non-MHD image through untouched', async () => {
+    const bodies = await buildImageMessageBodies([binFile('scan.nii.gz', [1, 2, 3])])
+    expect(bodies).toHaveLength(1)
+    expect(bodies[0].uri).toBe('scan.nii.gz')
+    expect(bodies[0].pairedData).toBeUndefined()
+    expect(await bytesOf(bodies[0].data)).toEqual([1, 2, 3])
   })
 })
