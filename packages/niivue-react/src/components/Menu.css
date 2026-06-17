@@ -82,6 +82,11 @@
 .nv-topbtn:hover { background: var(--bg-3); color: var(--fg-0); }
 .nv-topbtn.is-active { background: var(--bg-3); color: var(--fg-0); }
 
+/* A label immediately followed by its dropdown caret: hug the caret on the
+   inside (short gap before the chevron) while keeping normal spacing after it. */
+.nv-topbtn-label { padding-right: 2px; }
+.nv-topbtn-caret { padding-left: 2px; }
+
 .nv-iconbtn {
   width: 30px; height: 30px;
   display: grid; place-items: center;

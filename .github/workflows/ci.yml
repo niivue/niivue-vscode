@@ -378,7 +378,10 @@ jobs:
   e2e-tests:
     needs: [changes, build]
     if: needs.changes.outputs.pwa == 'true'
-    timeout-minutes: 10
+    # Headroom for the serial WebGL lane on software-WebGL CI. This is the only
+    # outer time bound now that globalTimeout is gone; bump the webgl lane to
+    # --workers=2 (see apps/pwa/tests/README.md) before lowering this.
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

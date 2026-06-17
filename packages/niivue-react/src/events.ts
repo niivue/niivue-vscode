@@ -449,6 +449,14 @@ function growNvArrayBy(nvArray: Signal<Niivue[]>, n: number) {
       isResizeCanvas: true,
       dragMode: 1, // contrast
       dragAndDropEnabled: false, // handled by app (Volume component)
+      // 'c' (cycle clip plane) and 'v' (cycle view mode) are handled by the
+      // app's useKeyboardShortcuts hook, which broadcasts to every selected
+      // canvas. Disabling NiiVue's own canvas-level handlers for these keys
+      // (an empty hotkey never matches an event's KeyboardEvent.code) keeps the
+      // app as the single source of truth, so the focused canvas is no longer
+      // acted on a second time on key release. See niivue/niivue-vscode#224.
+      clipPlaneHotKey: '',
+      viewModeHotKey: '',
     })
     nv.key = Math.random()
     nvArray.value = [...nvArray.value, nv]

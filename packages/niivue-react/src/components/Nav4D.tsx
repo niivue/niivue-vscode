@@ -167,14 +167,14 @@ export const Nav4D = ({ nv, nvArray, volumeIndex, vol4D, isPlaying, isEditingVol
   const showSync = num4DVolumes > 1
 
   return (
-    <div className="absolute bottom-1 right-1 flex items-center gap-1 bg-gray-900/70 rounded-lg p-1 backdrop-blur-sm shadow-lg">
+    <div className="absolute bottom-1 right-1 flex flex-col items-center gap-1 bg-gray-900/70 rounded-lg p-1 backdrop-blur-sm shadow-lg">
       <button
         className="bg-transparent hover:bg-white/20 text-white rounded px-2 py-1 transition-colors text-xl leading-none flex items-center justify-center min-w-[30px]"
-        onClick={prevVolume}
-        aria-label="Previous frame"
-        title="Previous frame"
+        onClick={nextVolume}
+        aria-label="Next frame"
+        title="Next frame"
       >
-        -
+        +
       </button>
 
       {isEditingVol4D.value ? (
@@ -205,14 +205,14 @@ export const Nav4D = ({ nv, nvArray, volumeIndex, vol4D, isPlaying, isEditingVol
 
       <button
         className="bg-transparent hover:bg-white/20 text-white rounded px-2 py-1 transition-colors text-xl leading-none flex items-center justify-center min-w-[30px]"
-        onClick={nextVolume}
-        aria-label="Next frame"
-        title="Next frame"
+        onClick={prevVolume}
+        aria-label="Previous frame"
+        title="Previous frame"
       >
-        +
+        -
       </button>
 
-      <div className="w-px h-4 bg-gray-600 mx-1"></div>
+      <div className="h-px w-4 bg-gray-600 my-1"></div>
 
       <button
         className="bg-transparent hover:bg-white/20 text-white rounded px-2 py-1 transition-colors flex items-center justify-center min-w-[30px]"
@@ -226,7 +226,7 @@ export const Nav4D = ({ nv, nvArray, volumeIndex, vol4D, isPlaying, isEditingVol
 
       {showSync && (
         <>
-          <div className="w-px h-4 bg-gray-600 mx-1"></div>
+          <div className="h-px w-4 bg-gray-600 my-1"></div>
           <button
             className={`${
               isSynced ? 'bg-blue-500/50' : 'bg-transparent'
