@@ -8,6 +8,13 @@ export interface ScalingOpts {
   max: number
 }
 
+// Niivue COLORMAP_TYPE values. MIN_TO_MAX is the default opaque mapping;
+// ZERO_TO_MAX_TRANSPARENT_BELOW_MIN scales the colormap from zero and renders
+// zero/background voxels as transparent (#237). Mirrored here to avoid importing
+// the enum, keeping the toggle a plain numeric property write.
+const MIN_TO_MAX = 0
+const ZERO_TRANSPARENT = 1
+
 export const ScalingBox = (props: any) => {
   const { nvArraySelected, selectedOverlayNumber, overlayMenu, visible } = props
   if (visible && !visible.value) return null
@@ -16,6 +23,9 @@ export const ScalingBox = (props: any) => {
     getOverlay(nvArraySelected.value[0], selectedOverlayNumber.value),
   )
   const invertState = useSignal(selectedOverlay.value.colormapInvert)
+  // colormapType === 1 (ZERO_TO_MAX_TRANSPARENT_BELOW_MIN) renders zero/background
+  // voxels as transparent. Works for any colormap, range or float/int data (#237).
+  const hideZeroState = useSignal(selectedOverlay.value.colormapType === ZERO_TRANSPARENT)
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -44,6 +54,13 @@ export const ScalingBox = (props: any) => {
     const colormap = e.target.value
     nvArraySelected.value.forEach((nv: ExtendedNiivue) => {
       handleOverlayColormap(nv, selectedOverlayNumber.value, colormap)
+      // Hide 0 anchors the colormap at zero; if it is active on signed data, make
+      // sure the freshly chosen colormap still keeps a negative colormap so the
+      // negative half stays visible (#237).
+      if (hideZeroState.value) {
+        reconcileHideZeroNegative(nv, selectedOverlayNumber.value)
+        nv.updateGLVolume()
+      }
     })
   }
 
@@ -58,6 +75,13 @@ export const ScalingBox = (props: any) => {
     invertState.value = !selectedOverlay.value.colormapInvert
     nvArraySelected.value.forEach((nv: ExtendedNiivue) => {
       handleOverlayInvert(nv, selectedOverlayNumber.value, invertState.value!)
+    })
+  }
+
+  const changeHideZero = () => {
+    hideZeroState.value = selectedOverlay.value.colormapType !== ZERO_TRANSPARENT
+    nvArraySelected.value.forEach((nv: ExtendedNiivue) => {
+      handleOverlayHideZero(nv, selectedOverlayNumber.value, hideZeroState.value!)
     })
   }
 
@@ -91,6 +115,15 @@ export const ScalingBox = (props: any) => {
         onClick={changeInverted}
       >
         Invert
+      </button>
+      <button
+        title="Render zero values as transparent"
+        className={`border-2 border-gray-600 rounded-md w-16 ${
+          hideZeroState.value ? 'bg-white text-gray-600' : 'bg-gray-600'
+        }`}
+        onClick={changeHideZero}
+      >
+        Hide 0
       </button>
       <button
         className="bg-gray-600 border-2 border-gray-600 rounded-md w-16 float-right"
@@ -174,6 +207,80 @@ function handleOverlayInvert(nv: ExtendedNiivue, layerNumber: number, invert: bo
     nv.setMeshLayerProperty(nv.meshes[0].id as any, layerNumber, 'colormapInvert', invert ? 1 : 0)
   }
   nv.updateGLVolume()
+}
+
+// Colormap used for the negative half when Hide 0 is auto-applied to signed data.
+const NEGATIVE_COLORMAP = 'winter'
+
+// Overlays we auto-assigned a negative colormap to (because Hide 0 would
+// otherwise drop their negative half). Tracked so toggling Hide 0 off — or
+// switching to a colormap that brings its own negative map — cleanly removes our
+// addition without ever clobbering a user-chosen negative/symmetric colormap.
+const autoNegativeOverlays = new WeakSet<object>()
+
+function handleOverlayHideZero(nv: ExtendedNiivue, layerNumber: number, enable: boolean) {
+  setOverlayColormapType(nv, layerNumber, enable ? ZERO_TRANSPARENT : MIN_TO_MAX)
+  if (enable) {
+    reconcileHideZeroNegative(nv, layerNumber)
+  } else {
+    removeAutoNegative(nv, layerNumber)
+  }
+  nv.updateGLVolume()
+}
+
+// Hide 0 (colormapType 1) re-anchors the colormap at zero, which renders every
+// negative voxel transparent unless a negative colormap is present. For a signed
+// overlay that has none, add one so the negative half stays visible; if the
+// overlay already carries a negative/symmetric colormap, leave it untouched (#237).
+function reconcileHideZeroNegative(nv: ExtendedNiivue, layerNumber: number) {
+  const overlay = getOverlay(nv, layerNumber)
+  if (!overlay) {
+    return
+  }
+  const hasNegativeColormap = (overlay.colormapNegative?.length ?? 0) > 0
+  if (overlayHasNegativeRange(overlay) && !hasNegativeColormap) {
+    setOverlayNegativeColormap(nv, layerNumber, NEGATIVE_COLORMAP)
+    autoNegativeOverlays.add(overlay)
+  } else if (hasNegativeColormap) {
+    // A colormap choice (e.g. symmetric) now owns the negative map; stop tracking it.
+    autoNegativeOverlays.delete(overlay)
+  }
+}
+
+function removeAutoNegative(nv: ExtendedNiivue, layerNumber: number) {
+  const overlay = getOverlay(nv, layerNumber)
+  if (overlay && autoNegativeOverlays.has(overlay)) {
+    setOverlayNegativeColormap(nv, layerNumber, '')
+    autoNegativeOverlays.delete(overlay)
+  }
+}
+
+function overlayHasNegativeRange(overlay: any) {
+  return (overlay?.cal_min ?? 0) < 0
+}
+
+function setOverlayColormapType(nv: ExtendedNiivue, layerNumber: number, colormapType: number) {
+  if (isVolumeOverlay(nv)) {
+    const overlay = nv.volumes[layerNumber]
+    if (overlay) {
+      overlay.colormapType = colormapType
+    }
+  } else {
+    nv.setMeshLayerProperty(nv.meshes[0].id as any, layerNumber, 'colormapType', colormapType)
+  }
+}
+
+function setOverlayNegativeColormap(nv: ExtendedNiivue, layerNumber: number, colormapNegative: string) {
+  if (isVolumeOverlay(nv)) {
+    const overlay = nv.volumes[layerNumber]
+    if (overlay) {
+      overlay.colormapNegative = colormapNegative
+    }
+  } else {
+    const id = nv.meshes[0].id
+    nv.setMeshLayerProperty(id as any, layerNumber, 'useNegativeCmap', (colormapNegative.length > 0) as any)
+    nv.setMeshLayerProperty(id as any, layerNumber, 'colormapNegative', colormapNegative as any)
+  }
 }
 
 function handleOverlayScaling(nv: ExtendedNiivue, layerNumber: number, scaling: ScalingOpts) {
