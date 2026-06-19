@@ -40,7 +40,7 @@ vi.mock('@niivue/niivue', () => {
     __esModule: true,
     default: NiiVueGPU,
     SLICE_TYPE: { AXIAL: 0, CORONAL: 1, SAGITTAL: 2, MULTIPLANAR: 3, RENDER: 4 },
-    DRAG_MODE: { none: 0, contrast: 1, measurement: 2, pan: 3, slicer3D: 4 },
+    DRAG_MODE: { none: 0, contrast: 1, measurement: 2, pan: 3, slicer3D: 4, callbackOnly: 5, roiSelection: 6, angle: 7, crosshair: 8, windowing: 9 },
   }
 })
 
@@ -175,7 +175,7 @@ describe('(c) ExtendedNiivue v1 constructor options + no mouseMoveListener', () 
 
     expect(ctorOpts.length).toBeGreaterThanOrEqual(1)
     const opts = ctorOpts[ctorOpts.length - 1]
-    expect(opts.primaryDragMode).toBe(1) // DRAG_MODE.contrast
+    expect(opts.primaryDragMode).toBe(8) // DRAG_MODE.crosshair
     expect(opts.isDragDropEnabled).toBe(false)
     // removed options must not be passed
     expect('dragMode' in opts).toBe(false)

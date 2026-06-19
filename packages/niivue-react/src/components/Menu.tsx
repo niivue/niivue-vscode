@@ -967,6 +967,6 @@ function applyDragMode(nvArray: Signal<ExtendedNiivue[]>, zoomDragMode: Signal<b
     // v1: the old drag-mode enum/option were replaced by the DRAG_MODE enum +
     // the primaryDragMode accessor.
     if (zoomDragMode.value) nv.primaryDragMode = DRAG_MODE.slicer3D
-    else nv.primaryDragMode = DRAG_MODE.contrast
+    else nv.primaryDragMode = DRAG_MODE.crosshair
   })
 }

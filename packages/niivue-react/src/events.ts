@@ -455,7 +455,12 @@ export class ExtendedNiivue extends NiiVue {
 function growNvArrayBy(nvArray: Signal<NiiVue[]>, n: number) {
   for (let i = 0; i < n; i++) {
     const nv = new ExtendedNiivue({
-      primaryDragMode: DRAG_MODE.contrast,
+      // v1 made crosshair its own drag mode and the default for the primary
+      // (left) button. Mapping the old `contrast` value here suppressed it, so
+      // left-click/drag no longer moved the crosshair (regression vs 0.x). Keep
+      // crosshair on the left button; windowing stays on the right button via
+      // niivue's default secondaryDragMode.
+      primaryDragMode: DRAG_MODE.crosshair,
       isDragDropEnabled: false, // handled by app (Volume component)
       // 'c' (cycle clip plane) and 'v' (cycle view mode) are handled by the
       // app's useKeyboardShortcuts hook, which broadcasts to every selected

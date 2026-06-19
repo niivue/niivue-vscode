@@ -29,7 +29,7 @@ vi.mock('@niivue/niivue', () => {
     __esModule: true,
     default: NiiVueGPU,
     SLICE_TYPE: { AXIAL: 0, CORONAL: 1, SAGITTAL: 2, MULTIPLANAR: 3, RENDER: 4 },
-    DRAG_MODE: { none: 0, contrast: 1, measurement: 2, pan: 3, slicer3D: 4 },
+    DRAG_MODE: { none: 0, contrast: 1, measurement: 2, pan: 3, slicer3D: 4, callbackOnly: 5, roiSelection: 6, angle: 7, crosshair: 8, windowing: 9 },
   }
 })
 
