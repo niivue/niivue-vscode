@@ -116,6 +116,17 @@ export const Volume = (props: AppProps & VolumeProps) => {
   }
 
   const handleDragStart = (e: DragEvent) => {
+    // niivue 0.68 called preventDefault on canvas pointerdown, which suppressed
+    // this native card drag everywhere the canvas covered; niivue v1 no longer
+    // does, so a press on the canvas would start a reorder drag (the "ghost
+    // screenshot" of the whole pane) instead of moving the crosshair. Restrict
+    // reorder to the chrome (the top drag-handle strip, etc.): if the drag
+    // begins over the canvas, cancel it and let the press reach niivue.
+    // See niivue/niivue-vscode#252.
+    if (document.elementFromPoint(e.clientX, e.clientY) instanceof HTMLCanvasElement) {
+      e.preventDefault()
+      return
+    }
     e.dataTransfer!.effectAllowed = 'move'
     e.dataTransfer!.setData(REORDER_MIME, volumeIndex.toString())
     draggingIndex.value = volumeIndex
