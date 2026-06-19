@@ -6,7 +6,8 @@ test.describe('Menu overflow', () => {
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto(BASE_URL)
 
-    await expect(page.getByRole('button', { name: 'View' })).toBeVisible()
+    // `exact` so this doesn't also match the brand button ("niivue Viewer").
+    await expect(page.getByRole('button', { name: 'View', exact: true })).toBeVisible()
     await expect(page.getByTestId('menu-overflow')).toHaveCount(0)
   })
 
@@ -39,7 +40,7 @@ test.describe('Menu overflow', () => {
     await page.setViewportSize({ width: 760, height: 800 })
     await page.goto(BASE_URL)
 
-    // With no image only Home/Add Image/View/Zoom show and all fit at 760px.
+    // With no image only Add Image/View/Zoom show and all fit at 760px.
     await expect(page.getByTestId('menu-overflow')).toHaveCount(0)
 
     await page.click('data-testid=menu-item-dropdown-Add Image')

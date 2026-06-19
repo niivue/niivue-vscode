@@ -10,13 +10,14 @@ import { BASE_URL, loadTestImage, waitForImageLoad } from './utils'
  * re-import it by dropping the file.
  */
 
-// Load one image, export the active canvas via the Save Scene button, and
-// return the downloaded `.nvd` file's text (downloadNvd writes uncompressed JSON).
+// Load one image, export the active canvas via the NVDocument button (its label
+// click saves by default), and return the downloaded `.nvd` file's text
+// (downloadNvd writes uncompressed JSON).
 async function exportScene(page: Page): Promise<string> {
   await page.goto(BASE_URL)
   await loadTestImage(page)
   const downloadPromise = page.waitForEvent('download')
-  await page.getByRole('button', { name: 'Save Scene' }).click()
+  await page.getByRole('button', { name: 'NVDocument' }).click()
   const download = await downloadPromise
   expect(download.suggestedFilename()).toMatch(/\.nvd$/)
   const path = await download.path()
@@ -42,9 +43,9 @@ test.describe('NVDocument (.nvd) import/export', () => {
     expect(viaFacade.blobs).toBeGreaterThan(0)
     expect(viaFacade.hasOpts).toBeTruthy()
 
-    // Export via the UI (Save Scene) downloads the same embedded shape.
+    // Export via the UI (NVDocument label click = Save) downloads the same shape.
     const downloadPromise = page.waitForEvent('download')
-    await page.getByRole('button', { name: 'Save Scene' }).click()
+    await page.getByRole('button', { name: 'NVDocument' }).click()
     const download = await downloadPromise
     expect(download.suggestedFilename()).toMatch(/\.nvd$/)
     const doc = JSON.parse(await readFile((await download.path()) as string, 'utf-8'))

@@ -56,6 +56,25 @@
   margin-top: 2px;
 }
 
+/* When the brand doubles as a dropdown trigger (standalone hosts): reset the
+   button chrome, give it a hit area and a hover/open affordance, and nudge it
+   left so the logo keeps its original alignment despite the new padding. */
+.nv-brand-trigger {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  padding: 4px 8px;
+  margin-left: -8px;
+  border-radius: 8px;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  transition: background 0.12s;
+}
+.nv-brand-trigger:hover,
+.nv-brand-trigger.is-active { background: var(--bg-3); }
+.nv-brand-caret { color: var(--fg-3); margin-left: 2px; flex-shrink: 0; }
+
 .nv-btn {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 6px 12px;
