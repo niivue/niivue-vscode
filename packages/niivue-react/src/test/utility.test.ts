@@ -1,3 +1,4 @@
+import { gzipSync } from 'node:zlib'
 import { describe, expect, it } from 'vitest'
 import {
   buildImageMessageBodies,
@@ -214,7 +215,15 @@ describe('buildImageMessageBodies (MHD / .raw pairing)', () => {
   // is both sufficient and clearer than polyfilling Blob.
   function fakeFile(name: string, bytes: Uint8Array): File {
     const buf = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
-    return { name, arrayBuffer: async () => buf } as unknown as File
+    return {
+      name,
+      arrayBuffer: async () => buf,
+      // Minimal Blob.slice: enough for the NIfTI header peek in
+      // buildImageMessageBodies (file.slice(0, N).arrayBuffer()).
+      slice: (start?: number, end?: number) => ({
+        arrayBuffer: async () => buf.slice(start ?? 0, end ?? buf.byteLength),
+      }),
+    } as unknown as File
   }
   function mhdFile(name: string, elementDataFile: string | null) {
     const header =
@@ -309,5 +318,69 @@ describe('buildImageMessageBodies (MHD / .raw pairing)', () => {
     expect(bodies[0].uri).toBe('scan.nii.gz')
     expect(bodies[0].pairedData).toBeUndefined()
     expect(await bytesOf(bodies[0].data)).toEqual([1, 2, 3])
+  })
+})
+
+describe('buildImageMessageBodies (oversized NIfTI guard)', () => {
+  // A minimal NIfTI-1 header carrying only the fields the size guard reads.
+  function niftiHeader(dims: number[], bitpix: number): Uint8Array {
+    const buf = new Uint8Array(352)
+    const dv = new DataView(buf.buffer)
+    dv.setInt32(0, 348, true)
+    dv.setInt16(40, dims[0], true)
+    for (let i = 1; i <= dims[0]; i++) dv.setInt16(40 + i * 2, dims[i], true)
+    dv.setInt16(72, bitpix, true)
+    return buf
+  }
+  // 1400 x 1400 x 1000 int16 = 3.65 GiB of voxels: over the 2 GB ceiling.
+  const HUGE = niftiHeader([3, 1400, 1400, 1000], 16)
+  // A File-like double whose full read throws, so a passing test proves the
+  // guard decided from the header alone and never read the whole file.
+  function unreadableFile(name: string, header: Uint8Array): File {
+    const buf = header.buffer.slice(header.byteOffset, header.byteOffset + header.byteLength)
+    return {
+      name,
+      arrayBuffer: async () => {
+        throw new Error('whole-file read attempted for an oversized volume')
+      },
+      slice: (start?: number, end?: number) => ({
+        arrayBuffer: async () => buf.slice(start ?? 0, end ?? buf.byteLength),
+      }),
+    } as unknown as File
+  }
+  function readableFile(name: string, bytes: Uint8Array): File {
+    const buf = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
+    return {
+      name,
+      arrayBuffer: async () => buf,
+      slice: (start?: number, end?: number) => ({
+        arrayBuffer: async () => buf.slice(start ?? 0, end ?? buf.byteLength),
+      }),
+    } as unknown as File
+  }
+
+  it('refuses an oversized .nii from its header without reading the whole file', async () => {
+    const bodies = await buildImageMessageBodies([unreadableFile('huge.nii', HUGE)])
+    expect(bodies).toHaveLength(1)
+    expect(bodies[0].uri).toBe('huge.nii')
+    expect(bodies[0].loadError).toMatch(/too large to display/i)
+    expect(bodies[0].data).toBeUndefined()
+  })
+
+  it('refuses an oversized .nii.gz by inflating only the header', async () => {
+    const gz = new Uint8Array(gzipSync(Buffer.from(HUGE)))
+    const bodies = await buildImageMessageBodies([unreadableFile('huge.nii.gz', gz)])
+    expect(bodies).toHaveLength(1)
+    expect(bodies[0].loadError).toMatch(/too large to display/i)
+    expect(bodies[0].data).toBeUndefined()
+  })
+
+  it('loads a normal-sized NIfTI as usual', async () => {
+    const bodies = await buildImageMessageBodies([
+      readableFile('ok.nii', niftiHeader([3, 124, 160, 140], 8)),
+    ])
+    expect(bodies).toHaveLength(1)
+    expect(bodies[0].loadError).toBeUndefined()
+    expect(bodies[0].data).toBeDefined()
   })
 })

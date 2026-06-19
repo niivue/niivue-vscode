@@ -281,8 +281,18 @@ export const Volume = (props: AppProps & VolumeProps) => {
           className="flex flex-col items-center justify-center bg-gray-900 text-white p-4 overflow-hidden"
           style={{ width: `${props.width}px`, height: `${props.height}px` }}
         >
-          <div className="text-red-500 text-3xl mb-2">⚠</div>
-          <div className="text-lg font-bold mb-1">Failed to load image</div>
+          <div
+            className={`text-3xl mb-2 ${
+              nv.loadError.includes('too large to display') ? 'text-amber-400' : 'text-red-500'
+            }`}
+          >
+            ⚠
+          </div>
+          <div className="text-lg font-bold mb-1">
+            {nv.loadError.includes('too large to display')
+              ? 'Image too large to display'
+              : 'Failed to load image'}
+          </div>
           <div className="text-sm text-gray-300 break-all text-center max-w-full italic mb-4">
             {name}
           </div>
