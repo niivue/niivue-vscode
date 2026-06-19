@@ -21,6 +21,8 @@ Fold the Home button into the brand, and turn "Save Scene" into an NVDocument Sa
 - Hosts can pass an optional `appInfo` ({ version, buildDate, repoUrl }) to
   `Menu`; the PWA wires in its build-time git metadata. The About dialog degrades
   gracefully (omits the version line) when a host supplies none.
-- The PWA home screen drops its "Data Privacy" section (the privacy note and the
-  NiiVue/NeuroDesk credits) now that the About dialog carries the same content;
-  the version footer stays.
+- The standalone home screens (PWA and desktop) now share a `HomeSection`
+  primitive for consistent styling while keeping their host-specific copy (PWA:
+  install / bookmarklet / update; desktop: native Open File). Both drop their
+  "Data Privacy" section, and the PWA also drops its version footer, since the
+  brand menu's About dialog now carries that information.

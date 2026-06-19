@@ -1,17 +1,14 @@
+import { HomeSection } from '@niivue/react'
 import imageUrl from '/resources/pwa_install.png'
 
 export const HomeScreen = () => (
   <>
-    <h2 className="text-2xl sm:text-3xl font-bold text-gray-200 p-2 px-4">
-      Drop Files to load images
-    </h2>
-    <p className="w-full sm:w-96 mb-4 text-m font-normal text-gray-300 px-4">
+    <HomeSection title="Drop Files to load images">
       Drag and drop files to an empty space on this window. Many medical image and mesh formats are
       supported.
-    </p>
+    </HomeSection>
 
-    <h2 className="text-2xl sm:text-3xl font-bold text-gray-200 p-2 px-4">Install as local App</h2>
-    <p className="w-full sm:w-96 mb-4 text-m font-normal text-gray-300 px-4">
+    <HomeSection title="Install as local App">
       <img
         className="float-right ml-2 w-32 sm:w-40 h-auto"
         src={imageUrl}
@@ -19,18 +16,16 @@ export const HomeScreen = () => (
       />
       To install niivue-vscode as a local app, click the install button in the address bar.
       <i> This is currently only supported in chromium-based browsers.</i>
-    </p>
+    </HomeSection>
 
-    <h2 className="text-2xl sm:text-3xl font-bold text-gray-200 py-2 px-4">Update App</h2>
-    <p className="w-full sm:w-96 mb-4 text-m font-normal text-gray-300 px-4">
+    <HomeSection title="Update App">
       The app will automatically check for updates and show a notification when a new version is
       available. You can also manually force an update by pressing{' '}
       <kbd className="bg-gray-600 px-1 rounded">Ctrl+Shift+R</kbd> to force refresh and clear the
       cache.
-    </p>
+    </HomeSection>
 
-    <h2 className="text-2xl sm:text-3xl font-bold text-gray-200 py-2 px-4">Bookmarklet</h2>
-    <p className="w-full sm:w-96 mb-4 text-m font-normal text-gray-300 px-4">
+    <HomeSection title="Bookmarklet">
       Drag this link ⇨
       <a
         className="touch-manipulation"
@@ -50,17 +45,6 @@ export const HomeScreen = () => (
       <a href="https://niivue.github.io/niivue-demo-images/mni152.nii.gz">
         <b> MNI </b>
       </a>
-    </p>
-
-    <footer className="text-xs py-2 px-4">
-      <a
-        href={__GIT_REPO_URL__ ? `${__GIT_REPO_URL__}/commit/${__GIT_HASH__}` : '#'}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-gray-500 hover:underline"
-      >
-        Version: {__GIT_HASH__} (Built: {new Date(__BUILD_DATE__).toLocaleDateString()})
-      </a>
-    </footer>
+    </HomeSection>
   </>
 )
