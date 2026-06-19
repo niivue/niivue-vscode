@@ -2,46 +2,46 @@
   "shared-core": {
     "label": "Shared core (`packages/niivue-react`)",
     "stats": {
-      "statements": 45.7,
-      "branches": 46.8,
-      "functions": 44.8,
-      "lines": 46.2
+      "statements": 46.9,
+      "branches": 48.1,
+      "functions": 45.7,
+      "lines": 47.4
     },
     "counts": {
       "statements": {
-        "covered": 1087,
-        "total": 2381
+        "covered": 1143,
+        "total": 2439
       },
       "branches": {
-        "covered": 834,
-        "total": 1783
+        "covered": 879,
+        "total": 1829
       },
       "functions": {
-        "covered": 328,
-        "total": 732
+        "covered": 343,
+        "total": 751
       },
       "lines": {
-        "covered": 1023,
-        "total": 2212
+        "covered": 1075,
+        "total": 2268
       }
     }
   },
   "pwa-glue": {
     "label": "`apps/pwa`",
     "stats": {
-      "statements": 28.9,
-      "branches": 33.3,
+      "statements": 28.3,
+      "branches": 32.4,
       "functions": 52.9,
-      "lines": 30.2
+      "lines": 29.5
     },
     "counts": {
       "statements": {
         "covered": 13,
-        "total": 45
+        "total": 46
       },
       "branches": {
-        "covered": 12,
-        "total": 36
+        "covered": 11,
+        "total": 34
       },
       "functions": {
         "covered": 9,
@@ -49,7 +49,7 @@
       },
       "lines": {
         "covered": 13,
-        "total": 43
+        "total": 44
       }
     }
   },
@@ -164,27 +164,27 @@
   "_overall": {
     "label": "Overall",
     "stats": {
-      "statements": 41.7,
-      "branches": 42,
-      "functions": 41.5,
-      "lines": 41.9
+      "statements": 42.7,
+      "branches": 43.1,
+      "functions": 42.2,
+      "lines": 42.8
     },
     "counts": {
       "statements": {
-        "covered": 1330,
-        "total": 3186
+        "covered": 1386,
+        "total": 3245
       },
       "branches": {
-        "covered": 958,
-        "total": 2280
+        "covered": 1002,
+        "total": 2324
       },
       "functions": {
-        "covered": 382,
-        "total": 921
+        "covered": 397,
+        "total": 940
       },
       "lines": {
-        "covered": 1253,
-        "total": 2991
+        "covered": 1305,
+        "total": 3048
       }
     }
   }
