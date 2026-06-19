@@ -3,6 +3,7 @@
  * open flow that orchestrates registerOpenedPath + initCanvas + per-file
  * loads.
  */
+import type { ComponentChildren } from 'preact'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { fireEvent, render } from '@testing-library/preact'
 
@@ -34,6 +35,13 @@ vi.mock('@niivue/react', () => ({
   ImageDrop: ({ children }: { children: unknown }) => children,
   Menu: () => null,
   listenToMessages: vi.fn(),
+  // Mirror the real HomeSection's title + body so getByText assertions work.
+  HomeSection: ({ title, children }: { title: string; children: ComponentChildren }) => (
+    <section>
+      <h2>{title}</h2>
+      <p>{children}</p>
+    </section>
+  ),
 }))
 
 import { invoke, isTauri as tauriIsTauri } from '@tauri-apps/api/core'
@@ -67,10 +75,12 @@ describe('DesktopHomeScreen', () => {
       expect(queryByText(/Open File/)).toBeNull()
     })
 
-    it('describes supported formats and the data-privacy guarantee', () => {
-      const { getByText } = render(<DesktopHomeScreen />)
+    it('introduces the app and describes supported formats', () => {
+      const { getByText, queryByText } = render(<DesktopHomeScreen />)
+      expect(getByText(/NiiVue Tauri/)).toBeInTheDocument()
       expect(getByText(/Supported Formats/)).toBeInTheDocument()
-      expect(getByText(/Data Privacy/)).toBeInTheDocument()
+      // The data-privacy note now lives in the brand menu's About dialog.
+      expect(queryByText(/Data Privacy/)).toBeNull()
     })
   })
 

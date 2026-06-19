@@ -1,3 +1,4 @@
+import { HomeSection } from '@niivue/react'
 import { open } from '@tauri-apps/plugin-dialog'
 import {
   MEDICAL_IMAGE_EXTENSIONS,
@@ -59,13 +60,10 @@ export const DesktopHomeScreen = () => {
 
   return (
     <>
-      <h2 className="text-2xl sm:text-3xl font-bold text-gray-200 p-2 px-4">
-        NiiVue Tauri
-      </h2>
-      <p className="w-full sm:w-96 mb-4 text-m font-normal text-gray-300 px-4">
-        Open medical images from your local filesystem. Drag and drop files
-        onto this window, or use the button below.
-      </p>
+      <HomeSection title="NiiVue Tauri">
+        Open medical images from your local filesystem. Drag and drop files onto this window, or use
+        the button below.
+      </HomeSection>
 
       {isTauri() && (
         <button
@@ -76,21 +74,10 @@ export const DesktopHomeScreen = () => {
         </button>
       )}
 
-      <h2 className="text-2xl sm:text-3xl font-bold text-gray-200 py-2 px-4">
-        Supported Formats
-      </h2>
-      <p className="w-full sm:w-96 mb-4 text-m font-normal text-gray-300 px-4">
-        NIfTI (.nii, .nii.gz), DICOM (.dcm), MHA/MHD, NRRD, FreeSurfer (.mgh,
-        .mgz), GIfTI (.gii), and many more.
-      </p>
-
-      <h2 className="text-2xl sm:text-3xl font-bold text-gray-200 py-2 px-4">
-        Data Privacy
-      </h2>
-      <p className="w-full sm:w-96 mb-4 text-m font-normal text-gray-300 px-4">
-        All processing happens locally on your machine. No data is sent to any
-        remote server. Your medical images never leave your computer.
-      </p>
+      <HomeSection title="Supported Formats">
+        NIfTI (.nii, .nii.gz), DICOM (.dcm), MHA/MHD, NRRD, FreeSurfer (.mgh, .mgz), GIfTI (.gii),
+        and many more.
+      </HomeSection>
     </>
   )
 }

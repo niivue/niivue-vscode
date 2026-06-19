@@ -12,11 +12,13 @@ import {
     addDcmFolderEvent,
     addImagesEvent,
     addOverlayEvent,
+    loadDocumentEvent,
     openImageFromURL,
 } from '../events'
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
 import { getImageMetadata, getMetadataString, getNumberOfPoints } from '../utility'
-import { AppProps, SelectionMode } from './AppProps'
+import { AboutDialog } from './AboutDialog'
+import { AppInfo, AppProps, SelectionMode } from './AppProps'
 import { HeaderBox } from './HeaderBox'
 import {
     HeaderDialog,
@@ -24,18 +26,20 @@ import {
     MenuEntry,
     StepperEntry,
     ToggleEntry,
+    activeMenu,
     toggle,
 } from './MenuElements'
 import { BarItem, MenuBar } from './MenuBar'
 import { DEFAULT_TILE_SPACING } from '../settings'
 import { ScalingBox } from './ScalingBox'
 
-export const Menu = (props: AppProps) => {
-  const { selection, selectionMode, nvArray, sliceType, hideUI, settings } = props
+export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
+  const { selection, selectionMode, nvArray, sliceType, hideUI, settings, appInfo } = props
   const isVscode = typeof (globalThis as any).vscode === 'object'
 
   // State
   const headerDialog = useSignal(false)
+  const aboutDialog = useSignal(false)
   const selectedOverlayNumber = useSignal(0)
   const overlayMenu = useSignal(false)
   const setHeaderMenu = useSignal(false)
@@ -132,6 +136,8 @@ export const Menu = (props: AppProps) => {
   })
 
   // Menu Click events
+  // "Reset Viewer" (brand menu): drop any loaded scene and query params by
+  // navigating back to the bare origin+path, then reload to a clean state.
   const homeEvent = () => {
     const url = new URL(location.href)
     location.href = url.origin + url.pathname
@@ -517,13 +523,6 @@ export const Menu = (props: AppProps) => {
   // to live on the JSX (e.g. isVolume / isVolumeOrMesh).
   const barItems: BarItem[] = [
     {
-      key: 'home',
-      type: 'button',
-      label: 'Home',
-      visible: !isVscode && !!settings.value.menuItems?.home,
-      onClick: homeEvent,
-    },
-    {
       key: 'addImage',
       type: 'menu',
       label: 'Add Image',
@@ -544,15 +543,19 @@ export const Menu = (props: AppProps) => {
       ),
     },
     {
+      // NVDocument (.nvd) scene file. The label is the default action (Save);
+      // the chevron opens Save / Load. Load is also reachable by dropping a
+      // `.nvd`, but the explicit entry pairs naturally with Save here.
       key: 'saveScene',
       type: 'menu',
-      label: 'Save Scene',
+      label: 'NVDocument',
       visible: !!settings.value.menuItems?.saveScene && !isVscode && isVolumeOrMesh.value,
       onClick: saveScene,
       children: (
         <>
-          <MenuEntry label="Scene (.nvd)" onClick={saveScene} />
-          <MenuEntry label="Scene as JSON (.nvd.json)" onClick={exportSceneJson} />
+          <MenuEntry label="Save" onClick={saveScene} />
+          <MenuEntry label="Save as JSON" onClick={exportSceneJson} />
+          <MenuEntry label="Load" onClick={loadDocumentEvent} />
         </>
       ),
     },
@@ -783,13 +786,12 @@ export const Menu = (props: AppProps) => {
     <>
       <div className="nv-topbar">
         <div className="nv-topbar-left">
-          <div className="nv-brand">
-            <img className="nv-brand-mark" src={niivueLogo} alt="" width={26} height={26} />
-            <div className="nv-brand-text">
-              <span className="nv-brand-name">niivue</span>
-              {!isVscode && <span className="nv-brand-sub">Viewer</span>}
-            </div>
-          </div>
+          <BrandMenu
+            showSubtext={!isVscode}
+            interactive={!isVscode && !!settings.value.menuItems?.home}
+            onReset={homeEvent}
+            onAbout={() => (aboutDialog.value = true)}
+          />
           <MenuBar items={barItems} />
         </div>
         <div className="nv-topbar-right">
@@ -808,9 +810,87 @@ export const Menu = (props: AppProps) => {
       />
       <HeaderBox nvArraySelected={nvArraySelected} nvArray={nvArray} visible={setHeaderMenu} />
       <HeaderDialog nvArraySelected={nvArraySelected} isOpen={headerDialog} />
+      <AboutDialog isOpen={aboutDialog} appInfo={appInfo} />
     </>
   )
 }
+
+// activeMenu key reserved for the brand dropdown.
+const BRAND_KEY = '__brand__'
+
+// The niivue logo + wordmark. On standalone hosts (`interactive`) it doubles as
+// a dropdown trigger for viewer-level actions (Reset Viewer, About); elsewhere
+// (vscode, embedded Streamlit) it renders as a static brand, unchanged.
+const BrandMenu = ({
+  showSubtext,
+  interactive,
+  onReset,
+  onAbout,
+}: {
+  showSubtext: boolean
+  interactive: boolean
+  onReset: () => void
+  onAbout: () => void
+}) => {
+  const open = computed(() => activeMenu.value === BRAND_KEY)
+  const inner = (
+    <>
+      <img className="nv-brand-mark" src={niivueLogo} alt="" width={26} height={26} />
+      <div className="nv-brand-text">
+        <span className="nv-brand-name">niivue</span>
+        {showSubtext && <span className="nv-brand-sub">Viewer</span>}
+      </div>
+    </>
+  )
+
+  if (!interactive) {
+    return <div className="nv-brand">{inner}</div>
+  }
+
+  return (
+    <div className="relative group">
+      <button
+        type="button"
+        className={`nv-brand nv-brand-trigger${open.value ? ' is-active' : ''}`}
+        onClick={(e) => {
+          e.stopPropagation()
+          activeMenu.value = open.value ? null : BRAND_KEY
+        }}
+        aria-haspopup="true"
+        aria-expanded={open.value}
+        title="Viewer menu"
+        data-testid="menu-brand"
+      >
+        {inner}
+        <BrandCaret />
+      </button>
+      {open.value && (
+        <div className="nv-menu-panel absolute left-0 z-50 min-w-[180px]">
+          <MenuEntry label="Reset Viewer" onClick={onReset} />
+          <MenuEntry label="About" onClick={onAbout} />
+        </div>
+      )}
+    </div>
+  )
+}
+
+const BrandCaret = () => (
+  <svg
+    className="nv-brand-caret w-2.5 h-2.5"
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 10 6"
+    aria-hidden="true"
+  >
+    <path
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+      d="m1 1 4 4 4-4"
+    />
+  </svg>
+)
 
 function applySelectionModeChange(
   selectionMode: Signal<SelectionMode>,

@@ -1,10 +1,12 @@
 import './index.css'
 
+export { AboutDialog } from './components/AboutDialog'
 export { App } from './components/App'
 export { useAppState } from './components/AppProps'
-export type { AppProps, ScalingOpts, SelectionMode } from './components/AppProps'
+export type { AppInfo, AppProps, ScalingOpts, SelectionMode } from './components/AppProps'
 export { Container } from './components/Container'
 export { HeaderBox } from './components/HeaderBox'
+export { HomeSection } from './components/HomeSection'
 export { ImageDrop } from './components/ImageDrop'
 export { Menu } from './components/Menu'
 export { NiiVueCanvas } from './components/NiiVueCanvas'

@@ -10,6 +10,13 @@ import { computed } from '@preact/signals'
 import { useEffect } from 'preact/hooks'
 import { HomeScreen } from './components/HomeScreen'
 
+// Build metadata for the brand menu's About dialog (injected by vite.config.ts).
+const appInfo = {
+  version: __GIT_HASH__,
+  buildDate: __BUILD_DATE__,
+  repoUrl: __GIT_REPO_URL__,
+}
+
 export const Pwa = ({ appProps }: { appProps: AppProps }) => {
   const nImages = computed(() => appProps.nvArray.value.length)
   const showHomeScreen = computed(() => nImages.value == 0)
@@ -53,7 +60,7 @@ export const Pwa = ({ appProps }: { appProps: AppProps }) => {
 
   return (
     <ImageDrop>
-      <Menu {...appProps} />
+      <Menu {...appProps} appInfo={appInfo} />
       {showHomeScreen.value && <HomeScreen />}
       <Container {...appProps} />
       {appProps.hideUI.value > 0 && (

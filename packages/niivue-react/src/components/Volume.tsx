@@ -295,6 +295,20 @@ export const Volume = (props: AppProps & VolumeProps) => {
           <div className="text-xs text-gray-400 bg-black/30 p-2 rounded max-w-full overflow-y-auto max-h-24">
             {nv.loadError}
           </div>
+          {nv.loadError.includes('unable to get WebGL context') && (
+            <div className="text-xs text-gray-300 text-center max-w-full mt-3">
+              Your GPU or driver could not provide a WebGL2 context. This is an environment issue,
+              not a problem with the file.{' '}
+              <a
+                href="https://github.com/niivue/niivue-vscode/issues/236"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-400 underline"
+              >
+                How to fix
+              </a>
+            </div>
+          )}
         </div>
       ) : (
         <NiiVueCanvas {...props} render={props.render} />

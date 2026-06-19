@@ -20,6 +20,21 @@ export interface AppProps {
   syncedIndices: Signal<Set<number>>
 }
 
+/**
+ * Host-supplied build metadata for the brand menu's About dialog. Optional and
+ * host-specific (e.g. the PWA injects its git hash at build time), so it is
+ * passed as a prop rather than threaded through the persisted settings - a
+ * version frozen into `localStorage` would go stale on the next deploy.
+ */
+export interface AppInfo {
+  /** Short build/version identifier, e.g. a git short hash. */
+  version?: string
+  /** ISO build timestamp; rendered as a localized date. */
+  buildDate?: string
+  /** Source repository URL; used for the version's commit link. */
+  repoUrl?: string
+}
+
 export interface ScalingOpts {
   isManual: boolean
   min: number
