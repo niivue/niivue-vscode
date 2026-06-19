@@ -116,6 +116,31 @@ These shortcuts can be customized in VS Code's Keyboard Shortcuts editor (File â
 
 A standalone [web version](https://korbinian90.github.io/niivue-vscode) is also available that can be installed as a Progressive Web App with file associations (Chrome/Edge only).
 
+## Troubleshooting
+
+### "Failed to load image: unable to get WebGL context" (Linux)
+
+This viewer needs a WebGL2 context. If the editor cannot create one you will see "unable to get WebGL context. Maybe the browser doesn't support WebGL2." This is an environment / GPU issue, not a problem with the file, and it is most common on Linux.
+
+**Cause.** Recent Chromium versions (the engine inside VS Code; WebGL context creation starts failing from around Chromium 144) no longer fall back to software WebGL automatically. When the webview has no working hardware WebGL2 - common with the **snap** build of VS Code, missing or blocklisted GPU drivers, or some Wayland setups - WebGL2 becomes unavailable. The same extension version works on Windows because Windows has a separate software fallback (Direct3D WARP) that is not affected.
+
+**Recommended fix (restore hardware acceleration).**
+
+- If VS Code was installed as a snap, reinstall the official `.deb` / apt build; snap confinement often blocks GPU access.
+- Make sure GPU drivers are installed; on Wayland, trying an X11 session can also help.
+
+**Temporary workaround (software rendering).** Re-enable Chromium's software renderer. Open the Command Palette, run **Preferences: Configure Runtime Arguments**, add the following to `argv.json`, then fully restart VS Code:
+
+```json
+{
+  "enable-unsafe-swiftshader": true
+}
+```
+
+This renders in software: it works, but 3D is slower. Note that this Chromium flag is officially temporary and may be removed in a future release, so prefer the hardware-acceleration fix where possible.
+
+For details and to report your environment, see [issue #236](https://github.com/niivue/niivue-vscode/issues/236).
+
 ## Development
 
 This extension is part of the [niivue-vscode monorepo](https://github.com/niivue/niivue-vscode). Contributions are welcome!
