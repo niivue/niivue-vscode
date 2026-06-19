@@ -269,14 +269,14 @@ async function addOverlay(nv: NiiVue, item: any, settings: NiiVueSettings) {
   if (isImageType(item.uri)) {
     const overlayColormap = item.colormap || settings?.defaultOverlayColormap || 'redyell'
     const overlayOpacity = item.opacity ?? settings?.defaultOverlayOpacity ?? 0.5
-    // v1: addVolume takes the load options directly. `url` is string | File, so
-    // wrap in-memory overlay bytes in a File (a string stays a URL/path).
-    const url =
-      typeof item.data === 'string'
+    // v1: addVolume takes the load options directly. `url` is string | File.
+    // No data (empty string / undefined) means load from the URL (item.uri); a
+    // non-empty string is itself a URL/path; in-memory bytes wrap in a File.
+    const url = !item.data
+      ? item.uri
+      : typeof item.data === 'string'
         ? item.data
-        : item.data
-          ? new File([toBlobPart(item.data)], item.uri)
-          : item.uri
+        : new File([toBlobPart(item.data)], item.uri)
     await nv.addVolume({
       url,
       name: item.uri,
@@ -284,7 +284,8 @@ async function addOverlay(nv: NiiVue, item: any, settings: NiiVueSettings) {
       opacity: overlayOpacity,
     })
   } else {
-    await nv.addMesh({ url: new File([toBlobPart(item.data)], item.uri), name: item.uri })
+    const url = item.data ? new File([toBlobPart(item.data)], item.uri) : item.uri
+    await nv.addMesh({ url, name: item.uri })
   }
 }
 

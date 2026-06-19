@@ -238,6 +238,15 @@ had no clean v1 equivalent; mapped to `isGraphVisible` + graph accessors).
 Still pending: **manual smoke verification** of each app (esp. the Streamlit voxel-click
 feedback to Python and overlay/mesh-overlay reloads).
 
+### Known niivue v1 behavior differences (surfaced by the e2e WebGL lane)
+- **Default window.** v1 sets a volume's `calMin`/`calMax` to the full data range by
+  default, where 0.68 used a ~2% robust max (e.g. `lesion.nii.gz` is `[0, 3]` in v1 vs
+  `[0, 2.001]` in 0.68). The migration reads the fields faithfully; tests assert v1's value.
+- **Transform-less MHD affine.** For an MHD with only `ElementSpacing` (no `TransformMatrix`/
+  `Offset`), v1 computes a **null x-axis affine**, so vox↔mm (and the crosshair POS/VAL
+  readout) is NaN even though the voxels load correctly. Upstream limitation; the MHD probe
+  test verifies the decoded voxels instead of the readout. Worth filing against niivue.
+
 ### Phase 3 - Opportunities unlocked (not required)
 - Drop the `mouseMoveListener` sync hack (done in Phase 1) - already an `nv-ext`-free win.
 - Consider `@niivue/nv-ext-*` packages where we hand-roll equivalents.

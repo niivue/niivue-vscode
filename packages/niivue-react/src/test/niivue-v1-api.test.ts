@@ -137,6 +137,19 @@ describe('(b) overlay loader wraps in-memory buffers in a File', () => {
     expect(arg.name).toBe('overlay.nii.gz')
   })
 
+  it('image overlay with empty data loads from the URL (regression: url is the uri, not "")', async () => {
+    // A URL-load overlay carries data: '' (empty string). url must fall back to
+    // item.uri; an empty string would make niivue throw "prepareVolume requires
+    // a url or an NVImage object".
+    const nv = makeMeshNv()
+    await handleMessage(
+      { type: 'overlay', body: { index: 0, uri: 'https://example.test/ov.nii.gz', data: '' } },
+      makeAppProps(nv),
+    )
+    expect(nv.addVolume).toHaveBeenCalledTimes(1)
+    expect(nv.addVolume.mock.calls[0][0].url).toBe('https://example.test/ov.nii.gz')
+  })
+
   it('mesh overlay (non-image uri) -> nv.addMesh({ url: File, ... })', async () => {
     const nv = makeMeshNv()
     const data = new Uint8Array([5, 6, 7]).buffer
