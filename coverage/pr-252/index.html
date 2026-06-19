@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>NiiVue Coverage Report</title>
+  <style>
+    body { font-family: sans-serif; margin: 2rem; max-width: 60rem; }
+    h1 { margin-bottom: 0.25rem; }
+    .generated { color: #666; font-size: 0.85rem; margin: 0 0 1.5rem; }
+    section.summary { margin-bottom: 2.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid #ddd; }
+    section.summary h2 { margin-top: 0; }
+    p.overall { font-size: 1.05rem; }
+    .delta { color: #555; font-weight: normal; }
+    .stale-note { color: #666; font-size: 0.85rem; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ccc; padding: 0.4rem 0.8rem; text-align: left; }
+    th { background: #f4f4f4; }
+    tr:nth-child(even) { background: #fafafa; }
+    table.summary-table td:not(:first-child),
+    table.summary-table th:not(:first-child) { text-align: right; }
+    h2.files-heading { margin-top: 0; }
+    code { background: #f4f4f4; padding: 0 0.25rem; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <h1>NiiVue Coverage Report</h1>
+  <p class="generated">Generated: 2026-06-19T10:29:09.198Z</p>
+  <section class="summary">
+    <h2>Coverage by package</h2>
+    <p class="overall"><strong>Overall line coverage: 46.2%</strong> <span class="delta">(+3.4) vs <code>main</code></span></p>
+    <table class="summary-table">
+      <thead>
+        <tr><th>Package</th><th>Statements</th><th>Branches</th><th>Functions</th><th>Lines</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Shared core (<code>packages/niivue-react</code>)</td><td>50.9% (+4)</td><td>50.6% (+2.5)</td><td>47.3% (+1.6)</td><td>51.7% (+4.3)</td></tr>
+      <tr><td><code>apps/pwa</code></td><td>28.3%</td><td>32.4%</td><td>52.9%</td><td>29.5%</td></tr>
+      <tr><td><code>apps/jupyter</code></td><td>14.4%</td><td>15.9%</td><td>14.9%</td><td>14.5%</td></tr>
+      <tr><td><code>apps/streamlit</code></td><td>19.7% (+1.9)</td><td>8.1% (+2.8)</td><td>20.7% (+2.2)</td><td>19.8% (+2.1)</td></tr>
+      <tr><td><code>apps/vscode</code></td><td>38.7%</td><td>39.6%</td><td>18.9%</td><td>38.1%</td></tr>
+      <tr><td><code>apps/desktop-tauri</code></td><td>81.8%</td><td>59.1%</td><td>78.9%</td><td>84.3%</td></tr>
+      </tbody>
+    </table>
+    
+  </section>
+  <section>
+    <h2 class="files-heading">Per-file coverage</h2>
+    <table>
+      <thead><tr><th>File</th><th>Statements</th></tr></thead>
+      <tbody>
+<tr><td>apps/desktop-tauri/src/components/DesktopApp.tsx</td><td>33% (4/12)</td></tr>
+<tr><td>apps/desktop-tauri/src/components/DesktopHomeScreen.tsx</td><td>89% (16/18)</td></tr>
+<tr><td>apps/desktop-tauri/src/recent-files.ts</td><td>100% (18/18)</td></tr>
+<tr><td>apps/desktop-tauri/src/tauri-bridge.ts</td><td>100% (7/7)</td></tr>
+<tr><td>apps/jupyter/src/index.ts</td><td>0% (0/35)</td></tr>
+<tr><td>apps/jupyter/src/url-utils.ts</td><td>100% (32/32)</td></tr>
+<tr><td>apps/jupyter/src/viewer.ts</td><td>0% (0/155)</td></tr>
+<tr><td>apps/pwa/src/components/HomeScreen.tsx</td><td>100% (2/2)</td></tr>
+<tr><td>apps/pwa/src/Pwa.tsx</td><td>0% (0/23)</td></tr>
+<tr><td>apps/pwa/src/settings.ts</td><td>0% (0/4)</td></tr>
+<tr><td>apps/streamlit/niivue_component/frontend/src/components/StyledViewer.tsx</td><td>0% (0/4)</td></tr>
+<tr><td>apps/streamlit/niivue_component/frontend/src/components/UnstyledCanvas.tsx</td><td>0% (0/3)</td></tr>
+<tr><td>apps/streamlit/niivue_component/frontend/src/hooks/useStreamlitNiivue.ts</td><td>0% (0/127)</td></tr>
+<tr><td>apps/streamlit/niivue_component/frontend/src/main.tsx</td><td>0% (0/3)</td></tr>
+<tr><td>apps/streamlit/niivue_component/frontend/src/StreamlitViewer.tsx</td><td>0% (0/8)</td></tr>
+<tr><td>apps/streamlit/niivue_component/frontend/src/types.ts</td><td>100% (1/1)</td></tr>
+<tr><td>apps/streamlit/niivue_component/frontend/src/utils.ts</td><td>95% (35/37)</td></tr>
+<tr><td>apps/vscode/src/dispose.ts</td><td>100% (15/15)</td></tr>
+<tr><td>apps/vscode/src/document.ts</td><td>0% (0/7)</td></tr>
+<tr><td>apps/vscode/src/editorProvider.ts</td><td>31% (66/216)</td></tr>
+<tr><td>apps/vscode/src/extension.ts</td><td>0% (0/25)</td></tr>
+<tr><td>apps/vscode/src/HoverProvider.ts</td><td>100% (23/23)</td></tr>
+<tr><td>apps/vscode/src/html.ts</td><td>100% (11/11)</td></tr>
+<tr><td>packages/niivue-react/src/assets/niivue-logo.ts</td><td>100% (1/1)</td></tr>
+<tr><td>packages/niivue-react/src/components/AboutDialog.tsx</td><td>100% (12/12)</td></tr>
+<tr><td>packages/niivue-react/src/components/App.tsx</td><td>0% (0/4)</td></tr>
+<tr><td>packages/niivue-react/src/components/AppProps.ts</td><td>67% (4/6)</td></tr>
+<tr><td>packages/niivue-react/src/components/Container.tsx</td><td>0% (0/41)</td></tr>
+<tr><td>packages/niivue-react/src/components/HeaderBox.tsx</td><td>14% (4/28)</td></tr>
+<tr><td>packages/niivue-react/src/components/HomeSection.tsx</td><td>0% (0/2)</td></tr>
+<tr><td>packages/niivue-react/src/components/ImageDrop.tsx</td><td>0% (0/42)</td></tr>
+<tr><td>packages/niivue-react/src/components/Menu.tsx</td><td>55% (183/332)</td></tr>
+<tr><td>packages/niivue-react/src/components/MenuBar.tsx</td><td>52% (44/85)</td></tr>
+<tr><td>packages/niivue-react/src/components/MenuElements.tsx</td><td>67% (53/79)</td></tr>
+<tr><td>packages/niivue-react/src/components/Nav4D.tsx</td><td>0% (0/107)</td></tr>
+<tr><td>packages/niivue-react/src/components/ScalingBox.tsx</td><td>5% (5/91)</td></tr>
+<tr><td>packages/niivue-react/src/components/Volume.tsx</td><td>0% (0/165)</td></tr>
+<tr><td>packages/niivue-react/src/constants/index.ts</td><td>0% (0/5)</td></tr>
+<tr><td>packages/niivue-react/src/constants/keyboardShortcuts.ts</td><td>95% (21/22)</td></tr>
+<tr><td>packages/niivue-react/src/document.ts</td><td>27% (6/22)</td></tr>
+<tr><td>packages/niivue-react/src/events.ts</td><td>34% (69/205)</td></tr>
+<tr><td>packages/niivue-react/src/hooks/index.ts</td><td>0% (0/22)</td></tr>
+<tr><td>packages/niivue-react/src/hooks/useKeyboardShortcuts.ts</td><td>100% (79/79)</td></tr>
+<tr><td>packages/niivue-react/src/index.ts</td><td>N/A (0/0)</td></tr>
+<tr><td>packages/niivue-react/src/layout.ts</td><td>91% (32/35)</td></tr>
+<tr><td>packages/niivue-react/src/nvd-json.ts</td><td>100% (50/50)</td></tr>
+<tr><td>packages/niivue-react/src/readyState.ts</td><td>100% (12/12)</td></tr>
+<tr><td>packages/niivue-react/src/settings.ts</td><td>100% (2/2)</td></tr>
+<tr><td>packages/niivue-react/src/utility.ts</td><td>97% (150/155)</td></tr>
+<tr><td>packages/niivue-react/src/viewer-client.ts</td><td>100% (35/35)</td></tr>
+<tr><td>apps/pwa/src/components/HomeScreen.tsx</td><td>100% (1/1)</td></tr>
+<tr><td>apps/pwa/src/main.tsx</td><td>83% (5/6)</td></tr>
+<tr><td>apps/pwa/src/Pwa.tsx</td><td>38% (3/8)</td></tr>
+<tr><td>apps/pwa/src/settings.ts</td><td>100% (2/2)</td></tr>
+<tr><td>localhost-4000/assets/index-Bf8rubp7.css</td><td>N/A (0/0)</td></tr>
+<tr><td>packages/niivue-react/src/assets/niivue-logo.ts</td><td>100% (1/1)</td></tr>
+<tr><td>packages/niivue-react/src/components/AboutDialog.tsx</td><td>100% (5/5)</td></tr>
+<tr><td>packages/niivue-react/src/components/AppProps.ts</td><td>100% (5/5)</td></tr>
+<tr><td>packages/niivue-react/src/components/Container.tsx</td><td>75% (15/20)</td></tr>
+<tr><td>packages/niivue-react/src/components/HeaderBox.tsx</td><td>25% (3/12)</td></tr>
+<tr><td>packages/niivue-react/src/components/HomeSection.tsx</td><td>100% (1/1)</td></tr>
+<tr><td>packages/niivue-react/src/components/ImageDrop.tsx</td><td>71% (15/21)</td></tr>
+<tr><td>packages/niivue-react/src/components/Menu.tsx</td><td>40% (49/121)</td></tr>
+<tr><td>packages/niivue-react/src/components/MenuBar.tsx</td><td>65% (24/37)</td></tr>
+<tr><td>packages/niivue-react/src/components/MenuElements.tsx</td><td>78% (25/32)</td></tr>
+<tr><td>packages/niivue-react/src/components/Nav4D.tsx</td><td>89% (42/47)</td></tr>
+<tr><td>packages/niivue-react/src/components/NiiVueCanvas.tsx</td><td>66% (61/93)</td></tr>
+<tr><td>packages/niivue-react/src/components/ScalingBox.tsx</td><td>7% (4/54)</td></tr>
+<tr><td>packages/niivue-react/src/components/Volume.tsx</td><td>54% (36/67)</td></tr>
+<tr><td>packages/niivue-react/src/constants/keyboardShortcuts.ts</td><td>100% (8/8)</td></tr>
+<tr><td>packages/niivue-react/src/document.ts</td><td>86% (12/14)</td></tr>
+<tr><td>packages/niivue-react/src/events.ts</td><td>58% (81/139)</td></tr>
+<tr><td>packages/niivue-react/src/hooks/useKeyboardShortcuts.ts</td><td>88% (7/8)</td></tr>
+<tr><td>packages/niivue-react/src/layout.ts</td><td>100% (13/13)</td></tr>
+<tr><td>packages/niivue-react/src/nvd-json.ts</td><td>10% (5/48)</td></tr>
+<tr><td>packages/niivue-react/src/readyState.ts</td><td>80% (4/5)</td></tr>
+<tr><td>packages/niivue-react/src/settings.ts</td><td>100% (1/1)</td></tr>
+<tr><td>packages/niivue-react/src/utility.ts</td><td>83% (91/109)</td></tr>
+<tr><td>packages/niivue-react/src/viewer-client.ts</td><td>61% (14/23)</td></tr>
+      </tbody>
+    </table>
+  </section>
+</body>
+</html>
