@@ -25,7 +25,6 @@ Dcm2niix.prototype.init = function () {
 
 import { dicomLoader } from '@niivue/dicom-loader'
 import { mnc2nii } from '@niivue/minc-loader'
-import { NVDocument, NVImage, NVMesh } from '@niivue/niivue'
 import { Signal } from '@preact/signals'
 import { useEffect, useRef } from 'preact/hooks'
 import { ExtendedNiivue, notifyImageLoaded } from '../events'
@@ -52,7 +51,15 @@ export const NiiVueCanvas = ({
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
   useEffect(() => {
-    canvasRef.current && !nv.canvas && nv.attachToCanvas(canvasRef.current)
+    if (!canvasRef.current || nv.canvas) {
+      return
+    }
+    // v1: attachToCanvas is async (returns a Promise). Wire the native
+    // 'frameChange' event to onFrameUpdate once attached - this replaces the old
+    // ExtendedNiivue.setFrame4D override and fires for every frame change.
+    nv.attachToCanvas(canvasRef.current).then(() => {
+      nv.addEventListener('frameChange', (e) => nv.onFrameUpdate(e.detail.frame))
+    })
   }, [canvasRef.current])
 
   useEffect(() => {
@@ -86,10 +93,11 @@ export const NiiVueCanvas = ({
     if (!nv.documentData || nv.isLoading) {
       return
     }
-    const docData = nv.documentData
+    const docFile = nv.documentData
     nv.isLoading = true
-    NVDocument.loadFromJSON(docData)
-      .then((doc) => nv.loadDocument(doc))
+    // v1: nv.loadDocument takes a string | File. document.ts hands us the `.nvd`
+    // CBOR bytes already wrapped in a File, so we load it directly (no JSON layer).
+    nv.loadDocument(docFile)
       .then(() => {
         nv.isLoaded = true
         nv.isLoading = false
@@ -110,7 +118,7 @@ export const NiiVueCanvas = ({
   }, [nv.documentData])
 
   if (nv.isLoaded && nv.volumes.length > 0) {
-    nv.setSliceType(sliceType.value)
+    nv.sliceType = sliceType.value
   }
 
   useEffect(() => {
@@ -122,14 +130,14 @@ export const NiiVueCanvas = ({
       return
     }
     // Apply settings reactively
-    nv.setInterpolation(!settings.value.interpolation)
+    nv.volumeIsNearestInterpolation = !settings.value.interpolation
     try {
-      nv.setCrosshairWidth(Number(settings.value.showCrosshairs))
+      nv.crosshairWidth = Number(settings.value.showCrosshairs)
     } catch (e) {
       console.warn('Failed to set crosshair width', e)
     }
-    nv.setRadiologicalConvention(settings.value.radiologicalConvention)
-    nv.opts.isColorbar = settings.value.colorbar
+    nv.isRadiological = settings.value.radiologicalConvention
+    nv.isColorbarVisible = settings.value.colorbar
     nv.drawScene()
   }, [settings.value, nv.canvas])
 
@@ -226,12 +234,13 @@ async function loadDicomSeries(
     throw new Error('No DICOM volume could be decoded from the provided files')
   }
   const [first, ...rest] = loadedFiles
-  const volume = await NVImage.loadFromUrl({
-    url: first.data,
+  // v1: addVolume takes load options; url is string | File, so wrap the decoded
+  // NIfTI buffer in a File (keep first.name so niivue infers the format).
+  await nv.addVolume({
+    url: new File([ensureArrayBuffer(first.data)], first.name),
     name: first.name,
     colormap: settings.defaultVolumeColormap,
   })
-  nv.addVolume(volume)
   // Extra series are already-decoded NIfTI buffers; route them back through
   // the image pipeline so each gets its own canvas.
   for (const file of rest) {
@@ -257,24 +266,24 @@ async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSetting
     if (item.data) {
       const image = {
         name: item.uri,
-        url: item.data,
+        url: new File([ensureArrayBuffer(item.data)], item.uri),
         colormap: settings.defaultVolumeColormap,
       }
-      await nv.loadImages([image])
+      await nv.loadVolumes([image])
       return
     }
   }
 
   if (isImageType(item.uri) && !item.data && !item.uri.endsWith('.dcm')) {
     // If the item is an image type but has no data, load it from the URL.
-    // Pass urlImgData so NiiVue can fetch the paired raw file for detached
+    // Pass urlImageData so NiiVue can fetch the paired raw file for detached
     // formats like MHD (ElementDataFile = <name>.raw).
     const image = {
       url: item.uri,
       colormap: settings.defaultVolumeColormap,
-      ...(item.urlImgData ? { urlImgData: item.urlImgData } : {}),
+      ...(item.urlImgData ? { urlImageData: item.urlImgData } : {}),
     }
-    await nv.loadImages([image])
+    await nv.loadVolumes([image])
     return
   }
 
@@ -308,13 +317,14 @@ async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSetting
     if (!header) {
       return
     }
-    const volume = await NVImage.loadFromUrl({
-      url: header as ArrayBuffer,
+    // v1: wrap the synthesized .mha header bytes in a File (the .mha name lets
+    // niivue parse it; ElementDataFile points at the .raw the user dropped).
+    await nv.addVolume({
+      url: new File([header], `${item.uri}.mha`),
       name: `${item.uri}.mha`,
       colormap: settings.defaultVolumeColormap,
       opacity: 1.0,
     })
-    nv.addVolume(volume)
   } else if ((item?.data?.length ?? item?.data?.byteLength) > 0) {
     const isBuffer = typeof item.data.byteLength === 'number'
 
@@ -331,7 +341,7 @@ async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSetting
       }
       if (item.pairedData) {
         // Detached format (e.g. MHD + .raw): wrap the raw pixel data in a
-        // temporary Blob URL so NiiVue can fetch it as urlImgData.
+        // temporary Blob URL so NiiVue can fetch it as urlImageData.
         const rawPaired: unknown = item.pairedData
         const pairedBuffer: ArrayBuffer =
           rawPaired instanceof ArrayBuffer
@@ -339,47 +349,44 @@ async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSetting
             : new Uint8Array(rawPaired as number[]).buffer
         const blobUrl = URL.createObjectURL(new Blob([pairedBuffer]))
         try {
-          const volume = await NVImage.loadFromUrl({
-            url: buffer,
-            urlImgData: blobUrl,
+          // v1: url is string | File; wrap the header buffer in a File named for
+          // the .mhd so niivue parses the detached format, urlImageData = the raw.
+          await nv.addVolume({
+            url: new File([buffer], item.uri),
+            urlImageData: blobUrl,
             name: item.uri,
             colormap: settings.defaultVolumeColormap,
           })
-          nv.addVolume(volume)
         } finally {
           URL.revokeObjectURL(blobUrl)
         }
       } else {
-        await nv.loadFromArrayBuffer(buffer, item.uri)
+        await nv.addVolume({ url: new File([buffer], item.uri), name: item.uri })
       }
     } else if (isBuffer && !isImageType(item.uri)) {
-      const mesh = await NVMesh.readMesh(item.data, item.uri, nv.gl)
-      nv.addMesh(mesh)
+      await nv.addMesh({ url: new File([ensureArrayBuffer(item.data)], item.uri), name: item.uri })
     } else if (typeof item.data === 'string') {
-      const volume = await NVImage.loadFromUrl({
+      await nv.addVolume({
         url: item.data,
         name: item.uri,
         colormap: settings.defaultVolumeColormap,
       })
-      nv.addVolume(volume)
     } else {
       console.warn('Unknown data type for loadVolume:', item.data)
     }
   } else if (isImageType(item.uri)) {
     if (item.data) {
-      const volume = await NVImage.loadFromUrl({
+      await nv.addVolume({
         url: item.data,
         name: item.uri,
         colormap: settings.defaultVolumeColormap,
       })
-      nv.addVolume(volume)
     } else {
       const volumeList = [{ url: item.uri, colormap: settings.defaultVolumeColormap }]
       await nv.loadVolumes(volumeList)
     }
   } else if (item.data) {
-    const mesh = await NVMesh.readMesh(item.data, item.uri, nv.gl)
-    nv.addMesh(mesh)
+    await nv.addMesh({ url: new File([ensureArrayBuffer(item.data)], item.uri), name: item.uri })
   } else {
     const meshList = [{ url: item.uri }]
     await nv.loadMeshes(meshList)

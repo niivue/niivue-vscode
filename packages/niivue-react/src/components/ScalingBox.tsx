@@ -15,7 +15,7 @@ export const ScalingBox = (props: any) => {
   const selectedOverlay = computed(() =>
     getOverlay(nvArraySelected.value[0], selectedOverlayNumber.value),
   )
-  const invertState = useSignal(selectedOverlay.value.colormapInvert)
+  const invertState = useSignal<boolean>(!!selectedOverlay.value.isColormapInverted)
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -34,7 +34,8 @@ export const ScalingBox = (props: any) => {
   const colormaps = computed(() => {
     const isVolume = nvArraySelected.value[0]?.volumes?.length > 0
     if (isVolume) {
-      return ['symmetric', ...nvArraySelected.value[0].colormaps()]
+      // v1: `colormaps` is a getter property (string[]), no longer a method.
+      return ['symmetric', ...nvArraySelected.value[0].colormaps]
     } else {
       return ['ge_color', 'gray', 'hsv', 'symmetric', 'warm']
     }
@@ -55,7 +56,7 @@ export const ScalingBox = (props: any) => {
   }
 
   const changeInverted = () => {
-    invertState.value = !selectedOverlay.value.colormapInvert
+    invertState.value = !selectedOverlay.value.isColormapInverted
     nvArraySelected.value.forEach((nv: ExtendedNiivue) => {
       handleOverlayInvert(nv, selectedOverlayNumber.value, invertState.value!)
     })
@@ -115,9 +116,9 @@ export const Scaling = ({ setScaling, init }: ScalingProps) => {
     if (!minRef.current || !maxRef.current) {
       return
     }
-    minRef.current.value = init.cal_min.toPrecision(2)
-    maxRef.current.value = init.cal_max.toPrecision(2)
-    const step = ((init.cal_max - init.cal_min) / 10).toPrecision(2)
+    minRef.current.value = init.calMin.toPrecision(2)
+    maxRef.current.value = init.calMax.toPrecision(2)
+    const step = ((init.calMax - init.calMin) / 10).toPrecision(2)
     minRef.current.step = step
     maxRef.current.step = step
   }, [init])
@@ -168,10 +169,11 @@ function handleOverlayInvert(nv: ExtendedNiivue, layerNumber: number, invert: bo
   if (isVolumeOverlay(nv)) {
     const overlay = nv.volumes[layerNumber]
     if (overlay) {
-      overlay.colormapInvert = invert
+      overlay.isColormapInverted = invert
     }
   } else {
-    nv.setMeshLayerProperty(nv.meshes[0].id as any, layerNumber, 'colormapInvert', invert ? 1 : 0)
+    // v1: setMeshLayerProperty(meshIndex, layerIndex, { camelCaseKey }); meshIndex 0.
+    nv.setMeshLayerProperty(0, layerNumber, { isColormapInverted: invert })
   }
   nv.updateGLVolume()
 }
@@ -180,12 +182,11 @@ function handleOverlayScaling(nv: ExtendedNiivue, layerNumber: number, scaling: 
   if (isVolumeOverlay(nv)) {
     const overlay = nv.volumes[layerNumber]
     if (overlay) {
-      overlay.cal_min = scaling.min
-      overlay.cal_max = scaling.max
+      overlay.calMin = scaling.min
+      overlay.calMax = scaling.max
     }
   } else {
-    nv.setMeshLayerProperty(nv.meshes[0].id as any, layerNumber, 'cal_min', scaling.min)
-    nv.setMeshLayerProperty(nv.meshes[0].id as any, layerNumber, 'cal_max', scaling.max)
+    nv.setMeshLayerProperty(0, layerNumber, { calMin: scaling.min, calMax: scaling.max })
   }
   nv.updateGLVolume()
 }
@@ -193,10 +194,10 @@ function handleOverlayScaling(nv: ExtendedNiivue, layerNumber: number, scaling: 
 function handleOpacity(nv: ExtendedNiivue, layerNumber: number, opacity: number) {
   if (isVolumeOverlay(nv)) {
     if (nv.volumes[layerNumber]) {
-      nv.setOpacity(layerNumber, opacity)
+      nv.setVolume(layerNumber, { opacity })
     }
   } else {
-    nv.setMeshLayerProperty(nv.meshes[0].id as any, layerNumber, 'opacity', opacity)
+    nv.setMeshLayerProperty(0, layerNumber, { opacity })
   }
   nv.updateGLVolume()
 }
@@ -225,15 +226,12 @@ function setVolumeColormap(nv: ExtendedNiivue, layerNumber: number, colormap: st
 }
 
 function setMeshColormap(nv: ExtendedNiivue, layerNumber: number, colormap: string) {
-  const id = nv.meshes[0].id
+  // v1: setMeshLayerProperty(meshIndex, layerIndex, { ...options }); meshIndex 0.
+  // A non-empty colormapNegative enables the negative map (old useNegativeCmap).
   if (colormap === 'symmetric') {
-    nv.setMeshLayerProperty(id as any, layerNumber, 'useNegativeCmap', true as any)
-    nv.setMeshLayerProperty(id as any, layerNumber, 'colormap', 'warm' as any)
-    nv.setMeshLayerProperty(id as any, layerNumber, 'colormapNegative', 'winter' as any)
+    nv.setMeshLayerProperty(0, layerNumber, { colormap: 'warm', colormapNegative: 'winter' })
   } else {
-    nv.setMeshLayerProperty(id as any, layerNumber, 'useNegativeCmap', false as any)
-    nv.setMeshLayerProperty(id as any, layerNumber, 'colormap', colormap as any)
-    nv.setMeshLayerProperty(id as any, layerNumber, 'colormapNegative', '' as any)
+    nv.setMeshLayerProperty(0, layerNumber, { colormap, colormapNegative: '' })
   }
 }
 

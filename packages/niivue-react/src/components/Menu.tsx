@@ -1,12 +1,12 @@
 import '../styles/tokens.css'
 import './Menu.css'
 import { niivueLogo } from '../assets/niivue-logo'
-import { SLICE_TYPE } from '@niivue/niivue'
+import { DRAG_MODE, SLICE_TYPE } from '@niivue/niivue'
 import type { SceneDocument } from '@niivue/viewer-protocol'
 import { Signal, computed, effect, useSignal } from '@preact/signals'
 import { useMemo } from 'preact/hooks'
 import { NIIVUE_CORE_SHORTCUTS, UI_SHORTCUTS, formatShortcut } from '../constants/keyboardShortcuts'
-import { downloadNvd } from '../document'
+import { downloadNvd, downloadSceneJson } from '../document'
 import {
     ExtendedNiivue,
     addDcmFolderEvent,
@@ -15,7 +15,7 @@ import {
     openImageFromURL,
 } from '../events'
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
-import { getMetadataString, getNumberOfPoints } from '../utility'
+import { getImageMetadata, getMetadataString, getNumberOfPoints } from '../utility'
 import { AppProps, SelectionMode } from './AppProps'
 import { HeaderBox } from './HeaderBox'
 import {
@@ -57,7 +57,10 @@ export const Menu = (props: AppProps) => {
       : nvArray.value,
   )
   const isMultiEcho = computed(() =>
-    nvArraySelected.value.some((nv) => nv.volumes?.[0]?.getImageMetadata().nt > 1),
+    nvArraySelected.value.some((nv) => {
+      const meta = getImageMetadata(nv.volumes?.[0])
+      return 'nt' in meta && meta.nt > 1
+    }),
   )
   const isVolume = computed(() => nvArraySelected.value[0]?.volumes?.length > 0)
   const isMesh = computed(() => nvArraySelected.value[0]?.meshes?.length > 0)
@@ -178,26 +181,29 @@ export const Menu = (props: AppProps) => {
     addOverlayEvent(getTargetIndex(), 'addMeshCurvature')
   }
 
-  const replaceLastVolume = () => {
+  const replaceLastVolume = async () => {
     if (isVolume.value) {
       const nv = nvArraySelected.value[nvArraySelected.value.length - 1]
-      nv.removeVolumeByIndex(nv.volumes.length - 1)
+      // v1: removeVolumeByIndex is gone - drop on the model, then refresh GL.
+      nv.model.removeVolume(nv.volumes.length - 1)
+      await nv.updateGLVolume()
       addOverlayEvent(getTargetIndex(), 'overlay')
     } else {
       addOverlayEvent(getTargetIndex(), 'replaceMeshOverlay')
     }
   }
 
-  const removeLastVolume = () => {
+  const removeLastVolume = async () => {
     const nv = nvArraySelected.value[0]
-    nv.removeVolumeByIndex(nv.volumes.length - 1)
-    nv.updateGLVolume()
+    nv.model.removeVolume(nv.volumes.length - 1)
+    await nv.updateGLVolume()
     nvArray.value = [...nvArray.value]
   }
 
   const resetZoom = () => {
     nvArray.value.forEach((nv) => {
-      nv.scene.pan2Dxyzmm = [0, 0, 0, 1]
+      // v1: pan/zoom state is a top-level accessor (nv.scene was removed).
+      nv.pan2Dxyzmm = [0, 0, 0, 1]
       nv.drawScene()
     })
   }
@@ -205,7 +211,8 @@ export const Menu = (props: AppProps) => {
   const setMultiplanar = () => {
     sliceType.value = SLICE_TYPE.MULTIPLANAR
     nvArraySelected.value.forEach((nv) => {
-      nv.graph.autoSizeMultiplanar = false
+      // v1: "Multiplanar + Render" shows the planes without the 4D graph.
+      nv.isGraphVisible = false
       nv.updateGLVolume()
     })
   }
@@ -214,10 +221,13 @@ export const Menu = (props: AppProps) => {
     crosshair.value = true
     sliceType.value = SLICE_TYPE.MULTIPLANAR
     nvArraySelected.value.forEach((nv) => {
-      nv.graph.autoSizeMultiplanar = true
-      nv.opts.multiplanarForceRender = true
-      nv.graph.normalizeValues = false
-      nv.graph.opacity = 1.0
+      // v1: "Multiplanar + Timeseries" surfaces the 4D graph. The old
+      // graph.autoSizeMultiplanar / opts.multiplanarForceRender layout knobs are
+      // gone; the graph is driven by isGraphVisible + graph* accessors. Exact
+      // auto-size layout parity needs PWA confirmation (see migration report).
+      nv.isGraphVisible = true
+      nv.graphNormalizeValues = false
+      nv.graphLineAlpha = 1.0
       nv.updateGLVolume()
     })
   }
@@ -256,20 +266,34 @@ export const Menu = (props: AppProps) => {
     alert('Settings saved!')
   }
 
-  // Export the active canvas as a niivue scene document (.nvd). v1 scope is a
-  // single canvas: the last selected one (VHP plan section 10).
-  const saveScene = () => {
+  // Export the active canvas as a niivue scene document. v1 scope is a single
+  // canvas: the last selected one (VHP plan section 10). Two formats: native
+  // CBOR `.nvd`, and a readable JSON `.nvd.json` that re-opens through parseNvd.
+  const sceneTarget = () => {
     const list = nvArraySelected.value
     const nv = list[list.length - 1]
-    if (!nv) return
-    const doc = nv.json() as unknown as SceneDocument
+    if (!nv) return null
     const rawName = nv.volumes?.[0]?.name || nv.meshes?.[0]?.name || (nv as any).uri || 'scene'
     const base =
       (decodeURIComponent(String(rawName)).split('/').pop() || 'scene').replace(
         /\.(nii\.gz|nii|gz|mgz|mgh|mz3|gii|dcm|mhd|mha|nrrd|nhdr|nvd)$/i,
         '',
       ) || 'scene'
-    downloadNvd(doc, `${base}.nvd`)
+    return { nv, base }
+  }
+
+  const saveScene = () => {
+    const t = sceneTarget()
+    if (!t) return
+    // v1: serializeDocument() returns the .nvd as CBOR bytes (nv.json() is gone).
+    const doc: SceneDocument = t.nv.serializeDocument()
+    downloadNvd(doc, `${t.base}.nvd`)
+  }
+
+  const exportSceneJson = () => {
+    const t = sceneTarget()
+    if (!t) return
+    downloadSceneJson(t.nv.serializeDocument(), `${t.base}.nvd.json`)
   }
 
   const cycleUIVisibility = () => {
@@ -310,7 +334,8 @@ export const Menu = (props: AppProps) => {
           p = [0, 0, 90]
           break
       }
-      nv.scene.clipPlaneDepthAziElev = p
+      // v1: nv.scene was removed; setClipPlane is the single source of truth
+      // (the old scene.clipPlaneDepthAziElev bookkeeping is gone).
       nv.setClipPlane(p)
       nv.drawScene()
     })
@@ -320,16 +345,19 @@ export const Menu = (props: AppProps) => {
     nvArraySelected.value.forEach((nv) => {
       const volume = nv.volumes[0]
       if (volume && volume.nFrame4D && volume.nFrame4D > 1) {
-        const nextFrame = Math.min(volume.nFrame4D - 1, volume.frame4D + 1)
+        const nextFrame = Math.min(volume.nFrame4D - 1, (volume.frame4D ?? 0) + 1)
         if (nextFrame !== volume.frame4D) {
-          // cast to any because ExtendedNiivue/Niivue signature might vary across versions
-          ;(nv as any).setFrame4D(volume, nextFrame)
+          // v1: setFrame4D(id, frame) - id is a string (a loaded volume has one).
+          nv.setFrame4D(volume.id!, nextFrame)
         }
       } else if (nv.volumes.length > 1) {
         const currentVolIdx = (nv as any).volIdx ?? 0
         const nextVolIdx = Math.min(nv.volumes.length - 1, currentVolIdx + 1)
         if (nextVolIdx !== currentVolIdx) {
-          nv.setVolume(nv.volumes[nextVolIdx])
+          // v1: the old setVolume(volumeObject) "make this the active/background
+          // volume" became moveVolumeToBottom(index). (Legacy branch: volIdx is
+          // never set, so this rarely fires; flagged for PWA confirmation.)
+          nv.moveVolumeToBottom(nextVolIdx)
         }
       }
     })
@@ -339,15 +367,16 @@ export const Menu = (props: AppProps) => {
     nvArraySelected.value.forEach((nv) => {
       const volume = nv.volumes[0]
       if (volume && volume.nFrame4D && volume.nFrame4D > 1) {
-        const prevFrame = Math.max(0, volume.frame4D - 1)
+        const prevFrame = Math.max(0, (volume.frame4D ?? 0) - 1)
         if (prevFrame !== volume.frame4D) {
-          ;(nv as any).setFrame4D(volume, prevFrame)
+          nv.setFrame4D(volume.id!, prevFrame)
         }
       } else if (nv.volumes.length > 1) {
         const currentVolIdx = (nv as any).volIdx ?? 0
         const prevVolIdx = Math.max(0, currentVolIdx - 1)
         if (prevVolIdx !== currentVolIdx) {
-          nv.setVolume(nv.volumes[prevVolIdx])
+          // v1 equivalent of the old setVolume(volumeObject); see volumeNext.
+          nv.moveVolumeToBottom(prevVolIdx)
         }
       }
     })
@@ -516,10 +545,16 @@ export const Menu = (props: AppProps) => {
     },
     {
       key: 'saveScene',
-      type: 'button',
+      type: 'menu',
       label: 'Save Scene',
       visible: !!settings.value.menuItems?.saveScene && !isVscode && isVolumeOrMesh.value,
       onClick: saveScene,
+      children: (
+        <>
+          <MenuEntry label="Scene (.nvd)" onClick={saveScene} />
+          <MenuEntry label="Scene as JSON (.nvd.json)" onClick={exportSceneJson} />
+        </>
+      ),
     },
     {
       key: 'view',
@@ -805,8 +840,9 @@ function ensureValidSelection(
 
 function applyInterpolation(nvArray: Signal<ExtendedNiivue[]>, interpolation: Signal<boolean>) {
   nvArray.value.forEach((nv: ExtendedNiivue) => {
-    if (nv.opts.isNearestInterpolation != !interpolation.value) {
-      nv.setInterpolation(!interpolation.value)
+    // v1: setter methods became accessor properties.
+    if (nv.volumeIsNearestInterpolation != !interpolation.value) {
+      nv.volumeIsNearestInterpolation = !interpolation.value
       nv.drawScene()
     }
   })
@@ -814,9 +850,9 @@ function applyInterpolation(nvArray: Signal<ExtendedNiivue[]>, interpolation: Si
 
 function applyCrosshairWidth(nvArray: Signal<ExtendedNiivue[]>, crosshair: Signal<boolean>) {
   nvArray.value.forEach((nv: ExtendedNiivue) => {
-    if (nv.opts.crosshairWidth != Number(crosshair.value)) {
+    if (nv.crosshairWidth != Number(crosshair.value)) {
       try {
-        nv.setCrosshairWidth(Number(crosshair.value))
+        nv.crosshairWidth = Number(crosshair.value)
       } catch (e) {
         // ignore
       }
@@ -830,8 +866,8 @@ function applyRadiologicalConvention(
   radiologicalConvention: Signal<boolean>,
 ) {
   nvArray.value.forEach((nv: ExtendedNiivue) => {
-    if (nv.getRadiologicalConvention() != radiologicalConvention.value) {
-      nv.setRadiologicalConvention(radiologicalConvention.value)
+    if (nv.isRadiological != radiologicalConvention.value) {
+      nv.isRadiological = radiologicalConvention.value
       nv.drawScene()
     }
   })
@@ -839,8 +875,8 @@ function applyRadiologicalConvention(
 
 function applyColorbar(nvArray: Signal<ExtendedNiivue[]>, colorbar: Signal<boolean>) {
   nvArray.value.forEach((nv: ExtendedNiivue) => {
-    if (nv.opts.isColorbar != colorbar.value) {
-      nv.opts.isColorbar = colorbar.value
+    if (nv.isColorbarVisible != colorbar.value) {
+      nv.isColorbarVisible = colorbar.value
       nv.drawScene()
     }
   })
@@ -848,7 +884,9 @@ function applyColorbar(nvArray: Signal<ExtendedNiivue[]>, colorbar: Signal<boole
 
 function applyDragMode(nvArray: Signal<ExtendedNiivue[]>, zoomDragMode: Signal<boolean>) {
   nvArray.value.forEach((nv: ExtendedNiivue) => {
-    if (zoomDragMode.value) nv.opts.dragMode = nv.dragModes.slicer3D
-    else nv.opts.dragMode = nv.dragModes.contrast
+    // v1: the old drag-mode enum/option were replaced by the DRAG_MODE enum +
+    // the primaryDragMode accessor.
+    if (zoomDragMode.value) nv.primaryDragMode = DRAG_MODE.slicer3D
+    else nv.primaryDragMode = DRAG_MODE.contrast
   })
 }

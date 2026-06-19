@@ -1,4 +1,4 @@
-import { Niivue, NVImage, NVMesh, NVMeshLoaders, SLICE_TYPE, type DocumentData } from '@niivue/niivue'
+import NiiVue, { DRAG_MODE, SLICE_TYPE } from '@niivue/niivue'
 import { Signal } from '@preact/signals'
 import { AppProps } from './components/AppProps'
 import { isNvdFile, readNvdFile } from './document'
@@ -61,9 +61,13 @@ export async function handleMessage(message: any, appProps: AppProps) {
         // nv.loadDocument call is deferred to NiiVueCanvas, which fires once the
         // canvas (and its GL context) is attached - mirroring the addImage path.
         const nv = getUnitinializedNvInstance(nvArray)
-        nv.uri = body.name || 'document.nvd'
+        const name = body.name || 'document.nvd'
+        nv.uri = name
         nv.isNew = false
-        nv.documentData = body.document
+        // v1: nv.loadDocument takes a File. The message carries the .nvd CBOR
+        // bytes (Uint8Array); wrap them in a File for NiiVueCanvas to load once
+        // the canvas/GL is attached.
+        nv.documentData = new File([body.document], name)
       }
       break
     case 'initCanvas':
@@ -110,7 +114,7 @@ function handleDebugMessage(body: any, appProps: AppProps) {
       {
         window.postMessage({
           type: 'debugAnswer',
-          body: [nvArray.value[0].volumes[0].cal_min, nvArray.value[0].volumes[0].cal_max],
+          body: [nvArray.value[0].volumes[0].calMin, nvArray.value[0].volumes[0].calMax],
         })
       }
       break
@@ -195,12 +199,11 @@ interface LayerOptions {
   opacity?: number
   colormap?: string
   colormapNegative?: string
-  useNegativeCmap?: boolean
   calMin?: number
   calMax?: number
 }
 
-async function addMeshOverlay(nv: Niivue, item: any, type: string, settings: NiiVueSettings) {
+async function addMeshOverlay(nv: NiiVue, item: any, type: string, settings: NiiVueSettings) {
   if (nv.meshes.length === 0) {
     return
   }
@@ -217,32 +220,25 @@ async function addMeshOverlay(nv: Niivue, item: any, type: string, settings: Nii
     }
     item.data = await response.arrayBuffer()
   }
-  const newLayer = await NVMeshLoaders.readLayer(
-    item.uri,
-    item.data,
-    mesh,
-    a.opacity,
-    a.colormap,
-    a.colormapNegative,
-    a.useNegativeCmap,
-    a.calMin,
-    a.calMax,
-  )
+  // v1: load the layer through the controller (meshIndex 0 here - uses nv.meshes[0]).
+  // addMeshLayer parses the buffer, appends the layer, and updates the mesh
+  // internally, so the manual readLayer/push/updateMesh dance is gone. The old
+  // `useNegativeCmap` flag is expressed by a non-empty `colormapNegative`.
+  await nv.addMeshLayer(0, {
+    url: new File([item.data], item.uri),
+    name: item.uri,
+    opacity: a.opacity,
+    colormap: a.colormap,
+    colormapNegative: a.colormapNegative,
+    calMin: a.calMin,
+    calMax: a.calMax,
+  })
 
-  if (newLayer) {
-    // Set the name property on the layer
-    newLayer.name = item.uri
-    nv.meshes[0].layers.push(newLayer)
-  } else {
-    throw Error('Layer could not be loaded')
-  }
-
-  mesh.updateMesh(nv.gl)
-  nv.opts.isColorbar = true
-  nv.updateGLVolume()
+  nv.isColorbarVisible = true
+  await nv.updateGLVolume()
   const layerNumber = nv.meshes[0].layers.length - 1
   if (type === 'addMeshCurvature') {
-    nv.setMeshLayerProperty(nv.meshes[0].id as any, layerNumber, 'colorbarVisible', false as any)
+    await nv.setMeshLayerProperty(0, layerNumber, { isColorbarVisible: false })
   }
 }
 
@@ -253,7 +249,6 @@ function getLayerDefaults(type: string, settings: NiiVueSettings) {
       {
         a.opacity = 0.7
         a.colormap = 'gray'
-        a.useNegativeCmap = false
         a.calMin = 0.3
         a.calMax = 0.5
       }
@@ -264,34 +259,41 @@ function getLayerDefaults(type: string, settings: NiiVueSettings) {
         a.opacity = 0.7
         a.colormap = settings?.defaultMeshOverlayColormap || 'hsv'
         a.colormapNegative = ''
-        a.useNegativeCmap = false
       }
       break
   }
   return a
 }
 
-async function addOverlay(nv: Niivue, item: any, settings: NiiVueSettings) {
+async function addOverlay(nv: NiiVue, item: any, settings: NiiVueSettings) {
   if (isImageType(item.uri)) {
     const overlayColormap = item.colormap || settings?.defaultOverlayColormap || 'redyell'
     const overlayOpacity = item.opacity ?? settings?.defaultOverlayOpacity ?? 0.5
-    const image = await NVImage.loadFromUrl({
-      url: item.data || item.uri,
+    // v1: addVolume takes the load options directly. `url` is string | File, so
+    // wrap in-memory overlay bytes in a File (a string stays a URL/path).
+    const url =
+      typeof item.data === 'string'
+        ? item.data
+        : item.data
+          ? new File([toBlobPart(item.data)], item.uri)
+          : item.uri
+    await nv.addVolume({
+      url,
       name: item.uri,
       colormap: overlayColormap,
       opacity: overlayOpacity,
     })
-    nv.addVolume(image)
-    const idx = nv.volumes.length - 1
-    if (idx >= 0) {
-      nv.volumes[idx].colormap = overlayColormap
-      nv.setOpacity(idx, overlayOpacity)
-      nv.updateGLVolume()
-    }
   } else {
-    const mesh = await NVMesh.readMesh(item.data, item.uri, nv.gl, 0.5)
-    nv.addMesh(mesh)
+    await nv.addMesh({ url: new File([toBlobPart(item.data)], item.uri), name: item.uri })
   }
+}
+
+// niivue's File/Blob wrapping needs a real BlobPart. ArrayBuffers and TypedArray
+// views pass through; a plain number[] (some postMessage bridges serialize
+// buffers this way) is repacked into a Uint8Array.
+function toBlobPart(data: ArrayBuffer | ArrayBufferView | number[]): BlobPart {
+  if (Array.isArray(data)) return new Uint8Array(data)
+  return data as BlobPart
 }
 
 export function addOverlayEvent(imageIndex: number, type: string) {
@@ -403,7 +405,7 @@ function getUnitinializedNvInstance(nvArray: Signal<ExtendedNiivue[]>) {
   return nvArray.value[nvArray.value.length - 1]
 }
 
-export class ExtendedNiivue extends Niivue {
+export class ExtendedNiivue extends NiiVue {
   constructor(opts: any) {
     super(opts)
   }
@@ -414,49 +416,27 @@ export class ExtendedNiivue extends Niivue {
   uri = ''
   key = NaN
   body = null
-  documentData: DocumentData | null = null // pending .nvd import, consumed by NiiVueCanvas
+  documentData: File | null = null // pending .nvd import (CBOR bytes wrapped in a File), consumed by NiiVueCanvas
   onVolumeUpdated = () => { }
   onFrameUpdate = (frame: number) => { }
-  setFrame4D(volumeOrId: any, frame: number) {
-    super.setFrame4D(volumeOrId, frame)
-    if (this.volumes[0]) {
-      this.onFrameUpdate(this.volumes[0].frame4D)
-    }
-  }
-  mouseMoveListener(e: MouseEvent) {
-    super.mouseMoveListener(e)
-    if (this.uiData.mouseButtonRightDown || this.uiData.mouseButtonCenterDown) {
-      this.canvas?.focus()
-      // handle the case where this.otherNV is of type Niivue
-      if (this.otherNV != null) {
-        if (this.otherNV instanceof Niivue) {
-          this.otherNV.scene.pan2Dxyzmm = this.scene.pan2Dxyzmm
-          this.otherNV.drawScene()
-        } else {
-          this.otherNV.forEach((nv: Niivue) => {
-            nv.scene.pan2Dxyzmm = this.scene.pan2Dxyzmm
-            nv.drawScene()
-          })
-        }
-      }
-    }
-  }
+  // v1: cross-canvas pan/3D sync is handled natively by `nv.broadcastTo(targets)`
+  // (Container.tsx/syncVolumes wires it), so the old per-canvas mouse-move sync
+  // override is gone. The 4D `setFrame4D` override is gone too: NiiVueCanvas
+  // listens to the native `'frameChange'` event and forwards it to `onFrameUpdate`,
+  // which fires for every frame change (internal or caller-driven), not just ours.
 }
 
-function growNvArrayBy(nvArray: Signal<Niivue[]>, n: number) {
+function growNvArrayBy(nvArray: Signal<NiiVue[]>, n: number) {
   for (let i = 0; i < n; i++) {
     const nv = new ExtendedNiivue({
-      isResizeCanvas: true,
-      dragMode: 1, // contrast
-      dragAndDropEnabled: false, // handled by app (Volume component)
+      primaryDragMode: DRAG_MODE.contrast,
+      isDragDropEnabled: false, // handled by app (Volume component)
       // 'c' (cycle clip plane) and 'v' (cycle view mode) are handled by the
       // app's useKeyboardShortcuts hook, which broadcasts to every selected
-      // canvas. Disabling NiiVue's own canvas-level handlers for these keys
-      // (an empty hotkey never matches an event's KeyboardEvent.code) keeps the
-      // app as the single source of truth, so the focused canvas is no longer
-      // acted on a second time on key release. See niivue/niivue-vscode#224.
-      clipPlaneHotKey: '',
-      viewModeHotKey: '',
+      // canvas. v1.0 removed the built-in clip-plane / view-mode hotkey options
+      // (no built-in hotkeys remain), so niivue no longer double-acts on the
+      // focused canvas - the app is the single source of truth. See
+      // niivue/niivue-vscode#224.
     })
     nv.key = Math.random()
     nvArray.value = [...nvArray.value, nv]

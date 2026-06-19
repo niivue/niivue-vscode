@@ -101,9 +101,14 @@ describe('isDicomData', () => {
 })
 
 describe('getMetadataString', () => {
+  // v1: getMetadataString reads vol.hdr.dims/pixDims via the getImageMetadata
+  // helper (the per-image metadata accessor was removed). dims/pixDims are
+  // 1-based: dims[1..4] = nx,ny,nz,nt and pixDims[1..3] = dx,dy,dz.
   function nv(volumes: { nx: number; ny: number; nz: number; dx: number; dy: number; dz: number; nt: number }[]) {
     return {
-      volumes: volumes.map((meta) => ({ getImageMetadata: () => meta })),
+      volumes: volumes.map((m) => ({
+        hdr: { dims: [3, m.nx, m.ny, m.nz, m.nt], pixDims: [0, m.dx, m.dy, m.dz] },
+      })),
     } as any
   }
 
@@ -116,7 +121,7 @@ describe('getMetadataString', () => {
   })
 
   it('returns empty string when metadata has no nx (uninitialized volume)', () => {
-    const stub = { volumes: [{ getImageMetadata: () => ({}) }] } as any
+    const stub = { volumes: [{ hdr: undefined }] } as any
     expect(getMetadataString(stub)).toBe('')
   })
 
@@ -139,13 +144,14 @@ describe('getMetadataString', () => {
 })
 
 describe('getNumberOfPoints', () => {
-  it('returns the per-vertex point count (pts.length / 3)', () => {
-    const nv = { meshes: [{ pts: new Array(30) }] } as any
+  // v1: mesh geometry is `positions` (flat x,y,z Float32Array), not `pts`.
+  it('returns the per-vertex point count (positions.length / 3)', () => {
+    const nv = { meshes: [{ positions: new Array(30) }] } as any
     expect(getNumberOfPoints(nv)).toBe('Number of Points: 10')
   })
 
   it('handles zero-length point arrays', () => {
-    const nv = { meshes: [{ pts: [] }] } as any
+    const nv = { meshes: [{ positions: [] }] } as any
     expect(getNumberOfPoints(nv)).toBe('Number of Points: 0')
   })
 })

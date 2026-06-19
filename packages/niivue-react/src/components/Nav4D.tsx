@@ -66,21 +66,23 @@ export const Nav4D = ({ nv, nvArray, volumeIndex, vol4D, isPlaying, isEditingVol
         targetFrame < volume.nFrame4D &&
         volume.frame4D !== targetFrame
       ) {
-        nvInstance.setFrame4D(volume.id, targetFrame)
+        // v1: volume.id is optional in the type, but a loaded 4D volume has one;
+        // setFrame4D requires a string id.
+        nvInstance.setFrame4D(volume.id!, targetFrame)
       }
     }
   }
 
   const nextVolume = () => {
-    const currentVol = nv.volumes[0].frame4D
-    nv.setFrame4D(nv.volumes[0].id, currentVol + 1)
-    vol4D.value = nv.volumes[0].frame4D
+    const currentVol = nv.volumes[0].frame4D ?? 0
+    nv.setFrame4D(nv.volumes[0].id!, currentVol + 1)
+    vol4D.value = nv.volumes[0].frame4D ?? 0
   }
 
   const prevVolume = () => {
-    const currentVol = nv.volumes[0].frame4D
-    nv.setFrame4D(nv.volumes[0].id, currentVol - 1)
-    vol4D.value = nv.volumes[0].frame4D
+    const currentVol = nv.volumes[0].frame4D ?? 0
+    nv.setFrame4D(nv.volumes[0].id!, currentVol - 1)
+    vol4D.value = nv.volumes[0].frame4D ?? 0
   }
 
   const setVol4D = (value: number) => {
@@ -88,8 +90,8 @@ export const Nav4D = ({ nv, nvArray, volumeIndex, vol4D, isPlaying, isEditingVol
     if (!nFrame4D) return
     const maxFrame = nFrame4D - 1
     const clampedValue = Math.max(0, Math.min(maxFrame, value))
-    nv.setFrame4D(nv.volumes[0].id, clampedValue)
-    vol4D.value = nv.volumes[0].frame4D
+    nv.setFrame4D(nv.volumes[0].id!, clampedValue)
+    vol4D.value = nv.volumes[0].frame4D ?? 0
   }
 
   const handleVol4DClick = (e: MouseEvent) => {
@@ -142,10 +144,10 @@ export const Nav4D = ({ nv, nvArray, volumeIndex, vol4D, isPlaying, isEditingVol
       }
       const nFrame4D = volume.nFrame4D
       if (!nFrame4D) return
-      const currentFrame = volume.frame4D
+      const currentFrame = volume.frame4D ?? 0
       const nextFrame = (currentFrame + 1) % nFrame4D
-      nv.setFrame4D(volume.id, nextFrame)
-      vol4D.value = volume.frame4D
+      nv.setFrame4D(volume.id!, nextFrame)
+      vol4D.value = volume.frame4D ?? 0
     }, 200)
   }
 

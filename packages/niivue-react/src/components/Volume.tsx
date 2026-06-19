@@ -49,9 +49,13 @@ export const Volume = (props: AppProps & VolumeProps) => {
   const canvasRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
-    nv.onLocationChange = (data: any) =>
+    // v1: location updates arrive as the 'locationChange' DOM event (the settable
+    // nv.onLocationChange callback was removed). Register once and read
+    // selection.value live inside the handler so it reacts to selection changes
+    // without re-adding listeners; clean up on unmount.
+    const onLoc = (e: CustomEvent) =>
       setIntensityAndLocation(
-        data,
+        e.detail,
         intensity,
         location_local,
         location,
@@ -59,10 +63,12 @@ export const Volume = (props: AppProps & VolumeProps) => {
         vol4D,
         nv,
       )
+    nv.addEventListener('locationChange', onLoc)
     nv.onFrameUpdate = (frame: number) => {
       vol4D.value = frame
     }
-  }, [selection.value])
+    return () => nv.removeEventListener('locationChange', onLoc)
+  }, [])
 
   // Stop playback when volume is deselected or editing begins
   useEffect(() => {
@@ -422,7 +428,7 @@ function setIntensityAndLocation(
     location.value = `${arrayToStringFixed(data.mm)} mm`
   }
   if (nv.volumes.length > 0 && nv.volumes[0]?.nFrame4D && nv.volumes[0].nFrame4D > 1) {
-    vol4D.value = nv.volumes[0].frame4D
+    vol4D.value = nv.volumes[0].frame4D ?? 0
   }
 }
 

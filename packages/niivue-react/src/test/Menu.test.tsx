@@ -5,14 +5,33 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AppProps, SelectionMode } from '../components/AppProps'
 import { Menu } from '../components/Menu'
 
-// Mock canvas and niivue to avoid webgl context issues in jsdom
-vi.mock('@niivue/niivue', () => ({
-  SLICE_TYPE: { AXIAL: 0, CORONAL: 1, SAGITTAL: 2, MULTIPLANAR: 3, RENDER: 4 },
-  Niivue: vi.fn(),
-  NVImage: { loadFromUrl: vi.fn() },
-  NVMesh: { readMesh: vi.fn() },
-  NVMeshLoaders: { readLayer: vi.fn() },
-}))
+// Mock canvas and niivue to avoid webgl context issues in jsdom.
+// v1 surface: the package's default export is the NiiVueGPU class (events.ts does
+// `import NiiVue from '@niivue/niivue'` and `extends NiiVue`), plus the DRAG_MODE
+// and SLICE_TYPE value enums. NVImage/NVMesh are types-only now, so they are not
+// re-exported. The instance methods the tests exercise live on the mock objects
+// passed in via nvArray below. The class is declared inside the factory because
+// vi.mock is hoisted above module top-level bindings.
+vi.mock('@niivue/niivue', () => {
+  class NiiVueGPU {
+    constructor(_opts?: unknown) {}
+    attachToCanvas = vi.fn()
+    addEventListener = vi.fn()
+    addVolume = vi.fn()
+    addMesh = vi.fn()
+    addMeshLayer = vi.fn()
+    setVolume = vi.fn()
+    setMeshLayerProperty = vi.fn()
+    updateGLVolume = vi.fn()
+    setFrame4D = vi.fn()
+  }
+  return {
+    __esModule: true,
+    default: NiiVueGPU,
+    SLICE_TYPE: { AXIAL: 0, CORONAL: 1, SAGITTAL: 2, MULTIPLANAR: 3, RENDER: 4 },
+    DRAG_MODE: { none: 0, contrast: 1, measurement: 2, pan: 3, slicer3D: 4 },
+  }
+})
 
 describe('Menu', () => {
   it('cycles clip plane correctly', async () => {

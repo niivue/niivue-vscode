@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'preact/hooks'
 import { ExtendedNiivue } from '../events'
 import { getCanvasSize } from '../layout'
 import { DEFAULT_TILE_SPACING } from '../settings'
-import { differenceInNames, getNames, reorderImages, swapImages } from '../utility'
+import { differenceInNames, getImageMetadata, getNames, reorderImages, swapImages } from '../utility'
 import { AppProps } from './AppProps'
 import { Volume } from './Volume'
 
@@ -34,7 +34,7 @@ export const Container = (props: AppProps) => {
   const canvasSize = computed(() =>
     getCanvasSize(
       nvArray.value.length,
-      nvArray.value?.[0]?.volumes?.[0]?.getImageMetadata() ?? {},
+      getImageMetadata(nvArray.value?.[0]?.volumes?.[0]),
       props.sliceType.value,
       windowInnerSize.value,
       props.settings.value.tileSpacing ?? DEFAULT_TILE_SPACING,
