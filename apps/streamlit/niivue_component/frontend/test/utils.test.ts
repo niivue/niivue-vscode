@@ -1,7 +1,35 @@
 import { describe, expect, it, vi } from 'vitest'
-import { base64ToArrayBuffer, throttle } from '../src/utils'
+import { base64ToArrayBuffer, buildVoxelClickPayload, throttle } from '../src/utils'
 
 describe('utils', () => {
+  describe('buildVoxelClickPayload', () => {
+    // Mirrors the shape niivue v1 emits on the 'locationChange' event so the
+    // Streamlit voxel-click feedback to Python keeps working after the
+    // callback -> event migration.
+    const detail = {
+      vox: [12.4, 33.6, 7.2],
+      mm: [-10.5, 20.1, 5.0],
+      values: [{ value: 128.7 }],
+    }
+
+    it('rounds voxel indices, preserves mm and the first value, and sets the type', () => {
+      const payload = buildVoxelClickPayload(detail, 'brain.nii.gz')
+      expect(payload).toEqual({
+        type: 'voxel_click',
+        voxel: [12, 34, 7],
+        mm: [-10.5, 20.1, 5.0],
+        value: 128.7,
+        filename: 'brain.nii.gz',
+      })
+    })
+
+    it('defaults a missing value to 0 and a missing filename to an empty string', () => {
+      const payload = buildVoxelClickPayload({ vox: [0, 0, 0], mm: [0, 0, 0], values: [] }, undefined)
+      expect(payload.value).toBe(0)
+      expect(payload.filename).toBe('')
+    })
+  })
+
   describe('base64ToArrayBuffer', () => {
     it('should decode valid base64 string', () => {
       const base64 = 'SGVsbG8gV29ybGQ=' // "Hello World"

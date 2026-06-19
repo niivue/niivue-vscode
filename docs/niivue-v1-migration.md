@@ -1,6 +1,6 @@
 # Migrating to `@niivue/niivue` v1.0 (niivue/mono)
 
-Status: **in progress** - foundation landed, core package (`@niivue/react`) migration underway.
+Status: **code-complete** (Phases 0-2) - core package + all apps migrated and green; pending manual confirmation.
 Target: `@niivue/niivue@1.0.0-rc.9` (npm `next` tag). Last verified against rc.9 (2026-06).
 
 This document is the single source of truth for the upgrade from `@niivue/niivue@0.68.2`
@@ -218,13 +218,25 @@ hand-written `.nvd.json`, and Save Scene → Scene as JSON → reopen), cross-ca
 "Multiplanar + Render" vs "+ Timeseries" layouts (`autoSizeMultiplanar`/`multiplanarForceRender`
 had no clean v1 equivalent; mapped to `isGraphVisible` + graph accessors).
 
-### Phase 2 - Apps (follow-up)
-Verified state right after Phase 1: **PWA, Tauri, and Jupyter type-check clean** (they inherit
-through `@niivue/react`). The only remaining direct-niivue work is one file:
-- `apps/streamlit/.../useStreamlitNiivue.ts` - 5 errors: `import { Niivue }` → default;
-  `nv.removeVolume(...)` → `nv.model.removeVolume(index)`; `nv.removeMesh(meshObj)` → index;
-  `baseMesh.updateMesh(nv.gl)` → `nv.setMesh(...)` (behavioural - needs a test first).
-Plus per-app smoke verification (and the VS Code `niivue` app, which bundles the webview).
+### Phase 2 - Apps (code complete; pending manual smoke verification)
+- [x] PWA, Tauri, Jupyter, VS Code (`niivue`) type-check + build clean - they inherit through
+      `@niivue/react` with no direct niivue breakage. The VS Code app bundles `@niivue/react`'s
+      `dist` into its webview (`build:webview`), built against the migrated package.
+- [x] `apps/streamlit/.../useStreamlitNiivue.ts` (the one file with direct niivue usage):
+      `import { Niivue }` removed (instances infer as `ExtendedNiivue`);
+      `nv.removeVolume(obj)` → `nv.model.removeVolume(i)` + `updateGLVolume()`;
+      `nv.removeMesh(obj)` → `nv.model.removeMesh(i)` + `updateGLVolume()`;
+      mesh-layer clear `mesh.layers = []; mesh.updateMesh(nv.gl)` → `nv.removeMeshLayer(0, i)`
+      loop (recomposites colors); `nv.onLocationChange = fn` (dead under `as any` in v1) →
+      `addEventListener('locationChange', ...)`, with the voxel-click payload extracted to
+      `buildVoxelClickPayload` and unit-tested.
+- Whole-monorepo gate green: `turbo type-check` 8/8; all TypeScript tests pass (`@niivue/react`
+      146, streamlit frontend 13, tauri 22, ...); `pnpm versions:check` (syncpack) clean.
+      (`@niivue/streamlit`'s Python `pytest` job is unrelated and only fails locally for want of
+      an installed `pytest`.)
+
+Still pending: **manual smoke verification** of each app (esp. the Streamlit voxel-click
+feedback to Python and overlay/mesh-overlay reloads).
 
 ### Phase 3 - Opportunities unlocked (not required)
 - Drop the `mouseMoveListener` sync hack (done in Phase 1) - already an `nv-ext`-free win.

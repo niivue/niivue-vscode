@@ -1,9 +1,8 @@
-import { Niivue } from '@niivue/niivue'
 import { handleMessage, initCanvas, isImageType, useAppState } from '@niivue/react'
 import { useEffect, useRef } from 'preact/hooks'
 import { Streamlit } from 'streamlit-component-lib'
 import { StreamlitArgs, VIEW_MODE_TO_SLICE_TYPE } from '../types'
-import { base64ToArrayBuffer, throttle } from '../utils'
+import { base64ToArrayBuffer, buildVoxelClickPayload, throttle } from '../utils'
 
 /** Sample characters from a base64 string for fingerprinting (avoids hashing overhead) */
 function dataFingerprint(data: string | undefined): string {
@@ -135,10 +134,12 @@ export const useStreamlitNiivue = (args: StreamlitArgs) => {
     
     // If overlay list changed, clear and reload all overlays
     if (JSON.stringify(overlayIds) !== JSON.stringify(currentIds)) {
-      // Remove all overlays except base volume (index 0)
+      // Remove all overlays except base volume (index 0). v1: removal is a
+      // synchronous model op (index-based); refresh the GPU once after.
       while (nv.volumes.length > 1) {
-        nv.removeVolume(nv.volumes[nv.volumes.length - 1])
+        nv.model.removeVolume(nv.volumes.length - 1)
       }
+      nv.updateGLVolume()
       
       // Load all overlays sequentially
       for (const overlay of args.overlays) {
@@ -169,11 +170,13 @@ export const useStreamlitNiivue = (args: StreamlitArgs) => {
       return
     }
 
-    // Clear previously loaded additional meshes
+    // Clear previously loaded additional meshes. v1: removal is a synchronous
+    // model op (index-based); refresh the GPU once after.
     const keepCount = args.nifti_data ? 0 : 1
     while (nv.meshes.length > keepCount) {
-      nv.removeMesh(nv.meshes[nv.meshes.length - 1])
+      nv.model.removeMesh(nv.meshes.length - 1)
     }
+    nv.updateGLVolume()
 
     // In mesh-only mode, first mesh is already loaded as base
     const startIndex = args.nifti_data ? 0 : 1
@@ -218,12 +221,12 @@ export const useStreamlitNiivue = (args: StreamlitArgs) => {
     )
 
     if (JSON.stringify(overlayIds) !== JSON.stringify(loadedMeshOverlaysRef.current)) {
-      // Clear existing mesh layers before re-adding to prevent accumulation
+      // Clear existing mesh layers before re-adding to prevent accumulation.
+      // v1: go through removeMeshLayer so the mesh colors recomposite (mutating
+      // mesh.layers directly would leave the previous overlay colors baked in).
       const baseMesh = nv.meshes[0]
-      if (baseMesh.layers && baseMesh.layers.length > 0) {
-        baseMesh.layers = []
-        baseMesh.updateMesh(nv.gl)
-        nv.updateGLVolume()
+      while (baseMesh.layers && baseMesh.layers.length > 0) {
+        nv.removeMeshLayer(0, baseMesh.layers.length - 1)
       }
 
       for (const overlay of meshOverlays) {
@@ -271,34 +274,27 @@ export const useStreamlitNiivue = (args: StreamlitArgs) => {
       return
     }
 
-    const handleLocationChange = (data: any) => {
+    const handleLocationChange = (detail: any) => {
       if (appProps.nvArray.value.length > 0 && appProps.nvArray.value[0]?.isLoaded) {
-        const voxel = data.vox
-        const mm = data.mm
-        const value = data.values[0]?.value ?? 0
-
-        throttledSetValue.current?.({
-          type: 'voxel_click',
-          voxel: [Math.round(voxel[0]), Math.round(voxel[1]), Math.round(voxel[2])],
-          mm: [mm[0], mm[1], mm[2]],
-          value: value,
-          filename: args.filename || '',
-        })
+        throttledSetValue.current?.(buildVoxelClickPayload(detail, args.filename))
       }
     }
 
-    // Attach to all niivue instances
-    appProps.nvArray.value.forEach((nv: Niivue) => {
+    // v1: location updates arrive on the 'locationChange' DOM event (the
+    // settable nv.onLocationChange callback was removed). Attach to every
+    // instance and clean up with the same listener reference.
+    const onLoc = (e: CustomEvent) => handleLocationChange(e.detail)
+    appProps.nvArray.value.forEach((nv) => {
       if (nv.canvas) {
-        ; (nv as any).onLocationChange = handleLocationChange
+        nv.addEventListener('locationChange', onLoc)
       }
     })
 
     return () => {
       throttledSetValue.current?.cancel()
-      appProps.nvArray.value.forEach((nv: Niivue) => {
+      appProps.nvArray.value.forEach((nv) => {
         if (nv.canvas) {
-          ; (nv as any).onLocationChange = null
+          nv.removeEventListener('locationChange', onLoc)
         }
       })
     }

@@ -1,3 +1,40 @@
+/** The subset of niivue's `locationChange` event detail we read for feedback. */
+export interface NiivueLocationDetail {
+  vox: number[]
+  mm: number[]
+  values: { value?: number }[]
+}
+
+export interface VoxelClickPayload {
+  type: 'voxel_click'
+  voxel: [number, number, number]
+  mm: [number, number, number]
+  value: number
+  filename: string
+}
+
+/**
+ * Build the Streamlit feedback payload from a niivue `locationChange` detail.
+ * niivue v1 delivers location updates via the DOM event (the settable
+ * `onLocationChange` callback was removed); the `NiiVueLocation` detail still
+ * carries `vox` / `mm` / `values`, so the payload shape is unchanged.
+ */
+export function buildVoxelClickPayload(
+  detail: NiivueLocationDetail,
+  filename: string | undefined,
+): VoxelClickPayload {
+  const voxel = detail.vox
+  const mm = detail.mm
+  const value = detail.values[0]?.value ?? 0
+  return {
+    type: 'voxel_click',
+    voxel: [Math.round(voxel[0]), Math.round(voxel[1]), Math.round(voxel[2])],
+    mm: [mm[0], mm[1], mm[2]],
+    value,
+    filename: filename || '',
+  }
+}
+
 export function base64ToArrayBuffer(base64: string): ArrayBuffer {
   const binary_string = window.atob(base64)
   const len = binary_string.length
