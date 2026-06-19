@@ -9,20 +9,20 @@
     },
     "counts": {
       "statements": {
-        "covered": 1142,
-        "total": 2436
+        "covered": 1143,
+        "total": 2439
       },
       "branches": {
         "covered": 878,
         "total": 1825
       },
       "functions": {
-        "covered": 342,
-        "total": 749
+        "covered": 343,
+        "total": 751
       },
       "lines": {
-        "covered": 1074,
-        "total": 2265
+        "covered": 1075,
+        "total": 2268
       }
     }
   },
@@ -30,7 +30,7 @@
     "label": "`apps/pwa`",
     "stats": {
       "statements": 28.3,
-      "branches": 33.3,
+      "branches": 32.4,
       "functions": 52.9,
       "lines": 29.5
     },
@@ -40,8 +40,8 @@
         "total": 46
       },
       "branches": {
-        "covered": 12,
-        "total": 36
+        "covered": 11,
+        "total": 34
       },
       "functions": {
         "covered": 9,
@@ -165,26 +165,26 @@
     "label": "Overall",
     "stats": {
       "statements": 42.7,
-      "branches": 43.2,
+      "branches": 43.1,
       "functions": 42.2,
       "lines": 42.8
     },
     "counts": {
       "statements": {
-        "covered": 1385,
-        "total": 3242
+        "covered": 1386,
+        "total": 3245
       },
       "branches": {
-        "covered": 1002,
-        "total": 2322
+        "covered": 1001,
+        "total": 2320
       },
       "functions": {
-        "covered": 396,
-        "total": 938
+        "covered": 397,
+        "total": 940
       },
       "lines": {
-        "covered": 1304,
-        "total": 3045
+        "covered": 1305,
+        "total": 3048
       }
     }
   }
