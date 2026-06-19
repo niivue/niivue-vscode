@@ -39,13 +39,11 @@
 }
 
 .nv-brand { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+/* The logo is a transparent neon mark (see scripts/generate-icons.mjs), so it
+   sits flush in the bar - no tile background, border, or glow needed. */
 .nv-brand-mark {
-  width: 26px; height: 26px; border-radius: 7px;
-  object-fit: cover;
-  background: #0a0e13;
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.1) inset,
-    0 2px 8px color-mix(in oklab, var(--accent) 25%, transparent);
+  width: 26px; height: 26px;
+  object-fit: contain;
 }
 .nv-brand-text { display: flex; flex-direction: column; line-height: 1; }
 .nv-brand-name { font-weight: 600; font-size: 13px; letter-spacing: -0.01em; color: var(--fg-0); }

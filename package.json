@@ -28,6 +28,8 @@
   ],
   "scripts": {
     "build": "turbo build",
+    "generate:icons": "node scripts/generate-icons.mjs all",
+    "generate:icons:tauri": "pnpm --filter @niivue/tauri run generate:icons:tauri",
     "test": "turbo test",
     "lint": "turbo lint",
     "type-check": "turbo type-check",
@@ -67,6 +69,7 @@
     "lint-staged": "^17.0.5",
     "prettier": "^3.8.3",
     "rimraf": "^6.1.3",
+    "sharp": "^0.35.2",
     "syncpack": "^13.0.4",
     "turbo": "^2.9.14",
     "typescript": "^5.9.3",

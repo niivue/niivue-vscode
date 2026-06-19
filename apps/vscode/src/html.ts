@@ -21,7 +21,7 @@ export async function getHtmlForWebview(
               <script type="module" crossorigin src="${scriptUri}" nonce="${nonce}"></script>
             </head>
             <body class="text-white p-0">
-              <div id="app" class="w-screen h-screen"></div>
+              <div id="app" class="nv-form-vscode w-screen h-screen"></div>
               <script nonce="${nonce}">
                 window.vscode = acquireVsCodeApi()
               </script>

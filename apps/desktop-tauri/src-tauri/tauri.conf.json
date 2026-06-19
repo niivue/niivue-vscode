@@ -6,7 +6,7 @@
     "frontendDist": "../build",
     "devUrl": "http://localhost:4001",
     "beforeDevCommand": "pnpm dev:frontend",
-    "beforeBuildCommand": "pnpm build:frontend"
+    "beforeBuildCommand": "pnpm generate:icons:tauri && pnpm build:frontend"
   },
   "app": {
     "windows": [

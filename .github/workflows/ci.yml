@@ -75,6 +75,16 @@ jobs:
       - name: Type check
         run: pnpm turbo type-check
 
+      # Drift guard for the one committed generated icon. Compares the master's
+      # hash against the value stamped into niivue-logo.ts (a content check, not
+      # a byte-compare of the palette PNG, which is not reproducible across
+      # platforms). Fails if the master changed without `pnpm generate:icons`.
+      - name: Verify committed icon matches its master
+        run: |
+          sha=$(sha256sum branding/niivue-icon.png | cut -d' ' -f1)
+          grep -q "icon-master-sha256: $sha" packages/niivue-react/src/assets/niivue-logo.ts \
+            || { echo "::error::niivue-logo.ts is stale for branding/niivue-icon.png - run 'pnpm generate:icons' and commit the result"; exit 1; }
+
       - name: Coverage aggregator unit tests
         run: pnpm coverage:report:test
 
