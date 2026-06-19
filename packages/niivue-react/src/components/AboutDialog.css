@@ -1,0 +1,86 @@
+/* About dialog (brand menu). Dark-themed to match the top bar; the `nv-`
+   prefix scopes these globally. */
+
+.nv-about {
+  width: min(440px, 92vw);
+  padding: 0;
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius);
+  background: var(--bg-4);
+  color: var(--fg-1);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.6);
+}
+.nv-about::backdrop {
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.nv-about-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+}
+
+.nv-about-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.nv-about-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--fg-0);
+  letter-spacing: -0.01em;
+}
+.nv-about-tagline {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--fg-2);
+}
+
+.nv-about-text {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--fg-1);
+}
+
+.nv-about-link {
+  color: var(--accent);
+  text-decoration: none;
+}
+.nv-about-link:hover {
+  text-decoration: underline;
+}
+
+.nv-about-links {
+  display: flex;
+  gap: 16px;
+  font-size: 12.5px;
+}
+
+.nv-about-version {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg-3);
+}
+
+.nv-about-close {
+  align-self: flex-end;
+  margin-top: 4px;
+  padding: 7px 16px;
+  border: 1px solid var(--line-2);
+  border-radius: 7px;
+  background: var(--bg-3);
+  color: var(--fg-1);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.nv-about-close:hover {
+  background: var(--bg-5);
+  color: var(--fg-0);
+}

@@ -1,8 +1,9 @@
 import './index.css'
 
+export { AboutDialog } from './components/AboutDialog'
 export { App } from './components/App'
 export { useAppState } from './components/AppProps'
-export type { AppProps, ScalingOpts, SelectionMode } from './components/AppProps'
+export type { AppInfo, AppProps, ScalingOpts, SelectionMode } from './components/AppProps'
 export { Container } from './components/Container'
 export { HeaderBox } from './components/HeaderBox'
 export { ImageDrop } from './components/ImageDrop'

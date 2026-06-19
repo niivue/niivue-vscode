@@ -1,4 +1,7 @@
 export interface MenuItems {
+  /** Gates the brand "viewer" dropdown (Reset Viewer / About). Named `home`
+   *  for back-compat: it formerly toggled the standalone Home button, whose
+   *  Reset action now lives in the brand menu. */
   home: boolean
   addImage: boolean
   view: boolean

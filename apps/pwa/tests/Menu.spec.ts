@@ -5,18 +5,29 @@ test.describe('Menu', () => {
   test('displays home screen', { tag: '@dom' }, async ({ page }) => {
     await page.goto(BASE_URL)
 
-    expect(await page.textContent('text=/Home/i')).toBeTruthy()
+    // The brand doubles as the viewer menu (Reset Viewer / About).
+    expect(await page.$('[data-testid="menu-brand"]')).toBeTruthy()
     expect(await page.textContent('text=/Add Image/i')).toBeTruthy()
     expect(await page.textContent('text=/View/i')).toBeTruthy()
     expect(await page.textContent('text=/Bookmarklet/i')).toBeTruthy()
     expect(await page.textContent('text=/Drop Files to load images/i')).toBeTruthy()
   })
 
+  test('brand menu opens Reset Viewer and About', { tag: '@dom' }, async ({ page }) => {
+    await page.goto(BASE_URL)
+
+    await page.click('data-testid=menu-brand')
+    expect(await page.textContent('text=/Reset Viewer/i')).toBeTruthy()
+
+    await page.click('text=/About/i')
+    await expect(page.getByTestId('about-dialog')).toBeVisible()
+    expect(await page.textContent('text=/NeuroDesk/i')).toBeTruthy()
+  })
+
   test('menubar updates with loading images', async ({ page }) => {
     await page.goto(BASE_URL)
 
     // initially only these menu items are visible
-    expect(await page.textContent('text=/Home/i')).toBeTruthy()
     expect(await page.textContent('text=/Add Image/i')).toBeTruthy()
     expect(await page.textContent('text=/View/i')).toBeTruthy()
 
@@ -33,7 +44,6 @@ test.describe('Menu', () => {
     ).toBeTruthy()
 
     // after loading an image these are visible
-    expect(await page.textContent('text=/Home/i')).toBeTruthy()
     expect(await page.textContent('text=/Add Image/i')).toBeTruthy()
     expect(await page.textContent('text=/View/i')).toBeTruthy()
     expect(await page.textContent('text=/ColorScale/i')).toBeTruthy()
@@ -56,7 +66,7 @@ test.describe('Menu', () => {
       await page.textContent('text=/matrix size:.*voxelsize:/i'),
     ).toBeTruthy()
 
-    const menuBar = ['Home', 'Add Image', 'View', 'ColorScale', 'Overlay', 'Header']
+    const menuBar = ['Add Image', 'View', 'ColorScale', 'Overlay', 'Header']
     for (const item of menuBar) {
       expect(await page.textContent(`text=/${item}/i`)).toBeTruthy()
     }

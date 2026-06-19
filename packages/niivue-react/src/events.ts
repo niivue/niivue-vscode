@@ -361,6 +361,31 @@ export function addImagesEvent() {
   }
 }
 
+/**
+ * Open a file picker for a NiiVue scene document (.nvd) and import it into a
+ * fresh canvas via the `loadDocument` message. This is the browser-host
+ * counterpart to `saveScene`'s download; vscode hosts persist scenes through
+ * their own services, so the menu gates this to non-vscode.
+ */
+export function loadDocumentEvent() {
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.accept = '.nvd'
+
+  input.onchange = async (e) => {
+    const file = (e.target as HTMLInputElement)?.files?.[0]
+    if (!file) return
+    try {
+      const document = await readNvdFile(file)
+      window.postMessage({ type: 'loadDocument', body: { document, name: file.name } })
+    } catch (err) {
+      console.error(`Failed to read .nvd file ${file.name}:`, err)
+    }
+  }
+
+  input.click()
+}
+
 export function addDcmFolderEvent() {
   if (typeof vscode === 'object') {
     vscode.postMessage({ type: 'addDcmFolder' })
