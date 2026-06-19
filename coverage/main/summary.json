@@ -2,26 +2,26 @@
   "shared-core": {
     "label": "Shared core (`packages/niivue-react`)",
     "stats": {
-      "statements": 45.9,
-      "branches": 46.9,
+      "statements": 45.7,
+      "branches": 46.8,
       "functions": 44.8,
-      "lines": 46.6
+      "lines": 46.2
     },
     "counts": {
       "statements": {
-        "covered": 1094,
+        "covered": 1087,
         "total": 2381
       },
       "branches": {
         "covered": 834,
-        "total": 1779
+        "total": 1783
       },
       "functions": {
         "covered": 328,
         "total": 732
       },
       "lines": {
-        "covered": 1030,
+        "covered": 1023,
         "total": 2212
       }
     }
@@ -164,26 +164,26 @@
   "_overall": {
     "label": "Overall",
     "stats": {
-      "statements": 42,
-      "branches": 42.1,
+      "statements": 41.7,
+      "branches": 42,
       "functions": 41.5,
-      "lines": 42.1
+      "lines": 41.9
     },
     "counts": {
       "statements": {
-        "covered": 1337,
+        "covered": 1330,
         "total": 3186
       },
       "branches": {
         "covered": 958,
-        "total": 2276
+        "total": 2280
       },
       "functions": {
         "covered": 382,
         "total": 921
       },
       "lines": {
-        "covered": 1260,
+        "covered": 1253,
         "total": 2991
       }
     }
