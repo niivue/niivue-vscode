@@ -2,27 +2,27 @@
   "shared-core": {
     "label": "Shared core (`packages/niivue-react`)",
     "stats": {
-      "statements": 46.9,
-      "branches": 48.1,
-      "functions": 45.7,
-      "lines": 47.4
+      "statements": 46.6,
+      "branches": 48,
+      "functions": 45.8,
+      "lines": 47.2
     },
     "counts": {
       "statements": {
-        "covered": 1143,
-        "total": 2439
+        "covered": 1149,
+        "total": 2464
       },
       "branches": {
-        "covered": 879,
-        "total": 1829
+        "covered": 886,
+        "total": 1847
       },
       "functions": {
-        "covered": 343,
-        "total": 751
+        "covered": 349,
+        "total": 762
       },
       "lines": {
-        "covered": 1075,
-        "total": 2268
+        "covered": 1079,
+        "total": 2284
       }
     }
   },
@@ -30,7 +30,7 @@
     "label": "`apps/pwa`",
     "stats": {
       "statements": 28.3,
-      "branches": 32.4,
+      "branches": 30,
       "functions": 52.9,
       "lines": 29.5
     },
@@ -40,8 +40,8 @@
         "total": 46
       },
       "branches": {
-        "covered": 11,
-        "total": 34
+        "covered": 9,
+        "total": 30
       },
       "functions": {
         "covered": 9,
@@ -83,19 +83,19 @@
   "streamlit-glue": {
     "label": "`apps/streamlit`",
     "stats": {
-      "statements": 17.8,
-      "branches": 5.3,
+      "statements": 17.9,
+      "branches": 5.4,
       "functions": 18.5,
-      "lines": 17.7
+      "lines": 17.8
     },
     "counts": {
       "statements": {
         "covered": 32,
-        "total": 180
+        "total": 179
       },
       "branches": {
         "covered": 8,
-        "total": 150
+        "total": 148
       },
       "functions": {
         "covered": 5,
@@ -103,7 +103,7 @@
       },
       "lines": {
         "covered": 31,
-        "total": 175
+        "total": 174
       }
     }
   },
@@ -138,7 +138,7 @@
     "label": "`apps/desktop-tauri`",
     "stats": {
       "statements": 81.8,
-      "branches": 59.1,
+      "branches": 65,
       "functions": 78.9,
       "lines": 84.3
     },
@@ -149,7 +149,7 @@
       },
       "branches": {
         "covered": 13,
-        "total": 22
+        "total": 20
       },
       "functions": {
         "covered": 15,
@@ -164,27 +164,27 @@
   "_overall": {
     "label": "Overall",
     "stats": {
-      "statements": 42.7,
+      "statements": 42.6,
       "branches": 43.1,
-      "functions": 42.2,
-      "lines": 42.8
+      "functions": 42.4,
+      "lines": 42.7
     },
     "counts": {
       "statements": {
-        "covered": 1386,
-        "total": 3245
+        "covered": 1392,
+        "total": 3269
       },
       "branches": {
-        "covered": 1002,
-        "total": 2324
+        "covered": 1007,
+        "total": 2334
       },
       "functions": {
-        "covered": 397,
-        "total": 940
+        "covered": 403,
+        "total": 951
       },
       "lines": {
-        "covered": 1305,
-        "total": 3048
+        "covered": 1309,
+        "total": 3063
       }
     }
   }
