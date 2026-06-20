@@ -455,6 +455,13 @@ export class ExtendedNiivue extends NiiVue {
 function growNvArrayBy(nvArray: Signal<NiiVue[]>, n: number) {
   for (let i = 0; i < n; i++) {
     const nv = new ExtendedNiivue({
+      // Force the WebGL2 backend. The default dual build tries WebGPU first and,
+      // when no adapter is available (VS Code webviews, Firefox/older browsers,
+      // headless CI), its fallback renders but never runs niivue's
+      // `initInteraction` - so clicks/drags do nothing and a drag instead starts
+      // the pane-reorder ghost. Selecting webgl2 up front takes the path that
+      // both renders and wires pointer interaction. See niivue/niivue-vscode#252.
+      backend: 'webgl2',
       // v1 made crosshair its own drag mode and the default for the primary
       // (left) button. Mapping the old `contrast` value here suppressed it, so
       // left-click/drag no longer moved the crosshair (regression vs 0.x). Keep

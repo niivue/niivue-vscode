@@ -48,27 +48,33 @@ export function useKeyboardShortcuts(handlers: KeyboardShortcutHandlers, enabled
       // Check each shortcut and call the corresponding handler
       if (matchesShortcut(event, UI_SHORTCUTS.VIEW_AXIAL) && handlers.onViewAxial) {
         event.preventDefault()
+        event.stopImmediatePropagation()
         handlers.onViewAxial()
       } else if (matchesShortcut(event, UI_SHORTCUTS.VIEW_SAGITTAL) && handlers.onViewSagittal) {
         event.preventDefault()
+        event.stopImmediatePropagation()
         handlers.onViewSagittal()
       } else if (matchesShortcut(event, UI_SHORTCUTS.VIEW_CORONAL) && handlers.onViewCoronal) {
         event.preventDefault()
+        event.stopImmediatePropagation()
         handlers.onViewCoronal()
       } else if (matchesShortcut(event, UI_SHORTCUTS.VIEW_RENDER) && handlers.onViewRender) {
         event.preventDefault()
+        event.stopImmediatePropagation()
         handlers.onViewRender()
       } else if (
         matchesShortcut(event, UI_SHORTCUTS.VIEW_MULTIPLANAR) &&
         handlers.onViewMultiplanar
       ) {
         event.preventDefault()
+        event.stopImmediatePropagation()
         handlers.onViewMultiplanar()
       } else if (
         matchesShortcut(event, UI_SHORTCUTS.VIEW_MULTIPLANAR_TIMESERIES) &&
         handlers.onViewMultiplanarTimeseries
       ) {
         event.preventDefault()
+        event.stopImmediatePropagation()
         handlers.onViewMultiplanarTimeseries()
       } else if (
         matchesShortcut(event, NIIVUE_CORE_SHORTCUTS.CYCLE_VIEW_MODE) &&
@@ -78,86 +84,107 @@ export function useKeyboardShortcuts(handlers: KeyboardShortcutHandlers, enabled
         // but since we want to sync our signal, we might handle it entirely in UI or just sync after.
         // If we handle it in UI, we SHOULD preventDefault to avoid double-cycling.
         event.preventDefault()
+        event.stopImmediatePropagation()
         handlers.onCycleViewMode()
       } else if (
         matchesShortcut(event, NIIVUE_CORE_SHORTCUTS.CYCLE_CLIP_PLANE) &&
         handlers.onCycleClipPlane
       ) {
         event.preventDefault()
+        event.stopImmediatePropagation()
         handlers.onCycleClipPlane()
       } else if (matchesShortcut(event, NIIVUE_CORE_SHORTCUTS.VOLUME_NEXT) && handlers.onVolumeNext) {
         event.preventDefault()
+        event.stopImmediatePropagation()
         handlers.onVolumeNext()
       } else if (matchesShortcut(event, NIIVUE_CORE_SHORTCUTS.VOLUME_PREV) && handlers.onVolumePrev) {
         event.preventDefault()
+        event.stopImmediatePropagation()
         handlers.onVolumePrev()
       } else if (matchesShortcut(event, UI_SHORTCUTS.RESET_VIEW) && handlers.onResetView) {
         event.preventDefault()
+        event.stopImmediatePropagation()
         handlers.onResetView()
       } else if (
         matchesShortcut(event, UI_SHORTCUTS.TOGGLE_INTERPOLATION) &&
         handlers.onToggleInterpolation
       ) {
         event.preventDefault()
+        event.stopImmediatePropagation()
         handlers.onToggleInterpolation()
       } else if (
         matchesShortcut(event, UI_SHORTCUTS.TOGGLE_COLORBAR) &&
         handlers.onToggleColorbar
       ) {
         event.preventDefault()
+        event.stopImmediatePropagation()
         handlers.onToggleColorbar()
       } else if (
         matchesShortcut(event, UI_SHORTCUTS.TOGGLE_RADIOLOGICAL) &&
         handlers.onToggleRadiological
       ) {
         event.preventDefault()
+        event.stopImmediatePropagation()
         handlers.onToggleRadiological()
       } else if (
         matchesShortcut(event, UI_SHORTCUTS.TOGGLE_CROSSHAIR) &&
         handlers.onToggleCrosshair
       ) {
         event.preventDefault()
+        event.stopImmediatePropagation()
         handlers.onToggleCrosshair()
       } else if (
         matchesShortcut(event, UI_SHORTCUTS.TOGGLE_ZOOM_MODE) &&
         handlers.onToggleZoomMode
       ) {
         event.preventDefault()
+        event.stopImmediatePropagation()
         handlers.onToggleZoomMode()
       } else if (matchesShortcut(event, UI_SHORTCUTS.ADD_IMAGE) && handlers.onAddImage) {
         event.preventDefault()
+        event.stopImmediatePropagation()
         handlers.onAddImage()
       } else if (matchesShortcut(event, UI_SHORTCUTS.ADD_OVERLAY) && handlers.onAddOverlay) {
         event.preventDefault()
+        event.stopImmediatePropagation()
         handlers.onAddOverlay()
       } else if (matchesShortcut(event, UI_SHORTCUTS.COLORSCALE) && handlers.onColorscale) {
         event.preventDefault()
+        event.stopImmediatePropagation()
         handlers.onColorscale()
       } else if (matchesShortcut(event, UI_SHORTCUTS.HIDE_UI) && handlers.onHideUI) {
         event.preventDefault()
+        event.stopImmediatePropagation()
         handlers.onHideUI()
       } else if (matchesShortcut(event, UI_SHORTCUTS.SHOW_HEADER) && handlers.onShowHeader) {
         event.preventDefault()
+        event.stopImmediatePropagation()
         handlers.onShowHeader()
       } else if (
         matchesShortcut(event, UI_SHORTCUTS.CROSSHAIR_SUPERIOR) &&
         handlers.onCrosshairSuperior
       ) {
         event.preventDefault()
+        event.stopImmediatePropagation()
         handlers.onCrosshairSuperior()
       } else if (
         matchesShortcut(event, UI_SHORTCUTS.CROSSHAIR_INFERIOR) &&
         handlers.onCrosshairInferior
       ) {
         event.preventDefault()
+        event.stopImmediatePropagation()
         handlers.onCrosshairInferior()
       }
     }
 
-    window.addEventListener('keydown', handleKeyDown)
+    // Capture phase + stopImmediatePropagation (above) so that for the keys the
+    // app owns (c/v, etc.) niivue's own window keydown listener - which v1
+    // attaches in initInteraction once the WebGL2 backend is active - does not
+    // also fire and double-act. See niivue/niivue-vscode#224.
+    window.addEventListener('keydown', handleKeyDown, true)
 
     return () => {
-      window.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('keydown', handleKeyDown, true)
     }
   }, [handlers, enabled])
 }

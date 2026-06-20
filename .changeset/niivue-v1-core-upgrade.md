@@ -15,8 +15,11 @@ This is a breaking dependency change. v1.0 is a WebGPU/WebGL2 rewrite: the `Niiv
 class became the default export `NiiVueGPU`, most setter methods became accessor
 properties, callbacks became DOM events, the data classes (`NVImage`/`NVMesh`/
 `NVDocument`) are now plain types with no constructors or statics, and scene/gl
-internals moved onto `nv.model`. We adopt the default dual-backend entry, so WebGPU is
-used where available (modern PWA browsers) and WebGL2 elsewhere (incl. VS Code webviews).
+internals moved onto `nv.model`. We pin the WebGL2 backend (`backend: 'webgl2'`): the
+default dual build tries WebGPU first and, when no adapter is available (VS Code webviews,
+many browsers, headless CI), its fallback renders but skips niivue's `initInteraction`, so
+clicks/drags do nothing. WebGL2 is mature and wires interaction everywhere; WebGPU can be
+revisited once the dual fallback handles interaction.
 
 The migration is centralised in `@niivue/react`; the apps inherit it through that package.
 
