@@ -28,6 +28,7 @@ import { mnc2nii } from '@niivue/minc-loader'
 import { Signal } from '@preact/signals'
 import { useEffect, useRef } from 'preact/hooks'
 import { ExtendedNiivue, notifyImageLoaded } from '../events'
+import { isNiftiName, NIFTI_PEEK_BYTES, niftiTooLargeWarning } from '../nifti'
 import { NiiVueSettings } from '../settings'
 import { isDicomData, isImageType } from '../utility'
 import { AppProps } from './AppProps'
@@ -248,6 +249,70 @@ async function loadDicomSeries(
   }
 }
 
+// Read just the leading bytes of a URL, then abort the rest of the download.
+// Used to inspect a NIfTI header without streaming the whole (multi-GB) file.
+async function fetchHeaderBytes(url: string, maxBytes = NIFTI_PEEK_BYTES): Promise<Uint8Array | null> {
+  try {
+    const response = await fetch(url)
+    if (!response.ok || !response.body) {
+      return null
+    }
+    const reader = response.body.getReader()
+    const chunks: Uint8Array[] = []
+    let total = 0
+    try {
+      while (total < maxBytes) {
+        const { value, done } = await reader.read()
+        if (done) {
+          break
+        }
+        if (value) {
+          chunks.push(value)
+          total += value.byteLength
+        }
+      }
+    } finally {
+      reader.cancel().catch(() => {})
+    }
+    if (total === 0) {
+      return null
+    }
+    const out = new Uint8Array(total)
+    let offset = 0
+    for (const chunk of chunks) {
+      out.set(chunk, offset)
+      offset += chunk.byteLength
+    }
+    return out
+  } catch {
+    return null
+  }
+}
+
+// Get the leading bytes of a NIfTI item for the size guard: a prefix of the
+// in-memory buffer when present, otherwise a header-only fetch of the URL.
+async function getNiftiHeaderBytes(item: any): Promise<ArrayBuffer | Uint8Array | null> {
+  const data = item.data
+  if (data && typeof data !== 'string') {
+    if (data instanceof ArrayBuffer) {
+      return data.byteLength > NIFTI_PEEK_BYTES ? data.slice(0, NIFTI_PEEK_BYTES) : data
+    }
+    if (ArrayBuffer.isView(data)) {
+      const view = new Uint8Array(data.buffer, data.byteOffset, data.byteLength)
+      return view.subarray(0, NIFTI_PEEK_BYTES)
+    }
+    if (Array.isArray(data) && data.length > 0) {
+      // Some postMessage bridges serialize buffers to plain number arrays.
+      return new Uint8Array(data.slice(0, NIFTI_PEEK_BYTES))
+    }
+    return null
+  }
+  if (!data && typeof item.uri === 'string' && item.uri.startsWith('http')) {
+    return fetchHeaderBytes(item.uri)
+  }
+  return null
+}
+
 async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSettings) {
   // Multi-file DICOM series: item.uri is an array of slice names with
   // item.data an array of buffers. Handle this first, because the single-file
@@ -256,6 +321,22 @@ async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSetting
   if (Array.isArray(item.uri)) {
     await loadDicomSeries(nv, item.uri, item.data, settings)
     return
+  }
+  // Guard: refuse NIfTI volumes whose uncompressed voxel data exceeds the ~2 GB
+  // ArrayBuffer/WebGL-texture ceiling before NiiVue tries to allocate it - which
+  // otherwise fails with "Array buffer allocation failed" or renders garbage.
+  // This is the universal net for every host reaching here: in-memory buffers
+  // (jupyter, streamlit, vscode binary) and URL streams (vscode local files)
+  // alike. The browser file picker is guarded earlier, in
+  // buildImageMessageBodies. See niivue/niivue-vscode#228.
+  if (typeof item.uri === 'string' && isNiftiName(item.uri)) {
+    const headerBytes = await getNiftiHeaderBytes(item)
+    if (headerBytes) {
+      const warning = await niftiTooLargeWarning(headerBytes, item.uri)
+      if (warning) {
+        throw new Error(warning)
+      }
+    }
   }
   const isMincFile = (uri: string) => {
     const lowerUri = uri.toLowerCase()
