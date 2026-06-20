@@ -38,8 +38,10 @@ describe('StatusBar', () => {
   })
 
   it('shows the matrix-size metadata for a loaded volume', () => {
+    // v1: metadata is read from the NIfTI header (the getImageMetadata helper),
+    // not a method. dims = [ndim, nx, ny, nz, nt]; pixDims = [qfac, dx, dy, dz].
     const nv = {
-      volumes: [{ getImageMetadata: () => ({ nx: 207, ny: 256, nz: 215, dx: 0.74, dy: 0.74, dz: 0.74, nt: 1 }) }],
+      volumes: [{ hdr: { dims: [3, 207, 256, 215, 1], pixDims: [1, 0.74, 0.74, 0.74] } }],
       meshes: [],
     }
     const props = makeProps({ nvArray: signal([nv]) })

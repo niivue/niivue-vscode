@@ -1,49 +1,43 @@
 import type { SceneDocument } from '@niivue/viewer-protocol'
+import { cborNvdToJson, jsonNvdToCbor, looksLikeJsonNvd } from './nvd-json'
 
 /**
- * `.nvd` (niivue NVDocument) import/export helpers for browser hosts.
+ * `.nvd` (niivue scene document) import/export helpers for browser hosts.
  *
- * Import reads a dropped/picked file into a plain document object; export
- * triggers a browser download. These are the persistence seam for a host with
- * `persistence: 'download'` (the PWA). The live niivue instance stays the
- * source of truth; we only serialize at this seam (VHP plan section 4).
+ * As of niivue v1.0 the native `.nvd` payload is the CBOR byte blob produced by
+ * `nv.serializeDocument()` and consumed by `nv.loadDocument(string | File)`. We
+ * additionally support a JSON form of the same document (see `nvd-json.ts`): a
+ * JSON `.nvd` (hand-authored in an editor, or exported via "Scene as JSON") is
+ * transcoded to CBOR on read, and a scene can be exported as readable JSON. The
+ * live niivue instance stays the source of truth; we only (trans)code at this
+ * seam. The actual scene decode/restore lives inside niivue.
  */
 
-/** True for a filename that is a niivue scene document. */
+/** True for a filename that is a niivue scene document (CBOR or JSON form). */
 export function isNvdFile(name: string): boolean {
-  return name.toLowerCase().endsWith('.nvd')
+  const n = name.toLowerCase()
+  return n.endsWith('.nvd') || n.endsWith('.nvd.json')
 }
 
 /**
- * Parse `.nvd` bytes into a plain document object. Supports both uncompressed
- * JSON and niivue's default gzip-compressed `.nvd` (detected by the gzip magic
- * bytes 0x1f 0x8b and inflated via the platform `DecompressionStream`).
+ * Return the `.nvd` bytes that `nv.loadDocument` accepts (CBOR). A CBOR file is
+ * passed through untouched; a JSON file is transcoded to CBOR so the same
+ * loader path handles both. niivue handles any gzip wrapping of CBOR internally.
  */
-export async function parseNvd(buffer: ArrayBuffer): Promise<SceneDocument> {
+export function parseNvd(buffer: ArrayBuffer): SceneDocument {
   const bytes = new Uint8Array(buffer)
-  let text: string
-  if (bytes.length > 1 && bytes[0] === 0x1f && bytes[1] === 0x8b) {
-    const stream = new Blob([buffer]).stream().pipeThrough(new DecompressionStream('gzip'))
-    text = await new Response(stream).text()
-  } else {
-    text = new TextDecoder().decode(buffer)
+  if (looksLikeJsonNvd(bytes)) {
+    return jsonNvdToCbor(new TextDecoder().decode(bytes))
   }
-  return JSON.parse(text) as SceneDocument
+  return bytes
 }
 
-/** Read a dropped/picked `.nvd` File (or Blob) into a document object. */
+/** Read a dropped/picked `.nvd` File (or Blob) into the CBOR bytes to load. */
 export async function readNvdFile(file: Blob): Promise<SceneDocument> {
   return parseNvd(await file.arrayBuffer())
 }
 
-/**
- * Trigger a browser download of a scene document as an (uncompressed) `.nvd`.
- * niivue's loaders accept both compressed and uncompressed `.nvd`, so plain
- * JSON keeps the file human-inspectable and round-trips cleanly.
- */
-export function downloadNvd(doc: SceneDocument, filename = 'scene.nvd'): void {
-  const name = isNvdFile(filename) ? filename : `${filename}.nvd`
-  const blob = new Blob([JSON.stringify(doc)], { type: 'application/json' })
+function triggerDownload(blob: Blob, name: string): void {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
@@ -53,4 +47,26 @@ export function downloadNvd(doc: SceneDocument, filename = 'scene.nvd'): void {
   a.remove()
   // Revoke on the next tick so the click has been dispatched.
   setTimeout(() => URL.revokeObjectURL(url), 0)
+}
+
+/**
+ * Trigger a browser download of a scene document as native CBOR `.nvd` bytes
+ * (the output of `nv.serializeDocument()`).
+ */
+export function downloadNvd(doc: SceneDocument, filename = 'scene.nvd'): void {
+  const name = isNvdFile(filename) ? filename : `${filename}.nvd`
+  // Copy into a fresh ArrayBuffer-backed view so the Blob owns standalone bytes.
+  const blob = new Blob([new Uint8Array(doc)], { type: 'application/octet-stream' })
+  triggerDownload(blob, name)
+}
+
+/**
+ * Trigger a browser download of a scene document as readable JSON. The CBOR
+ * bytes from `nv.serializeDocument()` are decoded to a JSON `.nvd` (embedded
+ * binary as `{ $bin: base64 }`); the result re-opens through `parseNvd`.
+ */
+export function downloadSceneJson(doc: SceneDocument, filename = 'scene.nvd.json'): void {
+  const name = filename.toLowerCase().endsWith('.json') ? filename : `${filename}.json`
+  const blob = new Blob([cborNvdToJson(new Uint8Array(doc))], { type: 'application/json' })
+  triggerDownload(blob, name)
 }

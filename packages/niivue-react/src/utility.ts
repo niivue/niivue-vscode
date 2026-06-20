@@ -1,16 +1,18 @@
-import { Niivue } from '@niivue/niivue'
+import NiiVue from '@niivue/niivue'
+import type { NVImage } from '@niivue/niivue'
 import { isNiftiName, NIFTI_PEEK_BYTES, niftiTooLargeWarning } from './nifti'
 
 // This function computes the display names for each Niivue instance in the array
 // It handles duplicate names by using overlay or layer names of the last item
-export function getNames(nvArray: Niivue[]) {
+export function getNames(nvArray: NiiVue[]) {
   // Get base names (first volume or mesh)
   const baseNames = nvArray.map((item) => {
     if (item.volumes.length > 0) {
       return decodeURIComponent(item.volumes[0].name)
     }
     if (item.meshes.length > 0) {
-      return decodeURIComponent(item.meshes[0].name)
+      // v1: NVMesh.name is optional; fall back to '' for a freshly created mesh.
+      return decodeURIComponent(item.meshes[0].name ?? '')
     }
     if ((item as any).uri) {
       return decodeURIComponent((item as any).uri)
@@ -283,9 +285,39 @@ export async function buildImageMessageBodies(
   return bodies
 }
 
-export function getMetadataString(nv: Niivue) {
-  const meta = nv?.volumes?.[0]?.getImageMetadata()
-  if (!meta || !meta.nx) {
+export interface ImageMetadata {
+  nx: number
+  ny: number
+  nz: number
+  nt: number
+  dx: number
+  dy: number
+  dz: number
+}
+
+/**
+ * Replacement for the removed per-image metadata accessor (niivue v1). Reads the
+ * matrix size and voxel dimensions straight off the NIfTI header dims/pixDims
+ * (1-based, matching the old return shape: nx,ny,nz,nt and dx,dy,dz). Returns an
+ * empty object when there is no header (mirrors the old undefined-when-absent).
+ */
+export function getImageMetadata(vol?: NVImage): ImageMetadata | Record<string, never> {
+  const h = vol?.hdr
+  if (!h) return {}
+  return {
+    nx: h.dims[1],
+    ny: h.dims[2],
+    nz: h.dims[3],
+    nt: h.dims[4],
+    dx: h.pixDims[1],
+    dy: h.pixDims[2],
+    dz: h.pixDims[3],
+  }
+}
+
+export function getMetadataString(nv: NiiVue) {
+  const meta = getImageMetadata(nv?.volumes?.[0])
+  if (!('nx' in meta) || !meta.nx) {
     return ''
   }
   const matrixString = 'matrix size: ' + meta.nx + ' x ' + meta.ny + ' x ' + meta.nz
@@ -300,9 +332,10 @@ export function getMetadataString(nv: Niivue) {
   return matrixString + ', ' + voxelString + timeString
 }
 
-export function getNumberOfPoints(nv: Niivue) {
+export function getNumberOfPoints(nv: NiiVue) {
   const mesh = nv?.meshes?.[0]
-  const matrixString = 'Number of Points: ' + mesh.pts.length / 3
+  // v1: mesh geometry is `positions` (flat x,y,z Float32Array); 3 floats per point.
+  const matrixString = 'Number of Points: ' + mesh.positions.length / 3
   return matrixString
 }
 

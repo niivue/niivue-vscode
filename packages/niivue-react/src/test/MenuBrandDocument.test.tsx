@@ -7,19 +7,39 @@ import { Menu } from '../components/Menu'
 import { activeMenu } from '../components/MenuElements'
 
 // jsdom has no WebGL and no <dialog> modal support; stub what the menu touches.
-vi.mock('@niivue/niivue', () => ({
-  SLICE_TYPE: { AXIAL: 0, CORONAL: 1, SAGITTAL: 2, MULTIPLANAR: 3, RENDER: 4 },
-  Niivue: vi.fn(),
-  NVImage: { loadFromUrl: vi.fn() },
-  NVMesh: { readMesh: vi.fn() },
-  NVMeshLoaders: { readLayer: vi.fn() },
-}))
+// v1: the package default export is the NiiVueGPU class (events.ts does
+// `import NiiVue from '@niivue/niivue'` and `extends NiiVue`), plus the DRAG_MODE /
+// SLICE_TYPE value enums. NVImage/NVMesh/NVMeshLoaders are gone; the instance
+// surface the menu touches lives on makeNv below.
+vi.mock('@niivue/niivue', () => {
+  class NiiVueGPU {
+    constructor(_opts?: unknown) {}
+    attachToCanvas = vi.fn()
+    addEventListener = vi.fn()
+    addVolume = vi.fn()
+    addMesh = vi.fn()
+    addMeshLayer = vi.fn()
+    setVolume = vi.fn()
+    setMeshLayerProperty = vi.fn()
+    updateGLVolume = vi.fn()
+    setFrame4D = vi.fn()
+  }
+  return {
+    __esModule: true,
+    default: NiiVueGPU,
+    SLICE_TYPE: { AXIAL: 0, CORONAL: 1, SAGITTAL: 2, MULTIPLANAR: 3, RENDER: 4 },
+    DRAG_MODE: { none: 0, contrast: 1, measurement: 2, pan: 3, slicer3D: 4, callbackOnly: 5, roiSelection: 6, angle: 7, crosshair: 8, windowing: 9 },
+  }
+})
 
-// Stub only the download helper so "Save" can be asserted without a real Blob/anchor.
+// Stub the download helpers so "Save" / "Save as JSON" can be asserted without a
+// real Blob/anchor.
 const downloadNvd = vi.fn()
+const downloadSceneJson = vi.fn()
 vi.mock('../document', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../document')>()),
   downloadNvd: (...args: unknown[]) => downloadNvd(...args),
+  downloadSceneJson: (...args: unknown[]) => downloadSceneJson(...args),
 }))
 
 // Capture the dedicated Load action wired to the NVDocument "Load" entry.
@@ -48,20 +68,19 @@ function makeNv() {
     volumes: [
       {
         name: 'brain.nii.gz',
-        getImageMetadata: () => ({ nx: 64, ny: 64, nz: 40, dx: 1, dy: 1, dz: 1, nt: 1 }),
+        // v1: metadata is read from the NIfTI header (the getImageMetadata helper),
+        // not a method. dims = [ndim, nx, ny, nz, nt]; pixDims = [qfac, dx, dy, dz].
+        hdr: { dims: [3, 64, 64, 40, 1], pixDims: [1, 1, 1, 1] },
+        nFrame4D: 1,
       },
     ],
     meshes: [],
-    scene: { pan2Dxyzmm: [0, 0, 0, 1] },
     opts: {},
-    json: () => ({ scene: 'data' }),
+    // v1: serializeDocument() (CBOR bytes) replaces nv.json(); saveScene hands
+    // the bytes to the (mocked) downloadNvd / downloadSceneJson helpers.
+    serializeDocument: () => new Uint8Array([1, 2, 3]),
     drawScene: vi.fn(),
     updateGLVolume: vi.fn(),
-    getRadiologicalConvention: vi.fn(() => false),
-    setInterpolation: vi.fn(),
-    setRadiologicalConvention: vi.fn(),
-    setCrosshairWidth: vi.fn(),
-    dragModes: { slicer3D: 1, contrast: 2 },
   }
 }
 
@@ -101,6 +120,17 @@ describe('NVDocument menu', () => {
 
     fireEvent.click(await screen.findByText('Load'))
     expect(loadDocumentEvent).toHaveBeenCalledTimes(1)
+    expect(downloadNvd).not.toHaveBeenCalled()
+  })
+
+  it('the chevron offers a JSON export that re-opens through parseNvd', async () => {
+    render(<Menu {...makeProps({ saveScene: true })} />)
+
+    fireEvent.click(screen.getByTestId('menu-item-dropdown-NVDocument'))
+
+    fireEvent.click(await screen.findByText('Save as JSON'))
+    expect(downloadSceneJson).toHaveBeenCalledTimes(1)
+    expect(downloadSceneJson.mock.calls[0][1]).toBe('brain.nvd.json')
     expect(downloadNvd).not.toHaveBeenCalled()
   })
 

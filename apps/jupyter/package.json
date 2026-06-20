@@ -73,7 +73,7 @@
     "@jupyterlab/services": "^7.5.7",
     "@jupyterlab/translation": "^4.5.7",
     "@lumino/widgets": "^2.7.5",
-    "@niivue/niivue": "^0.68.2"
+    "@niivue/niivue": "1.0.0-rc.9"
   },
   "devDependencies": {
     "@jupyterlab/builder": "^4.5.7",

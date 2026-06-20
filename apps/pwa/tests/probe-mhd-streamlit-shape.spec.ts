@@ -34,8 +34,20 @@ test('probe: addImage with body.pairedData renders MHD pair (Streamlit shape)', 
     timeout: 15000,
   })
 
+  // The MHD header parses with the right dimensions (proves the .mhd half of the
+  // pair was delivered and read).
   const bodyText = await page.evaluate(() => (document.body.innerText || '').slice(0, 500))
   expect(bodyText).toContain('64 x 64 x 64')
-  expect(bodyText).toContain('32 x 32 x 32')
-  expect(bodyText).toMatch(/VAL\s+255/)
+
+  // Verify the detached .raw voxels actually loaded into the volume. We check the
+  // decoded image directly rather than the crosshair POS/VAL readout: niivue v1
+  // computes a null x-axis affine for a transform-less MHD (sphere.mhd has only
+  // ElementSpacing), so vox<->mm - and thus the POS/VAL readout - is NaN. That is
+  // an upstream niivue limitation, not the pairedData plumbing this probe covers.
+  const vol = await page.evaluate(() => {
+    const v = (window as any).appProps?.nvArray?.value?.[0]?.volumes?.[0]
+    return { imgLen: v?.img?.length ?? 0, globalMax: v?.globalMax ?? 0 }
+  })
+  expect(vol.imgLen).toBe(64 * 64 * 64)
+  expect(vol.globalMax).toBe(255)
 })

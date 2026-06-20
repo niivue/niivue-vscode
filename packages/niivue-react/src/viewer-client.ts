@@ -1,4 +1,3 @@
-import type { ExportDocumentData } from '@niivue/niivue'
 import type {
   Disposable,
   JsonPatchOp,
@@ -51,9 +50,9 @@ export function createViewerClient(appProps: AppProps): ViewerClient {
       // Route through the bus so the deferred canvas-load lifecycle (GL must be
       // attached before nv.loadDocument) is reused. Resolves once the load is
       // enqueued; completion is observable via the loadedCount hook / the
-      // documentChanged event.
+      // documentChanged event. `doc` is the opaque `.nvd` CBOR byte payload.
       await handleMessage(
-        { type: 'loadDocument', body: { document: doc, name: doc.title } },
+        { type: 'loadDocument', body: { document: doc, name: 'document.nvd' } },
         appProps,
       )
       emit('documentChanged', undefined)
@@ -78,11 +77,9 @@ export function createViewerClient(appProps: AppProps): ViewerClient {
     async getDocument(): Promise<SceneDocument> {
       const nv = getActiveNv()
       if (!nv) throw new Error('getDocument: no canvas to export')
-      // nv.json() syncs the live volumes/meshes into the document and embeds a
-      // preview from the canvas. Cast at the niivue boundary: ExportDocumentData
-      // is structurally the SceneDocument, modulo the export-only Map field.
-      const exported: ExportDocumentData = nv.json()
-      return exported as unknown as SceneDocument
+      // v1: serializeDocument() returns the scene as the CBOR `.nvd` byte payload
+      // (a Uint8Array), which is exactly our SceneDocument. (nv.json() is gone.)
+      return nv.serializeDocument()
     },
 
     on<E extends ViewerEvent>(event: E, cb: (payload: ViewerEventMap[E]) => void): Disposable {

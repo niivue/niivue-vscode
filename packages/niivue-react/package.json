@@ -69,7 +69,8 @@
     "@fontsource/jetbrains-mono": "^5.0.0",
     "@niivue/dcm2niix": "^1.2.0",
     "@niivue/minc-loader": "^1.0.0",
-    "@niivue/viewer-protocol": "workspace:*"
+    "@niivue/viewer-protocol": "workspace:*",
+    "cbor-x": "^1.6.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
@@ -93,7 +94,7 @@
   },
   "peerDependencies": {
     "@niivue/dicom-loader": "^1.0.0",
-    "@niivue/niivue": "^0.68.2",
+    "@niivue/niivue": "1.0.0-rc.9",
     "@preact/signals": "^2.9.0",
     "preact": "^10.29.2"
   }

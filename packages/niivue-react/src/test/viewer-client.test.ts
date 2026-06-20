@@ -24,12 +24,14 @@ const flush = () => new Promise((resolve) => setTimeout(resolve, 0))
 beforeEach(() => handleMessage.mockClear())
 
 describe('createViewerClient (ViewerClient facade)', () => {
-  it('applyDocument posts a loadDocument message carrying the document', async () => {
+  it('applyDocument posts a loadDocument message carrying the document bytes', async () => {
     const client = createViewerClient(makeAppProps())
-    const doc = { title: 'scene.nvd', encodedImageBlobs: ['x'] }
+    // v1: the document is the opaque .nvd CBOR byte payload (a Uint8Array), not a
+    // JSON object; the facade uses a generic name (there is no title to read).
+    const doc = new Uint8Array([1, 2, 3, 4])
     await client.applyDocument(doc as never)
     expect(handleMessage).toHaveBeenCalledWith(
-      { type: 'loadDocument', body: { document: doc, name: 'scene.nvd' } },
+      { type: 'loadDocument', body: { document: doc, name: 'document.nvd' } },
       expect.anything(),
     )
   })
@@ -48,14 +50,15 @@ describe('createViewerClient (ViewerClient facade)', () => {
     ).rejects.toThrow(/not supported in v1/)
   })
 
-  it('getDocument serializes the selected canvas via nv.json()', async () => {
-    const exported = { title: 't', encodedImageBlobs: [], opts: {} }
-    const nvA = { json: vi.fn(() => ({ title: 'A' })) }
-    const nvB = { json: vi.fn(() => exported) }
+  it('getDocument serializes the selected canvas via nv.serializeDocument()', async () => {
+    // v1: getDocument returns the CBOR .nvd bytes from serializeDocument().
+    const exported = new Uint8Array([9, 8, 7])
+    const nvA = { serializeDocument: vi.fn(() => new Uint8Array([0])) }
+    const nvB = { serializeDocument: vi.fn(() => exported) }
     const client = createViewerClient(makeAppProps([nvA, nvB], [1]))
     const doc = await client.getDocument()
-    expect(nvB.json).toHaveBeenCalledTimes(1)
-    expect(nvA.json).not.toHaveBeenCalled()
+    expect(nvB.serializeDocument).toHaveBeenCalledTimes(1)
+    expect(nvA.serializeDocument).not.toHaveBeenCalled()
     expect(doc).toBe(exported)
   })
 
