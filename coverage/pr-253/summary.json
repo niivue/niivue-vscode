@@ -2,27 +2,27 @@
   "shared-core": {
     "label": "Shared core (`packages/niivue-react`)",
     "stats": {
-      "statements": 46.1,
-      "branches": 46.8,
-      "functions": 44.2,
-      "lines": 46.6
+      "statements": 51.8,
+      "branches": 49.4,
+      "functions": 46.3,
+      "lines": 52.7
     },
     "counts": {
       "statements": {
-        "covered": 1191,
-        "total": 2583
+        "covered": 1584,
+        "total": 3056
       },
       "branches": {
-        "covered": 917,
-        "total": 1959
+        "covered": 1167,
+        "total": 2360
       },
       "functions": {
-        "covered": 356,
-        "total": 806
+        "covered": 410,
+        "total": 885
       },
       "lines": {
-        "covered": 1122,
-        "total": 2406
+        "covered": 1498,
+        "total": 2843
       }
     }
   },
@@ -30,7 +30,7 @@
     "label": "`apps/pwa`",
     "stats": {
       "statements": 28.3,
-      "branches": 32.4,
+      "branches": 30,
       "functions": 52.9,
       "lines": 29.5
     },
@@ -40,8 +40,8 @@
         "total": 46
       },
       "branches": {
-        "covered": 11,
-        "total": 34
+        "covered": 9,
+        "total": 30
       },
       "functions": {
         "covered": 9,
@@ -83,27 +83,27 @@
   "streamlit-glue": {
     "label": "`apps/streamlit`",
     "stats": {
-      "statements": 17.8,
-      "branches": 5.3,
-      "functions": 18.5,
-      "lines": 17.7
+      "statements": 19.8,
+      "branches": 8.2,
+      "functions": 20.7,
+      "lines": 19.9
     },
     "counts": {
       "statements": {
-        "covered": 32,
-        "total": 180
+        "covered": 36,
+        "total": 182
       },
       "branches": {
-        "covered": 8,
-        "total": 150
+        "covered": 12,
+        "total": 146
       },
       "functions": {
-        "covered": 5,
-        "total": 27
+        "covered": 6,
+        "total": 29
       },
       "lines": {
-        "covered": 31,
-        "total": 175
+        "covered": 35,
+        "total": 176
       }
     }
   },
@@ -138,7 +138,7 @@
     "label": "`apps/desktop-tauri`",
     "stats": {
       "statements": 81.8,
-      "branches": 59.1,
+      "branches": 65,
       "functions": 78.9,
       "lines": 84.3
     },
@@ -149,7 +149,7 @@
       },
       "branches": {
         "covered": 13,
-        "total": 22
+        "total": 20
       },
       "functions": {
         "covered": 15,
@@ -164,27 +164,27 @@
   "_overall": {
     "label": "Overall",
     "stats": {
-      "statements": 42.3,
-      "branches": 42.4,
-      "functions": 41.2,
-      "lines": 42.4
+      "statements": 47.3,
+      "branches": 45.2,
+      "functions": 43,
+      "lines": 47.8
     },
     "counts": {
       "statements": {
-        "covered": 1434,
-        "total": 3389
+        "covered": 1825,
+        "total": 3858
       },
       "branches": {
-        "covered": 1040,
-        "total": 2454
+        "covered": 1278,
+        "total": 2826
       },
       "functions": {
-        "covered": 410,
-        "total": 995
+        "covered": 461,
+        "total": 1071
       },
       "lines": {
-        "covered": 1352,
-        "total": 3186
+        "covered": 1731,
+        "total": 3623
       }
     }
   }
