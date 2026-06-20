@@ -19,7 +19,6 @@ internals moved onto `nv.model`. We adopt the default dual-backend entry, so Web
 used where available (modern PWA browsers) and WebGL2 elsewhere (incl. VS Code webviews).
 
 The migration is centralised in `@niivue/react`; the apps inherit it through that package.
-See `docs/niivue-v1-migration.md` for the full old->new API mapping and the phased plan.
 
 Scene documents (`.nvd`) use niivue v1's native CBOR serialization. On top of that, a JSON
 form of the same v1 document is supported: a JSON `.nvd`/`.nvd.json` can be hand-authored in
