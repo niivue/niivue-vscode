@@ -1,4 +1,5 @@
 import { Niivue } from '@niivue/niivue'
+import { isNiftiName, NIFTI_PEEK_BYTES, niftiTooLargeWarning } from './nifti'
 
 // This function computes the display names for each Niivue instance in the array
 // It handles duplicate names by using overlay or layer names of the last item
@@ -193,7 +194,8 @@ export function isImageType(item: string) {
  * from the result so it is not loaded as a separate image.
  */
 export type ImageMessageBody = {
-  data: ArrayBuffer
+  // Omitted for load-error bodies (e.g. an oversized volume we refuse to read).
+  data?: ArrayBuffer
   uri: string
   pairedData?: ArrayBuffer
   loadError?: string
@@ -248,6 +250,23 @@ export async function buildImageMessageBodies(
   for (const file of files) {
     const key = file.name.toLowerCase()
     if (claimedAsPair.has(key)) continue
+    // Refuse NIfTI volumes whose uncompressed voxel data exceeds the ~2 GB
+    // ArrayBuffer/texture ceiling. Peek only the header (decompressing just the
+    // gzip prefix for .nii.gz) so we never read - let alone try to allocate -
+    // the whole multi-GB file. See niivue/niivue-vscode#228.
+    if (isNiftiName(file.name)) {
+      let tooLarge: string | null = null
+      try {
+        const head = await file.slice(0, NIFTI_PEEK_BYTES).arrayBuffer()
+        tooLarge = await niftiTooLargeWarning(head, file.name)
+      } catch {
+        // Couldn't peek the header (unusual) - fall through to a normal load.
+      }
+      if (tooLarge) {
+        bodies.push({ uri: file.name, loadError: tooLarge })
+        continue
+      }
+    }
     const data = mhdBuffers.get(key) ?? (await file.arrayBuffer())
     const loadError = errorByMhd.get(key)
     if (loadError) {
