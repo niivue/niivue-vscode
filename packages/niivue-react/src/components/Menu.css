@@ -16,12 +16,18 @@
    menu instead of wrapping to a second line. */
 .nv-bar { position: relative; flex: 1 1 auto; min-width: 0; }
 .nv-bar-row { display: flex; align-items: center; gap: 4px; }
-/* Off-screen twin used only to measure each item's natural width. */
+/* Off-screen twin used only to measure each item's natural width. Its box is
+   capped to the bar and overflow-clipped so the full-width proxy row (which is
+   wider than the viewport on narrow screens) never inflates the document scroll
+   area and produces page scrollbars. The proxies keep flex-shrink:0 so their
+   measured widths stay natural despite the cap. */
 .nv-bar-measure {
   position: absolute; top: 0; left: 0;
+  max-width: 100%; overflow: hidden;
   visibility: hidden; pointer-events: none;
   white-space: nowrap;
 }
+.nv-bar-measure > * { flex-shrink: 0; }
 
 .nv-more-toggle { padding: 6px 8px; }
 .nv-more-panel {
