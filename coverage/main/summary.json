@@ -2,27 +2,27 @@
   "shared-core": {
     "label": "Shared core (`packages/niivue-react`)",
     "stats": {
-      "statements": 49.6,
-      "branches": 49.7,
-      "functions": 46.6,
-      "lines": 50.3
+      "statements": 53,
+      "branches": 51.8,
+      "functions": 48.1,
+      "lines": 54
     },
     "counts": {
       "statements": {
-        "covered": 1331,
-        "total": 2684
+        "covered": 1468,
+        "total": 2771
       },
       "branches": {
-        "covered": 1003,
-        "total": 2017
+        "covered": 1096,
+        "total": 2115
       },
       "functions": {
-        "covered": 365,
-        "total": 783
+        "covered": 390,
+        "total": 810
       },
       "lines": {
-        "covered": 1259,
-        "total": 2502
+        "covered": 1385,
+        "total": 2566
       }
     }
   },
@@ -83,27 +83,27 @@
   "streamlit-glue": {
     "label": "`apps/streamlit`",
     "stats": {
-      "statements": 17.9,
-      "branches": 5.4,
-      "functions": 18.5,
-      "lines": 17.8
+      "statements": 19.8,
+      "branches": 8.2,
+      "functions": 20.7,
+      "lines": 19.9
     },
     "counts": {
       "statements": {
-        "covered": 32,
-        "total": 179
+        "covered": 36,
+        "total": 182
       },
       "branches": {
-        "covered": 8,
-        "total": 148
+        "covered": 12,
+        "total": 146
       },
       "functions": {
-        "covered": 5,
-        "total": 27
+        "covered": 6,
+        "total": 29
       },
       "lines": {
-        "covered": 31,
-        "total": 174
+        "covered": 35,
+        "total": 176
       }
     }
   },
@@ -164,27 +164,27 @@
   "_overall": {
     "label": "Overall",
     "stats": {
-      "statements": 45.1,
-      "branches": 44.9,
-      "functions": 43.1,
-      "lines": 45.4
+      "statements": 47.8,
+      "branches": 46.8,
+      "functions": 44.3,
+      "lines": 48.4
     },
     "counts": {
       "statements": {
-        "covered": 1574,
-        "total": 3489
+        "covered": 1709,
+        "total": 3573
       },
       "branches": {
-        "covered": 1124,
-        "total": 2504
+        "covered": 1207,
+        "total": 2581
       },
       "functions": {
-        "covered": 419,
-        "total": 972
+        "covered": 441,
+        "total": 996
       },
       "lines": {
-        "covered": 1489,
-        "total": 3281
+        "covered": 1618,
+        "total": 3346
       }
     }
   }
