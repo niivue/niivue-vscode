@@ -16,7 +16,7 @@ import {
     openImageFromURL,
 } from '../events'
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
-import { getImageMetadata, getMetadataString, getNumberOfPoints } from '../utility'
+import { getImageMetadata } from '../utility'
 import { AboutDialog } from './AboutDialog'
 import { AppInfo, AppProps, SelectionMode } from './AppProps'
 import { HeaderBox } from './HeaderBox'
@@ -83,16 +83,6 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
   const has4D = computed(() =>
     nvArraySelected.value.some((nv) => (nv.volumes?.[0]?.nFrame4D ?? 0) > 1)
   )
-
-  const displayInfo = computed(() => {
-    if (isVolume.value) {
-      return getMetadataString(nvArraySelected.value[0])
-    } else if (isMesh.value) {
-      return getNumberOfPoints(nvArraySelected.value[0])
-    } else {
-      return 'Metadata Info' // non-breaking space for empty line
-    }
-  })
 
   // Effects that occur when state or computed changes
   effect(() => applySelectionModeChange(selectionMode, selectionActive, selectMultiple))
@@ -801,7 +791,6 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
           </ImageSelect>
         </div>
       </div>
-      <p className="pl-2 text-fg-2">{displayInfo.value}</p>
       <ScalingBox
         selectedOverlayNumber={selectedOverlayNumber}
         overlayMenu={overlayMenu}

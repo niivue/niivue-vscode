@@ -3,6 +3,7 @@ import { AppProps } from './AppProps'
 import { Container } from './Container'
 import { ImageDrop } from './ImageDrop'
 import { Menu } from './Menu'
+import { StatusBar } from './StatusBar'
 
 export const App = ({ appProps }: { appProps: AppProps }) => {
   useEffect(() => {
@@ -14,7 +15,7 @@ export const App = ({ appProps }: { appProps: AppProps }) => {
     <ImageDrop>
       <Menu {...appProps} />
       <Container {...appProps} />
-      <div className="pl-2">{appProps.location?.value || '\u00A0'}</div>
+      <StatusBar {...appProps} />
     </ImageDrop>
   )
 }

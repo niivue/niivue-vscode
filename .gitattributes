@@ -1,0 +1,9 @@
+# The viewer logo is generated codegen (derived from branding/niivue-icon.png by
+# scripts/generate-icons.mjs) but committed because it is imported from
+# @niivue/react source. Mark it generated so GitHub collapses it in diffs and
+# excludes it from language stats; CI guards its freshness via the embedded
+# icon-master-sha256 (see .github/workflows/ci.yml).
+packages/niivue-react/src/assets/niivue-logo.ts linguist-generated=true
+
+# The single committed icon master.
+branding/niivue-icon.png binary

@@ -59,7 +59,12 @@ export const Volume = (props: AppProps & VolumeProps) => {
         intensity,
         location_local,
         location,
-        volumeIndex == selection.value[0],
+        // The global mm readout is owned by the first selected canvas. On a cold
+        // load NiiVue's initial onLocationChange can fire before a Menu effect
+        // initializes `selection` to [0]; fall back to canvas 0 so the readout
+        // populates immediately instead of staying blank until the next crosshair
+        // move.
+        selection.value.length > 0 ? volumeIndex === selection.value[0] : volumeIndex === 0,
         vol4D,
         nv,
       )

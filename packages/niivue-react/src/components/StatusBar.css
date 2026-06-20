@@ -1,0 +1,33 @@
+/* Bottom status strip. Global stylesheet; the `nv-` prefix provides scoping.
+   Deliberately slim (one text line) so it costs less vertical space than the
+   two rows it replaces. */
+
+.nv-statusbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-shrink: 0;
+  min-height: 22px;
+  padding: 2px var(--pad-x);
+  background: var(--bg-1);
+  border-top: 1px solid var(--line);
+  color: var(--fg-2);
+  font-family: var(--font-mono);
+  font-size: var(--font-xs);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* Metadata can be long; let it ellipsize rather than push the location off. */
+.nv-status-meta {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nv-status-loc {
+  flex-shrink: 0;
+  color: var(--fg-1);
+}

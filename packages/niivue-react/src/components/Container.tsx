@@ -24,7 +24,17 @@ export const Container = (props: AppProps) => {
   }
 
   useEffect(() => {
-    window.onresize = setSize
+    const el = sizeRef.current
+    if (!el) return
+    setSize()
+    // Observe the container's own box rather than only window resizes: the menu
+    // bar can reflow or collapse (overflow into "More", the status strip toggling
+    // with hideUI) with no window-resize event. A stale measurement then sizes
+    // the canvases too large and produces scrollbars on both axes.
+    if (typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(() => setSize())
+    observer.observe(el)
+    return () => observer.disconnect()
   }, [])
 
   useEffect(() => {
@@ -70,7 +80,7 @@ export const Container = (props: AppProps) => {
   const spacing = props.settings.value.tileSpacing ?? DEFAULT_TILE_SPACING
 
   return (
-    <div className="flex-grow h-full overflow-hidden" ref={sizeRef}>
+    <div className="flex-1 min-h-0 min-w-0 overflow-hidden" ref={sizeRef}>
       <div className="flex flex-wrap w-full m-1" style={{ gap: `${spacing}px` }}>
         {nvArray.value.map((nv, i) => (
           <Volume

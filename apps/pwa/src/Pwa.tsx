@@ -2,6 +2,7 @@ import {
   Container,
   ImageDrop,
   Menu,
+  StatusBar,
   createViewerClient,
   listenToMessages,
   type AppProps,
@@ -63,9 +64,7 @@ export const Pwa = ({ appProps }: { appProps: AppProps }) => {
       <Menu {...appProps} appInfo={appInfo} />
       {showHomeScreen.value && <HomeScreen />}
       <Container {...appProps} />
-      {appProps.hideUI.value > 0 && (
-        <div className="pl-2">{appProps.location?.value || '\u00A0'}</div>
-      )}
+      {appProps.hideUI.value > 0 && <StatusBar {...appProps} />}
     </ImageDrop>
   )
 }
