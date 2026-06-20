@@ -34,6 +34,7 @@
     "dev": "tauri dev",
     "build": "vite build",
     "build:bundle": "tauri build",
+    "generate:icons:tauri": "tauri icon ../../branding/niivue-icon.png && rimraf src-tauri/icons/android src-tauri/icons/ios",
     "clean": "rimraf build src-tauri/target",
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "pnpm run lint -- --fix",

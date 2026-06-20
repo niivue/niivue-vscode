@@ -1,4 +1,4 @@
-import { Container, ImageDrop, Menu, listenToMessages, type AppProps } from '@niivue/react'
+import { Container, ImageDrop, Menu, StatusBar, listenToMessages, type AppProps } from '@niivue/react'
 import { computed } from '@preact/signals'
 import { useEffect } from 'preact/hooks'
 import { readFileBytes } from '../tauri-bridge'
@@ -19,9 +19,7 @@ export const DesktopApp = ({ appProps }: { appProps: AppProps }) => {
       <Menu {...appProps} />
       {showHomeScreen.value && <DesktopHomeScreen />}
       <Container {...appProps} />
-      {appProps.hideUI.value > 0 && (
-        <div className="pl-2">{appProps.location?.value || ' '}</div>
-      )}
+      {appProps.hideUI.value > 0 && <StatusBar {...appProps} />}
     </ImageDrop>
   )
 }

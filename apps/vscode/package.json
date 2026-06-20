@@ -45,10 +45,11 @@
     "*"
   ],
   "scripts": {
-    "dev": "concurrently \"pnpm run esbuild-watch\" \"pnpm run watch:webview\"",
+    "generate:icons": "node ../../scripts/generate-icons.mjs vscode",
+    "dev": "pnpm run generate:icons && concurrently \"pnpm run esbuild-watch\" \"pnpm run watch:webview\"",
     "watch": "pnpm run esbuild-watch",
     "watch:webview": "cd ../../packages/niivue-react && pnpm dev:vscode-sync",
-    "build": "pnpm run build:css && pnpm run build:webview && pnpm run compile",
+    "build": "pnpm run generate:icons && pnpm run build:css && pnpm run build:webview && pnpm run compile",
     "compile": "pnpm run esbuild-base --minify",
     "build:css": "tailwindcss -i ./src/styles.css -o ./vscode-styles.css --minify",
     "build:webview": "node build-webview.mjs",
