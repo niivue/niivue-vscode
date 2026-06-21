@@ -30,7 +30,7 @@ import { useEffect, useRef } from 'preact/hooks'
 import { ExtendedNiivue, notifyImageLoaded } from '../events'
 import { isNiftiName, NIFTI_PEEK_BYTES, niftiTooLargeWarning } from '../nifti'
 import { NiiVueSettings } from '../settings'
-import { isDicomData, isImageType } from '../utility'
+import { graphmlToConnectome, isDicomData, isImageType } from '../utility'
 import { AppProps } from './AppProps'
 
 export interface NiiVueCanvasProps {
@@ -313,6 +313,47 @@ async function getNiftiHeaderBytes(item: any): Promise<ArrayBuffer | Uint8Array 
   return null
 }
 
+// Decode a GraphML payload (drag/drop buffer, postMessage number array, or
+// already-decoded string) to text.
+function graphmlBytesToText(data: any): string {
+  if (typeof data === 'string') {
+    return data
+  }
+  if (data instanceof ArrayBuffer) {
+    return new TextDecoder().decode(data)
+  }
+  if (ArrayBuffer.isView(data)) {
+    return new TextDecoder().decode(data as ArrayBufferView)
+  }
+  if (Array.isArray(data)) {
+    return new TextDecoder().decode(new Uint8Array(data))
+  }
+  throw new Error('Unsupported GraphML data type')
+}
+
+// Load a GraphML graph as a NiiVue connectome. The bytes come inlined
+// (drag/drop, vscode binary payload) or must be fetched from a URL (webview
+// resource, ?images= query parameter). NiiVue loads connectomes from a .jcon
+// mesh, so the converted graph is wrapped in a .jcon File whose name lets the
+// mesh loader detect the format and read it as bytes.
+async function loadGraphmlConnectome(nv: ExtendedNiivue, item: any) {
+  let text: string
+  if (item.data) {
+    text = graphmlBytesToText(item.data)
+  } else {
+    const response = await fetch(item.uri)
+    if (!response.ok) {
+      throw new Error(`Failed to fetch GraphML (${response.status} ${response.statusText})`)
+    }
+    text = await response.text()
+  }
+  const baseName = (item.uri.split('?')[0].split('/').pop() || 'graph').replace(/\.graphml$/i, '')
+  const connectome = graphmlToConnectome(text)
+  const jconName = `${baseName}.jcon`
+  const file = new File([JSON.stringify(connectome)], jconName, { type: 'application/json' })
+  await nv.addMesh({ url: file, name: jconName })
+}
+
 async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSettings) {
   // Multi-file DICOM series: item.uri is an array of slice names with
   // item.data an array of buffers. Handle this first, because the single-file
@@ -320,6 +361,11 @@ async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSetting
   // on an array.
   if (Array.isArray(item.uri)) {
     await loadDicomSeries(nv, item.uri, item.data, settings)
+    return
+  }
+  // GraphML graphs (e.g. vessel skeletons) render as a NiiVue connectome.
+  if (item.uri.split('?')[0].toLowerCase().endsWith('.graphml')) {
+    await loadGraphmlConnectome(nv, item)
     return
   }
   // Guard: refuse NIfTI volumes whose uncompressed voxel data exceeds the ~2 GB

@@ -331,6 +331,9 @@
           },
           {
             "filenamePattern": "*.npz"
+          },
+          {
+            "filenamePattern": "*.graphml"
           }
         ]
       }
@@ -371,7 +374,8 @@
           ".mnc",
           ".mnc.gz",
           ".npy",
-          ".npz"
+          ".npz",
+          ".graphml"
         ],
         "icon": {
           "light": "./language-icon.png",
