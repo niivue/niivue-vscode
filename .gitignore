@@ -85,3 +85,9 @@ coverage/
 
 # Claude Code session metadata (worktrees, memory, jobs)
 .claude/
+.agent/
+
+# Local-only Claude project instructions (not shared in the repo)
+CLAUDE.md
+GEMINI.md
+
