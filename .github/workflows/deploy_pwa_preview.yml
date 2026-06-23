@@ -51,7 +51,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download build artifact
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: pwa-preview
           path: pwa-preview
@@ -100,7 +100,7 @@ jobs:
 
       - name: Deploy to gh-pages
         if: steps.meta.outputs.skip != 'true'
-        uses: peaceiris/actions-gh-pages@v4
+        uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./pwa-preview
@@ -112,7 +112,7 @@ jobs:
 
       - name: Comment preview URL on PR
         if: steps.meta.outputs.skip != 'true'
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         env:
           PR_NUMBER: ${{ steps.meta.outputs.number }}
         with:
@@ -148,7 +148,7 @@ jobs:
       # commit status on the PR head SHA.
       - name: Surface preview status on PR head commit
         if: steps.meta.outputs.skip != 'true'
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         env:
           PR_NUMBER: ${{ steps.meta.outputs.number }}
           HEAD_SHA: ${{ steps.meta.outputs.head_sha }}
