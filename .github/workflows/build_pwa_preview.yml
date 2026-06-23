@@ -79,7 +79,7 @@ jobs:
       # which is what reviewers see in the GitHub diff. Repository is implicit.
       - name: Checkout PR merge ref (pull_request)
         if: github.event_name == 'pull_request'
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
 
@@ -87,7 +87,7 @@ jobs:
       # this checks out the fork repo at the PR's head commit.
       - name: Checkout PR head (workflow_dispatch)
         if: github.event_name == 'workflow_dispatch'
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           repository: ${{ steps.pr.outputs.repo }}
           ref: ${{ steps.pr.outputs.ref }}
