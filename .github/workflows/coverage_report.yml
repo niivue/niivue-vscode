@@ -116,7 +116,7 @@ jobs:
 
       - name: Download coverage-publish artifact
         if: steps.check.outputs.skip != 'true'
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: coverage-publish
           path: coverage-publish
@@ -186,7 +186,7 @@ jobs:
 
       - name: Deploy coverage report to gh-pages
         if: steps.meta.outputs.skip == 'false'
-        uses: peaceiris/actions-gh-pages@v4
+        uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./coverage-publish
@@ -201,7 +201,7 @@ jobs:
           steps.meta.outputs.skip == 'false' &&
           steps.meta.outputs.pr_number != '' &&
           steps.meta.outputs.pr_number != 'null'
-        uses: marocchino/sticky-pull-request-comment@v3
+        uses: marocchino/sticky-pull-request-comment@d4d6b0936434b21bc8345ad45a440c5f7d2c40ff # v3
         with:
           number: ${{ steps.meta.outputs.pr_number }}
           path: coverage-publish/summary.md
@@ -211,7 +211,7 @@ jobs:
           steps.meta.outputs.skip == 'false' &&
           steps.meta.outputs.pr_number != '' &&
           steps.meta.outputs.pr_number != 'null'
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         env:
           DEST: ${{ steps.meta.outputs.dest }}
           HEAD_SHA: ${{ steps.meta.outputs.head_sha }}
