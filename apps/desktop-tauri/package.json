@@ -1,6 +1,6 @@
 {
   "name": "@niivue/tauri",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "description": "NiiVue Tauri - standalone medical image viewer built with Tauri",
