@@ -443,6 +443,7 @@ export class ExtendedNiivue extends NiiVue {
   key = NaN
   body = null
   documentData: File | null = null // pending .nvd import (CBOR bytes wrapped in a File), consumed by NiiVueCanvas
+  npyLoadersRegistered = false // guards one-time nv.useLoader registration for .npy/.npz (see NiiVueCanvas)
   onVolumeUpdated = () => { }
   onFrameUpdate = (frame: number) => { }
   // v1: cross-canvas pan/3D sync is handled natively by `nv.broadcastTo(targets)`

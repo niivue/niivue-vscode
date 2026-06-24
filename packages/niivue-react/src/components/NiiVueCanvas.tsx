@@ -29,6 +29,7 @@ import { Signal } from '@preact/signals'
 import { useEffect, useRef } from 'preact/hooks'
 import { ExtendedNiivue, notifyImageLoaded } from '../events'
 import { isNiftiName, NIFTI_PEEK_BYTES, niftiTooLargeWarning } from '../nifti'
+import { convertNpy, convertNpz, isNpyName } from '../npy'
 import { NiiVueSettings } from '../settings'
 import { isDicomData, isImageType } from '../utility'
 import { AppProps } from './AppProps'
@@ -337,6 +338,16 @@ async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSetting
         throw new Error(warning)
       }
     }
+  }
+  // NumPy .npy/.npz: register converters that down-cast element types NiiVue's
+  // reader cannot handle (notably int64/uint64, numpy's default integer types)
+  // so the volume displays instead of erroring or rendering black. See #90.
+  // Registered once per instance: the npy converter shares its from/to extension,
+  // so re-registering would nest it around the previous reader on every load.
+  if (isNpyName(item.uri) && !nv.npyLoadersRegistered) {
+    nv.useLoader(convertNpy, 'npy', 'npy')
+    nv.useLoader(convertNpz, 'npz', 'npy')
+    nv.npyLoadersRegistered = true
   }
   const isMincFile = (uri: string) => {
     const lowerUri = uri.toLowerCase()
