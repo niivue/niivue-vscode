@@ -141,6 +141,10 @@
         "title": "NiiVue: Toggle Zoom Mode"
       },
       {
+        "command": "niivue.toggleWorldSpace",
+        "title": "NiiVue: Toggle World Space"
+      },
+      {
         "command": "niivue.addImage",
         "title": "NiiVue: Add Image"
       },
@@ -223,6 +227,11 @@
       {
         "command": "niivue.toggleZoomMode",
         "key": "z",
+        "when": "activeCustomEditorId == niiVue.default && !inputFocus"
+      },
+      {
+        "command": "niivue.toggleWorldSpace",
+        "key": "w",
         "when": "activeCustomEditorId == niiVue.default && !inputFocus"
       },
       {
@@ -407,6 +416,11 @@
           "type": "boolean",
           "default": false,
           "description": "Enable zoom drag mode by default."
+        },
+        "niivue.worldSpace": {
+          "type": "boolean",
+          "default": false,
+          "description": "Render slices in scanner (world) mm space by default. When off, slices are drawn on the native voxel grid, so an oblique acquisition is shown unrotated and unresampled."
         },
         "niivue.defaultVolumeColormap": {
           "type": "string",

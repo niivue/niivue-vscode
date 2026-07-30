@@ -36,6 +36,10 @@ export async function handleMessage(message: any, appProps: AppProps) {
         const index = body.index >= 0 ? body.index : nvArray.value.length - 1
         if (index >= 0 && index < nvArray.value.length) {
           await addOverlay(nvArray.value[index], body, settings.value)
+          // Re-emit the array so the Menu effects see the new volume. Without
+          // this the overlay keeps its world-space affine while the background
+          // has already been moved onto the voxel grid, and the two misalign.
+          nvArray.value = [...nvArray.value]
           notifyImageLoaded()
         }
       }

@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import type { KeyboardShortcut } from '../constants/keyboardShortcuts'
-import { formatShortcut, matchesShortcut, UI_SHORTCUTS } from '../constants/keyboardShortcuts'
+import {
+    formatShortcut,
+    matchesShortcut,
+    NIIVUE_CORE_SHORTCUTS,
+    UI_SHORTCUTS,
+} from '../constants/keyboardShortcuts'
 
 /** Build a KeyboardEvent-shaped object — only the four fields matchesShortcut inspects. */
 function evt(opts: { key: string; ctrl?: boolean; meta?: boolean; shift?: boolean; alt?: boolean }) {
@@ -75,6 +80,34 @@ describe('matchesShortcut', () => {
     expect(matchesShortcut(evt({ key: 'u', shift: true }), UI_SHORTCUTS.HIDE_UI)).toBe(false)
     expect(matchesShortcut(evt({ key: 'u', shift: true }), UI_SHORTCUTS.CROSSHAIR_SUPERIOR)).toBe(true)
     expect(matchesShortcut(evt({ key: 'u' }), UI_SHORTCUTS.CROSSHAIR_SUPERIOR)).toBe(false)
+  })
+})
+
+describe('the shortcut registry', () => {
+  // Both registries are dispatched from the same keydown handler (and niivue core
+  // watches its own keys), so a new entry that reuses a taken combination would
+  // silently shadow an existing action. ALL_SHORTCUTS is merged by name and hides
+  // that, hence walking the two registries directly.
+  it('assigns a unique key combination to every shortcut', () => {
+    const owners = new Map<string, string>()
+    const collisions: string[] = []
+    const registries = [
+      ['core', NIIVUE_CORE_SHORTCUTS],
+      ['ui', UI_SHORTCUTS],
+    ] as const
+    for (const [registry, shortcuts] of registries) {
+      for (const [name, shortcut] of Object.entries(shortcuts)) {
+        const combo = formatShortcut(shortcut)
+        const owner = `${registry}.${name}`
+        const previous = owners.get(combo)
+        if (previous) {
+          collisions.push(`${combo}: ${previous} vs ${owner}`)
+        } else {
+          owners.set(combo, owner)
+        }
+      }
+    }
+    expect(collisions).toEqual([])
   })
 })
 
