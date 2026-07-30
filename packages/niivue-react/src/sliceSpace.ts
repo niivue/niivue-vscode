@@ -6,10 +6,23 @@ import type { ExtendedNiivue } from './events'
  *
  * niivue 0.x exposed `opts.isSliceMM`: `false` (its default) drew 2D slices on
  * the native voxel grid, `true` drew them in scanner/world mm space, which
- * rotates and resamples an obliquely acquired volume. @niivue/niivue 1.0 dropped
- * the option and always renders in world space: its 2D model-view-projection is
- * built from `volumes[0].obliqueRAS`, which is only the identity for an
- * axis-aligned volume.
+ * rotates and resamples an obliquely acquired volume. @niivue/niivue 1.0 always
+ * renders in world space: its 2D model-view-projection is built from
+ * `volumes[0].obliqueRAS`, which is only the identity for an axis-aligned volume.
+ *
+ * There is a v1 option that looks like the successor. niivue/mono's own migration
+ * table (`packages/niivue/docs/convert.md`) maps `isSliceMM` to
+ * `ui.isPositionInMM`, and `documentLegacy.ts` applies that mapping when loading a
+ * 0.x document. It is a name-only successor: nothing in the render path reads
+ * `isPositionInMM` (in the mono source it appears only in its accessor, the
+ * defaults, type declarations, docs and the legacy-document mapping), and upstream
+ * `FEATURES.md` documents it as the *crosshair* coordinate space, not slice
+ * geometry. Setting it on an oblique volume in rc.9 leaves `obliqueRAS`, `frac2mm`,
+ * `tex2mm` and the extents bit-identical, so it cannot un-rotate the display.
+ * Likewise the matrices 0.x used for voxel space (`frac2mmOrtho`,
+ * `extentsMinOrtho`/`extentsMaxOrtho`, `mm2ortho`) are still computed by
+ * `calculateRAS` but consumed by nothing. Hence the affine route below; if
+ * upstream ever wires a real slice-space switch, this module can be deleted.
  *
  * Voxel space comes back through niivue's public affine API. Replacing a
  * volume's affine with its nearest axis-aligned equivalent makes `calculateRAS`

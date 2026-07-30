@@ -9,7 +9,9 @@
 
 Draw slices on the native voxel grid by default, with a **View > World Space** toggle (`W`) to switch back.
 
-niivue 0.x had `opts.isSliceMM`, whose default (`false`) drew 2D slices on the voxel grid; `true` drew them in scanner/world mm space, which rotates and resamples an obliquely acquired volume. The v1 core dropped the option and always renders in world space, so an oblique acquisition came up rotated with no way to see the rectangular grid it was measured on (#266).
+niivue 0.x had `opts.isSliceMM`, whose default (`false`) drew 2D slices on the voxel grid; `true` drew them in scanner/world mm space, which rotates and resamples an obliquely acquired volume. The v1 core always renders in world space, so an oblique acquisition came up rotated with no way to see the rectangular grid it was measured on (#266).
+
+The v1 option that looks like the replacement is not one: niivue/mono's migration table maps `isSliceMM` to `isPositionInMM`, but nothing in the render path reads that flag (upstream documents it as the *crosshair* coordinate space), and setting it on an oblique volume leaves `obliqueRAS`, `frac2mm` and the extents unchanged.
 
 - Voxel space is restored through niivue's public affine API: the volume affine is replaced by its nearest axis-aligned equivalent, which makes the core derive an identity `obliqueRAS` and lay the slices back on the voxel grid. Each voxel axis keeps its direction, sign and length, so the voxel data is neither permuted nor mirrored, and the world origin stays on the same voxel so the crosshair does not jump. `resetVolumeAffine` restores world space exactly.
 - The correction is derived from the background volume and applied to every volume of a canvas, so overlays stay registered to the background instead of each drifting onto its own grid. A volume that is already axis-aligned is left untouched, and an overlay loaded while voxel space is active is brought into line.
