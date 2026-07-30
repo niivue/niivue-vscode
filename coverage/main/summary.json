@@ -2,27 +2,27 @@
   "shared-core": {
     "label": "Shared core (`packages/niivue-react`)",
     "stats": {
-      "statements": 53,
-      "branches": 51.8,
-      "functions": 48.1,
-      "lines": 54
+      "statements": 51.1,
+      "branches": 50.1,
+      "functions": 47.9,
+      "lines": 52
     },
     "counts": {
       "statements": {
-        "covered": 1468,
-        "total": 2771
+        "covered": 1536,
+        "total": 3006
       },
       "branches": {
-        "covered": 1096,
-        "total": 2115
+        "covered": 1135,
+        "total": 2267
       },
       "functions": {
-        "covered": 390,
-        "total": 810
+        "covered": 405,
+        "total": 846
       },
       "lines": {
-        "covered": 1385,
-        "total": 2566
+        "covered": 1453,
+        "total": 2795
       }
     }
   },
@@ -164,27 +164,27 @@
   "_overall": {
     "label": "Overall",
     "stats": {
-      "statements": 47.8,
-      "branches": 46.8,
-      "functions": 44.3,
-      "lines": 48.4
+      "statements": 46.7,
+      "branches": 45.6,
+      "functions": 44.2,
+      "lines": 47.2
     },
     "counts": {
       "statements": {
-        "covered": 1709,
-        "total": 3573
+        "covered": 1777,
+        "total": 3808
       },
       "branches": {
-        "covered": 1207,
-        "total": 2581
+        "covered": 1246,
+        "total": 2733
       },
       "functions": {
-        "covered": 441,
-        "total": 996
+        "covered": 456,
+        "total": 1032
       },
       "lines": {
-        "covered": 1618,
-        "total": 3346
+        "covered": 1686,
+        "total": 3575
       }
     }
   }
