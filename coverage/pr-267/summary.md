@@ -2,7 +2,7 @@
 
 ![coverage](https://img.shields.io/endpoint?url=https://niivue.github.io/niivue-vscode/coverage/pr-267/badge.json)
 
-**Overall line coverage: 47.1% (−1.3) vs `main`**
+**Overall line coverage: 47.2% (−1.2) vs `main`**
 
 | Package | Statements | Branches | Functions | Lines |
 | --- | --- | --- | --- | --- |

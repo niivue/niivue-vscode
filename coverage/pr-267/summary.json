@@ -21,8 +21,8 @@
         "total": 846
       },
       "lines": {
-        "covered": 1452,
-        "total": 2794
+        "covered": 1453,
+        "total": 2795
       }
     }
   },
@@ -167,7 +167,7 @@
       "statements": 46.7,
       "branches": 45.6,
       "functions": 44.2,
-      "lines": 47.1
+      "lines": 47.2
     },
     "counts": {
       "statements": {
@@ -183,8 +183,8 @@
         "total": 1032
       },
       "lines": {
-        "covered": 1685,
-        "total": 3574
+        "covered": 1686,
+        "total": 3575
       }
     }
   }
