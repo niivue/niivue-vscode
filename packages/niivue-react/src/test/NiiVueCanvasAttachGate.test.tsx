@@ -2,19 +2,8 @@ import { signal } from '@preact/signals'
 import { cleanup, render, waitFor } from '@testing-library/preact'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-/**
- * Regression test for the intermittent "Failed to load image" seen when adding
- * several volumes in a row (niivue/niivue-vscode: image loading failures).
- *
- * `nv.attachToCanvas()` sets `nv.view` synchronously but only awaits
- * `view.init()` (GPU device, buffers, pipelines) afterwards, and
- * `nv.addVolume -> updateGLVolume -> view.updateBindGroups()` only guards on
- * `nv.view` being set. A volume whose decode finishes while init is still in
- * flight therefore hit a half-initialized view and threw
- * "createBindGroup ... 'buffer' ... Required member is undefined".
- *
- * NiiVueCanvas must not start a load until the attach promise has resolved.
- */
+// Regression test: a load starting before attachToCanvas settled hit a
+// half-initialized view and threw in createBindGroup. See niivue/mono#61.
 
 vi.mock('@niivue/dcm2niix', () => ({ Dcm2niix: class { init() {} } }))
 vi.mock('dcm2niix-worker', () => ({ default: 'blob:dcm2niix-worker' }))
@@ -111,14 +100,7 @@ describe('NiiVueCanvas attach gate', () => {
     expect(nv.loadError).toBe('')
   })
 
-  /**
-   * Environments with no usable GPU (headless Chromium exposes navigator.gpu but
-   * returns a null adapter, so niivue stays on WebGPU and throws "Failed to get
-   * WebGPU adapter") must keep loading. Without a device, updateBindGroups()
-   * returns at its own guard and the volume just never reaches the GPU.
-   * Propagating the attach rejection instead turns every load in CI into a
-   * "Failed to load image" tile.
-   */
+  // Headless CI has no GPU adapter, so attach always rejects there.
   it('still loads when attachToCanvas rejects, without reporting a load error', async () => {
     const nv = new ExtendedNiivue({}) as any
     nv.body = { data: new ArrayBuffer(64), uri: 'volume.nrrd' }

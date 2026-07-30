@@ -438,11 +438,7 @@ export class ExtendedNiivue extends NiiVue {
   isNew = true
   isLoaded = false
   isLoading = false // Prevent duplicate loadVolume calls during re-renders
-  // Settles once NiiVueCanvas' attachToCanvas() is done initializing the view
-  // (GPU device, buffers, pipelines). Loads must await it. It never rejects: an
-  // attach failure is logged and the load proceeds anyway - see the comment in
-  // NiiVueCanvas.tsx.
-  attached: Promise<void> | null = null
+  attached: Promise<void> | null = null // set by NiiVueCanvas; loads await it
   loadError = ''
   uri = ''
   key = NaN

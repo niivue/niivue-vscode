@@ -58,23 +58,9 @@ export const NiiVueCanvas = ({
     // v1: attachToCanvas is async (returns a Promise). Wire the native
     // 'frameChange' event to onFrameUpdate once attached - this replaces the old
     // ExtendedNiivue.setFrame4D override and fires for every frame change.
-    // The promise is kept on the instance so the load effects below can wait for
-    // it: attachToCanvas sets nv.view synchronously but only awaits view.init()
-    // (GPU device, buffers, pipelines) afterwards, and nv.addVolume ->
-    // updateGLVolume -> view.updateBindGroups() only guards on `nv.view` being
-    // set. A volume that finishes decoding inside that window hits a
-    // half-initialized view and throws
-    // "createBindGroup ... 'buffer' ... Required member is undefined".
-    //
-    // `nv.attached` resolves when attach *settles*, not only when it succeeds.
-    // Attach legitimately fails in environments with no usable GPU (headless
-    // Chromium returns a navigator.gpu object but a null adapter, so niivue
-    // stays on the WebGPU backend and throws "Failed to get WebGPU adapter";
-    // niivue only auto-falls back to WebGL2 when navigator.gpu is absent
-    // entirely). Loading anyway is the long-standing behaviour there: without a
-    // device, updateBindGroups() returns at its own `!this.device` guard and the
-    // volume simply does not reach the GPU. Rejecting here instead would turn
-    // every load in such an environment into a "Failed to load image" tile.
+    // Loads gate on nv.attached: nv.view exists before the GPU is initialized, and
+    // a load landing mid-init throws. Settles rather than rejects, so a machine
+    // with no usable GPU still loads (just without reaching the GPU).
     nv.attached = nv
       .attachToCanvas(canvasRef.current)
       .then(() => {
@@ -91,7 +77,6 @@ export const NiiVueCanvas = ({
     }
     nv.isLoading = true
     const body = nv.body
-    // Wait for attachToCanvas (see above) before touching the GPU.
     Promise.resolve(nv.attached)
       .then(() => loadVolume(nv, body, settings.value))
       .then(async () => {
@@ -123,7 +108,6 @@ export const NiiVueCanvas = ({
     nv.isLoading = true
     // v1: nv.loadDocument takes a string | File. document.ts hands us the `.nvd`
     // CBOR bytes already wrapped in a File, so we load it directly (no JSON layer).
-    // Same attach gate as the nv.body path above - loadDocument uploads volumes.
     Promise.resolve(nv.attached)
       .then(() => nv.loadDocument(docFile))
       .then(() => {
