@@ -58,9 +58,17 @@ export const NiiVueCanvas = ({
     // v1: attachToCanvas is async (returns a Promise). Wire the native
     // 'frameChange' event to onFrameUpdate once attached - this replaces the old
     // ExtendedNiivue.setFrame4D override and fires for every frame change.
-    nv.attachToCanvas(canvasRef.current).then(() => {
-      nv.addEventListener('frameChange', (e) => nv.onFrameUpdate(e.detail.frame))
-    })
+    // Loads gate on nv.attached: nv.view exists before the GPU is initialized, and
+    // a load landing mid-init throws. Settles rather than rejects, so a machine
+    // with no usable GPU still loads (just without reaching the GPU).
+    nv.attached = nv
+      .attachToCanvas(canvasRef.current)
+      .then(() => {
+        nv.addEventListener('frameChange', (e) => nv.onFrameUpdate(e.detail.frame))
+      })
+      .catch((error) => {
+        console.error('attachToCanvas failed:', error)
+      })
   }, [canvasRef.current])
 
   useEffect(() => {
@@ -68,7 +76,9 @@ export const NiiVueCanvas = ({
       return
     }
     nv.isLoading = true
-    loadVolume(nv, nv.body, settings.value)
+    const body = nv.body
+    Promise.resolve(nv.attached)
+      .then(() => loadVolume(nv, body, settings.value))
       .then(async () => {
         nv.isLoaded = true
         nv.isLoading = false
@@ -98,7 +108,8 @@ export const NiiVueCanvas = ({
     nv.isLoading = true
     // v1: nv.loadDocument takes a string | File. document.ts hands us the `.nvd`
     // CBOR bytes already wrapped in a File, so we load it directly (no JSON layer).
-    nv.loadDocument(docFile)
+    Promise.resolve(nv.attached)
+      .then(() => nv.loadDocument(docFile))
       .then(() => {
         nv.isLoaded = true
         nv.isLoading = false

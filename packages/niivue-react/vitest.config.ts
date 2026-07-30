@@ -1,6 +1,13 @@
+import { resolve } from 'path'
 import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      // vite.config.ts generates this virtual module; vitest does not.
+      'dcm2niix-worker': resolve(__dirname, 'src/test/stubs/dcm2niix-worker.ts'),
+    },
+  },
   test: {
     globals: true,
     environment: 'jsdom',

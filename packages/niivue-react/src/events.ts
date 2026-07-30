@@ -438,6 +438,7 @@ export class ExtendedNiivue extends NiiVue {
   isNew = true
   isLoaded = false
   isLoading = false // Prevent duplicate loadVolume calls during re-renders
+  attached: Promise<void> | null = null // set by NiiVueCanvas; loads await it
   loadError = ''
   uri = ''
   key = NaN
