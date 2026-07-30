@@ -58,7 +58,14 @@ export const NiiVueCanvas = ({
     // v1: attachToCanvas is async (returns a Promise). Wire the native
     // 'frameChange' event to onFrameUpdate once attached - this replaces the old
     // ExtendedNiivue.setFrame4D override and fires for every frame change.
-    nv.attachToCanvas(canvasRef.current).then(() => {
+    // The promise is kept on the instance so the load effects below can wait for
+    // it: attachToCanvas sets nv.view synchronously but only awaits view.init()
+    // (GPU device, buffers, pipelines) afterwards, and nv.addVolume ->
+    // updateGLVolume -> view.updateBindGroups() only guards on `nv.view` being
+    // set. A volume that finishes decoding inside that window hits a
+    // half-initialized view and throws
+    // "createBindGroup ... 'buffer' ... Required member is undefined".
+    nv.attached = nv.attachToCanvas(canvasRef.current).then(() => {
       nv.addEventListener('frameChange', (e) => nv.onFrameUpdate(e.detail.frame))
     })
   }, [canvasRef.current])
@@ -68,7 +75,10 @@ export const NiiVueCanvas = ({
       return
     }
     nv.isLoading = true
-    loadVolume(nv, nv.body, settings.value)
+    const body = nv.body
+    // Wait for attachToCanvas (see above) before touching the GPU.
+    Promise.resolve(nv.attached)
+      .then(() => loadVolume(nv, body, settings.value))
       .then(async () => {
         nv.isLoaded = true
         nv.isLoading = false
@@ -98,7 +108,9 @@ export const NiiVueCanvas = ({
     nv.isLoading = true
     // v1: nv.loadDocument takes a string | File. document.ts hands us the `.nvd`
     // CBOR bytes already wrapped in a File, so we load it directly (no JSON layer).
-    nv.loadDocument(docFile)
+    // Same attach gate as the nv.body path above - loadDocument uploads volumes.
+    Promise.resolve(nv.attached)
+      .then(() => nv.loadDocument(docFile))
       .then(() => {
         nv.isLoaded = true
         nv.isLoading = false
