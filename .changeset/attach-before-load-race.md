@@ -27,8 +27,14 @@ visible.
 
 - `NiiVueCanvas` keeps the attach promise on the instance (`nv.attached`) and
   gates both GPU-touching load paths (`nv.body` and `nv.documentData`) behind it.
-- An attach failure now surfaces its own message (e.g. the WebGL2-context hint)
-  instead of a confusing downstream error from a doomed load.
-- New unit test `NiiVueCanvasAttachGate` asserts `addVolume` is not called until
-  the attach promise resolves; `vitest.config.ts` aliases the `dcm2niix-worker`
+- The gate waits for attach to *settle*, not to succeed. Attach legitimately
+  fails where no GPU is usable (headless Chromium exposes `navigator.gpu` but
+  returns a null adapter, so niivue stays on WebGPU and throws "Failed to get
+  WebGPU adapter"; it only auto-falls back to WebGL2 when `navigator.gpu` is
+  absent entirely). Loading anyway is the long-standing behaviour there -
+  without a device `updateBindGroups()` returns at its own guard and the volume
+  simply never reaches the GPU. The failure is logged instead of swallowed.
+- New unit tests `NiiVueCanvasAttachGate` assert `addVolume` is not called until
+  the attach promise settles, and that a rejected attach still loads without
+  reporting a load error; `vitest.config.ts` aliases the `dcm2niix-worker`
   virtual module so components pulling in the DICOM loader are unit-testable.

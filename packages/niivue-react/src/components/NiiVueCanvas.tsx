@@ -65,9 +65,24 @@ export const NiiVueCanvas = ({
     // set. A volume that finishes decoding inside that window hits a
     // half-initialized view and throws
     // "createBindGroup ... 'buffer' ... Required member is undefined".
-    nv.attached = nv.attachToCanvas(canvasRef.current).then(() => {
-      nv.addEventListener('frameChange', (e) => nv.onFrameUpdate(e.detail.frame))
-    })
+    //
+    // `nv.attached` resolves when attach *settles*, not only when it succeeds.
+    // Attach legitimately fails in environments with no usable GPU (headless
+    // Chromium returns a navigator.gpu object but a null adapter, so niivue
+    // stays on the WebGPU backend and throws "Failed to get WebGPU adapter";
+    // niivue only auto-falls back to WebGL2 when navigator.gpu is absent
+    // entirely). Loading anyway is the long-standing behaviour there: without a
+    // device, updateBindGroups() returns at its own `!this.device` guard and the
+    // volume simply does not reach the GPU. Rejecting here instead would turn
+    // every load in such an environment into a "Failed to load image" tile.
+    nv.attached = nv
+      .attachToCanvas(canvasRef.current)
+      .then(() => {
+        nv.addEventListener('frameChange', (e) => nv.onFrameUpdate(e.detail.frame))
+      })
+      .catch((error) => {
+        console.error('attachToCanvas failed:', error)
+      })
   }, [canvasRef.current])
 
   useEffect(() => {
