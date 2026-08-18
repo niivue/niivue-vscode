@@ -53,7 +53,9 @@ export const NiiVueCanvas = ({
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
   useEffect(() => {
-    if (!canvasRef.current || nv.canvas) {
+    // nv.attached is assigned synchronously below, so it closes the window that
+    // nv.canvas alone leaves open while the async backend probe is in flight.
+    if (!canvasRef.current || nv.canvas || nv.attached) {
       return
     }
     // v1: attachToCanvas is async (returns a Promise). Probe WebGPU first and
