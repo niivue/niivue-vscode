@@ -27,6 +27,7 @@ import { dicomLoader } from '@niivue/dicom-loader'
 import { mnc2nii } from '@niivue/minc-loader'
 import { Signal } from '@preact/signals'
 import { useEffect, useRef } from 'preact/hooks'
+import { attachWithBackendFallback } from '../backend'
 import { ExtendedNiivue, notifyImageLoaded } from '../events'
 import { isNiftiName, NIFTI_PEEK_BYTES, niftiTooLargeWarning } from '../nifti'
 import { NiiVueSettings } from '../settings'
@@ -55,14 +56,14 @@ export const NiiVueCanvas = ({
     if (!canvasRef.current || nv.canvas) {
       return
     }
-    // v1: attachToCanvas is async (returns a Promise). Wire the native
-    // 'frameChange' event to onFrameUpdate once attached - this replaces the old
-    // ExtendedNiivue.setFrame4D override and fires for every frame change.
+    // v1: attachToCanvas is async (returns a Promise). Probe WebGPU first and
+    // fall back to WebGL2 when a device advertises navigator.gpu but cannot
+    // actually render. Wire the native 'frameChange' event to onFrameUpdate once
+    // attached - this replaces the old ExtendedNiivue.setFrame4D override.
     // Loads gate on nv.attached: nv.view exists before the GPU is initialized, and
     // a load landing mid-init throws. Settles rather than rejects, so a machine
     // with no usable GPU still loads (just without reaching the GPU).
-    nv.attached = nv
-      .attachToCanvas(canvasRef.current)
+    nv.attached = attachWithBackendFallback(nv, canvasRef.current)
       .then(() => {
         nv.addEventListener('frameChange', (e) => nv.onFrameUpdate(e.detail.frame))
       })
