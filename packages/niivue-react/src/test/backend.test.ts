@@ -109,6 +109,23 @@ describe('attachWithBackendFallback', () => {
     expect(attachToCanvas).toHaveBeenCalledTimes(2)
   })
 
+  it('leaves opts.backend alone when there is no navigator.gpu', async () => {
+    // niivue already picks WebGL2 here, so there is nothing to correct.
+    vi.stubGlobal('navigator', {})
+    const { attachWithBackendFallback } = await loadBackend()
+    const nv: any = { opts: {}, attachToCanvas: vi.fn().mockResolvedValue(undefined) }
+    await attachWithBackendFallback(nv, {} as HTMLCanvasElement)
+    expect(nv.opts.backend).toBeUndefined()
+  })
+
+  it('pins webgl2 when a gpu is advertised but unusable', async () => {
+    vi.stubGlobal('navigator', { gpu: { requestAdapter: async () => null } })
+    const { attachWithBackendFallback } = await loadBackend()
+    const nv: any = { opts: {}, attachToCanvas: vi.fn().mockResolvedValue(undefined) }
+    await attachWithBackendFallback(nv, {} as HTMLCanvasElement)
+    expect(nv.opts.backend).toBe('webgl2')
+  })
+
   it('does not retry when already on webgl2', async () => {
     vi.stubGlobal('navigator', {}) // no gpu -> webgl2
     const { attachWithBackendFallback } = await loadBackend()

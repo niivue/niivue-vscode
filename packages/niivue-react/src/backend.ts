@@ -29,40 +29,52 @@ type GpuLike = {
   } | null>
 }
 
-let probe: Promise<BackendType> | undefined
+/**
+ * `pin` says whether we must write `opts.backend`. Only a genuine disagreement
+ * with niivue earns that: a device that advertises WebGPU but cannot use it, or
+ * an explicit override. When there is no `navigator.gpu` at all niivue already
+ * picks WebGL2, and pinning it there changes its init path for no benefit.
+ */
+type Probe = { backend: BackendType; pin: boolean }
 
-/** Resolve the backend once per session; cached for every canvas that attaches. */
-export function preferredBackend(): Promise<BackendType> {
+let probe: Promise<Probe> | undefined
+
+function resolveProbe(): Promise<Probe> {
   if (!probe) {
     probe = detectBackend()
   }
   return probe
 }
 
-async function detectBackend(): Promise<BackendType> {
+/** Resolve the backend once per session; cached for every canvas that attaches. */
+export async function preferredBackend(): Promise<BackendType> {
+  return (await resolveProbe()).backend
+}
+
+async function detectBackend(): Promise<Probe> {
   const override = backendOverride()
   if (override) {
-    return override
+    return { backend: override, pin: true }
   }
   const gpu =
     typeof navigator !== 'undefined' ? (navigator as unknown as { gpu?: GpuLike }).gpu : undefined
   if (!gpu) {
-    return 'webgl2'
+    return { backend: 'webgl2', pin: false }
   }
   try {
     const adapter = await gpu.requestAdapter()
     if (!adapter) {
-      return 'webgl2'
+      return { backend: 'webgl2', pin: true }
     }
     const device = await adapter.requestDevice()
     if (!device) {
-      return 'webgl2'
+      return { backend: 'webgl2', pin: true }
     }
     // We only needed to confirm a usable device exists; release this throwaway.
     device.destroy?.()
-    return 'webgpu'
+    return { backend: 'webgpu', pin: false }
   } catch {
-    return 'webgl2'
+    return { backend: 'webgl2', pin: true }
   }
 }
 
@@ -83,12 +95,8 @@ export async function attachWithBackendFallback(
   nv: ExtendedNiivue,
   canvas: HTMLCanvasElement,
 ): Promise<BackendType> {
-  const backend = await preferredBackend()
-  // Only ever demote. Assigning 'webgpu' would override niivue's own selection,
-  // which is stricter than this probe (it declines adapters we can still create,
-  // e.g. software ones), and promoting past it changes the backend rather than
-  // guarding it. An explicit ?backend= override is the one case that may promote.
-  if (nv.opts && (backend === 'webgl2' || backendOverride())) {
+  const { backend, pin } = await resolveProbe()
+  if (nv.opts && pin) {
     nv.opts.backend = backend
   }
   try {
@@ -99,7 +107,7 @@ export async function attachWithBackendFallback(
       throw err
     }
     console.warn('[niivue] WebGPU attach failed, falling back to WebGL2:', err)
-    probe = Promise.resolve('webgl2') // every later canvas skips WebGPU too
+    probe = Promise.resolve({ backend: 'webgl2', pin: true }) // later canvases skip WebGPU too
     if (nv.opts) {
       nv.opts.backend = 'webgl2'
     }
