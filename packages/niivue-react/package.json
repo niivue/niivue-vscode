@@ -94,7 +94,7 @@
   },
   "peerDependencies": {
     "@niivue/dicom-loader": "^1.0.0",
-    "@niivue/niivue": "1.0.0-rc.9",
+    "@niivue/niivue": "1.0.0-rc.12",
     "@preact/signals": "^2.9.0",
     "preact": "^10.29.2"
   }
