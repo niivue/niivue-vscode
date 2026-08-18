@@ -74,14 +74,25 @@ describe('preferredBackend', () => {
 })
 
 describe('attachWithBackendFallback', () => {
-  it('attaches on webgpu without fallback when it succeeds', async () => {
+  it('leaves opts.backend alone when the probe clears webgpu', async () => {
+    // Demote-only: niivue's own selection is stricter than this probe, so a clean
+    // probe must not pin 'webgpu' and override it.
     vi.stubGlobal('navigator', { gpu: workingGpu })
     const { attachWithBackendFallback } = await loadBackend()
     const nv: any = { opts: {}, attachToCanvas: vi.fn().mockResolvedValue(undefined) }
     const used = await attachWithBackendFallback(nv, {} as HTMLCanvasElement)
     expect(used).toBe('webgpu')
-    expect(nv.opts.backend).toBe('webgpu')
+    expect(nv.opts.backend).toBeUndefined()
     expect(nv.attachToCanvas).toHaveBeenCalledTimes(1)
+  })
+
+  it('pins the backend when ?backend= forces one', async () => {
+    vi.stubGlobal('navigator', { gpu: workingGpu })
+    vi.stubGlobal('location', { search: '?backend=webgpu' })
+    const { attachWithBackendFallback } = await loadBackend()
+    const nv: any = { opts: {}, attachToCanvas: vi.fn().mockResolvedValue(undefined) }
+    await attachWithBackendFallback(nv, {} as HTMLCanvasElement)
+    expect(nv.opts.backend).toBe('webgpu')
   })
 
   it('falls back to webgl2 and re-attaches when the webgpu attach throws', async () => {

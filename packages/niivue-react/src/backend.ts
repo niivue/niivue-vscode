@@ -84,7 +84,11 @@ export async function attachWithBackendFallback(
   canvas: HTMLCanvasElement,
 ): Promise<BackendType> {
   const backend = await preferredBackend()
-  if (nv.opts) {
+  // Only ever demote. Assigning 'webgpu' would override niivue's own selection,
+  // which is stricter than this probe (it declines adapters we can still create,
+  // e.g. software ones), and promoting past it changes the backend rather than
+  // guarding it. An explicit ?backend= override is the one case that may promote.
+  if (nv.opts && (backend === 'webgl2' || backendOverride())) {
     nv.opts.backend = backend
   }
   try {
