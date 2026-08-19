@@ -1,3 +1,4 @@
+// CI control: no-op change to trigger the full pipeline against current main.
 import NiiVue from '@niivue/niivue'
 import type { NVImage } from '@niivue/niivue'
 import { isNiftiName, NIFTI_PEEK_BYTES, niftiTooLargeWarning } from './nifti'
