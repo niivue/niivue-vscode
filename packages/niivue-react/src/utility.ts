@@ -1,5 +1,5 @@
 import NiiVue from '@niivue/niivue'
-import type { NVImage } from '@niivue/niivue'
+import type { NVImage, NVConnectomeOptions } from '@niivue/niivue'
 import { isNiftiName, NIFTI_PEEK_BYTES, niftiTooLargeWarning } from './nifti'
 
 // This function computes the display names for each Niivue instance in the array
@@ -186,6 +186,161 @@ export function isImageType(item: string) {
     '.mnc',
     '.mnc.gz',
   ].find((fileType) => item.endsWith(fileType))
+}
+
+// ---- GraphML (vessel graph / brain network) support ----
+//
+// Tools such as SkelHub export vessel skeletons and brain networks as GraphML
+// (an XML graph format). Each <node> carries world-space coordinates and each
+// <edge> joins two nodes. We convert this to NiiVue's connectome model (the
+// sparse JCON shape: a node/edge list plus display options) so the graph
+// renders as spheres (nodes) joined by cylinders (edges), matching how the
+// source tools preview these graphs as points and lines.
+
+interface ConnectomeNode {
+  name: string
+  x: number
+  y: number
+  z: number
+  colorValue: number
+  sizeValue: number
+}
+
+interface ConnectomeEdge {
+  first: number
+  second: number
+  colorValue: number
+}
+
+// A NiiVue connectome in the sparse JCON representation: node/edge lists plus
+// the display options the mesh loader reads from the same JSON.
+export type GraphmlConnectome = NVConnectomeOptions & {
+  nodes: ConnectomeNode[]
+  edges: ConnectomeEdge[]
+}
+
+// Direct element children of `parent` with the given local name. Used instead
+// of getElementsByTagName so a nested subgraph's nodes/edges/data are not
+// hoisted into the parent graph or element.
+function directChildren(parent: Element, localName: string): Element[] {
+  const result: Element[] = []
+  for (let i = 0; i < parent.childNodes.length; i++) {
+    const child = parent.childNodes[i]
+    if (child.nodeType === 1 && (child as Element).localName === localName) {
+      result.push(child as Element)
+    }
+  }
+  return result
+}
+
+// Read the GraphML <key> table so <data key="..."> references resolve to their
+// declared attribute names (e.g. key id "v_X" -> attribute "X").
+function readGraphmlKeyNames(doc: Document): Map<string, string> {
+  const keyNames = new Map<string, string>()
+  const keys = doc.getElementsByTagNameNS('*', 'key')
+  for (let i = 0; i < keys.length; i++) {
+    const id = keys[i].getAttribute('id')
+    if (!id) continue
+    keyNames.set(id, keys[i].getAttribute('attr.name') ?? id)
+  }
+  return keyNames
+}
+
+// Collect an element's direct <data> children, keyed by resolved attribute
+// name. Only direct children are read so a nested subgraph cannot leak its
+// values into the parent node/edge.
+function readGraphmlData(element: Element, keyNames: Map<string, string>): Record<string, string> {
+  const values: Record<string, string> = {}
+  for (const el of directChildren(element, 'data')) {
+    const key = el.getAttribute('key')
+    if (!key) continue
+    values[keyNames.get(key) ?? key] = el.textContent ?? ''
+  }
+  return values
+}
+
+// First finite coordinate found among the candidate attribute names. An empty
+// <data> value is treated as absent: Number('') is 0, which would otherwise
+// place the node at the origin instead of reporting a missing coordinate.
+function pickGraphmlCoordinate(
+  values: Record<string, string>,
+  candidates: string[],
+): number | undefined {
+  for (const key of candidates) {
+    const raw = values[key]
+    if (raw === undefined || raw.trim() === '') continue
+    const n = Number(raw)
+    if (Number.isFinite(n)) return n
+  }
+  return undefined
+}
+
+/**
+ * Convert GraphML text into a NiiVue connectome definition. Nodes need
+ * world-space coordinates under attributes `X`/`Y`/`Z` (or lowercase
+ * `x`/`y`/`z`); edges reference nodes by their GraphML `source`/`target` ids.
+ * Throws with a clear message when the file is not parseable GraphML, has no
+ * nodes, or has nodes without coordinates.
+ */
+export function graphmlToConnectome(text: string): GraphmlConnectome {
+  const doc = new DOMParser().parseFromString(text, 'application/xml')
+  if (doc.getElementsByTagName('parsererror').length > 0) {
+    throw new Error('Could not parse GraphML: the file is not valid XML')
+  }
+  const graph = doc.getElementsByTagNameNS('*', 'graph')[0]
+  if (!graph) {
+    throw new Error('Could not parse GraphML: no <graph> element found')
+  }
+
+  const keyNames = readGraphmlKeyNames(doc)
+
+  const nodes: ConnectomeNode[] = []
+  const idToIndex = new Map<string, number>()
+  for (const el of directChildren(graph, 'node')) {
+    const id = el.getAttribute('id')
+    if (!id) continue
+    const values = readGraphmlData(el, keyNames)
+    const x = pickGraphmlCoordinate(values, ['X', 'x'])
+    const y = pickGraphmlCoordinate(values, ['Y', 'y'])
+    const z = pickGraphmlCoordinate(values, ['Z', 'z'])
+    if (x === undefined || y === undefined || z === undefined) {
+      throw new Error(
+        'GraphML node is missing X/Y/Z coordinates; cannot place the graph in 3D space',
+      )
+    }
+    idToIndex.set(id, nodes.length)
+    nodes.push({ name: values.name ?? id, x, y, z, colorValue: 1, sizeValue: 1 })
+  }
+
+  if (nodes.length === 0) {
+    throw new Error('GraphML contains no nodes')
+  }
+
+  const edges: ConnectomeEdge[] = []
+  for (const el of directChildren(graph, 'edge')) {
+    const first = idToIndex.get(el.getAttribute('source') ?? '')
+    const second = idToIndex.get(el.getAttribute('target') ?? '')
+    if (first === undefined || second === undefined) continue
+    edges.push({ first, second, colorValue: 1 })
+  }
+
+  // Uniform color values with nodeMin==nodeMax and edgeMin==edgeMax: this keeps
+  // every node and edge visible (the default connectome thresholds would hide
+  // edges whose value falls below edgeMin) and gives the graph one flat color.
+  return {
+    nodes,
+    edges,
+    nodeColormap: 'warm',
+    nodeColormapNegative: 'winter',
+    nodeMinColor: 1,
+    nodeMaxColor: 1,
+    nodeScale: 2,
+    edgeColormap: 'warm',
+    edgeColormapNegative: 'winter',
+    edgeMin: 1,
+    edgeMax: 1,
+    edgeScale: 1,
+  }
 }
 
 /**
