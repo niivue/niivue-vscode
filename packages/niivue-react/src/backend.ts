@@ -24,9 +24,7 @@ import type { ExtendedNiivue } from './events'
 // Minimal structural shape of the bits of the WebGPU API we touch, so this file
 // does not depend on @webgpu/types being installed.
 type GpuLike = {
-  requestAdapter(): Promise<{
-    requestDevice(): Promise<{ destroy?(): void } | null>
-  } | null>
+  requestAdapter(): Promise<object | null>
 }
 
 /**
@@ -61,18 +59,13 @@ async function detectBackend(): Promise<Probe> {
   if (!gpu) {
     return { backend: 'webgl2', pin: false }
   }
+  // Adapter only. An earlier version also requested a device and destroyed it;
+  // that throwaway device changed niivue's own init and broke canvas key
+  // handling in CI (niivue-vscode#272), and the reactive catch below already
+  // covers a device that fails after the adapter is handed over.
   try {
     const adapter = await gpu.requestAdapter()
-    if (!adapter) {
-      return { backend: 'webgl2', pin: true }
-    }
-    const device = await adapter.requestDevice()
-    if (!device) {
-      return { backend: 'webgl2', pin: true }
-    }
-    // We only needed to confirm a usable device exists; release this throwaway.
-    device.destroy?.()
-    return { backend: 'webgpu', pin: false }
+    return adapter ? { backend: 'webgpu', pin: false } : { backend: 'webgl2', pin: true }
   } catch {
     return { backend: 'webgl2', pin: true }
   }

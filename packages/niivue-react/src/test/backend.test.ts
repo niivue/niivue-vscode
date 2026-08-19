@@ -42,18 +42,27 @@ describe('preferredBackend', () => {
     expect(await preferredBackend()).toBe('webgl2')
   })
 
-  it('returns webgl2 when requestDevice throws', async () => {
+  it('returns webgl2 when requestAdapter throws', async () => {
     vi.stubGlobal('navigator', {
       gpu: {
-        requestAdapter: async () => ({
-          requestDevice: async () => {
-            throw new Error('device lost')
-          },
-        }),
+        requestAdapter: async () => {
+          throw new Error('adapter request failed')
+        },
       },
     })
     const { preferredBackend } = await loadBackend()
     expect(await preferredBackend()).toBe('webgl2')
+  })
+
+  it('does not request a device; an adapter is enough to try webgpu', async () => {
+    // Creating and destroying a throwaway device perturbed niivue's own init
+    // (niivue-vscode#272). A device that fails after the adapter is handed over
+    // is caught by the attach fallback below, not by this probe.
+    const requestDevice = vi.fn()
+    vi.stubGlobal('navigator', { gpu: { requestAdapter: async () => ({ requestDevice }) } })
+    const { preferredBackend } = await loadBackend()
+    expect(await preferredBackend()).toBe('webgpu')
+    expect(requestDevice).not.toHaveBeenCalled()
   })
 
   it('honors a ?backend=webgl2 override even with a working GPU', async () => {

@@ -27,6 +27,7 @@ import { dicomLoader } from '@niivue/dicom-loader'
 import { mnc2nii } from '@niivue/minc-loader'
 import { Signal } from '@preact/signals'
 import { useEffect, useRef } from 'preact/hooks'
+import { attachWithBackendFallback } from '../backend'
 import { ExtendedNiivue, notifyImageLoaded } from '../events'
 import { isNiftiName, NIFTI_PEEK_BYTES, niftiTooLargeWarning } from '../nifti'
 import { convertNpy, convertNpz, isNpyName } from '../npy'
@@ -65,8 +66,7 @@ export const NiiVueCanvas = ({
     // Loads gate on nv.attached: nv.view exists before the GPU is initialized, and
     // a load landing mid-init throws. Settles rather than rejects, so a machine
     // with no usable GPU still loads (just without reaching the GPU).
-    nv.attached = nv
-      .attachToCanvas(canvasRef.current)
+    nv.attached = attachWithBackendFallback(nv, canvasRef.current)
       .then(() => {
         nv.addEventListener('frameChange', (e) => nv.onFrameUpdate(e.detail.frame))
       })
