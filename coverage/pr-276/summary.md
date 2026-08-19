@@ -6,7 +6,7 @@
 
 | Package | Statements | Branches | Functions | Lines |
 | --- | --- | --- | --- | --- |
-| Shared core (`packages/niivue-react`) | 51.6% (+0.2) | 49.6% (+0.1) | 48.1% (+0.3) | 52.3% (+0.2) |
+| Shared core (`packages/niivue-react`) | 51.5% (+0.1) | 49.5% | 48.1% (+0.3) | 52.2% (+0.1) |
 | `apps/pwa` | 28.3% | 30% | 52.9% | 29.5% |
 | `apps/jupyter` | 14.4% | 15.9% | 14.9% | 14.5% |
 | `apps/streamlit` | 19.8% | 8.2% | 20.7% | 19.9% |
