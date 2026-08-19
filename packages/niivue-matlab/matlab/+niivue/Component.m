@@ -98,6 +98,8 @@ classdef Component < matlab.ui.componentcontainer.ComponentContainer
                 'opacity', obj.Opacity));
             
             obj.HTMLComponent.Data = msg;
+            
+            drawnow % force the flush; consecutive writes coalesce otherwise
         end
         
         function onDataChanged(obj, ~, ~)
@@ -151,6 +153,7 @@ classdef Component < matlab.ui.componentcontainer.ComponentContainer
             msg = struct('type', 'setColormap', ...
                 'payload', struct('colormap', colormap, 'index', volumeIndex));
             obj.HTMLComponent.Data = msg;
+            drawnow % force the flush; consecutive writes coalesce otherwise
         end
         
         function setCrosshair(obj, x, y, z)
@@ -159,6 +162,7 @@ classdef Component < matlab.ui.componentcontainer.ComponentContainer
             msg = struct('type', 'updateCrosshairs', ...
                 'payload', struct('x', x, 'y', y, 'z', z));
             obj.HTMLComponent.Data = msg;
+            drawnow % force the flush; consecutive writes coalesce otherwise
             obj.CrosshairPos = [x, y, z];
         end
     end

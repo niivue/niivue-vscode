@@ -205,9 +205,15 @@ classdef Controller < handle
     methods (Access = private)
         function sendMessage(obj, msg)
             %SENDMESSAGE Send a message to the viewer
+            %   Writes coalesce: HTMLComponent.Data is one shared property
+            %   flushed to the browser when MATLAB yields, so two commands
+            %   issued back to back deliver only the second. drawnow forces
+            %   the flush, which is what makes consecutive calls such as
+            %   addVolume(a); addVolume(b) both arrive.
             
             if obj.ViewerReady
                 obj.HTMLComponent.Data = msg;
+                drawnow
             else
                 % Queue message until viewer is ready
                 obj.MessageQueue{end+1} = msg;
@@ -223,11 +229,15 @@ classdef Controller < handle
                 switch data.type
                     case 'viewerReady'
                         obj.ViewerReady = true;
-                        % Send queued messages
-                        for i = 1:length(obj.MessageQueue)
-                            obj.HTMLComponent.Data = obj.MessageQueue{i};
-                        end
+                        % Send queued messages. Take the queue first: the
+                        % drawnow below re-enters this callback, and a
+                        % reentrant call must not replay the same backlog.
+                        queued = obj.MessageQueue;
                         obj.MessageQueue = {};
+                        for i = 1:numel(queued)
+                            obj.HTMLComponent.Data = queued{i};
+                            drawnow
+                        end
                         
                     case 'crosshairUpdate'
                         if isfield(data, 'position')
