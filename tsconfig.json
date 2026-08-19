@@ -30,6 +30,9 @@
     },
     {
       "path": "./packages/viewer-protocol"
+    },
+    {
+      "path": "./packages/niivue-matlab"
     }
   ]
 }
