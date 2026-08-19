@@ -2,74 +2,21 @@ import type { BackendType } from '@niivue/niivue'
 import type { ExtendedNiivue } from './events'
 
 /**
- * Render-backend selection for the niivue v1 WebGPU migration.
+ * WebGL2 fallback for the niivue v1 WebGPU migration.
  *
- * niivue v1 defaults to WebGPU whenever `navigator.gpu` exists, but a browser
- * can advertise `navigator.gpu` and still fail to create a working device
- * (software / blocklisted adapter, driver bug, exhausted limits). niivue's own
- * guard only checks that `navigator.gpu` is *present*, so those browsers crash on
- * the first render with `createBindGroup ... Required member is undefined`
- * instead of degrading. Seen in the PWA on both .npy and .nii.gz while the
- * WebGL2-backed VS Code webview rendered the same files fine.
+ * niivue v1 selects WebGPU whenever `navigator.gpu` exists, but that only proves
+ * the API is present. A blocklisted or software adapter, a driver bug, or
+ * exhausted limits still fail at the first render with `createBindGroup ...
+ * Required member is undefined`, which shows up as a blank canvas in the PWA
+ * while the WebGL2-backed VS Code webview draws the same files fine.
  *
- * Strategy: try WebGPU first (the faster v1 default), fall back to WebGL2 (the
- * universally supported backend) - never the other way around, since WebGL2
- * essentially always works and would never yield to WebGPU. Two layers:
- *   1. a probe that actually requests an adapter + device before committing, and
- *   2. a reactive catch around attach, in case the probe passes but init still
- *      throws (the bind-group failure happens during the first real render).
- * A `?backend=webgl2` / `?backend=webgpu` URL param forces a backend for support.
+ * We catch a failing WebGPU attach and re-attach on WebGL2. An earlier version
+ * also probed `navigator.gpu` up front, but awaiting anything before
+ * `attachToCanvas` delays it past the synchronous point niivue expects and
+ * breaks canvas key handling (niivue-vscode#272, caught by
+ * keyboard-shortcuts.spec.ts). Everything here therefore stays synchronous up to
+ * the attach call.
  */
-
-// Minimal structural shape of the bits of the WebGPU API we touch, so this file
-// does not depend on @webgpu/types being installed.
-type GpuLike = {
-  requestAdapter(): Promise<object | null>
-}
-
-/**
- * `pin` says whether we must write `opts.backend`. Only a genuine disagreement
- * with niivue earns that: a device that advertises WebGPU but cannot use it, or
- * an explicit override. When there is no `navigator.gpu` at all niivue already
- * picks WebGL2, and pinning it there changes its init path for no benefit.
- */
-type Probe = { backend: BackendType; pin: boolean }
-
-let probe: Promise<Probe> | undefined
-
-function resolveProbe(): Promise<Probe> {
-  if (!probe) {
-    probe = detectBackend()
-  }
-  return probe
-}
-
-/** Resolve the backend once per session; cached for every canvas that attaches. */
-export async function preferredBackend(): Promise<BackendType> {
-  return (await resolveProbe()).backend
-}
-
-async function detectBackend(): Promise<Probe> {
-  const override = backendOverride()
-  if (override) {
-    return { backend: override, pin: true }
-  }
-  const gpu =
-    typeof navigator !== 'undefined' ? (navigator as unknown as { gpu?: GpuLike }).gpu : undefined
-  if (!gpu) {
-    return { backend: 'webgl2', pin: false }
-  }
-  // Adapter only. An earlier version also requested a device and destroyed it;
-  // that throwaway device changed niivue's own init and broke canvas key
-  // handling in CI (niivue-vscode#272), and the reactive catch below already
-  // covers a device that fails after the adapter is handed over.
-  try {
-    const adapter = await gpu.requestAdapter()
-    return adapter ? { backend: 'webgpu', pin: false } : { backend: 'webgl2', pin: true }
-  } catch {
-    return { backend: 'webgl2', pin: true }
-  }
-}
 
 /** `?backend=webgl2` or `?backend=webgpu` forces a backend (support / debugging). */
 function backendOverride(): BackendType | undefined {
@@ -81,30 +28,33 @@ function backendOverride(): BackendType | undefined {
 }
 
 /**
- * Attach `nv` to `canvas` on the probed backend, falling back to WebGL2 if a
- * WebGPU attach throws despite the probe passing. Returns the backend used.
+ * Attach `nv` to `canvas`, falling back to WebGL2 if a WebGPU attach throws.
+ * Returns the backend that ended up being used.
+ *
+ * Nothing may be awaited before `attachToCanvas`: an async function body runs
+ * synchronously up to its first `await`, and that is what keeps the attach on
+ * the same tick it was on before this module existed.
  */
-export async function attachWithBackendFallback(
+export function attachWithBackendFallback(
   nv: ExtendedNiivue,
   canvas: HTMLCanvasElement,
 ): Promise<BackendType> {
-  const { backend, pin } = await resolveProbe()
-  if (nv.opts && pin) {
-    nv.opts.backend = backend
+  const override = backendOverride()
+  if (nv.opts && override) {
+    nv.opts.backend = override
   }
-  try {
-    await nv.attachToCanvas(canvas)
-    return backend
-  } catch (err) {
-    if (backend !== 'webgpu') {
-      throw err
-    }
-    console.warn('[niivue] WebGPU attach failed, falling back to WebGL2:', err)
-    probe = Promise.resolve({ backend: 'webgl2', pin: true }) // later canvases skip WebGPU too
-    if (nv.opts) {
-      nv.opts.backend = 'webgl2'
-    }
-    await nv.attachToCanvas(canvas)
-    return 'webgl2'
-  }
+  return nv
+    .attachToCanvas(canvas)
+    .then((): BackendType => (nv.opts?.backend as BackendType) ?? 'webgpu')
+    .catch(async (err: unknown): Promise<BackendType> => {
+      if (nv.opts?.backend === 'webgl2') {
+        throw err
+      }
+      console.warn('[niivue] WebGPU attach failed, falling back to WebGL2:', err)
+      if (nv.opts) {
+        nv.opts.backend = 'webgl2'
+      }
+      await nv.attachToCanvas(canvas)
+      return 'webgl2'
+    })
 }

@@ -28,7 +28,7 @@ import { mnc2nii } from '@niivue/minc-loader'
 import { Signal } from '@preact/signals'
 import { useEffect, useRef } from 'preact/hooks'
 import { attachWithBackendFallback } from '../backend'
-import { ExtendedNiivue, notifyImageLoaded } from '../events'
+import { ExtendedNiivue, notifyImageLoaded, removeBuiltinKeyHandler } from '../events'
 import { isNiftiName, NIFTI_PEEK_BYTES, niftiTooLargeWarning } from '../nifti'
 import { convertNpy, convertNpz, isNpyName } from '../npy'
 import { NiiVueSettings } from '../settings'
@@ -54,20 +54,19 @@ export const NiiVueCanvas = ({
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
   useEffect(() => {
-    // nv.attached is assigned synchronously below, so it closes the window that
-    // nv.canvas alone leaves open while the async backend probe is in flight.
-    if (!canvasRef.current || nv.canvas || nv.attached) {
+    if (!canvasRef.current || nv.canvas) {
       return
     }
-    // v1: attachToCanvas is async (returns a Promise). Probe WebGPU first and
-    // fall back to WebGL2 when a device advertises navigator.gpu but cannot
-    // actually render. Wire the native 'frameChange' event to onFrameUpdate once
-    // attached - this replaces the old ExtendedNiivue.setFrame4D override.
+    // v1: attachToCanvas is async (returns a Promise). attachWithBackendFallback
+    // re-attaches on WebGL2 if a WebGPU attach throws. Wire the native
+    // 'frameChange' event to onFrameUpdate once attached - this replaces the old
+    // ExtendedNiivue.setFrame4D override.
     // Loads gate on nv.attached: nv.view exists before the GPU is initialized, and
     // a load landing mid-init throws. Settles rather than rejects, so a machine
     // with no usable GPU still loads (just without reaching the GPU).
     nv.attached = attachWithBackendFallback(nv, canvasRef.current)
       .then(() => {
+        removeBuiltinKeyHandler(nv)
         nv.addEventListener('frameChange', (e) => nv.onFrameUpdate(e.detail.frame))
       })
       .catch((error) => {
