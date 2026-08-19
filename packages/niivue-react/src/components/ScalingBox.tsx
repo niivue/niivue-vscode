@@ -165,27 +165,30 @@ function isVolumeOverlay(nv: ExtendedNiivue) {
   return nv.volumes.length > 0
 }
 
-// v1: setVolume / setMeshLayerProperty refresh the GL volume themselves, so the
-// trailing updateGLVolume() is gone (one fewer updateBindGroups pass, niivue/mono#61).
-// isColormapInverted is not a VolumeUpdate field, so that branch still mutates directly.
 function handleOverlayInvert(nv: ExtendedNiivue, layerNumber: number, invert: boolean) {
   if (isVolumeOverlay(nv)) {
     const overlay = nv.volumes[layerNumber]
     if (overlay) {
       overlay.isColormapInverted = invert
     }
-    nv.updateGLVolume()
   } else {
+    // v1: setMeshLayerProperty(meshIndex, layerIndex, { camelCaseKey }); meshIndex 0.
     nv.setMeshLayerProperty(0, layerNumber, { isColormapInverted: invert })
   }
+  nv.updateGLVolume()
 }
 
 function handleOverlayScaling(nv: ExtendedNiivue, layerNumber: number, scaling: ScalingOpts) {
   if (isVolumeOverlay(nv)) {
-    nv.setVolume(layerNumber, { calMin: scaling.min, calMax: scaling.max })
+    const overlay = nv.volumes[layerNumber]
+    if (overlay) {
+      overlay.calMin = scaling.min
+      overlay.calMax = scaling.max
+    }
   } else {
     nv.setMeshLayerProperty(0, layerNumber, { calMin: scaling.min, calMax: scaling.max })
   }
+  nv.updateGLVolume()
 }
 
 function handleOpacity(nv: ExtendedNiivue, layerNumber: number, opacity: number) {
@@ -196,6 +199,7 @@ function handleOpacity(nv: ExtendedNiivue, layerNumber: number, opacity: number)
   } else {
     nv.setMeshLayerProperty(0, layerNumber, { opacity })
   }
+  nv.updateGLVolume()
 }
 
 function handleOverlayColormap(nv: ExtendedNiivue, layerNumber: number, colormap: string) {
@@ -204,17 +208,21 @@ function handleOverlayColormap(nv: ExtendedNiivue, layerNumber: number, colormap
   } else {
     setMeshColormap(nv, layerNumber, colormap)
   }
+  nv.updateGLVolume()
 }
 
 function setVolumeColormap(nv: ExtendedNiivue, layerNumber: number, colormap: string) {
-  if (!nv.volumes?.[layerNumber]) {
+  const overlay = nv.volumes?.[layerNumber]
+  if (!overlay) {
     return
   }
-  const props =
-    colormap === 'symmetric'
-      ? { colormap: 'warm', colormapNegative: 'winter' }
-      : { colormap, colormapNegative: '' }
-  nv.setVolume(layerNumber, props)
+  if (colormap === 'symmetric') {
+    overlay.colormap = 'warm'
+    overlay.colormapNegative = 'winter'
+  } else {
+    overlay.colormap = colormap
+    overlay.colormapNegative = ''
+  }
 }
 
 function setMeshColormap(nv: ExtendedNiivue, layerNumber: number, colormap: string) {
