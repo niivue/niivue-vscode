@@ -12,6 +12,24 @@ import { buildImageMessageBodies, isImageType } from './utility'
  * overlay message handlers (overlay / addMeshOverlay paths) call this so that
  * `waitForImageLoad` in tests works for all load types.
  */
+/**
+ * Detach niivue's own window keydown listener.
+ *
+ * v1 still ships built-in hotkeys (`NVControlBase`'s handler binds to *window*,
+ * not the canvas) and 'c' there advances `currentClipPlaneIndex` on the focused
+ * instance. The app's useKeyboardShortcuts hook already advances it for every
+ * selected canvas, so leaving both bound makes one press count twice - the
+ * regression in niivue/niivue-vscode#224. The app is the single source of truth
+ * for shortcuts, so niivue's listener comes off once attach has installed it.
+ */
+export function removeBuiltinKeyHandler(nv: NiiVue): void {
+  const handler = (nv as unknown as { _eventListeners?: { keydown?: EventListener } })
+    ._eventListeners?.keydown
+  if (handler) {
+    window.removeEventListener('keydown', handler)
+  }
+}
+
 export function notifyImageLoaded() {
   const w = window as any
   w.__niivue = w.__niivue || {}
@@ -466,10 +484,9 @@ function growNvArrayBy(nvArray: Signal<NiiVue[]>, n: number) {
       isDragDropEnabled: false, // handled by app (Volume component)
       // 'c' (cycle clip plane) and 'v' (cycle view mode) are handled by the
       // app's useKeyboardShortcuts hook, which broadcasts to every selected
-      // canvas. v1.0 removed the built-in clip-plane / view-mode hotkey options
-      // (no built-in hotkeys remain), so niivue no longer double-acts on the
-      // focused canvas - the app is the single source of truth. See
-      // niivue/niivue-vscode#224.
+      // canvas. v1.0 still binds its own hotkeys to window during attach, so
+      // removeBuiltinKeyHandler takes that listener off once attached, leaving
+      // the app as the single source of truth. See niivue/niivue-vscode#224.
     })
     nv.key = Math.random()
     nvArray.value = [...nvArray.value, nv]
