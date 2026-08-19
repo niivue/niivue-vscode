@@ -224,9 +224,7 @@ async function addMeshOverlay(nv: NiiVue, item: any, type: string, settings: Nii
   // addMeshLayer parses the buffer, appends the layer, and updates the mesh
   // internally, so the manual readLayer/push/updateMesh dance is gone. The old
   // `useNegativeCmap` flag is expressed by a non-empty `colormapNegative`.
-  // Set the colorbar flag before addMeshLayer so its own GL refresh already
-  // reflects it, dropping a second updateGLVolume() (one fewer updateBindGroups
-  // pass, the WebGPU resize-race path, niivue/mono#61).
+  // Set before addMeshLayer so its internal refresh picks up the flag.
   nv.isColorbarVisible = true
   await nv.addMeshLayer(0, {
     url: new File([item.data], item.uri),

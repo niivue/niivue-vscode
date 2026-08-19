@@ -165,11 +165,9 @@ function isVolumeOverlay(nv: ExtendedNiivue) {
   return nv.volumes.length > 0
 }
 
-// v1: setVolume / setMeshLayerProperty refresh the GL volume themselves, so the
-// trailing updateGLVolume() is gone (one fewer updateBindGroups pass, niivue/mono#61).
-// isColormapInverted is not a VolumeUpdate field, so that branch still mutates directly.
 function handleOverlayInvert(nv: ExtendedNiivue, layerNumber: number, invert: boolean) {
   if (isVolumeOverlay(nv)) {
+    // isColormapInverted is not a VolumeUpdate field, so it needs a manual refresh.
     const overlay = nv.volumes[layerNumber]
     if (overlay) {
       overlay.isColormapInverted = invert

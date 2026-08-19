@@ -209,8 +209,6 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
     nvArraySelected.value.forEach((nv) => {
       // v1: "Multiplanar + Render" shows the planes without the 4D graph.
       nv.isGraphVisible = false
-      // Display-only toggle: drawScene() redraws without updateGLVolume's
-      // updateBindGroups pass (the WebGPU resize-race crash path, niivue/mono#61).
       nv.drawScene()
     })
   }
@@ -226,8 +224,6 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
       nv.isGraphVisible = true
       nv.graphNormalizeValues = false
       nv.graphLineAlpha = 1.0
-      // Display-only toggle: drawScene() redraws without updateGLVolume's
-      // updateBindGroups pass (the WebGPU resize-race crash path, niivue/mono#61).
       nv.drawScene()
     })
   }
