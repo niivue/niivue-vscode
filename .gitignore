@@ -31,6 +31,8 @@ build_log.json
 # Generated directories
 lib/
 dist/
+dist-vscode/
+dist-jupyter/
 static/
 build/
 apps/vscode/niivue/
