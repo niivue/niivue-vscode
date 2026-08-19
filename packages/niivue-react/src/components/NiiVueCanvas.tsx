@@ -27,7 +27,7 @@ import { dicomLoader } from '@niivue/dicom-loader'
 import { mnc2nii } from '@niivue/minc-loader'
 import { Signal } from '@preact/signals'
 import { useEffect, useRef } from 'preact/hooks'
-import { ExtendedNiivue, notifyImageLoaded } from '../events'
+import { ExtendedNiivue, notifyImageLoaded, removeBuiltinKeyHandler } from '../events'
 import { isNiftiName, NIFTI_PEEK_BYTES, niftiTooLargeWarning } from '../nifti'
 import { convertNpy, convertNpz, isNpyName } from '../npy'
 import { NiiVueSettings } from '../settings'
@@ -65,6 +65,7 @@ export const NiiVueCanvas = ({
     nv.attached = nv
       .attachToCanvas(canvasRef.current)
       .then(() => {
+        removeBuiltinKeyHandler(nv)
         nv.addEventListener('frameChange', (e) => nv.onFrameUpdate(e.detail.frame))
       })
       .catch((error) => {
