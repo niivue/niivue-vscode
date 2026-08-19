@@ -40,7 +40,7 @@ jobs:
       desktop_version: ${{ steps.encode.outputs.desktop_version }}
 
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
         with:
           fetch-depth: 2
 
@@ -90,16 +90,16 @@ jobs:
             echo "No pending changesets — skipping pre-release."
           fi
 
-      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
         if: steps.detect.outputs.has_changesets == 'true'
 
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
         if: steps.detect.outputs.has_changesets == 'true'
         with:
           node-version: '22'
           cache: 'pnpm'
 
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v6
         if: steps.detect.outputs.has_changesets == 'true'
         with:
           python-version: '3.11'
@@ -225,7 +225,7 @@ jobs:
              steps.encode.outputs.jupyter == 'true' ||
              steps.encode.outputs.streamlit == 'true' ||
              steps.encode.outputs.desktop == 'true')
-        uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3
         with:
           tag_name: prerelease-${{ github.sha }}
           prerelease: true
