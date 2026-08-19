@@ -351,15 +351,23 @@ async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSetting
       }
     }
   }
-  // NumPy .npy/.npz: register converters that down-cast element types NiiVue's
-  // reader cannot handle (notably int64/uint64, numpy's default integer types)
-  // so the volume displays instead of erroring or rendering black. See #90.
-  // Registered once per instance: the npy converter shares its from/to extension,
-  // so re-registering would nest it around the previous reader on every load.
-  if (isNpyName(item.uri) && !nv.npyLoadersRegistered) {
-    nv.useLoader(convertNpy, 'npy', 'npy')
-    nv.useLoader(convertNpz, 'npz', 'npy')
-    nv.npyLoadersRegistered = true
+  // NumPy .npy/.npz: down-cast element types NiiVue's reader cannot handle
+  // (notably int64/uint64, numpy's default integer types) so the volume displays
+  // instead of erroring. See #90.
+  //
+  // Converted here rather than through nv.useLoader: as of 1.0.0-rc.12 a
+  // registered npy converter is not reached before the built-in reader throws
+  // "Unsupported NPY dtype: <i8". Converting the bytes up front keeps this
+  // working whichever way niivue resolves its readers. The output is still a
+  // .npy, so niivue's own reader parses it.
+  if (isNpyName(item.uri)) {
+    if (!item.data) {
+      item.data = await (await fetch(item.uri)).arrayBuffer()
+    }
+    const bytes = ensureArrayBuffer(item.data)
+    item.data = item.uri.toLowerCase().endsWith('.npz')
+      ? await convertNpz(bytes)
+      : convertNpy(bytes)
   }
   const isMincFile = (uri: string) => {
     const lowerUri = uri.toLowerCase()

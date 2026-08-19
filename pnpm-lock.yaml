@@ -89,8 +89,8 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0
       '@niivue/niivue':
-        specifier: 1.0.0-rc.9
-        version: 1.0.0-rc.9
+        specifier: 1.0.0-rc.12
+        version: 1.0.0-rc.12
       '@niivue/react':
         specifier: workspace:*
         version: link:../../packages/niivue-react
@@ -195,8 +195,8 @@ importers:
         specifier: ^2.7.5
         version: 2.7.5
       '@niivue/niivue':
-        specifier: 1.0.0-rc.9
-        version: 1.0.0-rc.9
+        specifier: 1.0.0-rc.12
+        version: 1.0.0-rc.12
     devDependencies:
       '@jupyterlab/builder':
         specifier: ^4.5.7
@@ -274,8 +274,8 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0
       '@niivue/niivue':
-        specifier: 1.0.0-rc.9
-        version: 1.0.0-rc.9
+        specifier: 1.0.0-rc.12
+        version: 1.0.0-rc.12
       '@niivue/react':
         specifier: workspace:*
         version: link:../../packages/niivue-react
@@ -391,8 +391,8 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0
       '@niivue/niivue':
-        specifier: 1.0.0-rc.9
-        version: 1.0.0-rc.9
+        specifier: 1.0.0-rc.12
+        version: 1.0.0-rc.12
       '@niivue/react':
         specifier: workspace:*
         version: link:../../../../packages/niivue-react
@@ -521,8 +521,8 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0
       '@niivue/niivue':
-        specifier: 1.0.0-rc.9
-        version: 1.0.0-rc.9
+        specifier: 1.0.0-rc.12
+        version: 1.0.0-rc.12
       '@niivue/viewer-protocol':
         specifier: workspace:*
         version: link:../viewer-protocol
@@ -2696,8 +2696,8 @@ packages:
   '@niivue/minc-loader@1.0.0':
     resolution: {integrity: sha512-wcrFHr+7F5aGg7cdxFoOYolJH6EHlW5xZNkh0+lAkDPnOneLAWlS8+RzPw383jcqIx5+xf+dgK4TVgU/OZ8KUQ==}
 
-  '@niivue/niivue@1.0.0-rc.9':
-    resolution: {integrity: sha512-CPu6+KTONESagpbYn+BF/TWy27twmPgqpLNam9x24tl9XDWKfJTLhkjqBZSCVOyWqu1eYMdJFt/nQeDbTGdWvA==}
+  '@niivue/niivue@1.0.0-rc.12':
+    resolution: {integrity: sha512-jLjepjnPPGRWdiZiQtYOZE0saLARRfPqfEQtbInYX7LGrQGcCpljtcetIIEi6oAT0Cv22upo7JTOlkNJyuOBow==}
 
   '@node-rs/crc32-android-arm-eabi@1.10.6':
     resolution: {integrity: sha512-vZAMuJXm3TpWPOkkhxdrofWDv+Q+I2oO7ucLRbXyAPmXFNDhHtBxbO1rk9Qzz+M3eep8ieS4/+jCL1Q0zacNMQ==}
@@ -11512,7 +11512,7 @@ snapshots:
     dependencies:
       nifti-reader-js: 0.7.1
 
-  '@niivue/niivue@1.0.0-rc.9':
+  '@niivue/niivue@1.0.0-rc.12':
     dependencies:
       cbor-x: 1.6.4
       clipper2-ts: 2.0.1-17
@@ -17390,7 +17390,7 @@ snapshots:
       acorn-import-phases: 1.0.4(acorn@8.16.0)
       browserslist: 4.28.2
       chrome-trace-event: 1.0.4
-      enhanced-resolve: 5.22.0
+      enhanced-resolve: 5.18.3
       es-module-lexer: 1.7.0
       eslint-scope: 5.1.1
       events: 3.3.0
@@ -17401,7 +17401,7 @@ snapshots:
       mime-types: 2.1.35
       neo-async: 2.6.2
       schema-utils: 4.3.3
-      tapable: 2.3.3
+      tapable: 2.3.0
       terser-webpack-plugin: 5.3.14(esbuild@0.28.0)(webpack@5.102.1(esbuild@0.28.0))
       watchpack: 2.4.4
       webpack-sources: 3.3.3
