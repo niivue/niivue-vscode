@@ -55,7 +55,7 @@
     "dev:types-only": "tsc --emitDeclarationOnly --declaration --outDir dist --watch",
     "build": "vite build && tsc --emitDeclarationOnly --declaration --outDir dist",
     "preview": "vite",
-    "clean": "rimraf dist",
+    "clean": "rimraf dist dist-vscode dist-jupyter",
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "type-check": "tsc --noEmit",
     "test": "vitest run",
