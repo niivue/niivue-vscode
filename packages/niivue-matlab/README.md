@@ -57,11 +57,11 @@ nv.addVolume('activation.nii', 'colormap', 'hot', 'opacity', 0.5);
 % Add mesh
 nv.addMesh('brain.obj');
 
-% Set crosshair position
+% Set crosshair position, in world mm
 nv.setCrosshair(64, 64, 32);
 
 % Change slice view
-nv.setSliceType(4); % Multiplanar view
+nv.setSliceType(3); % Multiplanar view
 
 % Clear all volumes
 nv.clear();
@@ -111,14 +111,14 @@ end
 - `setColormap(name, index)` - Set colormap for volume
 - `setOpacity(value, index)` - Set opacity for volume (0-1)
 - `addMesh(filepath)` - Load mesh file (.obj, .gii, etc.)
-- `setCrosshair(x, y, z)` - Set crosshair position
-- `setSliceType(type)` - Set view type (0-4)
+- `setCrosshair(x, y, z)` - Set crosshair position in world mm (not voxels)
+- `setSliceType(type)` - Set view type: 0=axial, 1=coronal, 2=sagittal, 3=multiplanar, 4=render
 - `clear()` - Remove all volumes
 
 **Properties:**
 
 - `Figure` - Handle to uifigure
-- `CrosshairPos` - Current crosshair position [x, y, z]
+- `CrosshairPos` - Current crosshair position [x, y, z] in world mm, updated by the viewer on every location change
 
 ### niivue.Viewer
 

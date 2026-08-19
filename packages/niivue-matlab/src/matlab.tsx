@@ -197,8 +197,11 @@ function handleMatlabMessage(data: MatlabMessage, appProps: AppProps) {
         typeof payload.z === 'number' &&
         nvArray.value.length > 0
       ) {
-        // v1: nv.scene is gone. setCrosshairPos takes the same scene-fraction
-        // triple the old nv.scene.crosshairPos held.
+        // v1: nv.scene is gone. Note the space change: the old
+        // nv.scene.crosshairPos was a [0,1] scene fraction, while
+        // setCrosshairPos is world mm (verified by round-tripping [-30 20 10]
+        // through a real volume). mm is what this API always meant to expose -
+        // the documented setCrosshair(64, 64, 32) only makes sense in mm.
         nvArray.value[0].setCrosshairPos([payload.x, payload.y, payload.z])
         nvArray.value[0].drawScene()
       }
@@ -268,6 +271,7 @@ function MatlabApp() {
     }
     sendToMatlab({
       type: 'crosshairUpdate',
+      // world mm, matching setCrosshairPos above.
       position: nv.getCrosshairPos(),
     })
   }, [locationValue])

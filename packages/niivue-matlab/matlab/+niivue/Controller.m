@@ -179,8 +179,8 @@ classdef Controller < handle
         
         function obj = setSliceType(obj, sliceType)
             %SETSLICETYPE Set the slice display type
-            %   obj.setSliceType(4) sets to multiplanar view
-            %   Slice types: 0=axial, 1=coronal, 2=sagittal, 3=render, 4=multiplanar
+            %   obj.setSliceType(3) sets to multiplanar view
+            %   Slice types: 0=axial, 1=coronal, 2=sagittal, 3=multiplanar, 4=render
             
             msg = struct('type', 'setSliceType', ...
                 'payload', struct('sliceType', sliceType));
