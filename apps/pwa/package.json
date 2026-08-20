@@ -54,7 +54,7 @@
   },
   "dependencies": {
     "@niivue/dicom-loader": "^1.0.0",
-    "@niivue/niivue": "1.0.0-rc.9",
+    "@niivue/niivue": "1.0.0-rc.12",
     "@niivue/react": "workspace:*",
     "@preact/signals": "^2.9.0",
     "preact": "^10.29.2",
@@ -68,7 +68,7 @@
     "@tailwindcss/postcss": "^4.3.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/preact": "^3.2.4",
-    "@types/node": "^25.8.0",
+    "@types/node": "^26.1.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vite-pwa/assets-generator": "^1.0.2",

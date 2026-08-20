@@ -19,7 +19,7 @@ execSync('pnpm build', {
 })
 
 // 3. Copy dist files into the (re-created) niivue dir
-const srcDistDir = path.resolve(reactPkgDir, 'dist')
+const srcDistDir = path.resolve(reactPkgDir, 'dist-vscode')
 console.log(`Copying built files from ${srcDistDir} to ${vscodeNiivueDir}...`)
 fs.mkdirSync(vscodeNiivueDir, { recursive: true })
 fs.cpSync(srcDistDir, vscodeNiivueDir, { recursive: true })

@@ -6,6 +6,13 @@ import { defineConfig } from 'vite'
 import dts from 'vite-plugin-dts'
 import virtual from 'vite-plugin-virtual'
 
+// Standalone app bundles for embedding hosts (VS Code webview, Jupyter widget).
+// Each gets its own outDir so it never overwrites the library build in dist/.
+const APP_TARGETS = ['vscode', 'jupyter']
+const appTarget = APP_TARGETS.includes(process.env.BUILD_TARGET ?? '')
+  ? process.env.BUILD_TARGET
+  : null
+
 export default defineConfig(({ mode }) => ({
   server: {
     host: '0.0.0.0', // Allow connections from any host
@@ -24,8 +31,8 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     preact(),
-    // Only generate .d.ts files in production builds (skip in development mode for speed)
-    ...(mode === 'development'
+    // Only generate .d.ts files for the library build (skip in development mode for speed)
+    ...(mode === 'development' || appTarget
       ? []
       : [
         dts({
@@ -76,6 +83,7 @@ export default defineConfig(({ mode }) => ({
     }),
   ],
   build: {
+    outDir: appTarget ? `dist-${appTarget}` : 'dist',
     // Only enable watch mode in development
     watch: mode === 'development' ? {
       // Rollup watch options with polling for dev containers
@@ -85,19 +93,17 @@ export default defineConfig(({ mode }) => ({
       },
     } : null,
     lib: {
-      entry:
-        process.env.BUILD_TARGET === 'vscode'
-          ? resolve(__dirname, 'src/main.tsx')
-          : resolve(__dirname, 'src/index.ts'),
+      entry: appTarget
+        ? resolve(__dirname, 'src/main.tsx')
+        : resolve(__dirname, 'src/index.ts'),
       name: 'NiivueReact',
       formats: ['es'],
       fileName: 'index',
     },
     rollupOptions: {
-      external:
-        process.env.BUILD_TARGET === 'vscode'
-          ? [] // Bundle all dependencies for VS Code
-          : ['preact', 'preact/hooks', '@niivue/niivue', '@niivue/dicom-loader', '@preact/signals'],
+      external: appTarget
+        ? [] // Bundle all dependencies into the standalone app
+        : ['preact', 'preact/hooks', '@niivue/niivue', '@niivue/dicom-loader', '@preact/signals'],
       output: {
         globals: {
           preact: 'preact',

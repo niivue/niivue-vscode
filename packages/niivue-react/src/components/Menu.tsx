@@ -209,7 +209,7 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
     nvArraySelected.value.forEach((nv) => {
       // v1: "Multiplanar + Render" shows the planes without the 4D graph.
       nv.isGraphVisible = false
-      nv.updateGLVolume()
+      nv.drawScene()
     })
   }
 
@@ -224,7 +224,7 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
       nv.isGraphVisible = true
       nv.graphNormalizeValues = false
       nv.graphLineAlpha = 1.0
-      nv.updateGLVolume()
+      nv.drawScene()
     })
   }
 

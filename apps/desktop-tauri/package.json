@@ -46,7 +46,7 @@
   },
   "dependencies": {
     "@niivue/dicom-loader": "^1.0.0",
-    "@niivue/niivue": "1.0.0-rc.9",
+    "@niivue/niivue": "1.0.0-rc.12",
     "@niivue/react": "workspace:*",
     "@preact/signals": "^2.9.0",
     "@tauri-apps/api": "^2.11.0",
@@ -61,7 +61,7 @@
     "@tauri-apps/cli": "^2.11.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/preact": "^3.2.4",
-    "@types/node": "^25.8.0",
+    "@types/node": "^26.1.2",
     "@vitest/coverage-v8": "^4.1.6",
     "autoprefixer": "^10.5.0",
     "jsdom": "^26.1.0",

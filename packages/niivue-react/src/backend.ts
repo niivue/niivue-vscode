@@ -2,24 +2,18 @@ import type { BackendType } from '@niivue/niivue'
 import type { ExtendedNiivue } from './events'
 
 /**
- * WebGL2 fallback for the niivue v1 WebGPU migration.
+ * WebGL2 escape hatch for the niivue v1 WebGPU migration.
  *
- * niivue v1 selects WebGPU whenever `navigator.gpu` exists, but that only proves
- * the API is present. A blocklisted or software adapter, a driver bug, or
- * exhausted limits still fail at the first render with `createBindGroup ...
- * Required member is undefined`, which shows up as a blank canvas in the PWA
- * while the WebGL2-backed VS Code webview draws the same files fine.
+ * niivue only falls back to WebGL2 when `navigator.gpu` is absent, so a browser
+ * that advertises WebGPU but cannot render still picks it and draws nothing.
+ * `?backend=webgl2` forces the working backend on those machines.
  *
- * We catch a failing WebGPU attach and re-attach on WebGL2. An earlier version
- * also probed `navigator.gpu` up front, but awaiting anything before
- * `attachToCanvas` delays it past the synchronous point niivue expects and
- * breaks canvas key handling (niivue-vscode#272, caught by
- * keyboard-shortcuts.spec.ts). Everything here therefore stays synchronous up to
- * the attach call.
+ * Falling back automatically is not possible from here: once the WebGPU context
+ * exists, `getContext('webgl2')` on the same canvas returns null.
  */
 
 /** `?backend=webgl2` or `?backend=webgpu` forces a backend (support / debugging). */
-function backendOverride(): BackendType | undefined {
+export function backendOverride(): BackendType | undefined {
   if (typeof location === 'undefined') {
     return undefined
   }
@@ -28,33 +22,18 @@ function backendOverride(): BackendType | undefined {
 }
 
 /**
- * Attach `nv` to `canvas`, falling back to WebGL2 if a WebGPU attach throws.
- * Returns the backend that ended up being used.
+ * Attach `nv` to `canvas`, honoring a `?backend=` override.
  *
- * Nothing may be awaited before `attachToCanvas`: an async function body runs
- * synchronously up to its first `await`, and that is what keeps the attach on
- * the same tick it was on before this module existed.
+ * Nothing may be awaited before `attachToCanvas`: attaching on the original tick
+ * is what keeps niivue's canvas key handling working.
  */
-export function attachWithBackendFallback(
+export function attachWithBackend(
   nv: ExtendedNiivue,
   canvas: HTMLCanvasElement,
-): Promise<BackendType> {
+): ReturnType<ExtendedNiivue['attachToCanvas']> {
   const override = backendOverride()
   if (nv.opts && override) {
     nv.opts.backend = override
   }
-  return nv
-    .attachToCanvas(canvas)
-    .then((): BackendType => (nv.opts?.backend as BackendType) ?? 'webgpu')
-    .catch(async (err: unknown): Promise<BackendType> => {
-      if (nv.opts?.backend === 'webgl2') {
-        throw err
-      }
-      console.warn('[niivue] WebGPU attach failed, falling back to WebGL2:', err)
-      if (nv.opts) {
-        nv.opts.backend = 'webgl2'
-      }
-      await nv.attachToCanvas(canvas)
-      return 'webgl2'
-    })
+  return nv.attachToCanvas(canvas)
 }

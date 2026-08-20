@@ -27,12 +27,12 @@ import { dicomLoader } from '@niivue/dicom-loader'
 import { mnc2nii } from '@niivue/minc-loader'
 import { Signal } from '@preact/signals'
 import { useEffect, useRef } from 'preact/hooks'
-import { attachWithBackendFallback } from '../backend'
+import { attachWithBackend } from '../backend'
 import { ExtendedNiivue, notifyImageLoaded, removeBuiltinKeyHandler } from '../events'
 import { isNiftiName, NIFTI_PEEK_BYTES, niftiTooLargeWarning } from '../nifti'
 import { convertNpy, convertNpz, isNpyName } from '../npy'
 import { NiiVueSettings } from '../settings'
-import { isDicomData, isImageType } from '../utility'
+import { graphmlToConnectome, isDicomData, isImageType } from '../utility'
 import { AppProps } from './AppProps'
 
 export interface NiiVueCanvasProps {
@@ -57,20 +57,23 @@ export const NiiVueCanvas = ({
     if (!canvasRef.current || nv.canvas) {
       return
     }
-    // v1: attachToCanvas is async (returns a Promise). attachWithBackendFallback
-    // re-attaches on WebGL2 if a WebGPU attach throws. Wire the native
+    // v1: attachToCanvas is async (returns a Promise). Wire the native
     // 'frameChange' event to onFrameUpdate once attached - this replaces the old
-    // ExtendedNiivue.setFrame4D override.
+    // ExtendedNiivue.setFrame4D override and fires for every frame change.
     // Loads gate on nv.attached: nv.view exists before the GPU is initialized, and
     // a load landing mid-init throws. Settles rather than rejects, so a machine
     // with no usable GPU still loads (just without reaching the GPU).
-    nv.attached = attachWithBackendFallback(nv, canvasRef.current)
+    nv.attached = attachWithBackend(nv, canvasRef.current)
       .then(() => {
         removeBuiltinKeyHandler(nv)
         nv.addEventListener('frameChange', (e) => nv.onFrameUpdate(e.detail.frame))
       })
       .catch((error) => {
-        console.error('attachToCanvas failed:', error)
+        console.error(
+          `attachToCanvas failed on ${nv.opts?.backend ?? 'webgpu'}.`,
+          'Retry with ?backend=webgl2 if this browser advertises WebGPU but cannot render.',
+          error,
+        )
       })
   }, [canvasRef.current])
 
@@ -327,6 +330,47 @@ async function getNiftiHeaderBytes(item: any): Promise<ArrayBuffer | Uint8Array 
   return null
 }
 
+// Decode a GraphML payload (drag/drop buffer, postMessage number array, or
+// already-decoded string) to text.
+function graphmlBytesToText(data: any): string {
+  if (typeof data === 'string') {
+    return data
+  }
+  if (data instanceof ArrayBuffer) {
+    return new TextDecoder().decode(data)
+  }
+  if (ArrayBuffer.isView(data)) {
+    return new TextDecoder().decode(data as ArrayBufferView)
+  }
+  if (Array.isArray(data)) {
+    return new TextDecoder().decode(new Uint8Array(data))
+  }
+  throw new Error('Unsupported GraphML data type')
+}
+
+// Load a GraphML graph as a NiiVue connectome. The bytes come inlined
+// (drag/drop, vscode binary payload) or must be fetched from a URL (webview
+// resource, ?images= query parameter). NiiVue loads connectomes from a .jcon
+// mesh, so the converted graph is wrapped in a .jcon File whose name lets the
+// mesh loader detect the format and read it as bytes.
+async function loadGraphmlConnectome(nv: ExtendedNiivue, item: any) {
+  let text: string
+  if (item.data) {
+    text = graphmlBytesToText(item.data)
+  } else {
+    const response = await fetch(item.uri)
+    if (!response.ok) {
+      throw new Error(`Failed to fetch GraphML (${response.status} ${response.statusText})`)
+    }
+    text = await response.text()
+  }
+  const baseName = (item.uri.split('?')[0].split('/').pop() || 'graph').replace(/\.graphml$/i, '')
+  const connectome = graphmlToConnectome(text)
+  const jconName = `${baseName}.jcon`
+  const file = new File([JSON.stringify(connectome)], jconName, { type: 'application/json' })
+  await nv.addMesh({ url: file, name: jconName })
+}
+
 async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSettings) {
   // Multi-file DICOM series: item.uri is an array of slice names with
   // item.data an array of buffers. Handle this first, because the single-file
@@ -334,6 +378,11 @@ async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSetting
   // on an array.
   if (Array.isArray(item.uri)) {
     await loadDicomSeries(nv, item.uri, item.data, settings)
+    return
+  }
+  // GraphML graphs (e.g. vessel skeletons) render as a NiiVue connectome.
+  if (item.uri.split('?')[0].toLowerCase().endsWith('.graphml')) {
+    await loadGraphmlConnectome(nv, item)
     return
   }
   // Guard: refuse NIfTI volumes whose uncompressed voxel data exceeds the ~2 GB
@@ -352,15 +401,23 @@ async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSetting
       }
     }
   }
-  // NumPy .npy/.npz: register converters that down-cast element types NiiVue's
-  // reader cannot handle (notably int64/uint64, numpy's default integer types)
-  // so the volume displays instead of erroring or rendering black. See #90.
-  // Registered once per instance: the npy converter shares its from/to extension,
-  // so re-registering would nest it around the previous reader on every load.
-  if (isNpyName(item.uri) && !nv.npyLoadersRegistered) {
-    nv.useLoader(convertNpy, 'npy', 'npy')
-    nv.useLoader(convertNpz, 'npz', 'npy')
-    nv.npyLoadersRegistered = true
+  // NumPy .npy/.npz: down-cast element types NiiVue's reader cannot handle
+  // (notably int64/uint64, numpy's default integer types) so the volume displays
+  // instead of erroring. See #90.
+  //
+  // Converted here rather than through nv.useLoader: as of 1.0.0-rc.12 a
+  // registered npy converter is not reached before the built-in reader throws
+  // "Unsupported NPY dtype: <i8". Converting the bytes up front keeps this
+  // working whichever way niivue resolves its readers. The output is still a
+  // .npy, so niivue's own reader parses it.
+  if (isNpyName(item.uri)) {
+    if (!item.data) {
+      item.data = await (await fetch(item.uri)).arrayBuffer()
+    }
+    const bytes = ensureArrayBuffer(item.data)
+    item.data = item.uri.toLowerCase().endsWith('.npz')
+      ? await convertNpz(bytes)
+      : convertNpy(bytes)
   }
   const isMincFile = (uri: string) => {
     const lowerUri = uri.toLowerCase()

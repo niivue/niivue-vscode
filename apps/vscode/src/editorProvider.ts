@@ -285,6 +285,7 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     '.npy',
     '.npz',
     '.raw',
+    '.graphml',
   ]
 
   static hasKnownExtension(lowerCasePath: string): boolean {

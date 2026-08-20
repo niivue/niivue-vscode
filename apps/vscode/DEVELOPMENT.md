@@ -98,7 +98,9 @@ The React package is built specifically for VS Code:
 BUILD_TARGET=vscode pnpm --filter @niivue/react build
 ```
 
-This configures the React app for WebView embedding without PWA features.
+This configures the React app for WebView embedding without PWA features. It writes
+a standalone bundle to `packages/niivue-react/dist-vscode/`, leaving the library
+build in `dist/` untouched.
 
 ## Testing
 

@@ -100,12 +100,8 @@ describe('NiiVueCanvas attach gate', () => {
     expect(nv.loadError).toBe('')
   })
 
-  // Headless CI has no GPU adapter, so the first attach always rejects there.
-  // attachWithBackendFallback then re-attaches on WebGL2, so two attempts is the
-  // expected shape rather than one.
-  const attachStarts = () => calls.filter((c) => c === 'attach:start').length
-
-  it('re-attaches on webgl2 when the first attach rejects, then loads', async () => {
+  // Headless CI has no GPU adapter, so attach always rejects there.
+  it('still loads when attachToCanvas rejects, without reporting a load error', async () => {
     const nv = new ExtendedNiivue({}) as any
     nv.body = { data: new ArrayBuffer(64), uri: 'volume.nrrd' }
     mountCanvas(nv)
@@ -113,25 +109,8 @@ describe('NiiVueCanvas attach gate', () => {
     await waitFor(() => expect(calls).toContain('attach:start'))
     rejectAttach(new Error('Failed to get WebGPU adapter'))
 
-    await waitFor(() => expect(attachStarts()).toBe(2))
-    resolveAttach()
-
     await waitFor(() => expect(nv.addVolume).toHaveBeenCalled())
-    expect(nv.loadError).toBe('')
-    expect(nv.isLoaded).toBe(true)
-  })
-
-  it('still loads when both attach attempts reject, without reporting a load error', async () => {
-    const nv = new ExtendedNiivue({}) as any
-    nv.body = { data: new ArrayBuffer(64), uri: 'volume.nrrd' }
-    mountCanvas(nv)
-
-    await waitFor(() => expect(calls).toContain('attach:start'))
-    rejectAttach(new Error('Failed to get WebGPU adapter'))
-    await waitFor(() => expect(attachStarts()).toBe(2))
-    rejectAttach(new Error('Failed to get WebGL2 context'))
-
-    await waitFor(() => expect(nv.addVolume).toHaveBeenCalled())
+    expect(calls).toEqual(['attach:start', 'attach:failed', 'addVolume'])
     expect(nv.loadError).toBe('')
     expect(nv.isLoaded).toBe(true)
   })

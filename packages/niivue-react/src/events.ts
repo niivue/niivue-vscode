@@ -242,6 +242,8 @@ async function addMeshOverlay(nv: NiiVue, item: any, type: string, settings: Nii
   // addMeshLayer parses the buffer, appends the layer, and updates the mesh
   // internally, so the manual readLayer/push/updateMesh dance is gone. The old
   // `useNegativeCmap` flag is expressed by a non-empty `colormapNegative`.
+  // Set before addMeshLayer so its internal refresh picks up the flag.
+  nv.isColorbarVisible = true
   await nv.addMeshLayer(0, {
     url: new File([item.data], item.uri),
     name: item.uri,
@@ -252,8 +254,6 @@ async function addMeshOverlay(nv: NiiVue, item: any, type: string, settings: Nii
     calMax: a.calMax,
   })
 
-  nv.isColorbarVisible = true
-  await nv.updateGLVolume()
   const layerNumber = nv.meshes[0].layers.length - 1
   if (type === 'addMeshCurvature') {
     await nv.setMeshLayerProperty(0, layerNumber, { isColorbarVisible: false })
@@ -462,7 +462,6 @@ export class ExtendedNiivue extends NiiVue {
   key = NaN
   body = null
   documentData: File | null = null // pending .nvd import (CBOR bytes wrapped in a File), consumed by NiiVueCanvas
-  npyLoadersRegistered = false // guards one-time nv.useLoader registration for .npy/.npz (see NiiVueCanvas)
   onVolumeUpdated = () => { }
   onFrameUpdate = (frame: number) => { }
   // v1: cross-canvas pan/3D sync is handled natively by `nv.broadcastTo(targets)`

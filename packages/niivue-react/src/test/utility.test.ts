@@ -5,6 +5,7 @@ import {
   getMetadataString,
   getNames,
   getNumberOfPoints,
+  graphmlToConnectome,
   isDicomData,
   isImageType,
 } from '../utility'
@@ -154,6 +155,136 @@ describe('getNumberOfPoints', () => {
   it('handles zero-length point arrays', () => {
     const nv = { meshes: [{ positions: [] }] } as any
     expect(getNumberOfPoints(nv)).toBe('Number of Points: 0')
+  })
+})
+
+describe('graphmlToConnectome', () => {
+  // Mirrors the GraphML that igraph writes (used by SkelHub): nodes carry
+  // world-space X/Y/Z plus a name, edges reference nodes by their `source`/
+  // `target` ids, and every <data> points at a <key> declaring its attr.name.
+  const igraphGraphml = `<?xml version="1.0" encoding="UTF-8"?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns">
+  <key id="v_name" for="node" attr.name="name" attr.type="string"/>
+  <key id="v_X" for="node" attr.name="X" attr.type="double"/>
+  <key id="v_Y" for="node" attr.name="Y" attr.type="double"/>
+  <key id="v_Z" for="node" attr.name="Z" attr.type="double"/>
+  <key id="e_proto_edge_id" for="edge" attr.name="proto_edge_id" attr.type="double"/>
+  <graph edgedefault="undirected">
+    <node id="n0"><data key="v_name">a</data><data key="v_X">1</data><data key="v_Y">2</data><data key="v_Z">3</data></node>
+    <node id="n1"><data key="v_name">b</data><data key="v_X">4</data><data key="v_Y">5</data><data key="v_Z">6</data></node>
+    <node id="n2"><data key="v_name">c</data><data key="v_X">7</data><data key="v_Y">8</data><data key="v_Z">9</data></node>
+    <edge source="n0" target="n2"><data key="e_proto_edge_id">0</data></edge>
+    <edge source="n1" target="n2"><data key="e_proto_edge_id">1</data></edge>
+  </graph>
+</graphml>`
+
+  it('parses nodes with world coordinates and names', () => {
+    const c = graphmlToConnectome(igraphGraphml)
+    expect(c.nodes).toEqual([
+      { name: 'a', x: 1, y: 2, z: 3, colorValue: 1, sizeValue: 1 },
+      { name: 'b', x: 4, y: 5, z: 6, colorValue: 1, sizeValue: 1 },
+      { name: 'c', x: 7, y: 8, z: 9, colorValue: 1, sizeValue: 1 },
+    ])
+  })
+
+  it('maps edge source/target ids to node indices (not assuming order)', () => {
+    const c = graphmlToConnectome(igraphGraphml)
+    // n0->n2 and n1->n2 become index pairs 0-2 and 1-2.
+    expect(c.edges).toEqual([
+      { first: 0, second: 2, colorValue: 1 },
+      { first: 1, second: 2, colorValue: 1 },
+    ])
+  })
+
+  it('keeps node and edge color ranges collapsed so nothing is thresholded away', () => {
+    // The connectome renderer hides edges whose colorValue < edgeMin. Equal
+    // min/max guards every node and edge against being culled.
+    const c = graphmlToConnectome(igraphGraphml)
+    expect(c.nodeMinColor).toBe(c.nodeMaxColor)
+    expect(c.edgeMin).toBe(c.edgeMax)
+  })
+
+  it('accepts lowercase x/y/z coordinate attributes', () => {
+    const lower = `<graphml xmlns="http://graphml.graphdrawing.org/xmlns">
+      <key id="kx" for="node" attr.name="x" attr.type="double"/>
+      <key id="ky" for="node" attr.name="y" attr.type="double"/>
+      <key id="kz" for="node" attr.name="z" attr.type="double"/>
+      <graph>
+        <node id="a"><data key="kx">1.5</data><data key="ky">2.5</data><data key="kz">3.5</data></node>
+      </graph>
+    </graphml>`
+    const c = graphmlToConnectome(lower)
+    expect(c.nodes).toEqual([{ name: 'a', x: 1.5, y: 2.5, z: 3.5, colorValue: 1, sizeValue: 1 }])
+  })
+
+  it('falls back to the node id when no name attribute is present', () => {
+    const noName = `<graphml xmlns="http://graphml.graphdrawing.org/xmlns">
+      <key id="kx" for="node" attr.name="X" attr.type="double"/>
+      <key id="ky" for="node" attr.name="Y" attr.type="double"/>
+      <key id="kz" for="node" attr.name="Z" attr.type="double"/>
+      <graph><node id="root"><data key="kx">0</data><data key="ky">0</data><data key="kz">0</data></node></graph>
+    </graphml>`
+    expect(graphmlToConnectome(noName).nodes[0].name).toBe('root')
+  })
+
+  it('skips edges that reference an unknown node id', () => {
+    const danglingEdge = `<graphml xmlns="http://graphml.graphdrawing.org/xmlns">
+      <key id="kx" for="node" attr.name="X" attr.type="double"/>
+      <key id="ky" for="node" attr.name="Y" attr.type="double"/>
+      <key id="kz" for="node" attr.name="Z" attr.type="double"/>
+      <graph>
+        <node id="a"><data key="kx">0</data><data key="ky">0</data><data key="kz">0</data></node>
+        <node id="b"><data key="kx">1</data><data key="ky">1</data><data key="kz">1</data></node>
+        <edge source="a" target="b"/>
+        <edge source="a" target="missing"/>
+      </graph>
+    </graphml>`
+    expect(graphmlToConnectome(danglingEdge).edges).toEqual([{ first: 0, second: 1, colorValue: 1 }])
+  })
+
+  it('throws when a node has no coordinates', () => {
+    const noCoords = `<graphml xmlns="http://graphml.graphdrawing.org/xmlns">
+      <key id="v_name" for="node" attr.name="name" attr.type="string"/>
+      <graph><node id="n0"><data key="v_name">a</data></node></graph>
+    </graphml>`
+    expect(() => graphmlToConnectome(noCoords)).toThrow(/X\/Y\/Z/)
+  })
+
+  it('treats an empty coordinate value as missing rather than 0', () => {
+    // Number('') is 0; without the guard this node would silently land at the
+    // origin instead of reporting the missing coordinate.
+    const emptyCoord = `<graphml xmlns="http://graphml.graphdrawing.org/xmlns">
+      <key id="kx" for="node" attr.name="X" attr.type="double"/>
+      <key id="ky" for="node" attr.name="Y" attr.type="double"/>
+      <key id="kz" for="node" attr.name="Z" attr.type="double"/>
+      <graph><node id="n0"><data key="kx"></data><data key="ky">1</data><data key="kz">2</data></node></graph>
+    </graphml>`
+    expect(() => graphmlToConnectome(emptyCoord)).toThrow(/X\/Y\/Z/)
+  })
+
+  it('does not hoist nodes from a nested subgraph into the top-level graph', () => {
+    const nested = `<graphml xmlns="http://graphml.graphdrawing.org/xmlns">
+      <key id="kx" for="node" attr.name="X" attr.type="double"/>
+      <key id="ky" for="node" attr.name="Y" attr.type="double"/>
+      <key id="kz" for="node" attr.name="Z" attr.type="double"/>
+      <graph>
+        <node id="outer">
+          <data key="kx">0</data><data key="ky">0</data><data key="kz">0</data>
+          <graph><node id="inner"><data key="kx">9</data><data key="ky">9</data><data key="kz">9</data></node></graph>
+        </node>
+      </graph>
+    </graphml>`
+    const c = graphmlToConnectome(nested)
+    expect(c.nodes).toEqual([{ name: 'outer', x: 0, y: 0, z: 0, colorValue: 1, sizeValue: 1 }])
+  })
+
+  it('throws when the graph has no nodes', () => {
+    const empty = `<graphml xmlns="http://graphml.graphdrawing.org/xmlns"><graph></graph></graphml>`
+    expect(() => graphmlToConnectome(empty)).toThrow(/no nodes/)
+  })
+
+  it('throws on malformed XML', () => {
+    expect(() => graphmlToConnectome('<graphml><graph></graphml>')).toThrow(/not valid XML/)
   })
 })
 
