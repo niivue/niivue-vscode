@@ -2,27 +2,27 @@
   "shared-core": {
     "label": "Shared core (`packages/niivue-react`)",
     "stats": {
-      "statements": 51.9,
-      "branches": 49.9,
-      "functions": 48.5,
-      "lines": 52.6
+      "statements": 51.3,
+      "branches": 48.8,
+      "functions": 48.2,
+      "lines": 52
     },
     "counts": {
       "statements": {
-        "covered": 1718,
-        "total": 3312
+        "covered": 1763,
+        "total": 3437
       },
       "branches": {
-        "covered": 1210,
-        "total": 2423
+        "covered": 1236,
+        "total": 2532
       },
       "functions": {
-        "covered": 431,
-        "total": 888
+        "covered": 433,
+        "total": 899
       },
       "lines": {
-        "covered": 1625,
-        "total": 3091
+        "covered": 1666,
+        "total": 3206
       }
     }
   },
@@ -56,15 +56,15 @@
   "jupyter-glue": {
     "label": "`apps/jupyter`",
     "stats": {
-      "statements": 14.4,
+      "statements": 14.3,
       "branches": 15.9,
-      "functions": 14.9,
+      "functions": 14.6,
       "lines": 14.5
     },
     "counts": {
       "statements": {
         "covered": 32,
-        "total": 222
+        "total": 223
       },
       "branches": {
         "covered": 20,
@@ -72,11 +72,11 @@
       },
       "functions": {
         "covered": 7,
-        "total": 47
+        "total": 48
       },
       "lines": {
         "covered": 32,
-        "total": 220
+        "total": 221
       }
     }
   },
@@ -164,27 +164,27 @@
   "_overall": {
     "label": "Overall",
     "stats": {
-      "statements": 47.6,
-      "branches": 45.7,
-      "functions": 44.9,
-      "lines": 48
+      "statements": 47.3,
+      "branches": 44.9,
+      "functions": 44.6,
+      "lines": 47.6
     },
     "counts": {
       "statements": {
-        "covered": 1959,
-        "total": 4114
+        "covered": 2004,
+        "total": 4240
       },
       "branches": {
-        "covered": 1321,
-        "total": 2889
+        "covered": 1347,
+        "total": 2998
       },
       "functions": {
-        "covered": 482,
-        "total": 1074
+        "covered": 484,
+        "total": 1086
       },
       "lines": {
-        "covered": 1858,
-        "total": 3871
+        "covered": 1899,
+        "total": 3987
       }
     }
   }
