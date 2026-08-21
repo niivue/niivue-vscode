@@ -1,6 +1,6 @@
 {
   "name": "@niivue/viewer-protocol",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "description": "Transport-agnostic Viewer-Host Protocol (VHP) contract for niivue-based viewers: capability handshake, call/result/event envelope, the ViewerClient facade interface, and the NVDocument-based scene document type.",
