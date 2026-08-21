@@ -26,7 +26,17 @@ classdef Bridge < handle
     end
 
     properties
-        Timeout = 30        % seconds to wait for any single call
+        %TIMEOUT Seconds to wait for a single call once the viewer is up.
+        Timeout = 30
+
+        %STARTUPTIMEOUT Seconds to wait for the page to boot.
+        %   Much larger than Timeout on purpose. The bundle is ~2 MB of
+        %   JavaScript and the first component in a session also pays a cold
+        %   browser start plus GPU device creation: measured around 10 s warm
+        %   and far longer cold on a loaded machine. A generous limit costs
+        %   nothing when things work and avoids failing a viewer that was
+        %   merely slow to start.
+        StartupTimeout = 180
     end
 
     methods
@@ -100,7 +110,7 @@ classdef Bridge < handle
     methods (Access = private)
         function waitForReady(obj)
             t = tic;
-            while ~obj.Ready && toc(t) < obj.Timeout
+            while ~obj.Ready && toc(t) < obj.StartupTimeout
                 drawnow
                 pause(0.001)
             end
@@ -109,7 +119,7 @@ classdef Bridge < handle
                     ['The NiiVue page did not start within %g s. This usually ' ...
                      'means the viewer bundle is missing or the embedded browser ' ...
                      'could not create a WebGL context. Run niivue.diagnose for ' ...
-                     'details.'], obj.Timeout);
+                     'details.'], obj.StartupTimeout);
             end
         end
 

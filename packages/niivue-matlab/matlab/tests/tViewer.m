@@ -11,7 +11,7 @@ classdef tViewer < matlab.unittest.TestCase
     end
 
     methods (TestClassSetup)
-        function requireViewer(tc)
+        function openSharedViewer(tc)
             tc.assumeFalse(isMATLABReleaseOlderThan("R2023a"), ...
                 'Needs R2023a for sendEventToHTMLSource.');
             tc.assumeTrue(usejava('jvm'), 'Needs a graphical session.');
@@ -20,34 +20,37 @@ classdef tViewer < matlab.unittest.TestCase
             catch
                 tc.assumeFail('Viewer bundle not built: pnpm --filter @niivue/matlab build');
             end
-            % Open one viewer up front. A machine with no usable WebGL context
-            % - a headless runner, a VM, a remote desktop - should skip these
-            % with a readable reason rather than fail every case on a timeout.
+
+            tc.Fixture = fullfile(fileparts(mfilename('fullpath')), 'fixtures', 'phantom.nii');
+            if ~isfile(tc.Fixture)
+                d = fileparts(tc.Fixture);
+                if ~exist(d, 'dir'), mkdir(d); end
+                % Asymmetric on every axis, so an axis mix-up shows up as a
+                % wrong intensity rather than quietly passing.
+                [x, y, z] = ndgrid(1:12, 1:14, 1:16);
+                niivue.internal.writeNifti(tc.Fixture, int16(x + 100*y + 10000*z), [2 2 2]);
+            end
+
+            % One viewer for the whole class. Starting one costs about ten
+            % seconds - a 2 MB bundle, a browser and a GPU device - so a fresh
+            % viewer per test would spend minutes doing nothing but booting.
             try
-                probe = niivue.Viewer(Name="probe");
-                delete(probe);
+                tc.Viewer = niivue.Viewer(Name="niivue tests");
             catch err
                 tc.assumeFail(sprintf( ...
                     'This session cannot host the viewer (%s). Run niivue.diagnose.', ...
                     err.identifier));
             end
+            tc.addTeardown(@() delete(tc.Viewer));
         end
     end
 
     methods (TestMethodSetup)
-        function openViewer(tc)
-            tc.Fixture = fullfile(fileparts(mfilename('fullpath')), 'fixtures', 'phantom.nii');
-            if ~isfile(tc.Fixture)
-                d = fileparts(tc.Fixture);
-                if ~exist(d, 'dir'), mkdir(d); end
-                % A small asymmetric phantom: distinct along each axis, so an
-                % axis mix-up shows up as a wrong intensity rather than passing.
-                [x, y, z] = ndgrid(1:12, 1:14, 1:16);
-                vol = int16(x + 100*y + 10000*z);
-                niivue.internal.writeNifti(tc.Fixture, vol, [2 2 2]);
-            end
-            tc.Viewer = niivue.Viewer(Name="test");
-            tc.addTeardown(@() delete(tc.Viewer));
+        function resetViewer(tc)
+            % Cheap compared with a new viewer, and enough: clear drops every
+            % volume and the layout is the only other sticky bit of state.
+            tc.Viewer.clear();
+            tc.Viewer.Layout = "multiplanar";
         end
     end
 
@@ -175,6 +178,76 @@ classdef tViewer < matlab.unittest.TestCase
 
         function reportsViewerErrorsToMatlab(tc)
             tc.verifyError(@() tc.Viewer.volumeInfo(99), 'niivue:viewerError');
+        end
+
+        function arrayVoxelLandsAtTheExpectedMillimetres(tc)
+            % Proves the whole array -> NIfTI -> display -> read-back chain,
+            % including axis order and origin. A permuted axis or a wrong
+            % origin returns a different voxel and the spike is missed.
+            sz = [9 11 13];
+            voxSize = [2 3 4];
+            spike = [4 7 9];                    % 1-based subscript
+            Y = zeros(sz, 'single');
+            Y(spike(1), spike(2), spike(3)) = 999;
+            tc.Viewer.addVolume(Y, VoxelSize=voxSize, Name="spike.nii");
+
+            expectedMM = voxSize .* (spike - 1) - voxSize .* (sz - 1) / 2;
+            hit = tc.Viewer.intensityAt(expectedMM);
+            tc.verifyEqual(hit(1).value, 999, 'AbsTol', 1e-3, ...
+                'the spike must be where the affine says it is');
+
+            miss = tc.Viewer.intensityAt(expectedMM + [voxSize(1) 0 0]);
+            tc.verifyEqual(miss(1).value, 0, 'AbsTol', 1e-3, ...
+                'the neighbouring voxel must be empty');
+        end
+
+        function loadsEveryCommonDataType(tc)
+            casts = {@logical, @uint8, @int16, @uint16, @int32, @single, @double};
+            for k = 1:numel(casts)
+                cast = casts{k};
+                A = cast(reshape(mod(1:(4*5*6), 7) + 1, 4, 5, 6));
+                info = tc.Viewer.addVolume(A, VoxelSize=[1 1 1]);
+                tc.verifyEqual(double(info.dims(1:3)), [4 5 6], ...
+                    sprintf('%s should load', func2str(cast)));
+                tc.Viewer.clear();
+            end
+        end
+
+        function loadingAfterClearWorks(tc)
+            % Regression: refreshing GL with an empty volume stack destroyed the
+            % bind groups, and every later load failed inside createBindGroup.
+            tc.Viewer.addVolume(tc.Fixture);
+            tc.Viewer.clear();
+            info = tc.Viewer.addVolume(tc.Fixture);
+            tc.verifyEqual(double(info.index), 1);
+            tc.verifyEqual(tc.Viewer.numVolumes(), 1);
+        end
+
+        function intensityAtReportsEveryLayer(tc)
+            tc.Viewer.addVolume(tc.Fixture);
+            tc.Viewer.addVolume(tc.Fixture, Colormap="hot");
+            values = tc.Viewer.intensityAt([0 0 0]);
+            tc.verifyNumElements(values, 2, 'one entry per loaded layer');
+            tc.verifyTrue(isfield(values, 'value'));
+        end
+
+        function fourDimensionalSeriesReportsItsFrames(tc)
+            T = single(zeros(6, 6, 6, 5));
+            for t = 1:5
+                T(:, :, :, t) = t;
+            end
+            info = tc.Viewer.addVolume(T, VoxelSize=[2 2 2]);
+            tc.verifyEqual(double(info.nFrame4D), 5);
+            tc.Viewer.setFrame(3);
+        end
+
+        function volumeInfoAlwaysReportsAWindow(tc)
+            % calMin/calMax must exist even when no Threshold was given: JSON
+            % drops undefined, which would reach MATLAB as a missing field.
+            tc.Viewer.addVolume(tc.Fixture);
+            info = tc.Viewer.volumeInfo(1);
+            tc.verifyTrue(isfield(info, 'calMin'));
+            tc.verifyTrue(isfield(info, 'calMax'));
         end
 
         function usingAClosedViewerSaysSo(tc)

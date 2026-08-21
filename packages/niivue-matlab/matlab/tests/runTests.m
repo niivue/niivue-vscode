@@ -1,15 +1,19 @@
 function results = runTests(opts)
 %RUNTESTS Run the NiiVue MATLAB test suite.
 %
-%   runTests                    everything available in this session
-%   runTests(Unit=true)         data-path tests only, no display needed
-%   runTests(JUnit="out.xml")   also write a JUnit report for CI
+%   runTests                     everything this session can run
+%   runTests(Unit=true)          data-path tests only, no display needed
+%   runTests(RequireViewer=true) fail if the viewer tests could not run
+%   runTests(JUnit="out.xml")    also write a JUnit report for CI
 %
 %   Viewer tests are skipped rather than failed when the session cannot host
-%   one; run niivue.diagnose to find out why.
+%   one; run niivue.diagnose to find out why. Use RequireViewer on machines
+%   that are supposed to be able to render - otherwise a suite that skipped
+%   everything reports the same "0 failed" as one that genuinely passed.
 
     arguments
         opts.Unit (1,1) logical = false
+        opts.RequireViewer (1,1) logical = false
         opts.JUnit (1,1) string = ""
     end
 
@@ -37,13 +41,30 @@ function results = runTests(opts)
 
     results = runner.run(suite);
 
+    passed = nnz([results.Passed]);
+    failed = nnz([results.Failed]);
+    skipped = nnz([results.Incomplete]);
+
     fprintf('\n%s\n', repmat('=', 1, 46));
     fprintf('  passed %d   failed %d   skipped %d   of %d\n', ...
-        nnz([results.Passed]), nnz([results.Failed]), ...
-        nnz([results.Incomplete]), numel(results));
+        passed, failed, skipped, numel(results));
     fprintf('%s\n\n', repmat('=', 1, 46));
 
-    if any([results.Failed])
-        error('niivue:testsFailed', '%d test(s) failed.', nnz([results.Failed]));
+    if failed > 0
+        error('niivue:testsFailed', '%d test(s) failed.', failed);
+    end
+
+    if ~opts.Unit
+        isViewer = startsWith({results.Name}, 'tViewer');
+        ranViewer = nnz(isViewer & [results.Passed]);
+        if ranViewer == 0 && any(isViewer)
+            msg = ['No viewer test actually ran - all %d were skipped. The bridge ' ...
+                   'was not exercised. Run niivue.diagnose to see what this session ' ...
+                   'is missing.'];
+            if opts.RequireViewer
+                error('niivue:viewerTestsSkipped', msg, nnz(isViewer));
+            end
+            warning('niivue:viewerTestsSkipped', msg, nnz(isViewer));
+        end
     end
 end

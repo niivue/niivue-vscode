@@ -94,7 +94,7 @@ addlistener(v, "CrosshairMoved", @(~, e) fprintf( ...
 The event carries `Millimetres`, `Voxel` and `Values` (one entry per loaded layer), which is enough
 to drive a plot, extract a time course, or look a label up in an atlas.
 
-### Show a volume you computed in MATLAB
+### Show an array straight from the workspace
 
 ```matlab
 Y = randn(64, 64, 40);
@@ -102,7 +102,29 @@ v = niivue.Viewer;
 v.addVolume(Y, VoxelSize=[3 3 3]);
 ```
 
-No file, no toolbox. Pass `Name="mymap.nii"` if you want it labelled.
+No file, no toolbox, no conversion step. The array is written out through a built-in NIfTI writer,
+so this works in base MATLAB.
+
+- **Types**: `logical`, `uint8`, `int16`, `uint16`, `int32`, `single`, `double`. Anything else is
+  promoted to `single` rather than refused.
+- **4-D** arrays become a series: `v.addVolume(T)` then `v.setFrame(3)` to scrub.
+- **Voxel size** defaults to `[1 1 1]`; pass `VoxelSize` in millimetres to get the geometry right.
+- **Name** it with `Name="mymap.nii"` so it is labelled in the layer list.
+
+Array element `Y(i,j,k)` becomes voxel `(i-1, j-1, k-1)`, and the world origin is placed at the
+centre of the volume, so the crosshair opens somewhere sensible rather than at a corner. Concretely,
+`Y(i,j,k)` sits at
+
+```matlab
+mm = VoxelSize .* ([i j k] - 1) - VoxelSize .* (size(Y) - 1) / 2;
+```
+
+which means `v.intensityAt(mm)` returns exactly that element. The test suite asserts this with a
+single-voxel spike, so an axis permutation or an origin slip cannot pass unnoticed.
+
+An array carries no header, so this is a plain scaled identity — no obliquity and no scanner
+coordinates. When you have a real header, load the **file**: the geometry then comes from the image
+rather than from an assumption.
 
 ### Compare images, the way Check Reg does
 
@@ -184,6 +206,13 @@ Files are staged with a `.bin` extension because MATLAB's static route serves on
 `.nii` and `.nii.gz` return 404. The real filename travels alongside, so the viewer still picks the
 right reader.
 
+### First open is slow
+
+Opening the first viewer in a MATLAB session takes roughly ten seconds: a ~2 MB bundle has to load,
+a browser process start and a GPU device come up. Later viewers in the same session are quicker.
+Keep a viewer and reuse it — `clear` then `addVolume` is close to instant — rather than opening a
+new one per image.
+
 ## Troubleshooting
 
 **`niivue.diagnose` says the bundle is missing.** Build it: `pnpm --filter @niivue/matlab build`.
@@ -200,8 +229,9 @@ package refuses to start on them rather than failing quietly. Check with `niivue
 
 ```matlab
 cd matlab/tests
-runTests               % everything
-runTests(Unit=true)    % data-path tests only, no display needed
+runTests                     % everything this session can run
+runTests(Unit=true)          % data-path tests only, no display needed
+runTests(RequireViewer=true) % fail if the viewer tests could not run
 ```
 
 Viewer tests open a real window and exercise the bridge in both directions. They are skipped rather

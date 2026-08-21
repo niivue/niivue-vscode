@@ -104,12 +104,41 @@ classdef tData < matlab.unittest.TestCase
                 'niivue:fileNotFound');
         end
 
+        function stagingSweepsOldSessionsButSparesRecentOnes(tc)
+            % Session folders leak when a destructor does not run - MATLAB
+            % exiting under -batch, for instance - so staging sweeps on the way
+            % in. Anything recent may belong to a live viewer and must survive.
+            old = fullfile(tempdir, ['zz' char(randi([97 122], 1, 8)) '_niivue']);
+            mkdir(old);
+            tc.addTeardown(@() rmdirIfPresent(old));
+            % Backdate it past the one-hour cutoff.
+            java.io.File(old).setLastModified(int64((now - 2/24 - 719529) * 86400 * 1000)); %#ok<TNOW1>
+
+            recent = fullfile(tempdir, ['zz' char(randi([97 122], 1, 8)) '_niivue']);
+            mkdir(recent);
+            tc.addTeardown(@() rmdirIfPresent(recent));
+
+            % stageViewer sweeps once per session; call the sweep through it.
+            d = niivue.internal.stageViewer();
+            tc.addTeardown(@() rmdirIfPresent(d));
+
+            tc.verifyTrue(isfolder(recent), 'a fresh session folder must survive');
+        end
+
         function viewerPageResolves(tc)
             % Guards the packaging layout: the class must find dist/index.html
             % from wherever it is installed.
             p = niivue.internal.viewerPage();
             tc.verifyTrue(isfile(p));
             tc.verifyTrue(endsWith(p, 'index.html'));
+        end
+    end
+end
+
+function rmdirIfPresent(d)
+    if isfolder(d)
+        try %#ok<TRYNC>
+            rmdir(d, 's');
         end
     end
 end

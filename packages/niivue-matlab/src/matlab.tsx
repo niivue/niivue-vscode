@@ -30,7 +30,7 @@ interface MatlabHTMLComponent {
 /** The slice of NiiVue's surface this bridge touches. */
 interface NvVolume {
   name?: string
-  hdr?: { dims?: number[]; pixDims?: number[] }
+  hdr?: { dims?: number[]; pixDims?: number[]; cal_min?: number; cal_max?: number }
   cal_min?: number
   cal_max?: number
   colormap?: string
@@ -40,8 +40,14 @@ interface NvVolume {
   getValue?: (...voxel: number[]) => number
 }
 
+interface NvLocation {
+  mm: number[]
+  vox: number[]
+  values: { name: string; value: number; label?: string }[]
+}
+
 interface NvInstance {
-  attached?: boolean
+  attached?: Promise<void> | null
   volumes: NvVolume[]
   meshes: unknown[]
   canvas: HTMLCanvasElement | null
@@ -51,12 +57,14 @@ interface NvInstance {
   addMesh: (options: unknown) => Promise<unknown>
   setVolume: (index: number, options: Record<string, unknown>) => Promise<unknown>
   setFrame4D: (id: string, frame: number) => void
-  updateGLVolume: () => void
+  updateGLVolume: () => Promise<void>
   drawScene: () => void
   getCrosshairPos: () => number[]
   setCrosshairPos: (mm: [number, number, number]) => void
   mm2frac?: (mm: number[]) => number[]
   frac2vox?: (frac: number[]) => number[]
+  createOnLocationChange?: () => void
+  addEventListener?: (name: string, fn: (e: { detail?: NvLocation }) => void) => void
   crosshairWidth: number
   isRadiological: boolean
   isColorbarVisible: boolean
@@ -85,16 +93,26 @@ function reply(id: number, ok: boolean, value: unknown, error?: string) {
   hostRef?.sendEventToMATLAB('nvresult', { id, ok, value, error: error ?? '' })
 }
 
-/** Resolve once the app has a canvas with an attached NiiVue instance. */
+/** Resolve once the app has a canvas whose GPU pipeline is fully attached. */
 function getNv(timeoutMs = 20000): Promise<NvInstance> {
   return new Promise((resolve, reject) => {
     const started = Date.now()
     const tick = () => {
       const nv = appPropsGlobal?.nvArray.value[0]
-      // Loading before attachToCanvas resolves throws inside the GPU backend,
-      // so gate on `attached` rather than mere existence.
+      // nv.attached is the promise NiiVueCanvas assigns when it *begins*
+      // attaching, not a boolean. Treating it as a flag lets a load start
+      // against a half-built pipeline, and updateGLVolume then throws
+      // "createBindGroup ... Required member is undefined" - intermittently,
+      // because it depends on how far attach got first.
       if (nv && nv.attached) {
-        resolve(nv as unknown as NvInstance)
+        Promise.resolve(nv.attached).then(
+          () => {
+            const inst = nv as unknown as NvInstance
+            bindLocation(inst)
+            resolve(inst)
+          },
+          (err: unknown) => reject(err instanceof Error ? err : new Error(String(err))),
+        )
         return
       }
       if (Date.now() - started > timeoutMs) {
@@ -123,40 +141,65 @@ function volumeSummary(nv: NvInstance, index: number) {
   if (!vol) {
     throw new Error(`No volume at index ${index + 1}`)
   }
+  // Every field is emitted, using null rather than undefined where NiiVue has
+  // not filled one in: JSON drops undefined, which would reach MATLAB as a
+  // missing struct field and turn "no window set" into an error at the call
+  // site.
+  const num = (v: unknown) => (typeof v === 'number' && isFinite(v) ? v : null)
   return {
     index: index + 1, // MATLAB is 1-based all the way to the wire
     name: vol.name ?? '',
     dims: Array.from(vol.hdr?.dims ?? []).slice(1, 5),
     pixDims: Array.from(vol.hdr?.pixDims ?? []).slice(1, 5),
-    calMin: vol.cal_min,
-    calMax: vol.cal_max,
-    colormap: vol.colormap,
-    opacity: vol.opacity,
-    nFrame4D: vol.nFrame4D ?? 1,
+    calMin: num(vol.cal_min) ?? num(vol.hdr?.cal_min),
+    calMax: num(vol.cal_max) ?? num(vol.hdr?.cal_max),
+    colormap: vol.colormap ?? '',
+    opacity: num(vol.opacity) ?? 1,
+    nFrame4D: num(vol.nFrame4D) ?? 1,
   }
 }
 
-function locationPayload(nv: NvInstance) {
-  const mm = nv.getCrosshairPos()
-  let vox: number[] = []
-  let values: { name: string; value: number }[]
-  try {
-    const frac = nv.mm2frac ? nv.mm2frac(mm) : null
-    if (frac && nv.frac2vox) {
-      vox = Array.from(nv.frac2vox(frac))
+let boundNv: NvInstance | null = null
+let lastLocation: NvLocation | null = null
+
+/** Attach once per instance so NiiVue's own location payload is available. */
+function bindLocation(nv: NvInstance) {
+  if (boundNv === nv || typeof nv.addEventListener !== 'function') {
+    return
+  }
+  boundNv = nv
+  lastLocation = null
+  nv.addEventListener('locationChange', (e) => {
+    if (e.detail) {
+      lastLocation = e.detail
     }
-  } catch {
-    vox = []
+  })
+}
+
+// NiiVue computes mm, voxel indices and the per-layer intensities itself, and
+// its numbers are the ones the status bar shows. Recomputing them here drifted
+// (voxel came back empty, so every intensity was NaN), so read its payload and
+// fall back only when no location has been reported yet.
+function locationPayload(nv: NvInstance) {
+  if (lastLocation) {
+    return {
+      mm: Array.from(lastLocation.mm ?? []),
+      vox: Array.from(lastLocation.vox ?? []),
+      values: (lastLocation.values ?? []).map((v) => ({
+        name: v.name ?? '',
+        value: v.value,
+        label: v.label ?? '',
+      })),
+    }
   }
-  try {
-    values = nv.volumes.map((v: NvVolume, i: number) => ({
-      name: v.name ?? `volume ${i + 1}`,
-      value: Number(v.getValue?.(...vox) ?? NaN),
-    }))
-  } catch {
-    values = []
+  return { mm: Array.from(nv.getCrosshairPos()), vox: [], values: [] }
+}
+
+/** Force NiiVue to recompute and re-emit after a programmatic move. */
+function refreshLocation(nv: NvInstance) {
+  if (typeof nv.createOnLocationChange === 'function') {
+    nv.createOnLocationChange()
   }
-  return { mm: Array.from(mm), vox, values }
 }
 
 const LAYOUTS: Record<string, number> = {
@@ -194,7 +237,7 @@ const methods: Record<string, (p: Params, nvP: Promise<NvInstance>) => Promise<u
     if (Object.keys(opts).length) {
       await nv.setVolume(index, opts)
     }
-    nv.updateGLVolume()
+    await nv.updateGLVolume()
     appPropsGlobal!.nvArray.value = [...appPropsGlobal!.nvArray.value]
     emit('volumeLoaded', volumeSummary(nv, index))
     return volumeSummary(nv, index)
@@ -226,7 +269,7 @@ const methods: Record<string, (p: Params, nvP: Promise<NvInstance>) => Promise<u
       opts.cal_max = p.calMax
     }
     await nv.setVolume(i, opts)
-    nv.updateGLVolume()
+    await nv.updateGLVolume()
     appPropsGlobal!.nvArray.value = [...appPropsGlobal!.nvArray.value]
     return volumeSummary(nv, i)
   },
@@ -234,7 +277,11 @@ const methods: Record<string, (p: Params, nvP: Promise<NvInstance>) => Promise<u
   async removeVolume(p, nvP) {
     const nv = await nvP
     nv.model.removeVolume((p.index as number) - 1)
-    nv.updateGLVolume()
+    // Refreshing GL with an empty stack tears down the bind groups and every
+    // later load fails with "createBindGroup ... Required member is undefined".
+    if (nv.volumes.length > 0) {
+      await nv.updateGLVolume()
+    }
     appPropsGlobal!.nvArray.value = [...appPropsGlobal!.nvArray.value]
     return { count: nv.volumes.length }
   },
@@ -244,7 +291,10 @@ const methods: Record<string, (p: Params, nvP: Promise<NvInstance>) => Promise<u
     for (let i = nv.volumes.length - 1; i >= 0; i--) {
       nv.model.removeVolume(i)
     }
-    nv.updateGLVolume()
+    // Deliberately no updateGLVolume: with nothing loaded it destroys the bind
+    // groups and the next addVolume fails.
+    lastLocation = null
+    nv.drawScene()
     appPropsGlobal!.nvArray.value = [...appPropsGlobal!.nvArray.value]
     return { count: 0 }
   },
@@ -253,6 +303,7 @@ const methods: Record<string, (p: Params, nvP: Promise<NvInstance>) => Promise<u
     const nv = await nvP
     nv.setCrosshairPos(p.mm as [number, number, number])
     nv.drawScene()
+    refreshLocation(nv)
     return locationPayload(nv)
   },
 
