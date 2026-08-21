@@ -1,14 +1,24 @@
 import { ComponentChildren } from 'preact'
 import { Signal, computed, useSignal } from '@preact/signals'
 import { useLayoutEffect, useRef } from 'preact/hooks'
-import { MenuButton, MenuEntry, MenuItem, MenuToggle, ToggleEntry, activeMenu } from './MenuElements'
+import {
+    ImageSelect,
+    MenuButton,
+    MenuEntry,
+    MenuItem,
+    MenuToggle,
+    ToggleEntry,
+    activeMenu,
+} from './MenuElements'
 
 // One top-level entry of the menu bar. The same descriptor renders either as a
 // horizontal control in the bar (delegating to the existing menu primitives) or,
 // when it doesn't fit, as a row inside the "More" overflow popover.
+// `select` is a toggle that also carries a dropdown (the image-selection
+// control): clicking the label flips `state`, the caret opens `children`.
 export type BarItem = {
   key: string
-  type: 'button' | 'menu' | 'toggle'
+  type: 'button' | 'menu' | 'toggle' | 'select'
   label: string
   visible: boolean
   onClick?: () => void
@@ -120,6 +130,13 @@ const BarForm = ({ item }: { item: BarItem }) => {
   if (item.type === 'toggle') {
     return <MenuToggle label={item.label} state={item.state} shortcut={item.shortcut} />
   }
+  if (item.type === 'select') {
+    return (
+      <ImageSelect label={item.label} state={item.state}>
+        {item.children}
+      </ImageSelect>
+    )
+  }
   return (
     <MenuItem label={item.label} onClick={item.onClick} shortcut={item.shortcut}>
       {item.children}
@@ -131,7 +148,7 @@ const BarForm = ({ item }: { item: BarItem }) => {
 // BarForm (a menu is a label button + caret button; others a single button)
 // without flyouts, handlers or testids.
 const ProxyForm = ({ item }: { item: BarItem }) => {
-  if (item.type === 'menu') {
+  if (item.type === 'menu' || item.type === 'select') {
     return (
       <div className="relative" data-proxy>
         <button className="nv-topbtn" tabIndex={-1}>
@@ -198,6 +215,16 @@ const OverflowRow = ({ item, expanded }: { item: BarItem; expanded: Signal<strin
   }
   if (item.type === 'button') {
     return <MenuEntry label={item.label} onClick={item.onClick} shortcut={item.shortcut} />
+  }
+  // The split label/caret control has no room here, so the toggle becomes a row
+  // and its options sit permanently open underneath it.
+  if (item.type === 'select') {
+    return (
+      <div className="nv-more-group">
+        <ToggleEntry label={item.label} state={item.state} />
+        <div className="nv-more-sub">{item.children}</div>
+      </div>
+    )
   }
   const isExpanded = computed(() => expanded.value === item.key)
   return (

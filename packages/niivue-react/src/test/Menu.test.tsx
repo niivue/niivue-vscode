@@ -1,9 +1,10 @@
 import { SLICE_TYPE } from '@niivue/niivue'
 import { signal } from '@preact/signals'
 import { cleanup, fireEvent, render, screen } from '@testing-library/preact'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AppProps, SelectionMode } from '../components/AppProps'
 import { Menu } from '../components/Menu'
+import { activeMenu } from '../components/MenuElements'
 
 // Mock canvas and niivue to avoid webgl context issues in jsdom.
 // v1 surface: the package's default export is the NiiVueGPU class (events.ts does
@@ -126,6 +127,7 @@ function makeKbProps(over: Record<string, unknown> = {}) {
       radiologicalConvention: false,
       colorbar: false,
       zoomDragMode: false,
+      worldSpace: false,
       menuItems: { view: true, navigation: true },
     }),
     ...over,
@@ -169,5 +171,46 @@ describe('Menu keyboard wiring (key -> view / UI value)', () => {
     expect(props.hideUI.value).toBe(0)
     pressKey('u')
     expect(props.hideUI.value).toBe(3)
+  })
+
+  it('"w" toggles world space, which defaults to off (voxel grid)', () => {
+    const props = makeKbProps()
+    render(<Menu {...(props as unknown as AppProps)} />)
+
+    expect(props.settings.value.worldSpace).toBe(false)
+    pressKey('w')
+    expect(props.settings.value.worldSpace).toBe(true)
+    pressKey('w')
+    expect(props.settings.value.worldSpace).toBe(false)
+  })
+})
+
+describe('Menu layout', () => {
+  // activeMenu is a module-level signal and `keepOpen` entries leave it set, so a
+  // menu can still be "open" from an earlier test. Start each test closed.
+  beforeEach(() => {
+    activeMenu.value = null
+  })
+
+  it('offers World Space in the View menu', async () => {
+    const props = makeKbProps()
+    render(<Menu {...(props as unknown as AppProps)} />)
+
+    fireEvent.click(screen.getByTestId('menu-item-dropdown-View'))
+    const entry = await screen.findByText('World Space')
+    fireEvent.click(entry)
+    expect(props.settings.value.worldSpace).toBe(true)
+  })
+
+  // The selection control used to be pinned to the far right of the top bar,
+  // detached from the menus it scopes (#266).
+  it('renders Select inside the menu bar, not in a separate right-hand slot', () => {
+    const props = makeKbProps({ nvArray: signal([makeKbNv(), makeKbNv()]) })
+    const { container } = render(<Menu {...(props as unknown as AppProps)} />)
+
+    expect(container.querySelector('.nv-topbar-right')).toBeNull()
+    // Two matches: the interactive row and the hidden width measurer.
+    const select = screen.getAllByText('Select')[0]
+    expect(select.closest('.nv-bar-row')).not.toBeNull()
   })
 })

@@ -18,6 +18,7 @@ export * from './events'
 export * from './nifti'
 export * from './hooks'
 export * from './settings'
+export * from './sliceSpace'
 export * from './utility'
 export { createViewerClient } from './viewer-client'
 // Re-export the Viewer-Host Protocol contract so apps depend only on
