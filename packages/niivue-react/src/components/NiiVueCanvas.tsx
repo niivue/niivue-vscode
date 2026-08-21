@@ -27,6 +27,7 @@ import { dicomLoader } from '@niivue/dicom-loader'
 import { mnc2nii } from '@niivue/minc-loader'
 import { Signal } from '@preact/signals'
 import { useEffect, useRef } from 'preact/hooks'
+import { attachWithBackend } from '../backend'
 import { ExtendedNiivue, notifyImageLoaded, removeBuiltinKeyHandler } from '../events'
 import { isNiftiName, NIFTI_PEEK_BYTES, niftiTooLargeWarning } from '../nifti'
 import { convertNpy, convertNpz, isNpyName } from '../npy'
@@ -62,14 +63,17 @@ export const NiiVueCanvas = ({
     // Loads gate on nv.attached: nv.view exists before the GPU is initialized, and
     // a load landing mid-init throws. Settles rather than rejects, so a machine
     // with no usable GPU still loads (just without reaching the GPU).
-    nv.attached = nv
-      .attachToCanvas(canvasRef.current)
+    nv.attached = attachWithBackend(nv, canvasRef.current)
       .then(() => {
         removeBuiltinKeyHandler(nv)
         nv.addEventListener('frameChange', (e) => nv.onFrameUpdate(e.detail.frame))
       })
       .catch((error) => {
-        console.error('attachToCanvas failed:', error)
+        console.error(
+          `attachToCanvas failed on ${nv.opts?.backend ?? 'webgpu'}.`,
+          'Retry with ?backend=webgl2 if this browser advertises WebGPU but cannot render.',
+          error,
+        )
       })
   }, [canvasRef.current])
 
