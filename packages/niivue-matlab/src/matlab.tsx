@@ -5,28 +5,67 @@ import type { AppProps } from '@niivue/react'
 import { SLICE_TYPE } from '@niivue/niivue'
 import './matlab.css'
 
-// MATLAB's uihtml component calls window.setup(htmlComponent) once the HTML
-// is loaded. We use that as the only inbound channel: htmlComponent.Data is a
-// JSON-serialisable struct that MATLAB writes, and DataChanged fires here.
-// We write back to htmlComponent.Data to ship messages to MATLAB.
-interface MatlabHTMLComponent {
+// MATLAB bridge.
+//
+// Control traffic uses the uihtml *event* channel (sendEventToHTMLSource /
+// sendEventToMATLAB, R2023a+) rather than the Data property. Data is a single
+// shared slot that only flushes when MATLAB yields, so consecutive writes
+// coalesce and all but the last are lost; events queue individually. Measured
+// on R2024b and R2026a: 500 events sent from a tight loop arrive as 500, in
+// both directions.
+//
+// Volume bytes never travel over that channel. MATLAB writes the file next to
+// this page and sends a URL; we fetch it from MATLAB's own connector at
+// ~70 MB/s. The alternative, base64 through a property, runs at ~1 MB/s.
+
+interface MatlabEvent {
   Data: unknown
-  addEventListener: (event: string, handler: (event: Event) => void) => void
 }
 
-interface MatlabMessage {
-  type: string
-  payload?: {
-    data?: string
-    name?: string
-    colormap?: string
-    opacity?: number
-    index?: number
-    x?: number
-    y?: number
-    z?: number
-    sliceType?: number
-  }
+interface MatlabHTMLComponent {
+  addEventListener: (event: string, handler: (event: MatlabEvent) => void) => void
+  sendEventToMATLAB: (name: string, data: unknown) => void
+}
+
+/** The slice of NiiVue's surface this bridge touches. */
+interface NvVolume {
+  name?: string
+  hdr?: { dims?: number[]; pixDims?: number[] }
+  cal_min?: number
+  cal_max?: number
+  colormap?: string
+  opacity?: number
+  nFrame4D?: number
+  id?: string
+  getValue?: (...voxel: number[]) => number
+}
+
+interface NvInstance {
+  attached?: boolean
+  volumes: NvVolume[]
+  meshes: unknown[]
+  canvas: HTMLCanvasElement | null
+  view?: { render: () => void }
+  model: { removeVolume: (index: number) => void }
+  addVolume: (options: unknown) => Promise<unknown>
+  addMesh: (options: unknown) => Promise<unknown>
+  setVolume: (index: number, options: Record<string, unknown>) => Promise<unknown>
+  setFrame4D: (id: string, frame: number) => void
+  updateGLVolume: () => void
+  drawScene: () => void
+  getCrosshairPos: () => number[]
+  setCrosshairPos: (mm: [number, number, number]) => void
+  mm2frac?: (mm: number[]) => number[]
+  frac2vox?: (frac: number[]) => number[]
+  crosshairWidth: number
+  isRadiological: boolean
+  isColorbarVisible: boolean
+}
+
+interface CallMessage {
+  id: number
+  method: string
+  params?: Record<string, unknown>
 }
 
 declare global {
@@ -36,194 +75,295 @@ declare global {
 }
 
 let appPropsGlobal: AppProps | null = null
-let htmlComponentRef: MatlabHTMLComponent | null = null
+let hostRef: MatlabHTMLComponent | null = null
 
-window.setup = (htmlComponent: MatlabHTMLComponent) => {
-  htmlComponentRef = htmlComponent
-
-  htmlComponent.addEventListener('DataChanged', (_event: Event) => {
-    const data = htmlComponent.Data as MatlabMessage
-    if (data && appPropsGlobal) {
-      handleMatlabMessage(data, appPropsGlobal)
-    }
-  })
-
-  sendToMatlab({ type: 'viewerReady' })
+function emit(name: string, payload: unknown) {
+  hostRef?.sendEventToMATLAB('nvevent', { name, payload })
 }
 
-function sendToMatlab(data: object) {
-  if (!htmlComponentRef) {
+function reply(id: number, ok: boolean, value: unknown, error?: string) {
+  hostRef?.sendEventToMATLAB('nvresult', { id, ok, value, error: error ?? '' })
+}
+
+/** Resolve once the app has a canvas with an attached NiiVue instance. */
+function getNv(timeoutMs = 20000): Promise<NvInstance> {
+  return new Promise((resolve, reject) => {
+    const started = Date.now()
+    const tick = () => {
+      const nv = appPropsGlobal?.nvArray.value[0]
+      // Loading before attachToCanvas resolves throws inside the GPU backend,
+      // so gate on `attached` rather than mere existence.
+      if (nv && nv.attached) {
+        resolve(nv as unknown as NvInstance)
+        return
+      }
+      if (Date.now() - started > timeoutMs) {
+        reject(new Error('Timed out waiting for the NiiVue canvas to attach'))
+        return
+      }
+      setTimeout(tick, 25)
+    }
+    tick()
+  })
+}
+
+async function fetchBytes(url: string): Promise<ArrayBuffer> {
+  const res = await fetch(url)
+  if (!res.ok) {
+    throw new Error(
+      `Could not read ${url} (HTTP ${res.status}). MATLAB only serves an ` +
+        `allowlisted set of extensions from the viewer folder; the host writes .bin.`,
+    )
+  }
+  return res.arrayBuffer()
+}
+
+function volumeSummary(nv: NvInstance, index: number) {
+  const vol = nv.volumes[index]
+  if (!vol) {
+    throw new Error(`No volume at index ${index + 1}`)
+  }
+  return {
+    index: index + 1, // MATLAB is 1-based all the way to the wire
+    name: vol.name ?? '',
+    dims: Array.from(vol.hdr?.dims ?? []).slice(1, 5),
+    pixDims: Array.from(vol.hdr?.pixDims ?? []).slice(1, 5),
+    calMin: vol.cal_min,
+    calMax: vol.cal_max,
+    colormap: vol.colormap,
+    opacity: vol.opacity,
+    nFrame4D: vol.nFrame4D ?? 1,
+  }
+}
+
+function locationPayload(nv: NvInstance) {
+  const mm = nv.getCrosshairPos()
+  let vox: number[] = []
+  let values: { name: string; value: number }[]
+  try {
+    const frac = nv.mm2frac ? nv.mm2frac(mm) : null
+    if (frac && nv.frac2vox) {
+      vox = Array.from(nv.frac2vox(frac))
+    }
+  } catch {
+    vox = []
+  }
+  try {
+    values = nv.volumes.map((v: NvVolume, i: number) => ({
+      name: v.name ?? `volume ${i + 1}`,
+      value: Number(v.getValue?.(...vox) ?? NaN),
+    }))
+  } catch {
+    values = []
+  }
+  return { mm: Array.from(mm), vox, values }
+}
+
+const LAYOUTS: Record<string, number> = {
+  axial: SLICE_TYPE.AXIAL,
+  coronal: SLICE_TYPE.CORONAL,
+  sagittal: SLICE_TYPE.SAGITTAL,
+  multiplanar: SLICE_TYPE.MULTIPLANAR,
+  render: SLICE_TYPE.RENDER,
+}
+
+type Params = Record<string, unknown>
+
+const methods: Record<string, (p: Params, nvP: Promise<NvInstance>) => Promise<unknown>> = {
+  async loadVolume(p, nvP) {
+    const nv = await nvP
+    const buf = await fetchBytes(p.url as string)
+    // Pass the real filename, not the .bin the host wrote: NiiVue picks its
+    // reader from the extension.
+    const volName = String(p.name)
+    await nv.addVolume({ url: new File([buf], volName), name: volName })
+    const index = nv.volumes.length - 1
+    const opts: Record<string, unknown> = {}
+    if (p.colormap) {
+      opts.colormap = p.colormap
+    }
+    if (typeof p.opacity === 'number') {
+      opts.opacity = p.opacity
+    }
+    if (typeof p.calMin === 'number') {
+      opts.cal_min = p.calMin
+    }
+    if (typeof p.calMax === 'number') {
+      opts.cal_max = p.calMax
+    }
+    if (Object.keys(opts).length) {
+      await nv.setVolume(index, opts)
+    }
+    nv.updateGLVolume()
+    appPropsGlobal!.nvArray.value = [...appPropsGlobal!.nvArray.value]
+    emit('volumeLoaded', volumeSummary(nv, index))
+    return volumeSummary(nv, index)
+  },
+
+  async loadMesh(p, nvP) {
+    const nv = await nvP
+    const buf = await fetchBytes(p.url as string)
+    const meshName = String(p.name)
+    await nv.addMesh({ url: new File([buf], meshName), name: meshName })
+    appPropsGlobal!.nvArray.value = [...appPropsGlobal!.nvArray.value]
+    return { index: nv.meshes.length }
+  },
+
+  async setVolumeOptions(p, nvP) {
+    const nv = await nvP
+    const i = (p.index as number) - 1
+    const opts: Record<string, unknown> = {}
+    if (p.colormap) {
+      opts.colormap = p.colormap
+    }
+    if (typeof p.opacity === 'number') {
+      opts.opacity = p.opacity
+    }
+    if (typeof p.calMin === 'number') {
+      opts.cal_min = p.calMin
+    }
+    if (typeof p.calMax === 'number') {
+      opts.cal_max = p.calMax
+    }
+    await nv.setVolume(i, opts)
+    nv.updateGLVolume()
+    appPropsGlobal!.nvArray.value = [...appPropsGlobal!.nvArray.value]
+    return volumeSummary(nv, i)
+  },
+
+  async removeVolume(p, nvP) {
+    const nv = await nvP
+    nv.model.removeVolume((p.index as number) - 1)
+    nv.updateGLVolume()
+    appPropsGlobal!.nvArray.value = [...appPropsGlobal!.nvArray.value]
+    return { count: nv.volumes.length }
+  },
+
+  async clear(_p, nvP) {
+    const nv = await nvP
+    for (let i = nv.volumes.length - 1; i >= 0; i--) {
+      nv.model.removeVolume(i)
+    }
+    nv.updateGLVolume()
+    appPropsGlobal!.nvArray.value = [...appPropsGlobal!.nvArray.value]
+    return { count: 0 }
+  },
+
+  async setCrosshair(p, nvP) {
+    const nv = await nvP
+    nv.setCrosshairPos(p.mm as [number, number, number])
+    nv.drawScene()
+    return locationPayload(nv)
+  },
+
+  async getCrosshair(_p, nvP) {
+    return locationPayload(await nvP)
+  },
+
+  async getVolumeInfo(p, nvP) {
+    const nv = await nvP
+    return volumeSummary(nv, (p.index as number) - 1)
+  },
+
+  async count(_p, nvP) {
+    const nv = await nvP
+    return { volumes: nv.volumes.length, meshes: nv.meshes.length }
+  },
+
+  async setLayout(p, nvP) {
+    const nv = await nvP
+    const key = String(p.layout).toLowerCase()
+    if (!(key in LAYOUTS)) {
+      throw new Error(`Unknown layout "${p.layout}"`)
+    }
+    appPropsGlobal!.sliceType.value = LAYOUTS[key]
+    nv.drawScene()
+    return { layout: key }
+  },
+
+  async setOptions(p, nvP) {
+    const nv = await nvP
+    if (typeof p.crosshairVisible === 'boolean') {
+      nv.crosshairWidth = p.crosshairVisible ? 1 : 0
+    }
+    if (typeof p.radiological === 'boolean') {
+      nv.isRadiological = p.radiological
+    }
+    if (typeof p.colorbar === 'boolean') {
+      nv.isColorbarVisible = p.colorbar
+    }
+    nv.drawScene()
+    return {}
+  },
+
+  async setFrame(p, nvP) {
+    const nv = await nvP
+    const i = (p.index as number) - 1
+    const id = nv.volumes[i]?.id
+    if (!id) {
+      throw new Error(`Volume ${p.index} cannot be scrubbed: it has no id`)
+    }
+    nv.setFrame4D(id, (p.frame as number) - 1)
+    return { frame: p.frame }
+  },
+
+  async snapshot(_p, nvP) {
+    const nv = await nvP
+    const canvas: HTMLCanvasElement | null = nv.canvas
+    if (!canvas) {
+      throw new Error('No canvas attached yet')
+    }
+    // Mirror NiiVue's own saveBitmap: force a synchronous render through the
+    // view, then blit into a 2-D canvas in the same task. drawScene alone is
+    // not enough on the WebGL2 path, whose context is created without
+    // preserveDrawingBuffer - the buffer is gone by composite time and the
+    // capture comes back solid black. Seen on MATLAB R2024b, which falls back
+    // to WebGL2; R2026a runs WebGPU and happened to survive.
+    // drawScene queues the scene; view.render() forces it out synchronously.
+    // Both are needed: without the draw there is nothing new to render, and
+    // without the synchronous render the WebGL2 path has already lost its
+    // drawing buffer by the time we read it (created without
+    // preserveDrawingBuffer), which returns solid black.
+    nv.drawScene()
+    if (nv.view && typeof nv.view.render === 'function') {
+      nv.view.render()
+    }
+    const out = document.createElement('canvas')
+    out.width = canvas.width
+    out.height = canvas.height
+    const ctx = out.getContext('2d')
+    if (!ctx) {
+      throw new Error('Could not create a 2-D context for the capture')
+    }
+    ctx.drawImage(canvas, 0, 0)
+    const url = out.toDataURL('image/png')
+    return { png: url.slice(url.indexOf(',') + 1) }
+  },
+}
+
+async function dispatch(msg: CallMessage) {
+  const { id, method, params } = msg
+  const fn = methods[method]
+  if (!fn) {
+    reply(id, false, null, `Unknown method "${method}"`)
     return
   }
   try {
-    htmlComponentRef.Data = data
-  } catch (error) {
-    console.error('Error sending data to MATLAB:', error)
+    const value = await fn(params ?? {}, getNv())
+    reply(id, true, value)
+  } catch (err) {
+    reply(id, false, null, err instanceof Error ? err.message : String(err))
   }
 }
 
-function base64ToArrayBuffer(b64: string): ArrayBuffer {
-  const binary = atob(b64)
-  const len = binary.length
-  const bytes = new Uint8Array(len)
-  for (let i = 0; i < len; i++) {
-    bytes[i] = binary.charCodeAt(i)
-  }
-  return bytes.buffer
-}
-
-// After a postMessage(addImage/addOverlay), the React app loads the volume
-// asynchronously via NiiVueCanvas's effect on nv.body. Optional MATLAB-side
-// args (colormap, opacity) need to land *after* that completes. Poll the
-// nvArray briefly until the new volume shows up, then apply.
-function applyVolumeOptionsWhenReady(
-  appProps: AppProps,
-  before: number,
-  options: { colormap?: string; opacity?: number },
-  attempts = 50,
-): void {
-  const nv = appProps.nvArray.value[0]
-  const grew = nv && nv.volumes.length > before
-  if (!grew) {
-    if (attempts > 0) {
-      setTimeout(() => applyVolumeOptionsWhenReady(appProps, before, options, attempts - 1), 100)
-    }
-    return
-  }
-  const idx = nv.volumes.length - 1
-  if (options.colormap) {
-    nv.volumes[idx].colormap = options.colormap
-  }
-  if (typeof options.opacity === 'number') {
-    nv.volumes[idx].opacity = options.opacity
-  }
-  nv.updateGLVolume()
-  appProps.nvArray.value = [...appProps.nvArray.value]
-}
-
-function handleMatlabMessage(data: MatlabMessage, appProps: AppProps) {
-  const { type, payload } = data
-  const { nvArray } = appProps
-
-  if (!payload) {
-    return
-  }
-
-  switch (type) {
-    case 'loadVolume': {
-      if (!payload.data) {
-        return
-      }
-      const buffer = base64ToArrayBuffer(payload.data)
-      const uri = payload.name ?? 'volume.nii'
-      const existingNv = nvArray.value[0]
-      const volumesBefore = existingNv ? existingNv.volumes.length : 0
-
-      if (nvArray.value.length === 0) {
-        // First volume: spin up a single canvas and load into it. The
-        // addImage handler in events.ts → NiiVueCanvas.loadVolume accepts
-        // raw ArrayBuffers for NIfTI/NRRD/MGH directly.
-        window.postMessage({ type: 'initCanvas', body: { n: 1 } }, '*')
-        window.postMessage({ type: 'addImage', body: { data: buffer, uri } }, '*')
-      } else {
-        // Subsequent volumes layer onto the existing canvas as overlays.
-        // The 'overlay' handler in events.ts goes through NVImage.loadFromUrl,
-        // whose url field is typed as string, so wrap the buffer in a Blob
-        // URL to stay on the well-typed path.
-        const blobUrl = URL.createObjectURL(new Blob([buffer]))
-        window.postMessage({ type: 'overlay', body: { data: blobUrl, uri, index: 0 } }, '*')
-      }
-
-      if (payload.colormap || typeof payload.opacity === 'number') {
-        applyVolumeOptionsWhenReady(appProps, volumesBefore, {
-          colormap: payload.colormap,
-          opacity: payload.opacity,
-        })
-      }
-      break
-    }
-    case 'addMesh': {
-      if (!payload.data || nvArray.value.length === 0) {
-        sendToMatlab({
-          type: 'error',
-          message: 'Load a volume before adding a mesh',
-        })
-        return
-      }
-      const nv = nvArray.value[0]
-      const buffer = base64ToArrayBuffer(payload.data)
-      const name = payload.name ?? 'mesh.obj'
-      // v1 parses the mesh itself: NVMesh is a type-only export now, and
-      // addMesh takes a File whose name carries the extension niivue
-      // dispatches the loader on.
-      nv.addMesh({ url: new File([buffer], name), name })
-        .then(() => {
-          nvArray.value = [...nvArray.value]
-        })
-        .catch((error: unknown) => {
-          console.error('Error loading mesh:', error)
-          sendToMatlab({ type: 'error', message: `Failed to load mesh: ${error}` })
-        })
-      break
-    }
-    case 'setColormap':
-      if (
-        typeof payload.index === 'number' &&
-        typeof payload.colormap === 'string' &&
-        nvArray.value.length > 0 &&
-        nvArray.value[0].volumes.length > payload.index
-      ) {
-        nvArray.value[0].volumes[payload.index].colormap = payload.colormap
-        nvArray.value[0].updateGLVolume()
-        nvArray.value = [...nvArray.value]
-      }
-      break
-    case 'setOpacity':
-      if (
-        typeof payload.index === 'number' &&
-        typeof payload.opacity === 'number' &&
-        nvArray.value.length > 0 &&
-        nvArray.value[0].volumes.length > payload.index
-      ) {
-        nvArray.value[0].volumes[payload.index].opacity = payload.opacity
-        nvArray.value[0].updateGLVolume()
-        nvArray.value = [...nvArray.value]
-      }
-      break
-    case 'updateCrosshairs':
-      if (
-        typeof payload.x === 'number' &&
-        typeof payload.y === 'number' &&
-        typeof payload.z === 'number' &&
-        nvArray.value.length > 0
-      ) {
-        // v1: nv.scene is gone. Note the space change: the old
-        // nv.scene.crosshairPos was a [0,1] scene fraction, while
-        // setCrosshairPos is world mm (verified by round-tripping [-30 20 10]
-        // through a real volume). mm is what this API always meant to expose -
-        // the documented setCrosshair(64, 64, 32) only makes sense in mm.
-        nvArray.value[0].setCrosshairPos([payload.x, payload.y, payload.z])
-        nvArray.value[0].drawScene()
-      }
-      break
-    case 'setSliceType':
-      appProps.sliceType.value = payload.sliceType ?? SLICE_TYPE.MULTIPLANAR
-      break
-    case 'clearVolumes':
-      if (nvArray.value.length > 0) {
-        // v1: nv.volumes is a read-only getter. Drop each volume on the
-        // model from the top down, then refresh GL (same shape as Menu.tsx).
-        const nv = nvArray.value[0]
-        for (let i = nv.volumes.length - 1; i >= 0; i--) {
-          nv.model.removeVolume(i)
-        }
-        nv.updateGLVolume()
-        nvArray.value = [...nvArray.value]
-      }
-      break
-    default:
-      console.warn('Unknown message type from MATLAB:', type)
-  }
+window.setup = (htmlComponent: MatlabHTMLComponent) => {
+  hostRef = htmlComponent
+  htmlComponent.addEventListener('nvcall', (event: MatlabEvent) => {
+    void dispatch(event.Data as CallMessage)
+  })
+  // The app mounts one canvas up front so the first call has somewhere to land.
+  window.postMessage({ type: 'initCanvas', body: { n: 1 } }, '*')
+  emit('ready', { href: location.href })
 }
 
 function MatlabApp() {
@@ -240,26 +380,18 @@ function MatlabApp() {
     defaultMeshOverlayColormap: 'hsv',
   })
 
-  // One-time wiring on mount. listenToMessages registers a window 'message'
-  // listener with no de-dup, so re-running this effect would accumulate
-  // handlers and process each MATLAB-driven postMessage N times. The signals
-  // inside appProps are stable across re-renders (useSignal returns the same
-  // instance per component lifetime), so an empty dep array is correct here
-  // even though appProps's object identity changes per render.
+  // One-time wiring. listenToMessages adds a window 'message' listener with no
+  // de-dup, so re-running would process each message N times. The signals in
+  // appProps are stable for the component's lifetime, so an empty dep array is
+  // correct even though appProps's identity changes per render.
   useEffect(() => {
     appPropsGlobal = appProps
     listenToMessages(appProps)
     setIsReady(true)
   }, [])
 
-  // Forward crosshair changes back to MATLAB. The React app's `location`
-  // signal is updated by Volume.tsx whenever niivue's onLocationChange fires
-  // (mouse click, drag, programmatic move). Watching it via a useEffect dep
-  // avoids both the 100 ms polling loop and the onLocationChange-overwrite
-  // collision that broke direct nv.onLocationChange assignment from here.
-  // Reading `.value` in the dep array also serves as the preact-signals
-  // subscription anchor; useSignals/preset-vite wires the rerender on
-  // change.
+  // Forward crosshair movement. Volume.tsx updates `location` whenever NiiVue's
+  // locationChange fires, which covers clicks, drags and programmatic moves.
   const locationValue = appProps.location.value
   useEffect(() => {
     if (!locationValue) {
@@ -269,11 +401,7 @@ function MatlabApp() {
     if (!nv) {
       return
     }
-    sendToMatlab({
-      type: 'crosshairUpdate',
-      // world mm, matching setCrosshairPos above.
-      position: nv.getCrosshairPos(),
-    })
+    emit('crosshairMoved', locationPayload(nv as unknown as NvInstance))
   }, [locationValue])
 
   if (!isReady) {

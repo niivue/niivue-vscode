@@ -1,64 +1,66 @@
-% Build MATLAB Toolbox (.mltbx) for NiiVue
-% This script creates a MATLAB Toolbox package that can be easily installed
-
-% Ensure we're in the right directory
-packageRoot = fileparts(mfilename('fullpath'));
-projectRoot = fullfile(packageRoot, '..');
-
-% Check if dist folder exists
-distPath = fullfile(projectRoot, 'dist', 'index.html');
-if ~exist(distPath, 'file')
-    error('Build artifacts not found. Please run "pnpm build" first.');
-end
-
-% Create toolbox project file
-prj = 'niivue_matlab.prj';
-if exist(prj, 'file')
-    delete(prj);
-end
-
-% Define toolbox properties
-toolboxName = 'NiiVue for MATLAB';
-toolboxVersion = '0.1.0';
-toolboxAuthor = 'NiiVue Team';
-toolboxSummary = 'High-performance neuroimaging visualization for MATLAB';
-toolboxDescription = [...
-    'NiiVue integration for MATLAB provides a modern, GPU-accelerated ', ...
-    'neuroimaging viewer that runs directly in MATLAB using uihtml. ', ...
-    'Features include: NIfTI volume loading, overlay support, ', ...
-    'mesh visualization, multiple colormaps, and interactive controls.'];
-
-% Create the toolbox using MATLAB's packaging tools
-fprintf('Creating MATLAB Toolbox package...\n');
-fprintf('Name: %s\n', toolboxName);
-fprintf('Version: %s\n', toolboxVersion);
-
-% Note: This requires MATLAB's toolbox packaging functionality
-% For manual creation, use the following structure:
+function out = build_toolbox(outFile)
+%BUILD_TOOLBOX Package NiiVue for MATLAB as an installable .mltbx.
 %
-% NiiVue_MATLAB/
-% ├── +niivue/
-% │   ├── Controller.m
-% │   ├── Viewer.m
-% │   └── Component.m
-% ├── dist/
-% │   └── index.html
-% └── examples/
-%     └── basic_usage.m
+%   build_toolbox                     writes niivue-matlab.mltbx here
+%   build_toolbox("path/to/out.mltbx")
+%
+%   Requires the viewer bundle to be built first:
+%       pnpm --filter @niivue/matlab build
 
-fprintf('\nTo manually create the toolbox:\n');
-fprintf('1. Open MATLAB Toolbox Packager (Home > Add-Ons > Package Toolbox)\n');
-fprintf('2. Add the following folders:\n');
-fprintf('   - matlab/+niivue/\n');
-fprintf('   - dist/\n');
-fprintf('   - matlab/examples/\n');
-fprintf('3. Set toolbox properties:\n');
-fprintf('   - Name: %s\n', toolboxName);
-fprintf('   - Version: %s\n', toolboxVersion);
-fprintf('   - Author: %s\n', toolboxAuthor);
-fprintf('   - Summary: %s\n', toolboxSummary);
-fprintf('4. Package and save as niivue_matlab.mltbx\n');
+    arguments
+        outFile (1,1) string = ""
+    end
 
-fprintf('\nAlternatively, install directly by adding to MATLAB path:\n');
-fprintf('  addpath(''%s'')\n', fullfile(projectRoot, 'matlab'));
-fprintf('  savepath\n');
+    here = fileparts(mfilename('fullpath'));
+    pkgRoot = fileparts(here);
+    toolboxDir = fullfile(pkgRoot, 'matlab');
+
+    bundle = fullfile(pkgRoot, 'dist', 'index.html');
+    if ~isfile(bundle)
+        error('niivue:bundleMissing', ...
+            ['The viewer bundle is missing, so the toolbox would install a ' ...
+             'viewer that cannot open.\nBuild it first:\n' ...
+             '    pnpm --filter @niivue/matlab build']);
+    end
+
+    if strlength(outFile) == 0
+        outFile = fullfile(pkgRoot, 'niivue-matlab.mltbx');
+    end
+
+    % ToolboxOptions builds the packaging definition in code, so there is no
+    % .prj to keep in sync with the folder layout. R2023a+, which matches the
+    % package's own minimum.
+    opts = matlab.addons.toolbox.ToolboxOptions(toolboxDir, 'niivue-matlab-0001');
+    opts.ToolboxName = "NiiVue for MATLAB";
+    opts.ToolboxVersion = readVersion(pkgRoot);
+    opts.Description = "GPU-accelerated viewer for NIfTI, DICOM, meshes and tractography.";
+    opts.Summary = "Interactive 3-D medical image viewer inside a MATLAB figure.";
+    opts.AuthorName = "NiiVue contributors";
+    opts.MinimumMatlabRelease = "R2023a";
+    opts.OutputFile = outFile;
+
+    % The bundle lives outside matlab/, so add it explicitly.
+    opts.ToolboxFiles = [opts.ToolboxFiles; string(bundle)];
+
+    matlab.addons.toolbox.packageToolbox(opts);
+    fprintf('Wrote %s\n', outFile);
+
+    if nargout > 0
+        out = outFile;
+    end
+end
+
+function v = readVersion(pkgRoot)
+    v = "0.1.0";
+    p = fullfile(pkgRoot, 'package.json');
+    if isfile(p)
+        try
+            j = jsondecode(fileread(p));
+            if isfield(j, 'version')
+                v = string(j.version);
+            end
+        catch
+            % keep the default
+        end
+    end
+end
