@@ -126,13 +126,44 @@ An array carries no header, so this is a plain scaled identity — no obliquity 
 coordinates. When you have a real header, load the **file**: the geometry then comes from the image
 rather than from an assumption.
 
-### Compare images, the way Check Reg does
+### Open several images at once
+
+Two different things you might mean, and each has its own call.
+
+**Side by side**, one panel per image, one crosshair driving all of them:
 
 ```matlab
-niivue.checkreg(["mean.nii" "T1.nii" "atlas.nii"])
+niivue.compare(["mean.nii" "T1.nii" "atlas.nii"])
 ```
 
-One crosshair, one world position, every image. There is no 24-image limit.
+**Stacked**, as overlays in a single panel:
+
+```matlab
+niivue.show("T1.nii", "spmT_0001.nii")
+```
+
+Both take whatever shape your script already has — no need to build a list by hand:
+
+```matlab
+niivue.compare("derivatives/*_T1w.nii.gz")   % wildcard, expanded and sorted
+niivue.compare("sub-01/anat")                % a folder: every image in it
+niivue.compare(dir("**/*_bold.nii.gz"))      % dir() output, straight in
+niivue.compare({'a.nii', 'b.nii'})           % cellstr
+niivue.compare(subjects + "/T1.nii")         % string array from a loop
+```
+
+So a whole cohort is one line:
+
+```matlab
+subjects = "sub-" + string(1:12, "%02d");
+niivue.compare(subjects + "/anat/T1w.nii.gz")
+```
+
+`niivue.checkreg` is the same as `compare`, under the name SPM users reach for. Unlike
+`spm_check_registration` there is no 24-image limit.
+
+Panels are linked by world position, so the crosshair lands on the same anatomy in every image
+regardless of their voxel grids — which is the point of looking at them together.
 
 ### Put it in an App Designer app
 
@@ -148,11 +179,16 @@ addlistener(app.Nv.Viewer, "CrosshairMoved", @(~, e) ...
 ### Get the rendering into a figure or a file
 
 ```matlab
-img = v.snapshot();        % uint8 H-by-W-by-3
+img = v.snapshot();          % uint8 H-by-W-by-3
 imshow(img)
 
-v.snapshot("figure1.png"); % straight to disk
+v.snapshot("figure1.png");   % straight to disk
+
+[img, info] = v.snapshot();  % info.panels, info.width, info.height
 ```
+
+A tiled comparison captures as the whole grid, not just the first panel;
+`info.panels` tells you how many went in.
 
 Use this rather than `print` or `exportapp`. Those capture the viewer as a solid black rectangle,
 because the GPU-composited surface is not in MATLAB's capture path. `snapshot` asks the viewer to
@@ -165,7 +201,8 @@ render its own bitmap and sends the pixels back, so the result behaves like any 
 | Member | What it does |
 |---|---|
 | `Viewer(parent)` | Open a viewer, optionally inside an existing container |
-| `addVolume(src, ...)` | Load a file path or a numeric array |
+| `addVolume(src, ...)` | Load a file path or a numeric array, stacked as a layer |
+| `openTiles(files)` | Open each image in its own linked panel |
 | `addMesh(src, ...)` | Load a surface |
 | `setVolume(i, ...)` | Restyle a loaded volume |
 | `removeVolume(i)` / `clear` | Remove one / all |
@@ -173,7 +210,7 @@ render its own bitmap and sends the pixels back, so the result behaves like any 
 | `intensityAt(mm)` | Values of every layer at a world point |
 | `setFrame(n, i)` | Choose the volume of a 4-D series |
 | `set(...)` | Toggle colorbar, crosshair, radiological convention |
-| `snapshot(file)` | Capture the render |
+| `snapshot(file)` | Capture the render, every panel included |
 | `Crosshair` | Get/set cursor position, world mm |
 | `Layout` | `"axial"`, `"coronal"`, `"sagittal"`, `"multiplanar"`, `"render"` |
 | `CrosshairMoved`, `VolumeLoaded` | Events, for `addlistener` |
@@ -185,8 +222,9 @@ Name-value options on `addVolume`: `Colormap`, `Opacity`, `Threshold`, `Name`, `
 
 | | |
 |---|---|
-| `niivue.show(files...)` | Open a viewer on one or more images |
-| `niivue.checkreg(files)` | Linked comparison view |
+| `niivue.show(files...)` | Open images stacked as overlays |
+| `niivue.compare(files)` | Open images side by side, crosshair linked |
+| `niivue.checkreg(files)` | `compare`, under the SPM name |
 | `niivue.diagnose` | Check this session and report what is missing |
 
 ## How it works

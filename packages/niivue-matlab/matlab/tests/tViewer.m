@@ -54,6 +54,22 @@ classdef tViewer < matlab.unittest.TestCase
         end
     end
 
+    methods (Access = private)
+        function files = threeFixtures(tc)
+            d = fullfile(fileparts(tc.Fixture), 'multi');
+            if ~exist(d, 'dir'), mkdir(d); end
+            names = ["one.nii" "two.nii" "three.nii"];
+            files = strings(1, 3);
+            for k = 1:3
+                files(k) = fullfile(d, names(k));
+                if ~isfile(files(k))
+                    niivue.internal.writeNifti(files(k), ...
+                        int16(k * reshape(1:(5*6*7), 5, 6, 7)), [2 2 2]);
+                end
+            end
+        end
+    end
+
     methods (Test)
         function opensAndReportsNoVolumes(tc)
             tc.verifyEqual(tc.Viewer.numVolumes(), 0);
@@ -250,6 +266,48 @@ classdef tViewer < matlab.unittest.TestCase
             tc.verifyTrue(isfield(info, 'calMax'));
         end
 
+        function openTilesMakesOnePanelPerImage(tc)
+            files = tc.threeFixtures();
+            result = tc.Viewer.openTiles(files);
+            tc.verifyEqual(double(result.tiles), 3, ...
+                'one panel per image, and no spare');
+            tc.verifyEmpty(result.failed);
+        end
+
+        function openTilesLeavesNoEmptyPanel(tc)
+            % Regression: the bridge already opens one panel at startup, so
+            % asking for one per image left an unused "No image loaded" tile.
+            result = tc.Viewer.openTiles(tc.threeFixtures());
+            tc.verifyEqual(double(result.tiles), 3);
+        end
+
+        function tiledPanelsShareOneCrosshair(tc)
+            tc.Viewer.openTiles(tc.threeFixtures());
+            tc.Viewer.Crosshair = [2 -4 2];
+            tc.verifyEqual(tc.Viewer.Crosshair, [2 -4 2], 'AbsTol', 0.5);
+        end
+
+        function clearCollapsesTilesBackToOnePanel(tc)
+            tc.Viewer.openTiles(tc.threeFixtures());
+            tc.Viewer.clear();
+            result = tc.Viewer.openTiles(tc.threeFixtures());
+            tc.verifyEqual(double(result.tiles), 3, ...
+                'panels must not accumulate across clears');
+        end
+
+        function snapshotCoversEveryPanel(tc)
+            % Panels are laid out by the app - a row here, a grid elsewhere -
+            % so counting bright quadrants tests the layout, not the capture.
+            % Ask the viewer what it composited instead.
+            tc.Viewer.openTiles(tc.threeFixtures());
+            settle(2);
+            [img, info] = tc.Viewer.snapshot();
+            tc.verifyEqual(info.panels, 3, 'every panel must be composited');
+            tc.verifyEqual(size(img, 2), info.width, 'width must match the composite');
+            tc.verifyGreaterThan(numel(unique(img(:))), 1, 'the capture must not be blank');
+        end
+
+
         function usingAClosedViewerSaysSo(tc)
             v = niivue.Viewer(Name="doomed");
             delete(v.Figure);
@@ -266,3 +324,4 @@ function settle(seconds)
         pause(0.01)
     end
 end
+

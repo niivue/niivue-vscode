@@ -106,6 +106,44 @@ classdef Viewer < handle
             info = obj.Bridge.call('loadVolume', params);
         end
 
+        function result = openTiles(obj, files)
+            %OPENTILES Open each image in its own linked panel.
+            %
+            %   v.openTiles(["mean.nii" "T1.nii" "atlas.nii"])
+            %
+            %   One panel per image, with a shared crosshair: moving it in any
+            %   panel moves it in all of them, at the same world position. Use
+            %   this to compare images. To stack them as overlays in a single
+            %   panel, use addVolume instead.
+            arguments
+                obj
+                files
+            end
+            obj.assertAlive();
+
+            paths = niivue.internal.resolveFiles(files);
+            items = struct('url', {}, 'name', {});
+            for k = 1:numel(paths)
+                ref = niivue.internal.publish(obj.Bridge.SessionDir, paths(k));
+                items(k).url = ref.url; %#ok<AGROW>
+                items(k).name = ref.name; %#ok<AGROW>
+            end
+
+            % Loading several images is slower than a single call; give the
+            % viewer room rather than tripping the ordinary call timeout.
+            restore = obj.Bridge.Timeout;
+            cleanup = onCleanup(@() obj.setTimeout(restore));
+            obj.Bridge.Timeout = max(restore, 30 * numel(paths));
+
+            result = obj.Bridge.call('openTiles', struct('items', items));
+
+            if ~isempty(result.failed)
+                warning('niivue:someImagesFailed', ...
+                    '%d of %d images could not be read.', ...
+                    numel(result.failed), numel(paths));
+            end
+        end
+
         function info = addMesh(obj, src, opts)
             %ADDMESH Load a surface mesh (.gii, .mz3, FreeSurfer, .obj, ...).
             arguments
@@ -218,11 +256,13 @@ classdef Viewer < handle
                 'radiological', opts.Radiological));
         end
 
-        function img = snapshot(obj, filename)
+        function [img, info] = snapshot(obj, filename)
             %SNAPSHOT Capture the rendered view as an RGB image.
             %
-            %   img = v.snapshot();          returns a uint8 H-by-W-by-3 array
-            %   v.snapshot("figure.png");    writes a file
+            %   img = v.snapshot();            returns a uint8 H-by-W-by-3 array
+            %   v.snapshot("figure.png");      writes a file
+            %   [img, info] = v.snapshot();    info.panels says how many panels
+            %                                  were composited
             %
             %   MATLAB's own print and exportapp capture the web view as solid
             %   black, because the GPU-composited surface is not in their path.
@@ -244,8 +284,11 @@ classdef Viewer < handle
             if strlength(filename) > 0
                 imwrite(img, filename);
             end
+            info = struct('panels', double(res.panels), ...
+                          'width', double(res.width), ...
+                          'height', double(res.height));
             if nargout == 0
-                clear img
+                clear img info
             end
         end
 
@@ -286,6 +329,12 @@ classdef Viewer < handle
     end
 
     methods (Access = private)
+        function setTimeout(obj, value)
+            if ~isempty(obj.Bridge) && isvalid(obj.Bridge)
+                obj.Bridge.Timeout = value;
+            end
+        end
+
         function assertAlive(obj)
             if isempty(obj.Bridge) || ~obj.Bridge.isAlive()
                 error('niivue:closed', ...

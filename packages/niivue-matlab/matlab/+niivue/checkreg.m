@@ -3,26 +3,18 @@ function v = checkreg(files, opts)
 %
 %   niivue.checkreg(["mean.nii" "T1.nii" "atlas.nii"])
 %
-%   Loads every image into a single linked view so one crosshair reads the same
-%   world position in all of them. Unlike spm_check_registration there is no
-%   24-image limit.
+%   The name SPM users will reach for. Identical to NIIVUE.COMPARE, which is
+%   the same thing without the SPM vocabulary. Unlike spm_check_registration
+%   there is no 24-image limit.
 %
-%   See also NIIVUE.SHOW, NIIVUE.VIEWER.
+%   See also NIIVUE.COMPARE, NIIVUE.SHOW.
 
     arguments
-        files (1,:) string
-        opts.Layout (1,1) string = "multiplanar"
+        files
+        opts.Layout (1,1) string = "axial"
     end
 
-    v = niivue.Viewer(Name="NiiVue - Check Registration");
-    for k = 1:numel(files)
-        if k == 1
-            v.addVolume(files(k));
-        else
-            v.addVolume(files(k), Opacity=0);   % loaded, hidden; toggle in the menu
-        end
-    end
-    v.Layout = opts.Layout;
+    v = niivue.compare(files, Layout=opts.Layout, Name="NiiVue - Check Registration");
     if nargout == 0
         clear v
     end

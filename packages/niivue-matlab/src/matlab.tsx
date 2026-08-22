@@ -48,6 +48,8 @@ interface NvLocation {
 
 interface NvInstance {
   attached?: Promise<void> | null
+  isNew?: boolean
+  uri?: string
   volumes: NvVolume[]
   meshes: unknown[]
   canvas: HTMLCanvasElement | null
@@ -176,14 +178,21 @@ function bindLocation(nv: NvInstance) {
   })
 }
 
-// NiiVue computes mm, voxel indices and the per-layer intensities itself, and
-// its numbers are the ones the status bar shows. Recomputing them here drifted
-// (voxel came back empty, so every intensity was NaN), so read its payload and
-// fall back only when no location has been reported yet.
+function sameSpot(a: number[], b: number[]) {
+  return a.length === b.length && a.every((v, i) => Math.abs(v - b[i]) < 1e-3)
+}
+
+// The crosshair position is read straight from the instance, so it is never
+// stale. Voxel indices and per-layer intensities come from NiiVue's own
+// locationChange payload - recomputing them here drifted - but only when that
+// payload describes the position we are actually reporting. With several
+// linked panels the events arrive from all of them, so an unchecked cache
+// would occasionally answer for the previous spot.
 function locationPayload(nv: NvInstance) {
-  if (lastLocation) {
+  const mm = Array.from(nv.getCrosshairPos())
+  if (lastLocation && sameSpot(Array.from(lastLocation.mm ?? []), mm)) {
     return {
-      mm: Array.from(lastLocation.mm ?? []),
+      mm,
       vox: Array.from(lastLocation.vox ?? []),
       values: (lastLocation.values ?? []).map((v) => ({
         name: v.name ?? '',
@@ -192,13 +201,21 @@ function locationPayload(nv: NvInstance) {
       })),
     }
   }
-  return { mm: Array.from(nv.getCrosshairPos()), vox: [], values: [] }
+  return { mm, vox: [], values: [] }
 }
 
-/** Force NiiVue to recompute and re-emit after a programmatic move. */
-function refreshLocation(nv: NvInstance) {
+/** Force NiiVue to recompute and re-emit, then let the event land. */
+async function refreshLocation(nv: NvInstance) {
   if (typeof nv.createOnLocationChange === 'function') {
     nv.createOnLocationChange()
+  }
+  const mm = Array.from(nv.getCrosshairPos())
+  const deadline = Date.now() + 500
+  while (Date.now() < deadline) {
+    if (lastLocation && sameSpot(Array.from(lastLocation.mm ?? []), mm)) {
+      return
+    }
+    await new Promise((r) => setTimeout(r, 10))
   }
 }
 
@@ -241,6 +258,57 @@ const methods: Record<string, (p: Params, nvP: Promise<NvInstance>) => Promise<u
     appPropsGlobal!.nvArray.value = [...appPropsGlobal!.nvArray.value]
     emit('volumeLoaded', volumeSummary(nv, index))
     return volumeSummary(nv, index)
+  },
+
+  async openTiles(p, nvP) {
+    await nvP
+    const items = (p.items ?? []) as { url: string; name: string }[]
+    const props = appPropsGlobal!
+
+    // Go through the app's own addImage pipeline rather than loading straight
+    // into one instance: each addImage claims its own canvas, and Container
+    // wires broadcastTo across them, so the tiles come out linked with no
+    // extra work here. It also owns the attach-before-load sequencing.
+    //
+    // Start from an empty array so this call gets exactly as many fresh
+    // panels as it has images. Two earlier attempts were worse: asking for
+    // one panel per image on top of the existing ones left a stray empty
+    // tile, and reusing an already-mounted instance hung, because setting
+    // body again on a canvas that has already loaded once does not trigger
+    // another load.
+    props.nvArray.value = []
+    window.postMessage({ type: 'initCanvas', body: { n: items.length } }, '*')
+
+    for (const item of items) {
+      const buf = await fetchBytes(item.url)
+      window.postMessage({ type: 'addImage', body: { data: buf, uri: item.name } }, '*')
+    }
+
+    // Wait until every tile has either a volume or a recorded load error,
+    // so the MATLAB call does not return before there is anything to see.
+    const deadline = Date.now() + 120000
+    for (;;) {
+      const arr = props.nvArray.value
+      const settled = arr.filter(
+        (nv) => (nv.volumes?.length ?? 0) > 0 || (nv as unknown as { loadError?: unknown }).loadError,
+      ).length
+      if (settled >= items.length) {
+        break
+      }
+      if (Date.now() > deadline) {
+        throw new Error(`Only ${settled} of ${items.length} images loaded before the timeout`)
+      }
+      await new Promise((r) => setTimeout(r, 50))
+    }
+
+    const arr = props.nvArray.value
+    return {
+      tiles: arr.length,
+      names: arr.map((nv) => (nv as unknown as { uri?: string }).uri ?? ''),
+      failed: arr
+        .map((nv, i) => ((nv as unknown as { loadError?: unknown }).loadError ? i + 1 : 0))
+        .filter((i) => i > 0),
+    }
   },
 
   async loadMesh(p, nvP) {
@@ -287,28 +355,48 @@ const methods: Record<string, (p: Params, nvP: Promise<NvInstance>) => Promise<u
   },
 
   async clear(_p, nvP) {
-    const nv = await nvP
-    for (let i = nv.volumes.length - 1; i >= 0; i--) {
-      nv.model.removeVolume(i)
+    await nvP
+    const props = appPropsGlobal!
+    const all = props.nvArray.value as unknown as NvInstance[]
+    for (const inst of all) {
+      for (let i = inst.volumes.length - 1; i >= 0; i--) {
+        inst.model.removeVolume(i)
+      }
+      // Deliberately no updateGLVolume: with nothing loaded it destroys the
+      // bind groups and the next addVolume fails.
+      inst.drawScene()
     }
-    // Deliberately no updateGLVolume: with nothing loaded it destroys the bind
-    // groups and the next addVolume fails.
+    // Collapse any extra panels openTiles created, so clear really does return
+    // the viewer to its opening state rather than leaving empty tiles behind.
+    if (props.nvArray.value.length > 1) {
+      props.nvArray.value = [props.nvArray.value[0]]
+    }
     lastLocation = null
-    nv.drawScene()
-    appPropsGlobal!.nvArray.value = [...appPropsGlobal!.nvArray.value]
+    props.nvArray.value = [...props.nvArray.value]
     return { count: 0 }
   },
 
   async setCrosshair(p, nvP) {
     const nv = await nvP
-    nv.setCrosshairPos(p.mm as [number, number, number])
-    nv.drawScene()
-    refreshLocation(nv)
+    const mm = p.mm as [number, number, number]
+    // Set every panel, not just the first. Container has each instance
+    // broadcastTo the others, so a position written to one panel can be
+    // overwritten moments later by another panel broadcasting its own - which
+    // showed up as the crosshair snapping back to the origin, but only
+    // sometimes, because it is a race.
+    const all = appPropsGlobal!.nvArray.value as unknown as NvInstance[]
+    for (const inst of all) {
+      inst.setCrosshairPos(mm)
+      inst.drawScene()
+    }
+    await refreshLocation(nv)
     return locationPayload(nv)
   },
 
   async getCrosshair(_p, nvP) {
-    return locationPayload(await nvP)
+    const nv = await nvP
+    await refreshLocation(nv)
+    return locationPayload(nv)
   },
 
   async getVolumeInfo(p, nvP) {
@@ -359,36 +447,58 @@ const methods: Record<string, (p: Params, nvP: Promise<NvInstance>) => Promise<u
   },
 
   async snapshot(_p, nvP) {
-    const nv = await nvP
-    const canvas: HTMLCanvasElement | null = nv.canvas
-    if (!canvas) {
+    await nvP
+    const instances = (appPropsGlobal!.nvArray.value as unknown as NvInstance[]).filter(
+      (nv) => nv.canvas,
+    )
+    if (instances.length === 0) {
       throw new Error('No canvas attached yet')
     }
-    // Mirror NiiVue's own saveBitmap: force a synchronous render through the
-    // view, then blit into a 2-D canvas in the same task. drawScene alone is
-    // not enough on the WebGL2 path, whose context is created without
-    // preserveDrawingBuffer - the buffer is gone by composite time and the
-    // capture comes back solid black. Seen on MATLAB R2024b, which falls back
-    // to WebGL2; R2026a runs WebGPU and happened to survive.
-    // drawScene queues the scene; view.render() forces it out synchronously.
-    // Both are needed: without the draw there is nothing new to render, and
-    // without the synchronous render the WebGL2 path has already lost its
-    // drawing buffer by the time we read it (created without
-    // preserveDrawingBuffer), which returns solid black.
-    nv.drawScene()
-    if (nv.view && typeof nv.view.render === 'function') {
-      nv.view.render()
-    }
+
+    // Composite every panel in its on-screen position, so a tiled
+    // comparison captures as the grid the user is looking at rather than
+    // just the first tile.
+    const rects = instances.map((nv) => nv.canvas!.getBoundingClientRect())
+    const left = Math.min(...rects.map((r) => r.left))
+    const top = Math.min(...rects.map((r) => r.top))
+    const right = Math.max(...rects.map((r) => r.right))
+    const bottom = Math.max(...rects.map((r) => r.bottom))
+    const scale = window.devicePixelRatio || 1
+
     const out = document.createElement('canvas')
-    out.width = canvas.width
-    out.height = canvas.height
+    out.width = Math.max(1, Math.round((right - left) * scale))
+    out.height = Math.max(1, Math.round((bottom - top) * scale))
     const ctx = out.getContext('2d')
     if (!ctx) {
       throw new Error('Could not create a 2-D context for the capture')
     }
-    ctx.drawImage(canvas, 0, 0)
+
+    instances.forEach((nv, i) => {
+      // Render and blit one panel at a time. The WebGL2 context is created
+      // without preserveDrawingBuffer, so a buffer is only readable in the
+      // same task as its draw - rendering all of them first and compositing
+      // afterwards would capture blanks.
+      nv.drawScene()
+      if (nv.view && typeof nv.view.render === 'function') {
+        nv.view.render()
+      }
+      const r = rects[i]
+      ctx.drawImage(
+        nv.canvas!,
+        Math.round((r.left - left) * scale),
+        Math.round((r.top - top) * scale),
+        Math.round(r.width * scale),
+        Math.round(r.height * scale),
+      )
+    })
+
     const url = out.toDataURL('image/png')
-    return { png: url.slice(url.indexOf(',') + 1) }
+    return {
+      png: url.slice(url.indexOf(',') + 1),
+      panels: instances.length,
+      width: out.width,
+      height: out.height,
+    }
   },
 }
 

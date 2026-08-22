@@ -125,6 +125,39 @@ classdef tData < matlab.unittest.TestCase
             tc.verifyTrue(isfolder(recent), 'a fresh session folder must survive');
         end
 
+        function resolveFilesAcceptsTheUsualMatlabShapes(tc)
+            a = fullfile(tc.TempDir, 'a.nii');
+            b = fullfile(tc.TempDir, 'b.nii');
+            niivue.internal.writeNifti(a, int16(zeros(2,2,2)), [1 1 1]);
+            niivue.internal.writeNifti(b, int16(zeros(2,2,2)), [1 1 1]);
+
+            tc.verifyNumElements(niivue.internal.resolveFiles(string(a)), 1);
+            tc.verifyNumElements(niivue.internal.resolveFiles([string(a) string(b)]), 2);
+            tc.verifyNumElements(niivue.internal.resolveFiles({a, b}), 2);
+            tc.verifyNumElements(niivue.internal.resolveFiles(fullfile(tc.TempDir, '*.nii')), 2);
+            tc.verifyNumElements(niivue.internal.resolveFiles(tc.TempDir), 2, ...
+                'a folder should yield the images inside it');
+            tc.verifyNumElements(niivue.internal.resolveFiles(dir(fullfile(tc.TempDir, '*.nii'))), 2, ...
+                'dir() output should be accepted directly');
+        end
+
+        function resolveFilesSortsExpandedMatches(tc)
+            % A loop over subjects should come out in a predictable order.
+            for name = ["c.nii" "a.nii" "b.nii"]
+                niivue.internal.writeNifti(fullfile(tc.TempDir, name), int16(zeros(2,2,2)), [1 1 1]);
+            end
+            got = niivue.internal.resolveFiles(fullfile(tc.TempDir, '*.nii'));
+            [~, names, exts] = arrayfun(@fileparts, got, 'UniformOutput', false);
+            tc.verifyEqual(string(names) + string(exts), ["a.nii" "b.nii" "c.nii"]);
+        end
+
+        function resolveFilesReportsBadInputClearly(tc)
+            tc.verifyError(@() niivue.internal.resolveFiles(fullfile(tc.TempDir, 'nope*.nii')), ...
+                'niivue:noMatch');
+            tc.verifyError(@() niivue.internal.resolveFiles("definitely-not-here.nii"), ...
+                'niivue:fileNotFound');
+        end
+
         function viewerPageResolves(tc)
             % Guards the packaging layout: the class must find dist/index.html
             % from wherever it is installed.
