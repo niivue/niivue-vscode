@@ -1,0 +1,50 @@
+# Queues Dependabot PRs for auto-merge so routine bumps stop needing a click.
+#
+# Trust posture: TRUSTED.
+#   - Never checks out or runs PR code. Reads Dependabot's own metadata and
+#     calls the merge API, nothing else.
+#
+# Gated on the DEPENDABOT_AUTOMERGE repository variable. Auto-merge only waits
+# for checks that main actually requires, so with no ruleset in place it would
+# merge on the spot. Set the variable to 'true' once main requires the CI
+# check; until then this workflow deliberately does nothing.
+
+name: Dependabot Auto-merge
+
+on: pull_request
+
+# Dependabot-triggered runs get a read-only token unless the workflow asks for
+# more. Both scopes are needed to queue a merge.
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    if: >-
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      vars.DEPENDABOT_AUTOMERGE == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch Dependabot metadata
+        id: meta
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Dev dependencies and workflow actions cannot reach users: a bad bump
+      # breaks CI, not a release. Runtime deps and every major stay manual.
+      # A changed maintainer set is the usual tell for a hijacked package, so
+      # those go to review no matter how harmless the version jump looks.
+      - name: Queue auto-merge
+        if: >-
+          steps.meta.outputs.update-type != 'version-update:semver-major' &&
+          steps.meta.outputs.maintainer-changes == 'false' &&
+          (
+            steps.meta.outputs.dependency-type == 'direct:development' ||
+            steps.meta.outputs.dependency-group == 'actions'
+          )
+        run: gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
