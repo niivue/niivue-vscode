@@ -14,6 +14,9 @@ updates:
       interval: 'weekly'
       day: 'monday'
     open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7
+    rebase-strategy: 'disabled'
     commit-message:
       prefix: 'ci'
       include: 'scope'
@@ -37,6 +40,15 @@ updates:
       day: 'monday'
     open-pull-requests-limit: 3
     versioning-strategy: 'increase-if-necessary'
+    # Quarantine window against poisoned releases: a compromised version is
+    # usually yanked within hours, so waiting lets the registry clean up before
+    # we pull it in. Security updates ignore cooldown and still land at once.
+    cooldown:
+      default-days: 7
+      semver-major-days: 30
+    # Dependabot otherwise rebases every open PR each time a sibling merges,
+    # and each rebase re-runs the full CI matrix. Stale PRs are cheaper.
+    rebase-strategy: 'disabled'
     commit-message:
       prefix: 'chore'
       prefix-development: 'chore'
@@ -154,6 +166,15 @@ updates:
       interval: 'weekly'
       day: 'monday'
     open-pull-requests-limit: 3
+    # Quarantine window against poisoned releases: a compromised version is
+    # usually yanked within hours, so waiting lets the registry clean up before
+    # we pull it in. Security updates ignore cooldown and still land at once.
+    cooldown:
+      default-days: 7
+      semver-major-days: 30
+    # Dependabot otherwise rebases every open PR each time a sibling merges,
+    # and each rebase re-runs the full CI matrix. Stale PRs are cheaper.
+    rebase-strategy: 'disabled'
     commit-message:
       prefix: 'chore'
       include: 'scope'
@@ -172,6 +193,15 @@ updates:
       interval: 'weekly'
       day: 'monday'
     open-pull-requests-limit: 3
+    # Quarantine window against poisoned releases: a compromised version is
+    # usually yanked within hours, so waiting lets the registry clean up before
+    # we pull it in. Security updates ignore cooldown and still land at once.
+    cooldown:
+      default-days: 7
+      semver-major-days: 30
+    # Dependabot otherwise rebases every open PR each time a sibling merges,
+    # and each rebase re-runs the full CI matrix. Stale PRs are cheaper.
+    rebase-strategy: 'disabled'
     commit-message:
       prefix: 'chore'
       include: 'scope'
