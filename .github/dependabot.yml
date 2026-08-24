@@ -16,7 +16,6 @@ updates:
     open-pull-requests-limit: 5
     cooldown:
       default-days: 7
-    rebase-strategy: 'disabled'
     commit-message:
       prefix: 'ci'
       include: 'scope'
@@ -46,9 +45,6 @@ updates:
     cooldown:
       default-days: 7
       semver-major-days: 30
-    # Dependabot otherwise rebases every open PR each time a sibling merges,
-    # and each rebase re-runs the full CI matrix. Stale PRs are cheaper.
-    rebase-strategy: 'disabled'
     commit-message:
       prefix: 'chore'
       prefix-development: 'chore'
@@ -172,9 +168,6 @@ updates:
     cooldown:
       default-days: 7
       semver-major-days: 30
-    # Dependabot otherwise rebases every open PR each time a sibling merges,
-    # and each rebase re-runs the full CI matrix. Stale PRs are cheaper.
-    rebase-strategy: 'disabled'
     commit-message:
       prefix: 'chore'
       include: 'scope'
@@ -199,9 +192,6 @@ updates:
     cooldown:
       default-days: 7
       semver-major-days: 30
-    # Dependabot otherwise rebases every open PR each time a sibling merges,
-    # and each rebase re-runs the full CI matrix. Stale PRs are cheaper.
-    rebase-strategy: 'disabled'
     commit-message:
       prefix: 'chore'
       include: 'scope'
