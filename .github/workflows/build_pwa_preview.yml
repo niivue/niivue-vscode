@@ -38,6 +38,10 @@ concurrency:
 
 jobs:
   build:
+    # Distinct check name: CI has a 'build' job too, and a required status
+    # check is matched by name alone. This workflow is path-filtered, so a
+    # shared name lets a run that never starts satisfy CI's required check.
+    name: preview-build
     # Fork PRs do NOT auto-build. The maintainer triggers the build manually
     # via workflow_dispatch after reviewing the diff. This saves CI minutes on
     # drive-by fork PRs and gives the maintainer an explicit consent point

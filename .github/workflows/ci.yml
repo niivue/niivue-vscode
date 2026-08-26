@@ -32,24 +32,32 @@ jobs:
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4
         id: filter
         with:
+          # pnpm-lock.yaml gates every app: a dependency bump touches only the
+          # lockfile, and without it here the whole test matrix is skipped.
           filters: |
             packages:
               - 'packages/**'
+              - 'pnpm-lock.yaml'
             pwa:
               - 'apps/pwa/**'
               - 'packages/**'
+              - 'pnpm-lock.yaml'
             jupyter:
               - 'apps/jupyter/**'
               - 'packages/**'
+              - 'pnpm-lock.yaml'
             vscode:
               - 'apps/vscode/**'
               - 'packages/**'
+              - 'pnpm-lock.yaml'
             streamlit:
               - 'apps/streamlit/**'
               - 'packages/**'
+              - 'pnpm-lock.yaml'
             desktop:
               - 'apps/desktop-tauri/**'
               - 'packages/**'
+              - 'pnpm-lock.yaml'
 
   lint-and-typecheck:
     runs-on: ubuntu-latest
