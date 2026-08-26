@@ -5,11 +5,11 @@
       "statements": 51.3,
       "branches": 48.8,
       "functions": 48.2,
-      "lines": 52
+      "lines": 51.9
     },
     "counts": {
       "statements": {
-        "covered": 1763,
+        "covered": 1762,
         "total": 3437
       },
       "branches": {
@@ -21,7 +21,7 @@
         "total": 899
       },
       "lines": {
-        "covered": 1666,
+        "covered": 1665,
         "total": 3206
       }
     }
@@ -164,14 +164,14 @@
   "_overall": {
     "label": "Overall",
     "stats": {
-      "statements": 47.3,
+      "statements": 47.2,
       "branches": 44.9,
       "functions": 44.6,
       "lines": 47.6
     },
     "counts": {
       "statements": {
-        "covered": 2004,
+        "covered": 2003,
         "total": 4240
       },
       "branches": {
@@ -183,7 +183,7 @@
         "total": 1086
       },
       "lines": {
-        "covered": 1899,
+        "covered": 1898,
         "total": 3987
       }
     }
