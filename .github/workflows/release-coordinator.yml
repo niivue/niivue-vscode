@@ -48,14 +48,13 @@ jobs:
 
       - name: Create Version PR or Publish
         id: changesets
-        uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1.9.0
+        uses: changesets/action@8488615a623b1b9c987934bb89eae8af6a946ac1 # v2.1.1
         with:
-          version: pnpm run version
-          publish: pnpm run release
-          commit: "chore(release): version packages"
-          title: "chore(release): version packages"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          version-script: pnpm run version
+          publish-script: pnpm run release
+          commit-message: "chore(release): version packages"
+          pr-title: "chore(release): version packages"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       # `changeset publish` only tags the private app packages (npm publish is
       # skipped). Tags pushed by GITHUB_TOKEN don't trigger other workflows,
@@ -64,7 +63,7 @@ jobs:
       # changeset version produced (bare semver / PEP 440) ships as-is; the
       # marketplace and PyPI both accept those formats for stable channels.
       - name: Dispatch per-app release workflows
-        if: steps.changesets.outputs.hasChangesets == 'false'
+        if: steps.changesets.outputs.has-changesets == 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
