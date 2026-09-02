@@ -19,6 +19,10 @@ export interface NiiVueSettings {
   colorbar: boolean
   radiologicalConvention: boolean
   zoomDragMode: boolean
+  /** Render 2D slices in scanner/world mm space instead of on the native voxel
+   *  grid. Off by default: an oblique acquisition is then shown as the
+   *  rectangular grid it was measured on, unrotated and unresampled. */
+  worldSpace: boolean
   defaultVolumeColormap: string
   defaultOverlayColormap: string
   defaultOverlayOpacity: number
@@ -39,6 +43,7 @@ export const defaultSettings: NiiVueSettings = {
   colorbar: false,
   radiologicalConvention: false,
   zoomDragMode: false,
+  worldSpace: false,
   defaultVolumeColormap: 'gray',
   defaultOverlayColormap: 'redyell',
   defaultOverlayOpacity: 0.5,

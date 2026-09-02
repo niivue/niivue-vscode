@@ -113,6 +113,7 @@ These shortcuts control the viewer interface and can be customized in VSCode set
 - **X**: Toggle radiological convention
 - **M**: Toggle crosshair
 - **Z**: Toggle zoom drag mode
+- **W**: Toggle world space (off by default: slices are drawn on the native voxel grid, so an oblique acquisition is shown unrotated)
 - **U**: Cycle UI visibility (Show All → Hide UI → Hide All)
 
 **Actions:**
