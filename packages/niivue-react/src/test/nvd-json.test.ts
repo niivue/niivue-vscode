@@ -77,6 +77,38 @@ describe('normalizeJsonNvd', () => {
     expect(decode(out)).toEqual(decode(complete))
   })
 
+  it('resolves relative image links against the URL the document came from', () => {
+    const doc = decode(
+      normalizeJsonNvd(
+        encode({
+          volumes: [
+            { url: 'brain.nii.gz' },
+            { url: '/atlas/mni.nii.gz' },
+            { url: 'https://other.example/x.nii.gz' },
+            { url: 'data:application/octet-stream;base64,AA==' },
+          ],
+          meshes: [{ url: 'surf/lh.pial', layers: [{ url: 'lh.curv' }] }],
+        }),
+        'https://data.example/study/scene.nvd.json',
+      ),
+    )
+
+    expect(doc.volumes.map((v: { url: string }) => v.url)).toEqual([
+      'https://data.example/study/brain.nii.gz',
+      'https://data.example/atlas/mni.nii.gz',
+      'https://other.example/x.nii.gz',
+      'data:application/octet-stream;base64,AA==',
+    ])
+    expect(doc.meshes[0].url).toBe('https://data.example/study/surf/lh.pial')
+    expect(doc.meshes[0].layers[0].url).toBe('https://data.example/study/lh.curv')
+  })
+
+  it('leaves links alone without the URL a document came from', () => {
+    const doc = decode(normalizeJsonNvd(encode({ volumes: [{ url: 'brain.nii.gz' }] })))
+
+    expect(doc.volumes[0].url).toBe('brain.nii.gz')
+  })
+
   it('rejects JSON that is not an object', () => {
     expect(() => normalizeJsonNvd(encode([1, 2]))).toThrow('must be an object')
   })

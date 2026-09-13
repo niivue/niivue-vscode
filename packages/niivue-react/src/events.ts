@@ -1,7 +1,7 @@
 import NiiVue, { DRAG_MODE, SLICE_TYPE } from '@niivue/niivue'
 import { Signal } from '@preact/signals'
 import { AppProps } from './components/AppProps'
-import { DocumentSource, isNvdFile } from './document'
+import { DocumentSource, isNvdFile, isWebUrl } from './document'
 import { readyStateManager } from './readyState'
 import { NiiVueSettings } from './settings'
 import { buildImageMessageBodies, isImageType } from './utility'
@@ -72,7 +72,7 @@ export async function handleMessage(message: any, appProps: AppProps) {
           // A scene document opened like an image: from a host's file browser
           // or open dialog, an OS launch, a URL parameter or a drop on a tile.
           nv.documentData = body.data
-            ? { name: body.uri, data: body.data }
+            ? { name: body.uri, data: body.data, url: isWebUrl(body.uri) ? body.uri : undefined }
             : { name: body.uri, url: body.uri }
         } else {
           nv.body = body

@@ -27,6 +27,20 @@ function isPlainObject(x: unknown): x is Record<string, unknown> {
 const isBinTag = (x: unknown): x is { $bin: string } =>
   isPlainObject(x) && Object.keys(x).length === 1 && typeof x.$bin === 'string'
 
+const hasScheme = (url: string) => /^[a-z][a-z\d+.-]*:/i.test(url)
+
+/** Resolve relative `url` fields of the listed items against `baseUrl`; true if any changed. */
+function resolveUrls(items: unknown, baseUrl: string): boolean {
+  let changed = false
+  for (const item of Array.isArray(items) ? items : []) {
+    if (isPlainObject(item) && typeof item.url === 'string' && item.url && !hasScheme(item.url)) {
+      item.url = new URL(item.url, baseUrl).href
+      changed = true
+    }
+  }
+  return changed
+}
+
 /**
  * Heuristic: do these bytes look like a JSON `.nvd` (vs CBOR)? CBOR documents
  * begin with a map/array major-type byte (0xA0-0xBF) and gzip with 0x1f; JSON
@@ -46,10 +60,12 @@ export function looksLikeJsonNvd(bytes: Uint8Array): boolean {
 
 /**
  * A JSON document as NiiVue's loader accepts it: `$bin` tags become NiiVue's
- * `$ta` tags, missing required fields are added and a BOM is dropped. A
- * document that needs none of that is returned as it is.
+ * `$ta` tags, missing required fields are added and a BOM is dropped. With
+ * the URL the document came from, relative image links are resolved against
+ * it; NiiVue would resolve them against the viewer's page. A document that
+ * needs none of that is returned as it is.
  */
-export function normalizeJsonNvd(bytes: Uint8Array): Uint8Array {
+export function normalizeJsonNvd(bytes: Uint8Array, baseUrl?: string): Uint8Array {
   let changed = bytes[0] === 0xef // NiiVue does not skip a UTF-8 BOM
   // TextDecoder drops the BOM.
   const doc: unknown = JSON.parse(new TextDecoder().decode(bytes), (_key, value) => {
@@ -67,6 +83,13 @@ export function normalizeJsonNvd(bytes: Uint8Array): Uint8Array {
       doc[field] = fallback()
       changed = true
     }
+  }
+  if (baseUrl) {
+    const meshes = Array.isArray(doc.meshes) ? doc.meshes : []
+    const layers = meshes.flatMap((mesh) => (isPlainObject(mesh) ? mesh.layers : []))
+    changed = resolveUrls(doc.volumes, baseUrl) || changed
+    changed = resolveUrls(meshes, baseUrl) || changed
+    changed = resolveUrls(layers, baseUrl) || changed
   }
   return changed ? new TextEncoder().encode(JSON.stringify(doc)) : bytes
 }

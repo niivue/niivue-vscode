@@ -43,6 +43,16 @@ describe('scene documents sent as images', () => {
     expect(firstCanvas(props).body).toBeNull()
   })
 
+  it('keeps the web URL of a document that arrives with its bytes', async () => {
+    const props = makeProps()
+    const data = new ArrayBuffer(4)
+    const uri = 'https://data.example/study/scene.nvd.json'
+
+    await handleMessage({ type: 'addImage', body: { data, uri } }, props)
+
+    expect(firstCanvas(props).documentData).toEqual({ name: uri, data, url: uri })
+  })
+
   it('fetches a document that arrives as a URL only', async () => {
     const props = makeProps()
     const uri = 'https://file.vscode-resource.example/scans/scene.nvd.json?v=2'

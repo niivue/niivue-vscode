@@ -22,8 +22,15 @@ afterEach(() => {
 describe('isNvdFile', () => {
   it('recognizes documents by URL, ignoring a query or fragment', () => {
     expect(isNvdFile('https://example.org/scene.nvd?token=1')).toBe(true)
-    expect(isNvdFile('scene.NVD.json#top')).toBe(true)
+    expect(isNvdFile('https://example.org/scene.NVD.json#top')).toBe(true)
     expect(isNvdFile('https://example.org/brain.nii.gz?name=scene.nvd')).toBe(false)
+    expect(isNvdFile('https://example.org/brain.nii.gz#scene.nvd')).toBe(false)
+  })
+
+  it('keeps # and ? in plain file names and workspace paths', () => {
+    expect(isNvdFile('subject#1.nvd')).toBe(true)
+    expect(isNvdFile('study#1/scene.nvd.json')).toBe(true)
+    expect(isNvdFile('what?.nvd')).toBe(true)
   })
 })
 
@@ -58,6 +65,43 @@ describe('documentFile', () => {
 
     expect(fetch).toHaveBeenCalledWith('https://h/a/scene.nvd.json?v=2')
     expect(file.name).toBe('scene.nvd.json')
+  })
+
+  it('resolves relative links in a fetched JSON document against its final URL', async () => {
+    const body = json({ volumes: [{ url: 'brain.nii.gz' }] })
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        url: 'https://data.example/study/scene.nvd.json',
+        arrayBuffer: async () => body.buffer,
+      })),
+    )
+
+    const file = await documentFile({
+      name: 'scene.nvd.json',
+      url: 'https://data.example/redirect?id=7',
+    })
+
+    const doc = JSON.parse(new TextDecoder().decode(new Uint8Array(await readBytes(file))))
+    expect(doc.volumes[0].url).toBe('https://data.example/study/brain.nii.gz')
+  })
+
+  it('resolves relative links in document bytes against their source URL', async () => {
+    const file = await documentFile({
+      name: 'scene.nvd.json',
+      data: json({ volumes: [{ url: 'brain.nii.gz' }] }),
+      url: 'https://data.example/study/scene.nvd.json',
+    })
+
+    const doc = JSON.parse(new TextDecoder().decode(new Uint8Array(await readBytes(file))))
+    expect(doc.volumes[0].url).toBe('https://data.example/study/brain.nii.gz')
+  })
+
+  it('names the file after a # in a plain file name', async () => {
+    const file = await documentFile({ name: 'subject#1.nvd', data: new Uint8Array([0xa0]) })
+
+    expect(file.name).toBe('subject#1.nvd')
   })
 
   it('fails with the HTTP status when the URL cannot be fetched', async () => {
