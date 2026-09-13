@@ -5,6 +5,8 @@ on:
     branches: [main]
   pull_request:
     branches: ['*']
+  # Dispatched by the Release Coordinator for the version PR.
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -551,10 +553,14 @@ jobs:
         run: |
           repo_name="${{ github.event.repository.name }}"
           owner="${{ github.repository_owner }}"
+          # A dispatched run on another branch (the version PR) publishes
+          # nothing, so it cannot overwrite main's report.
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             dest="coverage/pr-${{ github.event.pull_request.number }}"
-          else
+          elif [ "${{ github.ref }}" = "refs/heads/main" ]; then
             dest="coverage/main"
+          else
+            dest=""
           fi
           url="https://${owner}.github.io/${repo_name}/${dest}/"
           badge_url="https://img.shields.io/endpoint?url=${url}badge.json"
@@ -602,7 +608,7 @@ jobs:
         # aggregate.mjs exits 0 when no coverage JSON files are present (e.g.
         # docs-only commits where all test jobs were skipped) — skip staging
         # rather than failing on missing files.
-        if: hashFiles('coverage/merged/index.html') != ''
+        if: hashFiles('coverage/merged/index.html') != '' && steps.target.outputs.dest != ''
         env:
           DEST: ${{ steps.target.outputs.dest }}
           EVENT_NAME: ${{ github.event_name }}

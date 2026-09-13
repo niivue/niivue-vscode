@@ -56,6 +56,20 @@ jobs:
           pr-title: "chore(release): version packages"
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
+      # The version PR branch is pushed with GITHUB_TOKEN, which does not
+      # trigger pull_request workflows, so the checks the main ruleset requires
+      # would never report. Dispatch CI on the PR branch instead; its check
+      # runs land on the PR head commit.
+      - name: Run CI on the version PR
+        if: steps.changesets.outputs.pr-number != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ steps.changesets.outputs.pr-number }}
+        run: |
+          head_ref=$(gh pr view "$PR_NUMBER" --json headRefName -q .headRefName)
+          echo "Dispatching CI on $head_ref (PR #$PR_NUMBER)"
+          gh workflow run ci.yml --ref "$head_ref"
+
       # `changeset publish` only tags the private app packages (npm publish is
       # skipped). Tags pushed by GITHUB_TOKEN don't trigger other workflows,
       # so dispatch each app's dedicated release workflow whenever changesets
