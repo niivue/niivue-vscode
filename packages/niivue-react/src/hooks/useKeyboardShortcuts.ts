@@ -45,9 +45,15 @@ export function useKeyboardShortcuts(handlers: KeyboardShortcutHandlers, enabled
     if (!enabled) return
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      // Don't trigger shortcuts when typing in input fields
+      // Don't trigger shortcuts when typing in form fields (a <select> uses
+      // letter keys to jump to options, e.g. H for "hsv")
       const target = event.target as HTMLElement
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.tagName === 'SELECT' ||
+        target.isContentEditable
+      ) {
         return
       }
 
