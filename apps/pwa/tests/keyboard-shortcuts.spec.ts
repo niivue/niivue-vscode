@@ -56,4 +56,46 @@ test.describe('Keyboard shortcuts (smoke)', () => {
     await page.keyboard.press('c')
     await expect.poll(clipPlaneIndex).toBe(1)
   })
+
+  test('each crosshair key press moves exactly one voxel', async ({ page }) => {
+    // Regression: once NiiVue's own key listener was removed (#224), nothing
+    // handled H/J/K/L any more and the crosshair stayed put. The unit tests mock
+    // NiiVue, so this checks the real viewer: one press must equal one
+    // moveCrosshairInVox step, which fails both when the key is unhandled and
+    // when it is applied twice (by the app and by NiiVue's listener).
+    await page.goto(BASE_URL)
+    await loadTestImage(page)
+    await page.locator('canvas').first().click()
+
+    const position = () =>
+      page.evaluate(() => Array.from((window as any).appProps.nvArray.value[0].crosshairPos as number[]))
+    const moveInVox = (step: number[]) =>
+      page.evaluate((s) => (window as any).appProps.nvArray.value[0].moveCrosshairInVox(...s), step)
+    const change = (from: number[], to: number[]) => to.map((v, i) => v - from[i])
+    const isClose = (a: number[], b: number[]) => a.every((v, i) => Math.abs(v - b[i]) < 1e-6)
+
+    for (const [key, step] of [
+      ['l', [1, 0, 0]],
+      ['k', [0, 1, 0]],
+    ] as const) {
+      // The click left the crosshair between voxel centers; the first step snaps
+      // it onto the grid, so measure the second one.
+      await moveInVox([...step])
+      const start = await position()
+      await moveInVox([...step])
+      const oneVoxel = change(start, await position())
+      expect(oneVoxel.some((v) => Math.abs(v) > 1e-6), `${key}: a voxel step moves the crosshair`).toBe(true)
+
+      const beforePress = await position()
+      await page.keyboard.press(key)
+      await expect
+        .poll(async () => isClose(change(beforePress, await position()), oneVoxel), {
+          message: `${key}: moves one voxel (${oneVoxel})`,
+        })
+        .toBe(true)
+      // Let any second handler for the same press land before the final check.
+      await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))))
+      expect(isClose(change(beforePress, await position()), oneVoxel), `${key}: moved once`).toBe(true)
+    }
+  })
 })
