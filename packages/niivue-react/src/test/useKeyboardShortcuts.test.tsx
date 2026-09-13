@@ -100,7 +100,21 @@ describe('useKeyboardShortcuts', () => {
     for (const name of HANDLER_NAMES) expect(handlers[name]).not.toHaveBeenCalled()
   })
 
-  it.each(['INPUT', 'TEXTAREA'])('ignores shortcuts while focus is in a %s', (tag) => {
+  it.each(['h', 'j', 'k', 'l'])('leaves %s to a focused <select> for option type-ahead', (key) => {
+    const handlers = makeHandlers()
+    render(<Harness handlers={handlers} />)
+    const select = document.createElement('select')
+    document.body.appendChild(select)
+    try {
+      const event = fireKey({ key }, select)
+      for (const name of HANDLER_NAMES) expect(handlers[name]).not.toHaveBeenCalled()
+      expect(event.defaultPrevented).toBe(false)
+    } finally {
+      select.remove()
+    }
+  })
+
+  it.each(['INPUT', 'TEXTAREA', 'SELECT'])('ignores shortcuts while focus is in a %s', (tag) => {
     const handlers = makeHandlers()
     render(<Harness handlers={handlers} />)
     const field = document.createElement(tag)
