@@ -1,7 +1,16 @@
-import { Container, ImageDrop, Menu, StatusBar, listenToMessages, type AppProps } from '@niivue/react'
+import {
+  Container,
+  ImageDrop,
+  Menu,
+  StatusBar,
+  listenToMessages,
+  setFileSaver,
+  type AppProps,
+} from '@niivue/react'
 import { computed } from '@preact/signals'
+import { message } from '@tauri-apps/plugin-dialog'
 import { useEffect } from 'preact/hooks'
-import { readFileBytes } from '../tauri-bridge'
+import { isTauri, readFileBytes, saveFileWithDialog } from '../tauri-bridge'
 import { addRecentFile } from '../recent-files'
 import { DesktopHomeScreen } from './DesktopHomeScreen'
 
@@ -11,6 +20,9 @@ export const DesktopApp = ({ appProps }: { appProps: AppProps }) => {
 
   useEffect(() => {
     listenToMessages(appProps)
+    if (isTauri()) {
+      setFileSaver(saveWithNativeDialog)
+    }
     document.dispatchEvent(new Event('AppReady'))
   }, [])
 
@@ -22,6 +34,18 @@ export const DesktopApp = ({ appProps }: { appProps: AppProps }) => {
       {appProps.hideUI.value > 0 && <StatusBar {...appProps} />}
     </ImageDrop>
   )
+}
+
+/**
+ * Save a file from the viewer (a scene document or a screenshot) through the
+ * native save dialog, as a desktop app does, instead of a webview download.
+ */
+export async function saveWithNativeDialog(bytes: Uint8Array, filename: string): Promise<void> {
+  try {
+    await saveFileWithDialog(bytes, filename)
+  } catch (error) {
+    await message(String(error), { title: `Could not save ${filename}`, kind: 'error' })
+  }
 }
 
 /**

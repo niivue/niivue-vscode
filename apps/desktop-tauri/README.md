@@ -5,6 +5,7 @@ A standalone desktop application for viewing medical images (NIfTI, DICOM, and m
 ## Features
 
 - **Native file access** - Load images directly from your filesystem without CORS restrictions
+- **Scenes and figures** - Save NiiVue scene documents (`.nvd`) and screenshots through the native save dialog, and open `.nvd` files again
 - **High-performance WebGL2** - Powered by the NiiVue rendering engine
 - **Cross-platform** - Linux, macOS, and Windows
 - **Data privacy** - All processing happens locally; no data leaves your machine
@@ -55,7 +56,9 @@ The renderer cannot read arbitrary files from the host. Every path that crosses 
 3. Subsequent `readFileBytes` / `getFileInfo` calls accept only authorised paths.
 4. `listDirectory` is the only command that grows the allowlist server-side, for paths it has just surfaced.
 
-The CSP is tight (no `unsafe-eval`); the only IPC-callable Rust commands are `register_opened_path`, `read_file_bytes`, `get_file_info`, and `list_directory`, plus the Tauri-provided `dialog` and `store` plugins.
+Writing is limited the same way: `save_file` receives only the bytes and a suggested name, and writes where the user picks in the native save dialog it opens itself.
+
+The CSP is tight (no `unsafe-eval`); the only IPC-callable Rust commands are `register_opened_path`, `read_file_bytes`, `get_file_info`, `list_directory`, and `save_file`, plus the Tauri-provided `dialog` and `store` plugins.
 
 ## Architecture
 
