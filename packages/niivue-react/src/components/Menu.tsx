@@ -6,7 +6,7 @@ import type { SceneDocument } from '@niivue/viewer-protocol'
 import { Signal, computed, effect, useSignal } from '@preact/signals'
 import { useMemo } from 'preact/hooks'
 import { NIIVUE_CORE_SHORTCUTS, UI_SHORTCUTS, formatShortcut } from '../constants/keyboardShortcuts'
-import { downloadNvd, downloadSceneJson } from '../document'
+import { downloadNvd, downloadSceneJson, saveFile } from '../document'
 import {
     ExtendedNiivue,
     addDcmFolderEvent,
@@ -16,7 +16,8 @@ import {
     openImageFromURL,
 } from '../events'
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
-import { getImageMetadata } from '../utility'
+import { captureScreenshot } from '../screenshot'
+import { getImageMetadata, imageBaseName } from '../utility'
 import { AboutDialog } from './AboutDialog'
 import { AppInfo, AppProps, SelectionMode } from './AppProps'
 import { HeaderBox } from './HeaderBox'
@@ -269,12 +270,7 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
     const list = nvArraySelected.value
     const nv = list[list.length - 1]
     if (!nv) return null
-    const rawName = nv.volumes?.[0]?.name || nv.meshes?.[0]?.name || (nv as any).uri || 'scene'
-    const base =
-      (decodeURIComponent(String(rawName)).split('/').pop() || 'scene').replace(
-        /\.(nii\.gz|nii|gz|mgz|mgh|mz3|gii|dcm|mhd|mha|nrrd|nhdr|nvd)$/i,
-        '',
-      ) || 'scene'
+    const base = imageBaseName(nv.volumes?.[0]?.name || nv.meshes?.[0]?.name || (nv as any).uri)
     return { nv, base }
   }
 
@@ -283,13 +279,27 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
     if (!t) return
     // v1: serializeDocument() returns the .nvd as CBOR bytes (nv.json() is gone).
     const doc: SceneDocument = t.nv.serializeDocument()
-    downloadNvd(doc, `${t.base}.nvd`)
+    downloadNvd(doc, `${t.base || 'scene'}.nvd`)
   }
 
   const exportSceneJson = () => {
     const t = sceneTarget()
     if (!t) return
-    downloadSceneJson(t.nv.serializeDocument(), `${t.base}.nvd.json`)
+    downloadSceneJson(t.nv.serializeDocument(), `${t.base || 'scene'}.nvd.json`)
+  }
+
+  // PNG of the tiles as laid out on screen: all of them, or just the scene
+  // target. Either way the file is named after the scene target.
+  const saveScreenshot = async (scope: 'all' | 'selected') => {
+    const t = sceneTarget()
+    if (!t) return
+    try {
+      const panels = scope === 'all' ? nvArray.value : [t.nv]
+      const png = await captureScreenshot(panels, nvArray.value[0]?.backgroundColor)
+      if (png) saveFile(png, `${t.base || 'niivue'}_screenshot.png`, 'image/png')
+    } catch (error) {
+      console.error('Screenshot failed:', error)
+    }
   }
 
   const cycleUIVisibility = () => {
@@ -564,6 +574,25 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
           <MenuEntry label="Save" onClick={saveScene} />
           <MenuEntry label="Save as JSON" onClick={exportSceneJson} />
           <MenuEntry label="Load" onClick={loadDocumentEvent} />
+        </>
+      ),
+    },
+    {
+      // Figure export. The label captures every tile; the chevron can narrow
+      // it to the selected tile once there is more than one.
+      key: 'screenshot',
+      type: 'menu',
+      label: 'Screenshot',
+      visible: !!settings.value.menuItems?.screenshot && isVolumeOrMesh.value,
+      onClick: () => saveScreenshot('all'),
+      children: (
+        <>
+          <MenuEntry label="All tiles" onClick={() => saveScreenshot('all')} />
+          <MenuEntry
+            label="Selected tile"
+            onClick={() => saveScreenshot('selected')}
+            visible={multipleVolumes}
+          />
         </>
       ),
     },

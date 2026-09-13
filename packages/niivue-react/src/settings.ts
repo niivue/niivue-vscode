@@ -12,6 +12,7 @@ export interface MenuItems {
   header: boolean
   navigation?: boolean
   saveScene?: boolean
+  screenshot?: boolean
 }
 
 export interface NiiVueSettings {
@@ -55,5 +56,6 @@ export const defaultSettings: NiiVueSettings = {
     header: true,
     navigation: true,
     saveScene: true,
+    screenshot: true,
   },
 }

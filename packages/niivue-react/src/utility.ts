@@ -193,6 +193,22 @@ export function isImageType(item: string) {
   ].find((fileType) => item.endsWith(fileType))
 }
 
+const EXPORT_NAME_EXTENSION = /\.(nii\.gz|nii|gz|mgz|mgh|mz3|gii|dcm|mhd|mha|nrrd|nhdr|nvd)$/i
+
+/**
+ * Base name for files exported from a volume or mesh: the (URL-decoded) file
+ * name without directories or image extension. '' when nothing is left.
+ */
+export function imageBaseName(name: unknown): string {
+  let text = String(name ?? '')
+  try {
+    text = decodeURIComponent(text)
+  } catch {
+    // Not valid percent-encoding; keep the name as it is.
+  }
+  return (text.split(/[/\\]/).pop() ?? '').replace(EXPORT_NAME_EXTENSION, '')
+}
+
 // ---- GraphML (vessel graph / brain network) support ----
 //
 // Tools such as SkelHub export vessel skeletons and brain networks as GraphML

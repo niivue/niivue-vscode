@@ -50,6 +50,28 @@ function triggerDownload(blob: Blob, name: string): void {
 }
 
 /**
+ * Save bytes as a file. Webview hosts (VS Code, JupyterLab) cannot start a
+ * download, so there the bytes go to the host as a base64 `saveFile` message;
+ * every other host downloads them.
+ */
+export function saveFile(bytes: Uint8Array<ArrayBuffer>, filename: string, mimeType: string): void {
+  if (typeof vscode === 'object') {
+    vscode.postMessage({ type: 'saveFile', body: { filename, mimeType, data: toBase64(bytes) } })
+    return
+  }
+  triggerDownload(new Blob([bytes], { type: mimeType }), filename)
+}
+
+function toBase64(bytes: Uint8Array): string {
+  let binary = ''
+  // Chunked: spreading a large array into fromCharCode overflows the stack.
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000))
+  }
+  return btoa(binary)
+}
+
+/**
  * Trigger a browser download of a scene document as native CBOR `.nvd` bytes
  * (the output of `nv.serializeDocument()`).
  */
