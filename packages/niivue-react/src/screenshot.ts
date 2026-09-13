@@ -1,10 +1,10 @@
 import { CITATION_DOI_URL, CITATION_TEXT } from './citation'
 import { addPngTextChunks } from './png'
 
-/** The part of a niivue instance a screenshot needs. */
+/** The part of a NiiVue instance a screenshot needs. */
 export interface ScreenshotPanel {
   canvas: HTMLCanvasElement | null
-  // `isBusy` and `fontRenderer` are niivue view internals: render() defers
+  // `isBusy` and `fontRenderer` are NiiVue view internals: render() defers
   // itself to a later frame while `isBusy`, and on WebGPU also until the font
   // renderer is ready.
   view: { render(): void; isBusy?: boolean; fontRenderer?: { isReady?: boolean } } | null
@@ -55,11 +55,11 @@ export async function waitUntilRenderable(
 
 /** `tEXt` metadata written into every screenshot PNG. */
 export const SCREENSHOT_METADATA: Record<string, string> = {
-  Software: 'niivue Viewer (https://github.com/niivue/niivue-vscode)',
+  Software: 'NiiVue Viewer (https://github.com/niivue/niivue-vscode)',
   Comment: `If you use this image in published work, please cite: ${CITATION_TEXT} ${CITATION_DOI_URL}`,
 }
 
-/** CSS color for a niivue RGBA color (channels 0-1); black when unusable. */
+/** CSS color for a NiiVue RGBA color (channels 0-1); black when unusable. */
 export function rgbaToCss(rgba: ArrayLike<number> | null | undefined): string {
   const clamp = (v: number) => Math.min(1, Math.max(0, v))
   if (!rgba || rgba.length < 3 || ![0, 1, 2].every((i) => Number.isFinite(rgba[i]))) {

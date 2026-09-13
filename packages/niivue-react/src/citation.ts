@@ -1,4 +1,4 @@
-// The paper describing the niivue wrapper ecosystem; shown in the About dialog
+// The paper describing the NiiVue wrapper ecosystem; shown in the About dialog
 // and embedded in exported screenshots.
 export const CITATION_DOI_URL = 'https://doi.org/10.52294/001c.167815'
 export const CITATION_TEXT =

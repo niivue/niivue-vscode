@@ -60,7 +60,7 @@ describe('crc32', () => {
 describe('addPngTextChunks', () => {
   it('inserts tEXt chunks with valid CRCs right after IHDR, keeping the image intact', () => {
     const png = makePng()
-    const out = addPngTextChunks(png, { Software: 'niivue Viewer', Comment: 'Please cite: x' })
+    const out = addPngTextChunks(png, { Software: 'NiiVue Viewer', Comment: 'Please cite: x' })
 
     expect(Array.from(out.subarray(0, 8))).toEqual(Array.from(png.subarray(0, 8)))
     const chunks = parseChunks(out)
@@ -72,7 +72,7 @@ describe('addPngTextChunks', () => {
     const texts = chunks
       .filter((c) => c.type === 'tEXt')
       .map((c) => Buffer.from(c.data).toString('latin1'))
-    expect(texts).toEqual(['Software\0niivue Viewer', 'Comment\0Please cite: x'])
+    expect(texts).toEqual(['Software\0NiiVue Viewer', 'Comment\0Please cite: x'])
 
     const original = parseChunks(png)
     const kept = chunks.filter((c) => c.type !== 'tEXt')
