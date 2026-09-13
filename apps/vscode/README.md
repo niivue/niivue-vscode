@@ -25,6 +25,10 @@ code --install-extension KorbinianEckstein.niivue
 2. **Compare Multiple Files**: Select multiple files in Explorer, right-click → "NiiVue: Compare"
 3. **Add Overlays**: Click the Overlay menu
 
+### Saving Figures
+
+Click **Screenshot** in the menu bar to save the visible tiles as a PNG. The save dialog starts in the opened file's folder.
+
 ### Remote Development
 
 NiiVue works with VS Code's remote development features:

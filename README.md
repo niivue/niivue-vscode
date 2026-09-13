@@ -6,6 +6,8 @@
 
 This monorepo contains the [NiiVue](https://github.com/niivue/niivue) integration projects for VS Code, JupyterLab, web browsers, and Streamlit. View NIfTI files, meshes, tractography, and DICOM images with hardware-accelerated rendering across your favorite development environments.
 
+In every viewer, the **Screenshot** button in the menu bar saves the visible tiles as a PNG figure.
+
 ## Projects
 
 ### VS Code Extension (Main Project)
