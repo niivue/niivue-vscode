@@ -5,12 +5,12 @@
       "statements": 55.8,
       "branches": 52.5,
       "functions": 53.7,
-      "lines": 56.4
+      "lines": 56.3
     },
     "counts": {
       "statements": {
-        "covered": 2105,
-        "total": 3772
+        "covered": 2104,
+        "total": 3771
       },
       "branches": {
         "covered": 1459,
@@ -21,8 +21,8 @@
         "total": 996
       },
       "lines": {
-        "covered": 1981,
-        "total": 3515
+        "covered": 1980,
+        "total": 3514
       }
     }
   },
@@ -171,8 +171,8 @@
     },
     "counts": {
       "statements": {
-        "covered": 2408,
-        "total": 4623
+        "covered": 2407,
+        "total": 4622
       },
       "branches": {
         "covered": 1598,
@@ -183,8 +183,8 @@
         "total": 1188
       },
       "lines": {
-        "covered": 2273,
-        "total": 4341
+        "covered": 2272,
+        "total": 4340
       }
     }
   }
