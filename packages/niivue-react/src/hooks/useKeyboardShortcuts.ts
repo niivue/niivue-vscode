@@ -25,11 +25,17 @@ export interface KeyboardShortcutHandlers {
   onShowHeader?: () => void
   onCrosshairSuperior?: () => void
   onCrosshairInferior?: () => void
+  onCrosshairRight?: () => void
+  onCrosshairLeft?: () => void
+  onCrosshairAnterior?: () => void
+  onCrosshairPosterior?: () => void
 }
 
 /**
  * Hook to handle keyboard shortcuts for NiiVue UI actions
- * Note: niivue.js core shortcuts (V, C, arrows, H/J/K/L, Ctrl+U/D) are handled by the niivue library itself
+ * Note: this also handles niivue's built-in default keys (V, C, arrows, H/J/K/L,
+ * Ctrl+U/D), since niivue's own window listener is removed after attach
+ * (removeBuiltinKeyHandler in events.ts)
  *
  * @param handlers - Object containing callback functions for each shortcut action
  * @param enabled - Whether keyboard shortcuts are enabled (default: true)
@@ -151,6 +157,42 @@ export function useKeyboardShortcuts(handlers: KeyboardShortcutHandlers, enabled
       ) {
         event.preventDefault()
         handlers.onCrosshairInferior()
+      } else if (
+        matchesShortcut(event, NIIVUE_CORE_SHORTCUTS.CROSSHAIR_SUPERIOR) &&
+        handlers.onCrosshairSuperior
+      ) {
+        event.preventDefault()
+        handlers.onCrosshairSuperior()
+      } else if (
+        matchesShortcut(event, NIIVUE_CORE_SHORTCUTS.CROSSHAIR_INFERIOR) &&
+        handlers.onCrosshairInferior
+      ) {
+        event.preventDefault()
+        handlers.onCrosshairInferior()
+      } else if (
+        matchesShortcut(event, NIIVUE_CORE_SHORTCUTS.CROSSHAIR_RIGHT) &&
+        handlers.onCrosshairRight
+      ) {
+        event.preventDefault()
+        handlers.onCrosshairRight()
+      } else if (
+        matchesShortcut(event, NIIVUE_CORE_SHORTCUTS.CROSSHAIR_LEFT) &&
+        handlers.onCrosshairLeft
+      ) {
+        event.preventDefault()
+        handlers.onCrosshairLeft()
+      } else if (
+        matchesShortcut(event, NIIVUE_CORE_SHORTCUTS.CROSSHAIR_ANTERIOR) &&
+        handlers.onCrosshairAnterior
+      ) {
+        event.preventDefault()
+        handlers.onCrosshairAnterior()
+      } else if (
+        matchesShortcut(event, NIIVUE_CORE_SHORTCUTS.CROSSHAIR_POSTERIOR) &&
+        handlers.onCrosshairPosterior
+      ) {
+        event.preventDefault()
+        handlers.onCrosshairPosterior()
       }
     }
 

@@ -17,7 +17,8 @@ const HANDLER_NAMES: (keyof KeyboardShortcutHandlers)[] = [
   'onVolumePrev', 'onResetView', 'onToggleInterpolation', 'onToggleColorbar',
   'onToggleRadiological', 'onToggleCrosshair', 'onToggleZoomMode', 'onAddImage',
   'onAddOverlay', 'onColorscale', 'onHideUI', 'onShowHeader', 'onCrosshairSuperior',
-  'onCrosshairInferior',
+  'onCrosshairInferior', 'onCrosshairRight', 'onCrosshairLeft', 'onCrosshairAnterior',
+  'onCrosshairPosterior',
 ]
 
 // Every handler wired as a spy. Typed as the hook's interface so it drops
@@ -67,6 +68,12 @@ const CASES: Array<[string, KeyboardEventInit, keyof KeyboardShortcutHandlers]> 
   ['u -> hide UI', { key: 'u' }, 'onHideUI'],
   ['Shift+U -> crosshair superior', { key: 'u', shiftKey: true }, 'onCrosshairSuperior'],
   ['Shift+D -> crosshair inferior', { key: 'd', shiftKey: true }, 'onCrosshairInferior'],
+  ['Ctrl+U -> crosshair superior', { key: 'u', ctrlKey: true }, 'onCrosshairSuperior'],
+  ['Ctrl+D -> crosshair inferior', { key: 'd', ctrlKey: true }, 'onCrosshairInferior'],
+  ['l -> crosshair right', { key: 'l' }, 'onCrosshairRight'],
+  ['h -> crosshair left', { key: 'h' }, 'onCrosshairLeft'],
+  ['k -> crosshair anterior', { key: 'k' }, 'onCrosshairAnterior'],
+  ['j -> crosshair posterior', { key: 'j' }, 'onCrosshairPosterior'],
   ['Ctrl+Shift+O -> add image', { key: 'o', ctrlKey: true, shiftKey: true }, 'onAddImage'],
   ['Ctrl+L -> add overlay', { key: 'l', ctrlKey: true }, 'onAddOverlay'],
   ['Ctrl+Shift+H -> show header', { key: 'h', ctrlKey: true, shiftKey: true }, 'onShowHeader'],
