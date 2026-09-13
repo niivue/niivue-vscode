@@ -48,15 +48,15 @@
     "@niivue/dicom-loader": "^1.0.0",
     "@niivue/niivue": "1.0.0-rc.13",
     "@niivue/react": "workspace:*",
-    "@preact/signals": "^2.9.0",
+    "@preact/signals": "^2.11.2",
     "@tauri-apps/api": "^2.11.0",
     "@tauri-apps/plugin-dialog": "^2.4.0",
     "@tauri-apps/plugin-store": "^2.4.0",
-    "preact": "^10.29.2"
+    "preact": "^10.29.8"
   },
   "devDependencies": {
     "@niivue/dcm2niix": "^1.2.0",
-    "@preact/preset-vite": "^2.10.5",
+    "@preact/preset-vite": "^2.10.6",
     "@tailwindcss/postcss": "^4.3.0",
     "@tauri-apps/cli": "^2.11.0",
     "@testing-library/jest-dom": "^6.9.1",

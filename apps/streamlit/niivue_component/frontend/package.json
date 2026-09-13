@@ -20,12 +20,12 @@
     "@niivue/dicom-loader": "^1.0.0",
     "@niivue/niivue": "1.0.0-rc.13",
     "@niivue/react": "workspace:*",
-    "@preact/signals": "^2.9.0",
-    "preact": "^10.29.2",
+    "@preact/signals": "^2.11.2",
+    "preact": "^10.29.8",
     "streamlit-component-lib": "^2.0.0"
   },
   "devDependencies": {
-    "@preact/preset-vite": "^2.10.5",
+    "@preact/preset-vite": "^2.10.6",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/preact": "^3.2.4",
     "@types/node": "^26.1.2",
