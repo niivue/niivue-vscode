@@ -46,7 +46,7 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     panel.webview.html = await getHtmlForWebview(panel.webview, context.extensionUri)
     const editor = new NiiVueEditorProvider(context)
     editor.webviews.add(uri, panel)
-    NiiVueEditorProvider.addCommonListeners(panel)
+    NiiVueEditorProvider.addCommonListeners(panel, uri)
     return panel
   }
 
@@ -129,7 +129,8 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     })
   }
 
-  private static addCommonListeners(panel: vscode.WebviewPanel) {
+  /** `sourceUri` is what the panel opened; saved files default to its folder. */
+  private static addCommonListeners(panel: vscode.WebviewPanel, sourceUri: vscode.Uri) {
     panel.webview.onDidReceiveMessage(async (e) => {
       switch (e.type) {
         case 'addOverlay':
@@ -192,8 +193,60 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
               }
             })
           return
+        case 'saveFile':
+          await NiiVueEditorProvider.saveFile(e.body, sourceUri)
+          return
       }
     })
+  }
+
+  private static readonly saveFilters = new Map([['image/png', { 'PNG Image': ['png'] }]])
+
+  /**
+   * Save a file the webview produced (e.g. a screenshot), since a webview
+   * cannot download. The dialog suggests the opened file's folder, or the
+   * first workspace folder when that file is not on a writable file system
+   * (a web link). Writing through `workspace.fs` also works remotely.
+   */
+  static async saveFile(
+    body: { filename?: unknown; mimeType?: unknown; data?: unknown } | undefined,
+    sourceUri: vscode.Uri,
+  ): Promise<void> {
+    if (typeof body?.data !== 'string') {
+      return
+    }
+    // Only a plain name is accepted; directories come from the dialog.
+    const suggested = typeof body.filename === 'string' ? body.filename.split(/[/\\]/).pop() : ''
+    const filename = suggested && !/^\.\.?$/.test(suggested) ? suggested : 'untitled'
+    const folder = vscode.workspace.fs.isWritableFileSystem(sourceUri.scheme)
+      ? NiiVueEditorProvider.parentDir(sourceUri)
+      : vscode.workspace.workspaceFolders?.[0]?.uri
+    const target = await vscode.window.showSaveDialog({
+      defaultUri: folder ? vscode.Uri.joinPath(folder, filename) : undefined,
+      filters: NiiVueEditorProvider.saveFilters.get(String(body.mimeType)),
+    })
+    if (!target) {
+      return
+    }
+    const name = target.path.split('/').pop()
+    try {
+      await vscode.workspace.fs.writeFile(target, NiiVueEditorProvider.base64ToBytes(body.data))
+      vscode.window.showInformationMessage(`Saved ${name}`)
+    } catch (error) {
+      vscode.window.showErrorMessage(
+        `Could not save ${name}: ${error instanceof Error ? error.message : String(error)}`,
+      )
+    }
+  }
+
+  // atob rather than Buffer: the extension also runs in the browser (vscode.dev).
+  private static base64ToBytes(data: string): Uint8Array {
+    const binary = atob(data)
+    const bytes = new Uint8Array(binary.length)
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i)
+    }
+    return bytes
   }
 
   public static async openDcmFolder(folderUri: vscode.Uri, panel: vscode.WebviewPanel) {
@@ -245,7 +298,7 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
       this._context.extensionUri,
     )
 
-    NiiVueEditorProvider.addCommonListeners(webviewPanel)
+    NiiVueEditorProvider.addCommonListeners(webviewPanel, document.uri)
 
     webviewPanel.webview.onDidReceiveMessage(async (message) => {
       if (message.type === 'ready') {
