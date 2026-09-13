@@ -152,6 +152,17 @@ result = niivue_viewer(
 )
 ```
 
+### Scene Documents (NVDocument)
+
+A NiiVue scene document (`.nvd`, or `.nvd.json`) restores images together with their display settings and the view. Pass it like an image; the file name tells the viewer it is a scene:
+
+```python
+scene = Path("brain.nvd").read_bytes()
+niivue_viewer(nifti_data=scene, filename="brain.nvd")
+```
+
+In the styled viewer, **NVDocument** saves the scene as a download, and **NVDocument > Load** opens a scene document from disk.
+
 ## ⚡ Performance
 
 Because Streamlit re-runs the whole script whenever a component calls
@@ -205,8 +216,8 @@ viewer()
 
 **Parameters:**
 
-- `nifti_data` (bytes, optional): Raw NIFTI file data
-- `filename` (str): Displayed filename
+- `nifti_data` (bytes, optional): Raw file data of the main image (NIfTI or another supported format), or a scene document (`.nvd`, `.nvd.json`)
+- `filename` (str): Displayed filename; its extension selects the format
 - `overlays` (list[dict], optional): Overlay images list
   - `data` (bytes): Overlay data
   - `name` (str): Overlay name
