@@ -262,7 +262,7 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
     alert('Settings saved!')
   }
 
-  // Export the active canvas as a niivue scene document. v1 scope is a single
+  // Export the active canvas as a NiiVue scene document. v1 scope is a single
   // canvas: the last selected one (VHP plan section 10). Two formats: native
   // CBOR `.nvd`, and a readable JSON `.nvd.json` that re-opens through parseNvd.
   const sceneTarget = () => {
@@ -420,7 +420,7 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
     })
   }
 
-  // H/L/J/K keep niivue's own key mapping: in the 3D render view they turn the
+  // H/L/J/K keep NiiVue's own key mapping: in the 3D render view they turn the
   // camera, elsewhere they step the crosshair one voxel.
   const keyStep = (di: number, dj: number) => () => {
     nvArraySelected.value.forEach((nv) => {
@@ -826,7 +826,7 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
 // activeMenu key reserved for the brand dropdown.
 const BRAND_KEY = '__brand__'
 
-// The niivue logo + wordmark. When `interactive` it doubles as a dropdown
+// The NiiVue logo + wordmark. When `interactive` it doubles as a dropdown
 // trigger for viewer-level actions: About everywhere, plus Reset Viewer on
 // standalone hosts (`showReset`), since reloading a webview host (VS Code,
 // JupyterLab) would drop the files it opened. Embedded Streamlit keeps a
@@ -849,7 +849,7 @@ const BrandMenu = ({
     <>
       <img className="nv-brand-mark" src={niivueLogo} alt="" width={26} height={26} />
       <div className="nv-brand-text">
-        <span className="nv-brand-name">niivue</span>
+        <span className="nv-brand-name">NiiVue</span>
         {showSubtext && <span className="nv-brand-sub">Viewer</span>}
       </div>
     </>

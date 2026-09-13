@@ -13,14 +13,14 @@ import { buildImageMessageBodies, isImageType } from './utility'
  * `waitForImageLoad` in tests works for all load types.
  */
 /**
- * Detach niivue's own window keydown listener.
+ * Detach NiiVue's own window keydown listener.
  *
  * v1 still ships built-in hotkeys (`NVControlBase`'s handler binds to *window*,
  * not the canvas) and 'c' there advances `currentClipPlaneIndex` on the focused
  * instance. The app's useKeyboardShortcuts hook already advances it for every
  * selected canvas, so leaving both bound makes one press count twice - the
  * regression in niivue/niivue-vscode#224. The app is the single source of truth
- * for shortcuts, so niivue's listener comes off once attach has installed it.
+ * for shortcuts, so NiiVue's listener comes off once attach has installed it.
  */
 export function removeBuiltinKeyHandler(nv: NiiVue): void {
   const handler = (nv as unknown as { _eventListeners?: { keydown?: EventListener } })
@@ -75,7 +75,7 @@ export async function handleMessage(message: any, appProps: AppProps) {
       break
     case 'loadDocument':
       {
-        // Import a niivue scene document (.nvd) into a fresh canvas. The actual
+        // Import a NiiVue scene document (.nvd) into a fresh canvas. The actual
         // nv.loadDocument call is deferred to NiiVueCanvas, which fires once the
         // canvas (and its GL context) is attached - mirroring the addImage path.
         const nv = getUnitinializedNvInstance(nvArray)
@@ -307,7 +307,7 @@ async function addOverlay(nv: NiiVue, item: any, settings: NiiVueSettings) {
   }
 }
 
-// niivue's File/Blob wrapping needs a real BlobPart. ArrayBuffers and TypedArray
+// NiiVue's File/Blob wrapping needs a real BlobPart. ArrayBuffers and TypedArray
 // views pass through; a plain number[] (some postMessage bridges serialize
 // buffers this way) is repacked into a Uint8Array.
 function toBlobPart(data: ArrayBuffer | ArrayBufferView | number[]): BlobPart {
@@ -478,7 +478,7 @@ function growNvArrayBy(nvArray: Signal<NiiVue[]>, n: number) {
       // (left) button. Mapping the old `contrast` value here suppressed it, so
       // left-click/drag no longer moved the crosshair (regression vs 0.x). Keep
       // crosshair on the left button; windowing stays on the right button via
-      // niivue's default secondaryDragMode.
+      // NiiVue's default secondaryDragMode.
       primaryDragMode: DRAG_MODE.crosshair,
       isDragDropEnabled: false, // handled by app (Volume component)
       // 'c' (cycle clip plane) and 'v' (cycle view mode) are handled by the

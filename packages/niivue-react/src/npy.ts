@@ -6,7 +6,7 @@
  * dtype is int64 (`<i8`) - `np.save('x.npy', np.arange(...))`, label maps, masks
  * and most integer arrays land here - which the reader cannot handle. On the
  * released 0.68.x line that int64 was silently mis-read as 1-byte float32
- * (garbage / all-black); on niivue v1 it throws "Unsupported NPY dtype". Either
+ * (garbage / all-black); on NiiVue v1 it throws "Unsupported NPY dtype". Either
  * way the volume never displays. See https://github.com/niivue/niivue-vscode/issues/90.
  *
  * loadVolume (NiiVueCanvas.tsx) runs these converters on the bytes before handing

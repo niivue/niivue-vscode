@@ -58,7 +58,7 @@ test.describe('app', () => {
       window.postMessage(message, '*')
     })
 
-    // niivue v1's default window for this image is the full data range [0, 3]
+    // NiiVue v1's default window for this image is the full data range [0, 3]
     // (0.68 defaulted to a ~2% robust max of ~2.001). The migration reads calMin
     // /calMax faithfully, so we assert v1's value.
     expect(await message).toStrictEqual([0, 3])

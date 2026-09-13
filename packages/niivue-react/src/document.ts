@@ -2,18 +2,18 @@ import type { SceneDocument } from '@niivue/viewer-protocol'
 import { cborNvdToJson, jsonNvdToCbor, looksLikeJsonNvd } from './nvd-json'
 
 /**
- * `.nvd` (niivue scene document) import/export helpers for browser hosts.
+ * `.nvd` (NiiVue scene document) import/export helpers for browser hosts.
  *
- * As of niivue v1.0 the native `.nvd` payload is the CBOR byte blob produced by
+ * As of NiiVue v1.0 the native `.nvd` payload is the CBOR byte blob produced by
  * `nv.serializeDocument()` and consumed by `nv.loadDocument(string | File)`. We
  * additionally support a JSON form of the same document (see `nvd-json.ts`): a
  * JSON `.nvd` (hand-authored in an editor, or exported via "Scene as JSON") is
  * transcoded to CBOR on read, and a scene can be exported as readable JSON. The
- * live niivue instance stays the source of truth; we only (trans)code at this
- * seam. The actual scene decode/restore lives inside niivue.
+ * live NiiVue instance stays the source of truth; we only (trans)code at this
+ * seam. The actual scene decode/restore lives inside NiiVue.
  */
 
-/** True for a filename that is a niivue scene document (CBOR or JSON form). */
+/** True for a filename that is a NiiVue scene document (CBOR or JSON form). */
 export function isNvdFile(name: string): boolean {
   const n = name.toLowerCase()
   return n.endsWith('.nvd') || n.endsWith('.nvd.json')
@@ -22,7 +22,7 @@ export function isNvdFile(name: string): boolean {
 /**
  * Return the `.nvd` bytes that `nv.loadDocument` accepts (CBOR). A CBOR file is
  * passed through untouched; a JSON file is transcoded to CBOR so the same
- * loader path handles both. niivue handles any gzip wrapping of CBOR internally.
+ * loader path handles both. NiiVue handles any gzip wrapping of CBOR internally.
  */
 export function parseNvd(buffer: ArrayBuffer): SceneDocument {
   const bytes = new Uint8Array(buffer)

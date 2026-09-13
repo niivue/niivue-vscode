@@ -6,7 +6,7 @@ test.describe('Menu overflow', () => {
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto(BASE_URL)
 
-    // `exact` so this doesn't also match the brand button ("niivue Viewer").
+    // `exact` so this doesn't also match the brand button ("NiiVue Viewer").
     await expect(page.getByRole('button', { name: 'View', exact: true })).toBeVisible()
     await expect(page.getByTestId('menu-overflow')).toHaveCount(0)
   })

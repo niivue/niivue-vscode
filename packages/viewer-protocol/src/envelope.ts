@@ -3,7 +3,7 @@
  *
  * Wire-compatible with niivue/mono's `@niivue/web-bridge` envelope
  * (`{ kind: 'call' | 'result' | 'event', ... }`) so local-first work converges
- * with niivue core later (VHP plan sections 9 and 12). web-bridge is
+ * with NiiVue core later (VHP plan sections 9 and 12). web-bridge is
  * unpublished, so the shape is re-declared here rather than imported.
  *
  * v1 is facade-first: these are declared for the upcoming VS Code / Jupyter

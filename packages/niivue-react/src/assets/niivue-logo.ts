@@ -2,7 +2,7 @@
 // Do not edit by hand; run `pnpm generate:icons` to refresh.
 // icon-master-sha256: 97875774f13d4af883265fd248477f6296d00b6952fb10387d83b796949c4acb
 //
-// The niivue brand mark shown in the top bar (see Menu.tsx). Inlined as a
+// The NiiVue brand mark shown in the top bar (see Menu.tsx). Inlined as a
 // base64 data URI rather than a *.png import: @niivue/react is type-checked
 // *from source* by the PWA and Streamlit frontends, which do not all declare an
 // ambient *.png module. A plain string sidesteps that while still inlining.

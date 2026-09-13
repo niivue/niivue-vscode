@@ -34,10 +34,10 @@ test('probe: load sphere.mhd via URL with explicit urlImgData', async ({ page })
     .catch(() => null)
 
   const status = result ? await result.jsonValue() : { count: 0, errs: false, timedOut: true }
-  // Expose the niivue instance to the probe.
+  // Expose the NiiVue instance to the probe.
   const nvDiag = await page.evaluate(() => {
     const w = window as any
-    // Try to find the niivue instance via the canvas
+    // Try to find the NiiVue instance via the canvas
     const canvas = document.querySelector('canvas') as any
     const nv = canvas?.NV ?? canvas?._nv ?? canvas?.niivue ?? null
     return {

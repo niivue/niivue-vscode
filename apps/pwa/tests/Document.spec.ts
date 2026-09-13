@@ -8,7 +8,7 @@ import { BASE_URL, loadTestImage, waitForImageLoad } from './utils'
  * renderer round-trip the unit tests cannot cover (jsdom has no WebGL): export
  * the live scene to an `.nvd` and re-import it by dropping the file.
  *
- * As of the niivue v1.0 migration the `.nvd` payload is CBOR (the bytes from
+ * As of the NiiVue v1.0 migration the `.nvd` payload is CBOR (the bytes from
  * `nv.serializeDocument()`), not JSON, so this asserts on bytes and the
  * round-trip rather than the old `encodedImageBlobs` JSON shape.
  */

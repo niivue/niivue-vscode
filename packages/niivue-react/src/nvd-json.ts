@@ -1,13 +1,13 @@
 import { decode, Encoder } from 'cbor-x'
 
 /**
- * JSON <-> CBOR transcoding for niivue `.nvd` scene documents.
+ * JSON <-> CBOR transcoding for NiiVue `.nvd` scene documents.
  *
- * niivue v1.0 serializes scenes as CBOR (`nv.serializeDocument()` /
+ * NiiVue v1.0 serializes scenes as CBOR (`nv.serializeDocument()` /
  * `nv.loadDocument()`); it has no JSON path. But the on-the-wire object is a
  * plain `NVDocumentData`, so we add JSON support at our own seam: a JSON `.nvd`
  * is parsed and re-encoded to the CBOR that `loadDocument` expects, and a CBOR
- * `.nvd` can be decoded back to readable JSON for editing/export. niivue does
+ * `.nvd` can be decoded back to readable JSON for editing/export. NiiVue does
  * all the actual scene restore - we only change the container format here.
  *
  * Why this is useful: a URL-referencing scene
@@ -20,8 +20,8 @@ import { decode, Encoder } from 'cbor-x'
 
 // Plain-CBOR encoder: `useRecords: false` emits vanilla CBOR maps (no cbor-x
 // record extension), so the bytes decode with any CBOR reader - including
-// niivue's own `decode` - regardless of the cbor-x version it bundles.
-// Uint8Array values become CBOR byte strings, which niivue reads back as
+// NiiVue's own `decode` - regardless of the cbor-x version it bundles.
+// Uint8Array values become CBOR byte strings, which NiiVue reads back as
 // Uint8Array (matching the embedded-data fields of NVDocumentData).
 const encoder = new Encoder({ useRecords: false })
 
@@ -51,7 +51,7 @@ function base64ToBytes(b64: string): Uint8Array {
   return out
 }
 
-/** JSON side -> niivue side: replace every `{ $bin: base64 }` with a Uint8Array. */
+/** JSON side -> NiiVue side: replace every `{ $bin: base64 }` with a Uint8Array. */
 export function reviveBinary(x: unknown): unknown {
   if (Array.isArray(x)) return x.map(reviveBinary)
   if (isPlainObject(x)) {
@@ -66,7 +66,7 @@ export function reviveBinary(x: unknown): unknown {
   return x
 }
 
-/** niivue side -> JSON side: replace every Uint8Array with `{ $bin: base64 }`. */
+/** NiiVue side -> JSON side: replace every Uint8Array with `{ $bin: base64 }`. */
 export function encodeBinary(x: unknown): unknown {
   if (x instanceof Uint8Array) return { $bin: bytesToBase64(x) }
   if (Array.isArray(x)) return x.map(encodeBinary)
@@ -78,10 +78,10 @@ export function encodeBinary(x: unknown): unknown {
   return x
 }
 
-// niivue's `applyDocumentToModel` reads these fields without guarding, so a
+// NiiVue's `applyDocumentToModel` reads these fields without guarding, so a
 // document missing any of them throws. The config groups (layout/ui/volume/
 // mesh/draw/interaction) are applied via `Object.assign` and may be omitted -
-// niivue keeps its own defaults. This lets a hand-authored scene be as small as
+// NiiVue keeps its own defaults. This lets a hand-authored scene be as small as
 // `{ "volumes": [{ "url": "…" }] }`.
 const DEFAULT_SCENE = {
   azimuth: 110,
@@ -104,7 +104,7 @@ const DEFAULT_DOC = {
   meshes: [] as unknown[],
 }
 
-/** Fill the fields niivue requires so a sparse hand-authored scene still loads. */
+/** Fill the fields NiiVue requires so a sparse hand-authored scene still loads. */
 export function withDocDefaults(doc: Record<string, unknown>): Record<string, unknown> {
   const scene = { ...DEFAULT_SCENE, ...((doc.scene as object) ?? {}) }
   return { ...DEFAULT_DOC, ...doc, scene }

@@ -9,7 +9,7 @@ const COMPARE_COMMAND_ID = 'jupyterlab-niivue:compare'
 
 const plugin: JupyterFrontEndPlugin<void> = {
   id: 'jupyterlab-niivue:plugin',
-  description: 'A JupyterLab extension for viewing NIfTI files with Niivue',
+  description: 'A JupyterLab extension for viewing NIfTI files with NiiVue',
   autoStart: true,
   requires: [IDocumentManager, IFileBrowserFactory],
   optional: [ITranslator],
@@ -48,7 +48,9 @@ const plugin: JupyterFrontEndPlugin<void> = {
 
     const widgetFactory = new NiivueViewer.Factory(
       {
+        // `name` stays as is: users' default-viewer settings refer to it.
         name: FACTORY_NAME,
+        label: 'NiiVue Viewer',
         fileTypes: fileTypes,
         defaultFor: fileTypes,
         modelName: 'base64',
@@ -58,7 +60,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
     )
 
     widgetFactory.widgetCreated.connect((_sender: any, widget: any) => {
-      console.log('Niivue widget created:', widget)
+      console.log('NiiVue widget created:', widget)
       // widget.title.icon = 'jp-MaterialIcon jp-ImageIcon';
       widget.context.pathChanged.connect(() => {
         widget.title.label = widget.context.localPath.split('/').pop() || ''

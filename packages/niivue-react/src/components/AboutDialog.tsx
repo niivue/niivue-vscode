@@ -11,7 +11,7 @@ const CITATION_TEXT =
   'Eckstein K, Androulakis A, Dao TT, et al. Seamless neuroimaging visualization: The NiiVue wrapper ecosystem. Aperture Neuro. 2026;6.'
 
 /**
- * The brand menu's "About" dialog: what niivue Viewer is, its credits, the data
+ * The brand menu's "About" dialog: what NiiVue Viewer is, its credits, the data
  * privacy guarantee, and (when the host provides `appInfo`) the build version.
  *
  * `isOpen` is a trigger signal in the HeaderDialog mold: set it true to open the
@@ -47,7 +47,7 @@ export const AboutDialog = ({
         <header className="nv-about-head">
           <img className="nv-brand-mark" src={niivueLogo} alt="" width={40} height={40} />
           <div>
-            <h2 className="nv-about-title">niivue Viewer</h2>
+            <h2 className="nv-about-title">NiiVue Viewer</h2>
             <p className="nv-about-tagline">Browser-based medical image &amp; mesh viewer</p>
           </div>
         </header>

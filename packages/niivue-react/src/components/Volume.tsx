@@ -121,12 +121,12 @@ export const Volume = (props: AppProps & VolumeProps) => {
   }
 
   const handleDragStart = (e: DragEvent) => {
-    // niivue 0.68 called preventDefault on canvas pointerdown, which suppressed
-    // this native card drag everywhere the canvas covered; niivue v1 no longer
+    // NiiVue 0.68 called preventDefault on canvas pointerdown, which suppressed
+    // this native card drag everywhere the canvas covered; NiiVue v1 no longer
     // does, so a press on the canvas would start a reorder drag (the "ghost
     // screenshot" of the whole pane) instead of moving the crosshair. Restrict
     // reorder to the chrome (the top drag-handle strip, etc.): if the drag
-    // begins over the canvas, cancel it and let the press reach niivue.
+    // begins over the canvas, cancel it and let the press reach NiiVue.
     // See niivue/niivue-vscode#252.
     if (document.elementFromPoint(e.clientX, e.clientY) instanceof HTMLCanvasElement) {
       e.preventDefault()
@@ -200,8 +200,8 @@ export const Volume = (props: AppProps & VolumeProps) => {
 
   const is4D = computed(() => nv.volumes[0]?.nFrame4D && nv.volumes[0]?.nFrame4D > 1)
 
-  // Use capture-phase listeners to intercept drag/drop before niivue's canvas handlers
-  // (niivue registers bubble-phase listeners that call stopPropagation, preventing our handlers)
+  // Use capture-phase listeners to intercept drag/drop before NiiVue's canvas handlers
+  // (NiiVue registers bubble-phase listeners that call stopPropagation, preventing our handlers)
   useEffect(() => {
     const el = canvasRef.current
     if (!el) return
@@ -358,7 +358,7 @@ export const Volume = (props: AppProps & VolumeProps) => {
       )}
       {hideUI.value > 2 && (
         <>
-          {/* Drag handle: thin strip so canvas clicks reach niivue everywhere else. */}
+          {/* Drag handle: thin strip so canvas clicks reach NiiVue everywhere else. */}
           <div
             className="absolute top-0 left-0 right-0 h-4 cursor-move bg-gradient-to-b from-black/30 to-transparent"
             title="Drag to reorder"
