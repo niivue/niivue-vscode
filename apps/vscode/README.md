@@ -29,6 +29,10 @@ code --install-extension KorbinianEckstein.niivue
 
 Click **Screenshot** in the menu bar to save the visible tiles as a PNG at twice the on-screen resolution. The save dialog starts in the opened file's folder.
 
+### Saving and Opening Scenes
+
+**NVDocument** in the menu bar saves the selected tile as a NiiVue scene document: its images with their display settings and the view. **Save** writes a `.nvd` file, **Save as JSON** a readable `.nvd.json`. Click a `.nvd` file in the Explorer to open the scene again, or use **NVDocument > Load**; a `.nvd.json` opens with right-click → "NiiVue: Open".
+
 ### Remote Development
 
 NiiVue works with VS Code's remote development features:

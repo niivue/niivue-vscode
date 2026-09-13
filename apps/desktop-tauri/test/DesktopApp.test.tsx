@@ -13,6 +13,10 @@ vi.mock('@tauri-apps/api/core', () => ({
   isTauri: vi.fn(() => true),
 }))
 
+vi.mock('@tauri-apps/plugin-dialog', () => ({
+  message: vi.fn().mockResolvedValue(undefined),
+}))
+
 vi.mock('@tauri-apps/plugin-store', () => ({
   load: vi.fn().mockResolvedValue({
     get: vi.fn().mockResolvedValue([]),
@@ -28,12 +32,43 @@ vi.mock('@niivue/react', () => ({
   ImageDrop: ({ children }: { children: unknown }) => children,
   Menu: () => null,
   listenToMessages: vi.fn(),
+  setFileSaver: vi.fn(),
 }))
 
 import { invoke } from '@tauri-apps/api/core'
-import { loadFileFromPath } from '../src/components/DesktopApp'
+import { message } from '@tauri-apps/plugin-dialog'
+import { loadFileFromPath, saveWithNativeDialog } from '../src/components/DesktopApp'
 
 const mockInvoke = vi.mocked(invoke)
+
+describe('saveWithNativeDialog', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('saves through the save_file command', async () => {
+    mockInvoke.mockResolvedValue('/scans/brain.nvd')
+    const bytes = new Uint8Array([7, 8])
+
+    await saveWithNativeDialog(bytes, 'brain.nvd')
+
+    expect(mockInvoke).toHaveBeenCalledWith('save_file', bytes, {
+      headers: { 'x-file-name': 'brain.nvd' },
+    })
+    expect(message).not.toHaveBeenCalled()
+  })
+
+  it('shows why a file could not be saved', async () => {
+    mockInvoke.mockRejectedValue('Failed to write /readonly/brain.nvd: Access is denied.')
+
+    await saveWithNativeDialog(new Uint8Array([7]), 'brain.nvd')
+
+    expect(message).toHaveBeenCalledWith('Failed to write /readonly/brain.nvd: Access is denied.', {
+      title: 'Could not save brain.nvd',
+      kind: 'error',
+    })
+  })
+})
 
 describe('loadFileFromPath', () => {
   let postMessageSpy: ReturnType<typeof vi.spyOn>

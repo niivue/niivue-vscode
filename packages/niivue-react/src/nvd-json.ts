@@ -1,113 +1,48 @@
-import { decode, Encoder } from 'cbor-x'
-
 /**
- * JSON <-> CBOR transcoding for NiiVue `.nvd` scene documents.
+ * JSON form of NiiVue `.nvd` scene documents.
  *
- * NiiVue v1.0 serializes scenes as CBOR (`nv.serializeDocument()` /
- * `nv.loadDocument()`); it has no JSON path. But the on-the-wire object is a
- * plain `NVDocumentData`, so we add JSON support at our own seam: a JSON `.nvd`
- * is parsed and re-encoded to the CBOR that `loadDocument` expects, and a CBOR
- * `.nvd` can be decoded back to readable JSON for editing/export. NiiVue does
- * all the actual scene restore - we only change the container format here.
- *
- * Why this is useful: a URL-referencing scene
+ * NiiVue reads and writes documents as CBOR (the default) or as JSON, where a
+ * typed array is `{ "$ta": "Uint8Array", "b64": "<base64>" }`. A JSON document
+ * opened here can also be hand-authored and sparse, e.g.
  *   { "volumes": [{ "url": "brain.nii.gz", "colormap": "gray" }] }
- * has no binary fields, so the JSON is small and hand-authorable in an editor
- * and viewed directly. Self-contained scenes (embedded voxel/mesh data) carry
- * `Uint8Array` fields that JSON can't hold; we represent those as
- * `{ "$bin": "<base64>" }` so they round-trip losslessly.
+ * or carry embedded bytes as `{ "$bin": "<base64>" }`, the tag earlier exports
+ * of this viewer used. Such a document is completed and retagged before NiiVue
+ * loads it; NiiVue does the actual decoding and scene restore.
  */
 
-// Plain-CBOR encoder: `useRecords: false` emits vanilla CBOR maps (no cbor-x
-// record extension), so the bytes decode with any CBOR reader - including
-// NiiVue's own `decode` - regardless of the cbor-x version it bundles.
-// Uint8Array values become CBOR byte strings, which NiiVue reads back as
-// Uint8Array (matching the embedded-data fields of NVDocumentData).
-const encoder = new Encoder({ useRecords: false })
+// Top-level fields NiiVue's loader reads without a fallback.
+const REQUIRED_FIELDS: Record<string, () => unknown> = {
+  version: () => 1,
+  scene: () => ({}),
+  layout: () => ({}),
+  clipPlanes: () => [],
+  volumes: () => [],
+  meshes: () => [],
+}
 
 function isPlainObject(x: unknown): x is Record<string, unknown> {
-  return (
-    typeof x === 'object' &&
-    x !== null &&
-    !Array.isArray(x) &&
-    !(x instanceof Uint8Array) &&
-    !ArrayBuffer.isView(x)
-  )
+  return typeof x === 'object' && x !== null && !Array.isArray(x)
 }
 
-function bytesToBase64(bytes: Uint8Array): string {
-  let bin = ''
-  const CHUNK = 0x8000 // avoid call-stack limits / quadratic concat on large embeds
-  for (let i = 0; i < bytes.length; i += CHUNK) {
-    bin += String.fromCharCode(...bytes.subarray(i, i + CHUNK))
-  }
-  return btoa(bin)
-}
+const isBinTag = (x: unknown): x is { $bin: string } =>
+  isPlainObject(x) && Object.keys(x).length === 1 && typeof x.$bin === 'string'
 
-function base64ToBytes(b64: string): Uint8Array {
-  const bin = atob(b64)
-  const out = new Uint8Array(bin.length)
-  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i)
-  return out
-}
+const hasScheme = (url: string) => /^[a-z][a-z\d+.-]*:/i.test(url)
 
-/** JSON side -> NiiVue side: replace every `{ $bin: base64 }` with a Uint8Array. */
-export function reviveBinary(x: unknown): unknown {
-  if (Array.isArray(x)) return x.map(reviveBinary)
-  if (isPlainObject(x)) {
-    const keys = Object.keys(x)
-    if (keys.length === 1 && typeof x.$bin === 'string') {
-      return base64ToBytes(x.$bin)
+/** Resolve relative `url` fields of the listed items against `baseUrl`; true if any changed. */
+function resolveUrls(items: unknown, baseUrl: string): boolean {
+  let changed = false
+  for (const item of Array.isArray(items) ? items : []) {
+    if (isPlainObject(item) && typeof item.url === 'string' && item.url && !hasScheme(item.url)) {
+      try {
+        item.url = new URL(item.url, baseUrl).href
+        changed = true
+      } catch {
+        // An opaque base such as a blob: or data: URL cannot resolve links.
+      }
     }
-    const out: Record<string, unknown> = {}
-    for (const k of keys) out[k] = reviveBinary(x[k])
-    return out
   }
-  return x
-}
-
-/** NiiVue side -> JSON side: replace every Uint8Array with `{ $bin: base64 }`. */
-export function encodeBinary(x: unknown): unknown {
-  if (x instanceof Uint8Array) return { $bin: bytesToBase64(x) }
-  if (Array.isArray(x)) return x.map(encodeBinary)
-  if (isPlainObject(x)) {
-    const out: Record<string, unknown> = {}
-    for (const k of Object.keys(x)) out[k] = encodeBinary(x[k])
-    return out
-  }
-  return x
-}
-
-// NiiVue's `applyDocumentToModel` reads these fields without guarding, so a
-// document missing any of them throws. The config groups (layout/ui/volume/
-// mesh/draw/interaction) are applied via `Object.assign` and may be omitted -
-// NiiVue keeps its own defaults. This lets a hand-authored scene be as small as
-// `{ "volumes": [{ "url": "…" }] }`.
-const DEFAULT_SCENE = {
-  azimuth: 110,
-  elevation: 10,
-  scaleMultiplier: 1,
-  gamma: 1,
-  crosshairPos: [0.5, 0.5, 0.5],
-  pan2Dxyzmm: [0, 0, 0, 1],
-  backgroundColor: [0, 0, 0, 1],
-  clipPlaneColor: [0.7, 0, 0.7, 0.5],
-  isClipPlaneCutaway: false,
-}
-
-const DEFAULT_DOC = {
-  version: 1,
-  created: '',
-  scene: DEFAULT_SCENE,
-  clipPlanes: [] as number[],
-  volumes: [] as unknown[],
-  meshes: [] as unknown[],
-}
-
-/** Fill the fields NiiVue requires so a sparse hand-authored scene still loads. */
-export function withDocDefaults(doc: Record<string, unknown>): Record<string, unknown> {
-  const scene = { ...DEFAULT_SCENE, ...((doc.scene as object) ?? {}) }
-  return { ...DEFAULT_DOC, ...doc, scene }
+  return changed
 }
 
 /**
@@ -127,15 +62,44 @@ export function looksLikeJsonNvd(bytes: Uint8Array): boolean {
   return bytes[i] === 0x7b /* { */ || bytes[i] === 0x5b /* [ */
 }
 
-/** Transcode a JSON `.nvd` (text) to the CBOR bytes `nv.loadDocument` expects. */
-export function jsonNvdToCbor(text: string): Uint8Array {
-  const parsed = JSON.parse(text) as Record<string, unknown>
-  const doc = reviveBinary(withDocDefaults(parsed))
-  return new Uint8Array(encoder.encode(doc))
+/**
+ * A JSON document as NiiVue's loader accepts it: `$bin` tags become NiiVue's
+ * `$ta` tags, missing required fields are added and a BOM is dropped. With
+ * the URL the document came from, relative image links are resolved against
+ * it; NiiVue would resolve them against the viewer's page. A document that
+ * needs none of that is returned as it is.
+ */
+export function normalizeJsonNvd(bytes: Uint8Array, baseUrl?: string): Uint8Array {
+  let changed = bytes[0] === 0xef // NiiVue does not skip a UTF-8 BOM
+  // TextDecoder drops the BOM.
+  const doc: unknown = JSON.parse(new TextDecoder().decode(bytes), (_key, value) => {
+    if (!isBinTag(value)) {
+      return value
+    }
+    changed = true
+    return { $ta: 'Uint8Array', b64: value.$bin }
+  })
+  if (!isPlainObject(doc)) {
+    throw new Error('A JSON scene document must be an object')
+  }
+  for (const [field, fallback] of Object.entries(REQUIRED_FIELDS)) {
+    if (doc[field] === undefined) {
+      doc[field] = fallback()
+      changed = true
+    }
+  }
+  if (baseUrl) {
+    const meshes = Array.isArray(doc.meshes) ? doc.meshes : []
+    const layers = meshes.flatMap((mesh) => (isPlainObject(mesh) ? mesh.layers : []))
+    changed = resolveUrls(doc.volumes, baseUrl) || changed
+    changed = resolveUrls(meshes, baseUrl) || changed
+    changed = resolveUrls(layers, baseUrl) || changed
+  }
+  return changed ? new TextEncoder().encode(JSON.stringify(doc)) : bytes
 }
 
-/** Decode CBOR `.nvd` bytes (e.g. from `nv.serializeDocument()`) to pretty JSON. */
-export function cborNvdToJson(bytes: Uint8Array): string {
-  const doc = encodeBinary(decode(bytes))
-  return JSON.stringify(doc, null, 2)
+/** NiiVue's JSON serialization (`serializeDocument({ format: 'json' })`), indented. */
+export function indentJsonNvd(bytes: Uint8Array): Uint8Array {
+  const doc: unknown = JSON.parse(new TextDecoder().decode(bytes))
+  return new TextEncoder().encode(JSON.stringify(doc, null, 2))
 }

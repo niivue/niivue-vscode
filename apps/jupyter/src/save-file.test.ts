@@ -1,34 +1,25 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { downloadFile, isSaveFileBody } from './save-file'
+import { describe, expect, it, vi } from 'vitest'
+import {
+  isNotFound,
+  isSaveFileBody,
+  saveToWorkspace,
+  suggestedSavePath,
+  WorkspaceSaver,
+} from './save-file'
 
-// The node test environment has no DOM; a minimal document records the link.
-function fakeDocument() {
-  const link = { href: '', download: '', click: vi.fn(), remove: vi.fn() }
-  const doc = {
-    createElement: vi.fn(() => link),
-    body: { appendChild: vi.fn() },
+function fakeSaver(overrides: Partial<WorkspaceSaver> = {}) {
+  return {
+    askPath: vi.fn(async (suggested: string) => suggested),
+    exists: vi.fn(async () => false),
+    confirmReplace: vi.fn(async () => true),
+    write: vi.fn(async () => {}),
+    saved: vi.fn(),
+    failed: vi.fn(),
+    ...overrides,
   }
-  return { doc: doc as unknown as Document, link }
 }
 
-let blobs: Blob[]
-
-beforeEach(() => {
-  blobs = []
-  vi.useFakeTimers()
-  vi.spyOn(URL, 'createObjectURL').mockImplementation((blob) => {
-    blobs.push(blob as Blob)
-    return 'blob:saved-file'
-  })
-  vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {})
-})
-
-afterEach(() => {
-  vi.useRealTimers()
-  vi.restoreAllMocks()
-})
-
-describe('downloadFile', () => {
+describe('saveToWorkspace', () => {
   const png = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 128, 255])
   const body = {
     filename: 'brain_screenshot.png',
@@ -36,38 +27,102 @@ describe('downloadFile', () => {
     data: Buffer.from(png).toString('base64'),
   }
 
-  it('downloads the decoded bytes under the suggested name', async () => {
-    const { doc, link } = fakeDocument()
+  it("writes the file next to the opened file under the viewer's name", async () => {
+    const saver = fakeSaver()
 
-    expect(downloadFile(body, doc)).toBe(true)
+    expect(await saveToWorkspace(body, 'study/sub-01', saver)).toBe(
+      'study/sub-01/brain_screenshot.png',
+    )
 
-    expect(link.download).toBe('brain_screenshot.png')
-    expect(link.href).toBe('blob:saved-file')
-    expect(link.click).toHaveBeenCalledTimes(1)
-    expect(link.remove).toHaveBeenCalledTimes(1)
-    expect(blobs[0].type).toBe('image/png')
-    expect(new Uint8Array(await blobs[0].arrayBuffer())).toEqual(png)
+    expect(saver.askPath).toHaveBeenCalledWith('study/sub-01/brain_screenshot.png')
+    expect(saver.write).toHaveBeenCalledWith('study/sub-01/brain_screenshot.png', body.data)
+    expect(saver.saved).toHaveBeenCalledWith('study/sub-01/brain_screenshot.png')
+    expect(saver.confirmReplace).not.toHaveBeenCalled()
   })
 
-  it('revokes the object URL once the click is dispatched', () => {
-    const { doc } = fakeDocument()
+  it('saves to the path the user entered, relative to the workspace root', async () => {
+    const saver = fakeSaver({ askPath: vi.fn(async () => ' /figures/scene.nvd ') })
 
-    downloadFile(body, doc)
-    expect(URL.revokeObjectURL).not.toHaveBeenCalled()
-    vi.runAllTimers()
+    await saveToWorkspace({ ...body, filename: 'brain.nvd' }, 'study', saver)
 
-    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:saved-file')
+    expect(saver.write).toHaveBeenCalledWith('figures/scene.nvd', body.data)
   })
 
-  it('ignores malformed messages', () => {
-    const { doc } = fakeDocument()
+  it('does nothing when the user cancels or clears the path', async () => {
+    for (const answer of [null, '  ']) {
+      const saver = fakeSaver({ askPath: vi.fn(async () => answer) })
 
-    expect(downloadFile(undefined, doc)).toBe(false)
-    expect(downloadFile({ ...body, data: undefined }, doc)).toBe(false)
-    expect(downloadFile({ ...body, filename: 42 }, doc)).toBe(false)
-    expect(downloadFile({ ...body, data: '!' }, doc)).toBe(false)
+      expect(await saveToWorkspace(body, 'study', saver)).toBeNull()
 
-    expect(doc.createElement).not.toHaveBeenCalled()
+      expect(saver.write).not.toHaveBeenCalled()
+    }
+  })
+
+  it('asks before replacing an existing file', async () => {
+    const keep = fakeSaver({
+      exists: vi.fn(async () => true),
+      confirmReplace: vi.fn(async () => false),
+    })
+    const replace = fakeSaver({ exists: vi.fn(async () => true) })
+
+    expect(await saveToWorkspace(body, '', keep)).toBeNull()
+    expect(await saveToWorkspace(body, '', replace)).toBe('brain_screenshot.png')
+
+    expect(keep.confirmReplace).toHaveBeenCalledWith('brain_screenshot.png')
+    expect(keep.write).not.toHaveBeenCalled()
+    expect(replace.write).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not write when checking for an existing file fails', async () => {
+    const error = new Error('Service Unavailable')
+    const saver = fakeSaver({ exists: vi.fn(async () => Promise.reject(error)) })
+
+    expect(await saveToWorkspace(body, 'study', saver)).toBeNull()
+
+    expect(saver.write).not.toHaveBeenCalled()
+    expect(saver.failed).toHaveBeenCalledWith('study/brain_screenshot.png', error)
+  })
+
+  it('reports a failed write', async () => {
+    const error = new Error('Permission denied')
+    const saver = fakeSaver({ write: vi.fn(async () => Promise.reject(error)) })
+
+    expect(await saveToWorkspace(body, 'study', saver)).toBeNull()
+
+    expect(saver.failed).toHaveBeenCalledWith('study/brain_screenshot.png', error)
+    expect(saver.saved).not.toHaveBeenCalled()
+  })
+
+  it('ignores malformed messages without asking', async () => {
+    const saver = fakeSaver()
+
+    for (const malformed of [
+      undefined,
+      { ...body, data: undefined },
+      { ...body, filename: 42 },
+      { ...body, data: '!' },
+    ]) {
+      expect(await saveToWorkspace(malformed, 'study', saver)).toBeNull()
+    }
+
+    expect(saver.askPath).not.toHaveBeenCalled()
+  })
+})
+
+describe('isNotFound', () => {
+  it('is true only for a 404 response', () => {
+    expect(isNotFound({ response: { status: 404 } })).toBe(true)
+    expect(isNotFound({ response: { status: 503 } })).toBe(false)
+    expect(isNotFound(new Error('offline'))).toBe(false)
+    expect(isNotFound(null)).toBe(false)
+  })
+})
+
+describe('suggestedSavePath', () => {
+  it('keeps only the base name of the suggested file', () => {
+    expect(suggestedSavePath('study/', '..\\..\\other/escape.png')).toBe('study/escape.png')
+    expect(suggestedSavePath('', 'scene.nvd')).toBe('scene.nvd')
+    expect(suggestedSavePath('/study', '..')).toBe('study/untitled')
   })
 })
 

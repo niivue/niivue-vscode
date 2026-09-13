@@ -155,6 +155,7 @@ export default defineConfig({
                 '.gii',
                 '.mz3',
               ],
+              'application/x-niivue-document': ['.nvd'],
             },
           },
         ],

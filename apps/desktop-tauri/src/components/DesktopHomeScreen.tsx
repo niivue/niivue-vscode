@@ -26,8 +26,8 @@ export const DesktopHomeScreen = () => {
       title: 'Open Medical Image',
       filters: [
         {
-          name: 'Medical Images',
-          extensions: MEDICAL_IMAGE_EXTENSIONS.map((ext) => ext.replace(/^\./, '')),
+          name: 'Medical Images and Scenes',
+          extensions: [...MEDICAL_IMAGE_EXTENSIONS.map((ext) => ext.replace(/^\./, '')), 'nvd'],
         },
         {
           name: 'All Files',
@@ -76,7 +76,7 @@ export const DesktopHomeScreen = () => {
 
       <HomeSection title="Supported Formats">
         NIfTI (.nii, .nii.gz), DICOM (.dcm), MHA/MHD, NRRD, FreeSurfer (.mgh, .mgz), GIfTI (.gii),
-        and many more.
+        NiiVue scene documents (.nvd), and many more.
       </HomeSection>
     </>
   )

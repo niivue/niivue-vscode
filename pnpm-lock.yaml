@@ -531,9 +531,6 @@ importers:
       '@niivue/viewer-protocol':
         specifier: workspace:*
         version: link:../viewer-protocol
-      cbor-x:
-        specifier: ^1.6.0
-        version: 1.6.6
     devDependencies:
       '@preact/signals':
         specifier: ^2.11.2

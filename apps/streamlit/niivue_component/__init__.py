@@ -53,9 +53,10 @@ def niivue_viewer(
     Parameters:
     -----------
     nifti_data : bytes or None
-        Raw NIFTI file data for the main image
+        Raw file data for the main image (NIfTI or another supported format),
+        or a NiiVue scene document (.nvd, .nvd.json)
     filename : str
-        Name of the file being displayed
+        Name of the file being displayed; its extension selects the format
     paired_data : bytes or None
         Raw voxel data for detached formats. Required when ``nifti_data`` is
         an MHD header with ``ElementDataFile`` pointing to a separate file

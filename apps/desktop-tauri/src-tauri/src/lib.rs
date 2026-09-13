@@ -1,7 +1,9 @@
 use serde::Serialize;
+use std::borrow::Cow;
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
+use tauri_plugin_dialog::DialogExt;
 
 /// In-process allowlist of paths the user has explicitly opened (via the
 /// native file dialog or directory listing). The webview cannot ask Rust to
@@ -172,6 +174,82 @@ fn list_directory(
     Ok(files)
 }
 
+/// The name a file from the viewer is suggested under: the last segment of
+/// the percent-decoded name, or "untitled".
+fn suggested_file_name(encoded: Option<&str>) -> String {
+    let decoded = encoded
+        .map(|v| {
+            percent_encoding::percent_decode_str(v)
+                .decode_utf8_lossy()
+                .to_string()
+        })
+        .unwrap_or_default();
+    let name = decoded.rsplit(&['/', '\\'][..]).next().unwrap_or("").trim();
+    if name.is_empty() || name == "." || name == ".." {
+        "untitled".to_string()
+    } else {
+        name.to_string()
+    }
+}
+
+/// The save dialog filter (label, extension) for a file name.
+fn save_filter(file_name: &str) -> Option<(&'static str, &'static str)> {
+    let lower = file_name.to_lowercase();
+    if lower.ends_with(".nvd") {
+        Some(("NiiVue Document", "nvd"))
+    } else if lower.ends_with(".json") {
+        Some(("JSON Document", "json"))
+    } else if lower.ends_with(".png") {
+        Some(("PNG Image", "png"))
+    } else {
+        None
+    }
+}
+
+/// The file bytes of a request: the raw body, or the JSON array of numbers
+/// the postMessage IPC fallback sends instead.
+fn request_bytes(body: &tauri::ipc::InvokeBody) -> Result<Cow<'_, [u8]>, String> {
+    match body {
+        tauri::ipc::InvokeBody::Raw(bytes) => Ok(Cow::Borrowed(bytes)),
+        tauri::ipc::InvokeBody::Json(value) => serde_json::from_value(value.clone())
+            .map(Cow::Owned)
+            .map_err(|_| "Expected the file's bytes as the request body".to_string()),
+    }
+}
+
+/// Save a file the viewer produced (a scene document or a screenshot). The
+/// bytes arrive as the raw request body and the suggested name, percent-encoded,
+/// in the `x-file-name` header. Only the user picks where it is written, in
+/// the native save dialog, so the renderer cannot write to arbitrary paths.
+/// Returns the saved path, or None when the dialog is cancelled.
+#[tauri::command]
+async fn save_file(
+    app: tauri::AppHandle,
+    request: tauri::ipc::Request<'_>,
+) -> Result<Option<String>, String> {
+    let bytes = request_bytes(request.body())?;
+    let name = suggested_file_name(
+        request
+            .headers()
+            .get("x-file-name")
+            .and_then(|v| v.to_str().ok()),
+    );
+    let mut dialog = app.dialog().file().set_file_name(&name);
+    if let Some((label, extension)) = save_filter(&name) {
+        dialog = dialog.add_filter(label, &[extension]);
+    }
+    // Blocking is fine here: async commands do not run on the main thread.
+    let Some(path) = dialog.blocking_save_file() else {
+        return Ok(None);
+    };
+    let path = path
+        .into_path()
+        .map_err(|e| format!("Invalid save location: {e}"))?;
+    std::fs::write(&path, &bytes)
+        .map_err(|e| format!("Failed to write {}: {e}", path.display()))?;
+    Ok(Some(path.to_string_lossy().to_string()))
+}
+
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
@@ -182,6 +260,7 @@ pub fn run() {
             read_file_bytes,
             get_file_info,
             list_directory,
+            save_file,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -192,7 +271,7 @@ mod tests {
     // Only import what the tests need. `use super::*` would re-import the
     // `#[tauri::command]`-generated macros that share names with the
     // commands, which the Rust compiler rejects as duplicate definitions.
-    use super::{canonical, AllowedPaths};
+    use super::{canonical, request_bytes, save_filter, suggested_file_name, AllowedPaths};
     use std::io::Write;
     use std::path::PathBuf;
 
@@ -309,5 +388,44 @@ mod tests {
         assert_eq!(matches.len(), 1);
         assert!(matches[0].ends_with("real.nii.gz"));
         std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn test_suggested_file_name_decodes_and_keeps_only_the_name() {
+        assert_eq!(
+            suggested_file_name(Some("gehirn%C3%BC.nvd")),
+            "gehirn\u{fc}.nvd"
+        );
+        assert_eq!(
+            suggested_file_name(Some("..%2F..%5Cetc%2Fscene.nvd")),
+            "scene.nvd"
+        );
+        assert_eq!(suggested_file_name(Some("..")), "untitled");
+        assert_eq!(suggested_file_name(Some("")), "untitled");
+        assert_eq!(suggested_file_name(None), "untitled");
+    }
+
+    #[test]
+    fn test_request_bytes_accepts_a_raw_body_or_a_json_byte_array() {
+        let raw = tauri::ipc::InvokeBody::Raw(vec![1, 2, 255]);
+        assert_eq!(request_bytes(&raw).unwrap().as_ref(), &[1, 2, 255]);
+        let json = tauri::ipc::InvokeBody::Json(serde_json::json!([1, 2, 255]));
+        assert_eq!(request_bytes(&json).unwrap().as_ref(), &[1, 2, 255]);
+        let wrong = tauri::ipc::InvokeBody::Json(serde_json::json!({ "0": 1 }));
+        assert!(request_bytes(&wrong).is_err());
+    }
+
+    #[test]
+    fn test_save_filter_by_extension() {
+        assert_eq!(save_filter("brain.nvd"), Some(("NiiVue Document", "nvd")));
+        assert_eq!(
+            save_filter("brain.NVD.json"),
+            Some(("JSON Document", "json"))
+        );
+        assert_eq!(
+            save_filter("brain_screenshot.png"),
+            Some(("PNG Image", "png"))
+        );
+        assert_eq!(save_filter("notes.txt"), None);
     }
 }

@@ -67,6 +67,20 @@ export async function listDirectory(
   return invoke<FileInfo[]>('list_directory', { path, extensions })
 }
 
+/**
+ * Save bytes as a file where the user picks in the native save dialog. The
+ * bytes use the binary IPC channel and the suggested name travels in a
+ * header. Resolves to the saved path, or null when the dialog is cancelled.
+ */
+export async function saveFileWithDialog(
+  bytes: Uint8Array,
+  filename: string,
+): Promise<string | null> {
+  return invoke<string | null>('save_file', bytes, {
+    headers: { 'x-file-name': encodeURIComponent(filename) },
+  })
+}
+
 /** Common medical imaging file extensions. */
 export const MEDICAL_IMAGE_EXTENSIONS = [
   '.nii',

@@ -20,8 +20,7 @@ used where available (modern PWA browsers) and WebGL2 elsewhere (incl. VS Code w
 
 The migration is centralised in `@niivue/react`; the apps inherit it through that package.
 
-Scene documents (`.nvd`) use NiiVue v1's native CBOR serialization. On top of that, a JSON
-form of the same v1 document is supported: a JSON `.nvd`/`.nvd.json` can be hand-authored in
-an editor and opened directly (transcoded to CBOR on load), and the NVDocument menu offers a
-"Save as JSON" export. Embedded binary is carried as `{ $bin: base64 }`; URL-referencing scenes are
-plain, editable JSON.
+Scene documents (`.nvd`) use NiiVue v1's native CBOR serialization, and its JSON form works
+too: the NVDocument menu offers a "Save as JSON" export in NiiVue's JSON document format, and a
+JSON `.nvd`/`.nvd.json` opens directly, including a sparse scene hand-authored in an editor that
+links its images by URL (the fields NiiVue requires are filled in on load).

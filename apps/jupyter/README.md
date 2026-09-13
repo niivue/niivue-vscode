@@ -20,6 +20,10 @@ pip install jupyterlab-niivue
 2. **Right-click Menu**: Right-click on a file and select "Open With" → "NiiVue Viewer"
 3. **Compare Multiple Files**: Select multiple files (2 or more), right-click, and choose "Compare in NiiVue" to view them side-by-side in a multi-panel layout
 
+### Saving Scenes and Figures
+
+**NVDocument** in the menu bar saves the selected tile as a NiiVue scene document (`.nvd`, or readable `.nvd.json` with **Save as JSON**): its images with their display settings and the view. **Screenshot** saves the visible tiles as a PNG. Both ask for a path in the workspace, starting in the opened file's folder. Double-click a `.nvd` in the file browser to open the scene again, or use **NVDocument > Load**.
+
 ## Screenshots
 
 ![Default view showing a brain volume opened in JupyterLab with the NiiVue viewer](https://raw.githubusercontent.com/niivue/niivue-vscode/main/apps/jupyter/media/screenshot_default_view.png)

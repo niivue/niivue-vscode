@@ -42,6 +42,19 @@ export const useStreamlitNiivue = (args: StreamlitArgs) => {
   const loadedMeshesRef = useRef<string | null>(null)
   const loadedMeshOverlaysRef = useRef<string[]>([])
 
+  // The viewer posts its own actions (NVDocument > Load, dropped files) to this
+  // window. Only those are handled; Streamlit talks to the component through
+  // messages from the parent page.
+  useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      if (event.source === window) {
+        handleMessage(event.data, appProps)
+      }
+    }
+    window.addEventListener('message', onMessage)
+    return () => window.removeEventListener('message', onMessage)
+  }, [])
+
   // Sync view mode (axial, coronal, etc)
   useEffect(() => {
     if (args.view_mode) {

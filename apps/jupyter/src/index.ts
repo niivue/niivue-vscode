@@ -44,6 +44,8 @@ const plugin: JupyterFrontEndPlugin<void> = {
       'mnc',
       'npy',
       'npz',
+      'nvd',
+      'nvd.json',
     ]
 
     const widgetFactory = new NiivueViewer.Factory(
@@ -236,6 +238,18 @@ const plugin: JupyterFrontEndPlugin<void> = {
         displayName: 'NumPy Compressed Archive',
         extensions: ['.npz'],
         mimeTypes: ['application/octet-stream'],
+      },
+      {
+        name: 'nvd',
+        displayName: 'NiiVue Document',
+        extensions: ['.nvd'],
+        mimeTypes: ['application/octet-stream'],
+      },
+      {
+        name: 'nvd.json',
+        displayName: 'NiiVue JSON Document',
+        extensions: ['.nvd.json'],
+        mimeTypes: ['application/json'],
       },
     ]
 

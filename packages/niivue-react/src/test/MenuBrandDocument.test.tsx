@@ -34,8 +34,8 @@ vi.mock('@niivue/niivue', () => {
 
 // Stub the download helpers so "Save" / "Save as JSON" can be asserted without a
 // real Blob/anchor.
-const downloadNvd = vi.fn()
-const downloadSceneJson = vi.fn()
+const downloadNvd = vi.fn(async (..._args: unknown[]) => {})
+const downloadSceneJson = vi.fn(async (..._args: unknown[]) => {})
 vi.mock('../document', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../document')>()),
   downloadNvd: (...args: unknown[]) => downloadNvd(...args),
@@ -63,6 +63,8 @@ afterEach(() => {
   activeMenu.value = null
 })
 
+const jsonDocument = new TextEncoder().encode('{"version":8}')
+
 function makeNv() {
   return {
     volumes: [
@@ -76,9 +78,10 @@ function makeNv() {
     ],
     meshes: [],
     opts: {},
-    // v1: serializeDocument() (CBOR bytes) replaces nv.json(); saveScene hands
-    // the bytes to the (mocked) downloadNvd / downloadSceneJson helpers.
-    serializeDocument: () => new Uint8Array([1, 2, 3]),
+    // v1: serializeDocument() (CBOR bytes, or JSON with format 'json') replaces
+    // nv.json(); the menu hands the bytes to the (mocked) save helpers.
+    serializeDocument: (options?: { format?: string }) =>
+      options?.format === 'json' ? jsonDocument : new Uint8Array([1, 2, 3]),
     drawScene: vi.fn(),
     updateGLVolume: vi.fn(),
   }
@@ -123,13 +126,14 @@ describe('NVDocument menu', () => {
     expect(downloadNvd).not.toHaveBeenCalled()
   })
 
-  it('the chevron offers a JSON export that re-opens through parseNvd', async () => {
+  it("the chevron offers a JSON export in NiiVue's JSON format", async () => {
     render(<Menu {...makeProps({ saveScene: true })} />)
 
     fireEvent.click(screen.getByTestId('menu-item-dropdown-NVDocument'))
 
     fireEvent.click(await screen.findByText('Save as JSON'))
     expect(downloadSceneJson).toHaveBeenCalledTimes(1)
+    expect(downloadSceneJson.mock.calls[0][0]).toBe(jsonDocument)
     expect(downloadSceneJson.mock.calls[0][1]).toBe('brain.nvd.json')
     expect(downloadNvd).not.toHaveBeenCalled()
   })
@@ -176,6 +180,14 @@ describe('Brand menu in a webview host (VS Code, JupyterLab)', () => {
   })
   afterAll(() => {
     delete (globalThis as any).vscode
+  })
+
+  it('shows NVDocument, whose Save goes through the host', () => {
+    render(<Menu {...makeProps({ saveScene: true })} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'NVDocument' }))
+
+    expect(downloadNvd).toHaveBeenCalledTimes(1)
   })
 
   it('offers About but not Reset Viewer, regardless of the home flag', async () => {
