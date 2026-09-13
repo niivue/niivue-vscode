@@ -218,18 +218,20 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     // Only a plain name is accepted; directories come from the dialog.
     const suggested = typeof body.filename === 'string' ? body.filename.split(/[/\\]/).pop() : ''
     const filename = suggested && !/^\.\.?$/.test(suggested) ? suggested : 'untitled'
-    const folder = vscode.workspace.fs.isWritableFileSystem(sourceUri.scheme)
-      ? NiiVueEditorProvider.parentDir(sourceUri)
-      : vscode.workspace.workspaceFolders?.[0]?.uri
-    const target = await vscode.window.showSaveDialog({
-      defaultUri: folder ? vscode.Uri.joinPath(folder, filename) : undefined,
-      filters: NiiVueEditorProvider.saveFilters.get(String(body.mimeType)),
-    })
-    if (!target) {
-      return
-    }
-    const name = target.path.split('/').pop()
+    const mimeType = typeof body.mimeType === 'string' ? body.mimeType : ''
+    let name = filename
     try {
+      const folder = vscode.workspace.fs.isWritableFileSystem(sourceUri.scheme)
+        ? NiiVueEditorProvider.parentDir(sourceUri)
+        : vscode.workspace.workspaceFolders?.[0]?.uri
+      const target = await vscode.window.showSaveDialog({
+        defaultUri: folder ? vscode.Uri.joinPath(folder, filename) : undefined,
+        filters: NiiVueEditorProvider.saveFilters.get(mimeType),
+      })
+      if (!target) {
+        return
+      }
+      name = target.path.split('/').pop() ?? filename
       await vscode.workspace.fs.writeFile(target, NiiVueEditorProvider.base64ToBytes(body.data))
       vscode.window.showInformationMessage(`Saved ${name}`)
     } catch (error) {

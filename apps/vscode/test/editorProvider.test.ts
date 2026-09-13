@@ -499,6 +499,20 @@ describe('NiiVueEditorProvider.saveFile', () => {
     expect(window.showInformationMessage).not.toHaveBeenCalled()
   })
 
+  it('reports a failing save dialog and ignores a non-string MIME type', async () => {
+    workspace.fs.isWritableFileSystem.mockReturnValue(true)
+    window.showSaveDialog.mockRejectedValue(new Error('dialog unavailable'))
+
+    await NiiVueEditorProvider.saveFile(
+      { ...body, filename: 'fig.png', mimeType: { toString: 0, valueOf: 0 } },
+      Uri.parse('file:///scans/brain.nii.gz'),
+    )
+
+    expect(dialogOptions().filters).toBeUndefined()
+    expect(window.showErrorMessage).toHaveBeenCalledWith('Could not save fig.png: dialog unavailable')
+    expect(workspace.fs.writeFile).not.toHaveBeenCalled()
+  })
+
   it('reduces a suggested name to its last path segment', async () => {
     workspace.fs.isWritableFileSystem.mockReturnValue(true)
     window.showSaveDialog.mockResolvedValue(undefined)
