@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test'
 import { readFile } from 'fs/promises'
 import { expect, test } from './fixtures'
-import { BASE_URL, loadTestImage } from './utils'
+import { BASE_URL, loadTestImage, waitForImageLoad } from './utils'
 
 /**
  * The Screenshot button over a real renderer. Unlike most specs this reads
@@ -12,6 +12,12 @@ import { BASE_URL, loadTestImage } from './utils'
  */
 
 type Chunk = { type: string; data: Buffer }
+
+async function loadImage(page: Page, file: string) {
+  const message = { type: 'addImage', body: { data: '', uri: BASE_URL + file } }
+  await page.evaluate((m) => window.postMessage(m, '*'), message)
+  await waitForImageLoad(page)
+}
 
 function pngChunks(png: Buffer): Chunk[] {
   const chunks: Chunk[] = []
@@ -49,14 +55,16 @@ async function tileLayout(page: Page) {
 test.describe('Screenshot', () => {
   test('saves the tiles as a PNG of the rendered image with the citation', async ({ page }) => {
     await page.goto(BASE_URL)
+    // Two different images, so a compositor that copies the wrong canvas into
+    // a tile shows up as identical tiles.
     await loadTestImage(page)
-    await loadTestImage(page)
+    await loadImage(page, 'pcasl.nii.gz')
     await expect(page.locator('canvas')).toHaveCount(2)
 
     const downloadPromise = page.waitForEvent('download')
     await page.getByRole('button', { name: 'Screenshot', exact: true }).click()
     const download = await downloadPromise
-    expect(download.suggestedFilename()).toBe('lesion_screenshot.png')
+    expect(['lesion_screenshot.png', 'pcasl_screenshot.png']).toContain(download.suggestedFilename())
     const png = await readFile((await download.path()) as string)
 
     expect([...png.subarray(0, 8)]).toEqual([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
@@ -101,7 +109,26 @@ test.describe('Screenshot', () => {
             gapMax = Math.max(gapMax, brightness(col, row))
           }
         }
-        return { litFraction, gapWidth: tiles[1].x - tiles[0].x - tiles[0].w, gapMax }
+        // Mean absolute difference between the two tiles, sampled on a grid.
+        let diff = 0
+        let samples = 0
+        const w = Math.min(tiles[0].w, tiles[1].w)
+        const h = Math.min(tiles[0].h, tiles[1].h)
+        for (let row = 0; row < h; row += 4) {
+          for (let col = 0; col < w; col += 4) {
+            diff += Math.abs(
+              brightness(tiles[0].x + col, tiles[0].y + row) -
+                brightness(tiles[1].x + col, tiles[1].y + row),
+            )
+            samples++
+          }
+        }
+        return {
+          litFraction,
+          gapWidth: tiles[1].x - tiles[0].x - tiles[0].w,
+          gapMax,
+          tileDifference: diff / samples,
+        }
       },
       { base64: png.toString('base64'), tiles: layout.tiles },
     )
@@ -110,5 +137,6 @@ test.describe('Screenshot', () => {
     }
     expect(pixels.gapWidth).toBeGreaterThan(0)
     expect(pixels.gapMax).toBe(0)
+    expect(pixels.tileDifference).toBeGreaterThan(8)
   })
 })
