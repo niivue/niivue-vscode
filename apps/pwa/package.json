@@ -57,8 +57,7 @@
     "@niivue/niivue": "1.0.0-rc.12",
     "@niivue/react": "workspace:*",
     "@preact/signals": "^2.9.0",
-    "preact": "^10.29.2",
-    "react-router-dom": "^7.15.1"
+    "preact": "^10.29.2"
   },
   "devDependencies": {
     "@babel/core": "^7.29.0",

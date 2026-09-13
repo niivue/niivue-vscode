@@ -56,8 +56,8 @@ export default defineConfig({
       // working in dev and the E2E production build.
       '@niivue/viewer-protocol': resolve(__dirname, '../../packages/viewer-protocol/src'),
     },
-    // react-router-dom specifies "module" field in package.json for ESM entry
-    // if it's not mapped, it uses the "main" field which is CommonJS that redirects to CJS preact
+    // Resolve packages through their ESM "module" entry; a CommonJS "main"
+    // entry can pull in the CJS build of preact
     mainFields: ['module'],
   },
   server: {
