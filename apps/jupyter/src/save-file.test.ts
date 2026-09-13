@@ -65,6 +65,7 @@ describe('downloadFile', () => {
     expect(downloadFile(undefined, doc)).toBe(false)
     expect(downloadFile({ ...body, data: undefined }, doc)).toBe(false)
     expect(downloadFile({ ...body, filename: 42 }, doc)).toBe(false)
+    expect(downloadFile({ ...body, data: '!' }, doc)).toBe(false)
 
     expect(doc.createElement).not.toHaveBeenCalled()
   })

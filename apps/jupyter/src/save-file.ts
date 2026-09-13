@@ -25,7 +25,12 @@ export function downloadFile(body: unknown, doc: Document = document): boolean {
   if (!isSaveFileBody(body)) {
     return false
   }
-  const binary = atob(body.data)
+  let binary: string
+  try {
+    binary = atob(body.data)
+  } catch {
+    return false
+  }
   const bytes = new Uint8Array(binary.length)
   for (let i = 0; i < binary.length; i++) {
     bytes[i] = binary.charCodeAt(i)
