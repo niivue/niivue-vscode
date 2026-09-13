@@ -11,7 +11,7 @@ import { ABCWidgetFactory, DocumentRegistry, DocumentWidget } from '@jupyterlab/
 import { FileDialog } from '@jupyterlab/filebrowser'
 import { ServerConnection } from '@jupyterlab/services'
 import { Widget } from '@lumino/widgets'
-import { saveToWorkspace } from './save-file'
+import { isNotFound, saveToWorkspace } from './save-file'
 import {
   fetchArrayBuffer,
   fetchJson,
@@ -253,7 +253,12 @@ export class NiivueWidget extends Widget {
       exists: (path) =>
         contents.get(path, { content: false }).then(
           () => true,
-          () => false,
+          (error) => {
+            if (isNotFound(error)) {
+              return false
+            }
+            throw error
+          },
         ),
       confirmReplace: async (path) => {
         const result = await showDialog({

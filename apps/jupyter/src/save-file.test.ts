@@ -1,5 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
-import { isSaveFileBody, saveToWorkspace, suggestedSavePath, WorkspaceSaver } from './save-file'
+import {
+  isNotFound,
+  isSaveFileBody,
+  saveToWorkspace,
+  suggestedSavePath,
+  WorkspaceSaver,
+} from './save-file'
 
 function fakeSaver(overrides: Partial<WorkspaceSaver> = {}) {
   return {
@@ -67,6 +73,16 @@ describe('saveToWorkspace', () => {
     expect(replace.write).toHaveBeenCalledTimes(1)
   })
 
+  it('does not write when checking for an existing file fails', async () => {
+    const error = new Error('Service Unavailable')
+    const saver = fakeSaver({ exists: vi.fn(async () => Promise.reject(error)) })
+
+    expect(await saveToWorkspace(body, 'study', saver)).toBeNull()
+
+    expect(saver.write).not.toHaveBeenCalled()
+    expect(saver.failed).toHaveBeenCalledWith('study/brain_screenshot.png', error)
+  })
+
   it('reports a failed write', async () => {
     const error = new Error('Permission denied')
     const saver = fakeSaver({ write: vi.fn(async () => Promise.reject(error)) })
@@ -90,6 +106,15 @@ describe('saveToWorkspace', () => {
     }
 
     expect(saver.askPath).not.toHaveBeenCalled()
+  })
+})
+
+describe('isNotFound', () => {
+  it('is true only for a 404 response', () => {
+    expect(isNotFound({ response: { status: 404 } })).toBe(true)
+    expect(isNotFound({ response: { status: 503 } })).toBe(false)
+    expect(isNotFound(new Error('offline'))).toBe(false)
+    expect(isNotFound(null)).toBe(false)
   })
 })
 

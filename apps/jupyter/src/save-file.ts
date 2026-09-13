@@ -30,6 +30,11 @@ export interface WorkspaceSaver {
   failed(path: string, error: unknown): void
 }
 
+/** Whether a contents API request failed because nothing exists at the path. */
+export function isNotFound(error: unknown): boolean {
+  return (error as { response?: { status?: number } } | null)?.response?.status === 404
+}
+
 /** The suggested workspace path for a file: its base name in `folder`. */
 export function suggestedSavePath(folder: string, filename: string): string {
   // Only a plain name is accepted; directories come from the user.
