@@ -33,6 +33,10 @@ Visit the live demo and click "Install" when prompted by your browser to add Nii
 3. **Example Images**: Try the built-in example images to get started
 4. **URL Parameters**: Open files by URL with a comma-separated `images` list (e.g., `?images=https://niivue.github.io/niivue-demo-images/mni152.nii.gz`)
 
+### Saving and Opening Scenes
+
+**NVDocument** in the menu bar downloads the selected tile as a NiiVue scene document: its images with their display settings and the view. **Save** writes a `.nvd` file, **Save as JSON** a readable `.nvd.json`. Open a scene again with **NVDocument > Load**, by dropping the file, through the `images` URL parameter, or, in the installed app, by opening a `.nvd` file with NiiVue.
+
 ### Keyboard Shortcuts
 
 | Shortcut | Action |
