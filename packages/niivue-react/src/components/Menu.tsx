@@ -420,6 +420,20 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
     })
   }
 
+  // H/L/J/K keep niivue's own key mapping: in the 3D render view they turn the
+  // camera, elsewhere they step the crosshair one voxel.
+  const keyStep = (di: number, dj: number) => () => {
+    nvArraySelected.value.forEach((nv) => {
+      if (nv.sliceType === SLICE_TYPE.RENDER) {
+        nv.azimuth = (((nv.azimuth + di) % 360) + 360) % 360
+        nv.elevation = Math.max(-90, Math.min(90, nv.elevation - dj))
+      } else {
+        nv.moveCrosshairInVox(di, dj, 0)
+      }
+      nv.drawScene()
+    })
+  }
+
   // Signal sync handlers
   const toggleInterpolation = () => {
     interpolation.value = !interpolation.value
@@ -482,6 +496,10 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
     onShowHeader: toggle(headerDialog),
     onCrosshairSuperior: crosshairSuperior,
     onCrosshairInferior: crosshairInferior,
+    onCrosshairRight: keyStep(1, 0),
+    onCrosshairLeft: keyStep(-1, 0),
+    onCrosshairAnterior: keyStep(0, 1),
+    onCrosshairPosterior: keyStep(0, -1),
   }), [
     sliceType,
     setMultiplanar,

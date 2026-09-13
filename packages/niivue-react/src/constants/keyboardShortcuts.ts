@@ -9,12 +9,12 @@ export interface KeyboardShortcut {
   shift?: boolean
   alt?: boolean
   description: string
-  isNiivueCore?: boolean // true if handled by niivue.js core library
+  isNiivueCore?: boolean // true for niivue.js built-in default keys
 }
 
 /**
- * Keyboard shortcuts handled by niivue.js core library
- * These are already implemented in @niivue/niivue and cannot be changed
+ * niivue.js built-in default keys. niivue's own listener is removed after attach
+ * (see removeBuiltinKeyHandler), so the app handles these with the same mapping.
  */
 export const NIIVUE_CORE_SHORTCUTS: Record<string, KeyboardShortcut> = {
   CYCLE_VIEW_MODE: {
