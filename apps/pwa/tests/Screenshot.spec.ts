@@ -32,25 +32,40 @@ function pngChunks(png: Buffer): Chunk[] {
   return chunks
 }
 
-// The tile canvases in device pixels, relative to the top-left of their union.
+// Screenshots render at twice the on-screen resolution (SCREENSHOT_SCALE).
+const EXPORT_SCALE = 2
+
+// The tiles as exported: on-screen layout at twice the device pixel ratio, each
+// canvas at NiiVue's backing-store size (floor of CSS size times the ratio).
 async function tileLayout(page: Page) {
-  return page.evaluate(() => {
-    const scale = window.devicePixelRatio || 1
+  return page.evaluate((exportScale) => {
+    const scale = (window.devicePixelRatio || 1) * exportScale
     const rects = Array.from(document.querySelectorAll('canvas'), (c) => c.getBoundingClientRect())
     const left = Math.min(...rects.map((r) => r.left))
     const top = Math.min(...rects.map((r) => r.top))
+    const tiles = rects.map((r) => ({
+      x: Math.round((r.left - left) * scale),
+      y: Math.round((r.top - top) * scale),
+      w: Math.floor(r.width * scale),
+      h: Math.floor(r.height * scale),
+    }))
     return {
-      width: Math.round((Math.max(...rects.map((r) => r.right)) - left) * scale),
-      height: Math.round((Math.max(...rects.map((r) => r.bottom)) - top) * scale),
-      tiles: rects.map((r) => ({
-        x: Math.round((r.left - left) * scale),
-        y: Math.round((r.top - top) * scale),
-        w: Math.round(r.width * scale),
-        h: Math.round(r.height * scale),
-      })),
+      width: Math.max(...tiles.map((t) => t.x + t.w)),
+      height: Math.max(...tiles.map((t) => t.y + t.h)),
+      tiles,
     }
-  })
+  }, EXPORT_SCALE)
 }
+
+// Whether every canvas is back at its on-screen resolution.
+const canvasesAtScreenResolution = (page: Page) =>
+  page.evaluate(() =>
+    Array.from(document.querySelectorAll('canvas')).every((c) => {
+      const r = c.getBoundingClientRect()
+      const ratio = window.devicePixelRatio || 1
+      return c.width === Math.floor(r.width * ratio) && c.height === Math.floor(r.height * ratio)
+    }),
+  )
 
 test.describe('Screenshot', () => {
   test('saves the tiles as a PNG of the rendered image with the citation', async ({ page }) => {
@@ -64,8 +79,11 @@ test.describe('Screenshot', () => {
     const downloadPromise = page.waitForEvent('download')
     await page.getByRole('button', { name: 'Screenshot', exact: true }).click()
     const download = await downloadPromise
-    expect(['lesion_screenshot.png', 'pcasl_screenshot.png']).toContain(download.suggestedFilename())
+    expect(['lesion_screenshot.png', 'pcasl_screenshot.png']).toContain(
+      download.suggestedFilename(),
+    )
     const png = await readFile((await download.path()) as string)
+    expect(await canvasesAtScreenResolution(page)).toBe(true)
 
     expect([...png.subarray(0, 8)]).toEqual([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
     const chunks = pngChunks(png)

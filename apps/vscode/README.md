@@ -27,7 +27,7 @@ code --install-extension KorbinianEckstein.niivue
 
 ### Saving Figures
 
-Click **Screenshot** in the menu bar to save the visible tiles as a PNG. The save dialog starts in the opened file's folder.
+Click **Screenshot** in the menu bar to save the visible tiles as a PNG at twice the on-screen resolution. The save dialog starts in the opened file's folder.
 
 ### Remote Development
 
