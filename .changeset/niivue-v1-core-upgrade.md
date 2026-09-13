@@ -3,12 +3,12 @@
 '@niivue/viewer-protocol': patch
 '@niivue/pwa': patch
 'niivue': patch
-'@niivue/streamlit': patch
-'@niivue/jupyter': patch
+'@niivue/streamlit': minor
+'@niivue/jupyter': minor
 '@niivue/tauri': patch
 ---
 
-Upgrade the NiiVue core to the v1.0 release candidate (`@niivue/niivue@1.0.0-rc.9`,
+Upgrade the NiiVue core to the v1.0 release candidate (`@niivue/niivue@1.0.0-rc.12`,
 from the new `niivue/mono` monorepo).
 
 This is a breaking dependency change. v1.0 is a WebGPU/WebGL2 rewrite: the `Niivue`
@@ -22,6 +22,6 @@ The migration is centralised in `@niivue/react`; the apps inherit it through tha
 
 Scene documents (`.nvd`) use niivue v1's native CBOR serialization. On top of that, a JSON
 form of the same v1 document is supported: a JSON `.nvd`/`.nvd.json` can be hand-authored in
-an editor and opened directly (transcoded to CBOR on load), and "Save Scene" offers a "Scene
-as JSON" export. Embedded binary is carried as `{ $bin: base64 }`; URL-referencing scenes are
+an editor and opened directly (transcoded to CBOR on load), and the NVDocument menu offers a
+"Save as JSON" export. Embedded binary is carried as `{ $bin: base64 }`; URL-referencing scenes are
 plain, editable JSON.

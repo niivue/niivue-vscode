@@ -25,7 +25,7 @@ first use of NiiVue's `NVDocument` serialization.
 - A new `loadDocument` message imports a `.nvd` into a fresh canvas; dropping a
   `.nvd` onto the shared `ImageDrop`, or picking one via "Add Image", routes
   through it. Both gzip-compressed and uncompressed `.nvd` files are read.
-- A "Save Scene" menu entry exports the active canvas as a downloaded `.nvd`
+- An NVDocument menu button exports the active canvas as a downloaded `.nvd`
   (browser hosts; gated by the new `menuItems.saveScene`).
 - Proven end-to-end on the PWA (Playwright: export then re-import via drop) and
   guarded by a GL-free NVDocument round-trip golden test (VHP Phase 0).
