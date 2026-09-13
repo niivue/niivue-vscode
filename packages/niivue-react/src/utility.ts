@@ -193,7 +193,8 @@ export function isImageType(item: string) {
   ].find((fileType) => item.endsWith(fileType))
 }
 
-const EXPORT_NAME_EXTENSION = /\.(nii\.gz|nii|gz|mgz|mgh|mz3|gii|dcm|mhd|mha|nrrd|nhdr|nvd)$/i
+const EXPORT_NAME_EXTENSION =
+  /\.(nii\.gz|nii|mnc\.gz|mnc|mif\.gz|mif|mih|gz|mgz|mgh|mz3|gii|dcm|mhd|mha|nrrd|nhdr|npy|npz|v16|vmr|v|graphml|nvd)$/i
 
 /**
  * Base name for files exported from a volume or mesh: the (URL-decoded) file
