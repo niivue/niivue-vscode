@@ -124,6 +124,10 @@ export const UI_SHORTCUTS: Record<string, KeyboardShortcut> = {
     key: 'z',
     description: 'Toggle zoom drag mode',
   },
+  TOGGLE_WORLD_SPACE: {
+    key: 'w',
+    description: 'Toggle world space slice rendering (off = native voxel grid)',
+  },
   ADD_IMAGE: {
     key: 'o',
     ctrl: true,

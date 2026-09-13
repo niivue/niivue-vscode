@@ -18,6 +18,7 @@ export interface KeyboardShortcutHandlers {
   onToggleRadiological?: () => void
   onToggleCrosshair?: () => void
   onToggleZoomMode?: () => void
+  onToggleWorldSpace?: () => void
   onAddImage?: () => void
   onAddOverlay?: () => void
   onColorscale?: () => void
@@ -124,6 +125,12 @@ export function useKeyboardShortcuts(handlers: KeyboardShortcutHandlers, enabled
       ) {
         event.preventDefault()
         handlers.onToggleZoomMode()
+      } else if (
+        matchesShortcut(event, UI_SHORTCUTS.TOGGLE_WORLD_SPACE) &&
+        handlers.onToggleWorldSpace
+      ) {
+        event.preventDefault()
+        handlers.onToggleWorldSpace()
       } else if (matchesShortcut(event, UI_SHORTCUTS.ADD_IMAGE) && handlers.onAddImage) {
         event.preventDefault()
         handlers.onAddImage()

@@ -22,7 +22,6 @@ import { AppInfo, AppProps, SelectionMode } from './AppProps'
 import { HeaderBox } from './HeaderBox'
 import {
     HeaderDialog,
-    ImageSelect,
     MenuEntry,
     StepperEntry,
     ToggleEntry,
@@ -31,6 +30,7 @@ import {
 } from './MenuElements'
 import { BarItem, MenuBar } from './MenuBar'
 import { DEFAULT_TILE_SPACING } from '../settings'
+import { applySliceSpace } from '../sliceSpace'
 import { ScalingBox } from './ScalingBox'
 
 export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
@@ -48,6 +48,7 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
   const radiologicalConvention = useSignal(settings.value.radiologicalConvention)
   const colorbar = useSignal(settings.value.colorbar)
   const zoomDragMode = useSignal(settings.value.zoomDragMode)
+  const worldSpace = useSignal(settings.value.worldSpace)
   const tileSpacing = useSignal(settings.value.tileSpacing ?? DEFAULT_TILE_SPACING)
   const selectionActive = useSignal(false)
   const selectMultiple = useSignal(false)
@@ -92,6 +93,12 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
   effect(() => applyRadiologicalConvention(nvArray, radiologicalConvention))
   effect(() => applyColorbar(nvArray, colorbar))
   effect(() => applyDragMode(nvArray, zoomDragMode))
+  // Rewrites volume affines, so it is async; the effect only kicks it off.
+  effect(() => {
+    applySliceSpace(nvArray.value, worldSpace.value).catch((e) =>
+      console.warn('Failed to apply slice space', e),
+    )
+  })
 
   // Sync settings global value to local signals (e.g. for Streamlit)
   effect(() => {
@@ -100,6 +107,7 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
     radiologicalConvention.value = settings.value.radiologicalConvention
     colorbar.value = settings.value.colorbar
     zoomDragMode.value = settings.value.zoomDragMode
+    worldSpace.value = settings.value.worldSpace
     tileSpacing.value = settings.value.tileSpacing ?? DEFAULT_TILE_SPACING
   })
 
@@ -111,6 +119,7 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
       settings.value.radiologicalConvention !== radiologicalConvention.value ||
       settings.value.colorbar !== colorbar.value ||
       settings.value.zoomDragMode !== zoomDragMode.value ||
+      settings.value.worldSpace !== worldSpace.value ||
       settings.value.tileSpacing !== tileSpacing.value
     ) {
       settings.value = {
@@ -120,6 +129,7 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
         radiologicalConvention: radiologicalConvention.value,
         colorbar: colorbar.value,
         zoomDragMode: zoomDragMode.value,
+        worldSpace: worldSpace.value,
         tileSpacing: tileSpacing.value,
       }
     }
@@ -256,6 +266,7 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
       radiologicalConvention: radiologicalConvention.value,
       colorbar: colorbar.value,
       zoomDragMode: zoomDragMode.value,
+      worldSpace: worldSpace.value,
       tileSpacing: tileSpacing.value,
     }
     localStorage.setItem('userSettings', JSON.stringify(currentSettings))
@@ -449,6 +460,11 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
     settings.value = { ...settings.value, zoomDragMode: zoomDragMode.value }
   }
 
+  const toggleWorldSpace = () => {
+    worldSpace.value = !worldSpace.value
+    settings.value = { ...settings.value, worldSpace: worldSpace.value }
+  }
+
   const setTileSpacing = (value: number) => {
     tileSpacing.value = value
     settings.value = { ...settings.value, tileSpacing: value }
@@ -475,6 +491,7 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
     onToggleRadiological: toggleRadiological,
     onToggleCrosshair: toggleCrosshair,
     onToggleZoomMode: toggleZoomDragMode,
+    onToggleWorldSpace: toggleWorldSpace,
     onAddImage: addImagesEvent,
     onAddOverlay: overlayButtonOnClick,
     onColorscale: openColorScaleLastOverlay,
@@ -496,6 +513,7 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
     toggleRadiological,
     toggleCrosshair,
     toggleZoomDragMode,
+    toggleWorldSpace,
     addImagesEvent,
     overlayButtonOnClick,
     openColorScaleLastOverlay,
@@ -648,6 +666,13 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
             state={crosshair}
             shortcut={formatShortcut(UI_SHORTCUTS.TOGGLE_CROSSHAIR)}
           />
+          {/* Off (the default) draws slices on the native voxel grid; on shows
+              them in scanner mm space, which rotates an oblique acquisition. */}
+          <ToggleEntry
+            label="World Space"
+            state={worldSpace}
+            shortcut={formatShortcut(UI_SHORTCUTS.TOGGLE_WORLD_SPACE)}
+          />
           <hr />
           {!isVscode && <MenuEntry label="Save Settings" onClick={saveSettings} />}
         </>
@@ -770,6 +795,22 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
         </>
       ),
     },
+    {
+      // Scopes what the other menus act on. It used to be pinned to the far right
+      // of the top bar, which read as unrelated to the menus it governs; it is a
+      // normal bar item now, trailing them (#266).
+      key: 'select',
+      type: 'select',
+      label: 'Select',
+      visible: multipleVolumes.value,
+      state: selectionActive,
+      children: (
+        <>
+          <ToggleEntry label="Multiple" state={selectMultiple} />
+          <MenuEntry label="Select All" onClick={selectAll} />
+        </>
+      ),
+    },
   ]
 
   return (
@@ -783,12 +824,6 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
             onAbout={() => (aboutDialog.value = true)}
           />
           <MenuBar items={barItems} />
-        </div>
-        <div className="nv-topbar-right">
-          <ImageSelect label="Select" state={selectionActive} visible={multipleVolumes}>
-            <ToggleEntry label="Multiple" state={selectMultiple} />
-            <MenuEntry label="Select All" onClick={selectAll} />
-          </ImageSelect>
         </div>
       </div>
       <ScalingBox

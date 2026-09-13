@@ -94,6 +94,7 @@ These shortcuts can be customized in VS Code's Keyboard Shortcuts editor (File �
 - **X**: Toggle radiological convention
 - **M**: Toggle crosshair visibility
 - **Z**: Toggle zoom drag mode
+- **W**: Toggle world space (off by default: slices are drawn on the native voxel grid, so an oblique acquisition is shown unrotated)
 - **U**: Cycle UI visibility (Show All → Hide UI → Hide All)
 
 **Actions:**
