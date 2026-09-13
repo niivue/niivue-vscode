@@ -59,8 +59,9 @@ export function compositePanels(
   ctx.fillRect(0, 0, out.width, out.height)
 
   for (const { nv, canvas, rect } of shown) {
-    // Copy each canvas right after its own render, in the same task: the
-    // contexts have no preserveDrawingBuffer, so a canvas read later is blank.
+    // Render each canvas in the same task that copies it: the contexts have no
+    // preserveDrawingBuffer, so a canvas last drawn in an earlier frame reads
+    // back blank.
     nv.drawScene()
     nv.view?.render()
     ctx.drawImage(
