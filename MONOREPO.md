@@ -15,6 +15,7 @@ A modern monorepo containing multiple NiiVue applications and packages for neuro
 ### Packages (`packages/`)
 
 - **`niivue-react/`** - Core React components and utilities for NiiVue
+- **`viewer-protocol/`** - Viewer-Host Protocol contract (types and constants only) for niivue-based viewers
 
 ## Getting Started
 

@@ -29,26 +29,37 @@ Visit the live demo and click "Install" when prompted by your browser to add Nii
 ### Opening Files
 
 1. **Drag and Drop**: Drop medical image files onto the viewer
-2. **File Picker**: Click "Open File" to browse and select files
+2. **File Picker**: Click "Add Image" to browse and select files
 3. **Example Images**: Try the built-in example images to get started
-4. **URL Parameters**: Open specific files via URL (e.g., `?example=mni152.nii.gz`)
+4. **URL Parameters**: Open files by URL with a comma-separated `images` list (e.g., `?images=https://niivue.github.io/niivue-demo-images/mni152.nii.gz`)
 
 ### Keyboard Shortcuts
 
 | Shortcut | Action |
 |----------|--------|
-| `L` | Toggle left panel |
-| `R` | Toggle right panel |
-| `I` | Toggle image info |
+| `1/2/3` | Axial/sagittal/coronal view |
+| `4` | Render view |
+| `5` | Multiplanar + render view |
+| `6` | Multiplanar + timeseries view |
 | `V` | Cycle through view modes |
-| `C` | Toggle crosshair |
+| `C` | Cycle through clip plane orientations in 3D |
+| `R` | Reset view/zoom |
+| `←/→` | Previous/next volume in 4D images |
+| `H/L` | Move crosshair left/right |
+| `J/K` | Move crosshair posterior/anterior |
+| `Shift+U/Shift+D` | Move crosshair superior/inferior |
+| `I` | Toggle interpolation |
 | `B` | Toggle colorbar |
-| `1-4` | Switch to specific slice view |
-| `M` | Toggle 3D render mode |
-| `S` | Save current view as image |
-| `←/→` | Navigate slices |
-| `+/-` | Zoom in/out |
-| `Space` | Reset view |
+| `X` | Toggle radiological convention |
+| `M` | Toggle crosshair |
+| `Z` | Toggle zoom drag mode |
+| `U` | Cycle UI visibility |
+| `S` | Open colorscale menu |
+| `Ctrl+Shift+O` | Add image |
+| `Ctrl+L` | Add overlay |
+| `Ctrl+Shift+H` | Show header information |
+
+In the 3D render view, `H/L` and `J/K` rotate the camera instead. On macOS, `Cmd` works in place of `Ctrl`.
 
 ### Supported File Formats
 
@@ -58,7 +69,9 @@ Visit the live demo and click "Install" when prompted by your browser to add Nii
 - **NRRD**: `.nrrd`, `.nhdr`
 - **MGH/MGZ**: `.mgh`, `.mgz`
 - **MHA/MHD**: `.mha`, `.mhd`
-- **BrainVoyager**: `.v`, `.vmr`, `.v16`
+- **BrainVoyager**: `.vmr`, `.v16`
+- **ECAT7**: `.v`
+- **MINC**: `.mnc`, `.mnc.gz`
 - **NumPy**: `.npy`, `.npz` *(experimental)*
 
 #### Surface/Mesh Formats
@@ -68,8 +81,24 @@ Visit the live demo and click "Install" when prompted by your browser to add Nii
 - **Legacy Formats**: `.asc`, `.obj`, `.stl`, `.vtk`, `.ply`, `.off`, `.gii.gz`
 
 #### Tractography
-- **TrackVis**: `.trk`, `.tck`
-- **TCK**: `.tck`
+- **TrackVis**: `.trk`
+- **MRtrix**: `.tck`
+- **TRX**: `.trx`
+
+#### Graphs
+- **GraphML**: `.graphml` (node/edge graphs, shown as a connectome)
+
+## Troubleshooting
+
+### Images stay blank
+
+The viewer renders with WebGPU when the browser offers it and with WebGL2 otherwise. Some browsers advertise WebGPU but cannot render with it (for example with a blocklisted GPU or a driver problem), which leaves the canvas empty. Force WebGL2 by adding `?backend=webgl2` to the address:
+
+```
+https://niivue.github.io/niivue-vscode/?backend=webgl2
+```
+
+It combines with other parameters, e.g. `?backend=webgl2&images=<url>`. `?backend=webgpu` forces WebGPU.
 
 ## Privacy & Security
 
@@ -95,14 +124,14 @@ A comment will be automatically posted on your PR with the preview URL once the 
 
 ## Related Projects
 
-- **VS Code Extension**: [NiiVue for VS Code](https://marketplace.visualstudio.com/items?itemName=niivue.vscode)
+- **VS Code Extension**: [NiiVue for VS Code](https://marketplace.visualstudio.com/items?itemName=KorbinianEckstein.niivue)
 - **JupyterLab Extension**: [jupyterlab-niivue](https://pypi.org/project/jupyterlab-niivue/)
 - **NiiVue Core**: [github.com/niivue/niivue](https://github.com/niivue/niivue)
 
 ## Support
 
 - **Bug Reports**: [GitHub Issues](https://github.com/niivue/niivue-vscode/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/niivue/niivue-vscode/discussions)
+- **Questions**: [GitHub Issues](https://github.com/niivue/niivue-vscode/issues)
 - **Documentation**: [NiiVue Docs](https://niivue.github.io/niivue/)
 
 ## Financial Support

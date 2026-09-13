@@ -2,7 +2,7 @@
 
 [![Coverage](https://img.shields.io/endpoint?url=https://niivue.github.io/niivue-vscode/coverage/main/badge.json)](https://niivue.github.io/niivue-vscode/coverage/main/)
 
-**WebGL 2.0 medical image viewers for multiple platforms**
+**WebGPU/WebGL2 medical image viewers for multiple platforms**
 
 This monorepo contains the [NiiVue](https://github.com/niivue/niivue) integration projects for VS Code, JupyterLab, web browsers, and Streamlit. View NIfTI files, meshes, tractography, and DICOM images with hardware-accelerated rendering across your favorite development environments.
 
@@ -47,23 +47,31 @@ Browser-based viewer that works offline as an installable web app.
 
 Embed NiiVue viewer in Streamlit data apps.
 
-- **Install**: `pip install --index-url https://test.pypi.org/simple/ --no-deps niivue-streamlit`
+- **Install**: `pip install niivue-streamlit`
 - **Docs**: [apps/streamlit/README.md](apps/streamlit/README.md)
 
 ```python
 # Quick start
-import streamlit as st
-from niivue_component import niivue_component
+from pathlib import Path
+from niivue_component import niivue_viewer
 
-niivue_component(images=["brain.nii.gz"])
+niivue_viewer(nifti_data=Path("brain.nii.gz").read_bytes(), filename="brain.nii.gz")
 ```
+
+### Desktop App (_new_)
+
+Standalone desktop viewer for Linux, macOS and Windows, built with [Tauri](https://tauri.app/). Opens images from the local file system through a native file dialog.
+
+- **Build**: from source with `pnpm --filter @niivue/tauri build` (requires Rust)
+- **Docs**: [apps/desktop-tauri/README.md](apps/desktop-tauri/README.md)
 
 ## Supported Formats
 
-- **Voxel-based**: NIfTI (.nii, .nii.gz), NRRD, MRtrix MIF, AFNI, MGH/MGZ, ITK MHD, ECAT7, DICOM, NumPy (.npy, .npz)
+- **Voxel-based**: NIfTI (.nii, .nii.gz), NRRD, MRtrix MIF, AFNI, MGH/MGZ, ITK MHD, ECAT7, MINC, BrainVoyager, DICOM, NumPy (.npy, .npz)
 - **Mesh-based**: GIfTI, FreeSurfer, MZ3, STL, OBJ, PLY, VTK, X3D, and many others
 - **Mesh Overlays**: GIfTI, CIfTI-2, MZ3, FreeSurfer (CURV, ANNOT), SMP, STC
 - **Tractography**: TCK, TRK, TRX, VTK, AFNI
+- **Graphs**: GraphML (.graphml) node/edge graphs, shown as a connectome
 
 ## Keyboard Shortcuts
 
@@ -71,7 +79,7 @@ NiiVue supports comprehensive keyboard shortcuts for efficient navigation and co
 
 ### Core NiiVue Shortcuts (Built-in)
 
-These shortcuts are handled by the niivue.js core library and work across all platforms:
+These are NiiVue's default keys and work across all platforms:
 
 **Mouse Controls:**
 
@@ -88,7 +96,7 @@ These shortcuts are handled by the niivue.js core library and work across all pl
 
 **Crosshair Movement:**
 
-- **H/L**: Move crosshair Right/Left
+- **H/L**: Move crosshair Left/Right
 - **J/K**: Move crosshair Posterior/Anterior
 - **Ctrl+U/Ctrl+D**: Move crosshair Superior/Inferior
 - **Shift+U/Shift+D**: Move crosshair Superior/Inferior (browser-friendly alternative; Ctrl+U/D is intercepted by browsers in PWA)

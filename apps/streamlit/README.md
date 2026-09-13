@@ -9,7 +9,7 @@ A modern Streamlit component for visualizing neuroimaging data using NiiVue, bui
 1. **Install the component**:
 
    ```bash
-   pip install --index-url https://test.pypi.org/simple/ --no-deps niivue-streamlit
+   pip install niivue-streamlit
    ```
 
 2. **Use in your Streamlit app**:
