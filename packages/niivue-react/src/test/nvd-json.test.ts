@@ -103,6 +103,16 @@ describe('normalizeJsonNvd', () => {
     expect(doc.meshes[0].layers[0].url).toBe('https://data.example/study/lh.curv')
   })
 
+  it('keeps links it cannot resolve against an opaque document URL', () => {
+    const scene = encode({
+      volumes: [{ url: 'brain.nii.gz', data: { img: { $ta: 'Uint8Array', b64: b64([1]) } } }],
+    })
+
+    for (const base of ['blob:https://data.example/5b1c', 'data:application/json,{}']) {
+      expect(decode(normalizeJsonNvd(scene, base)).volumes[0].url).toBe('brain.nii.gz')
+    }
+  })
+
   it('leaves links alone without the URL a document came from', () => {
     const doc = decode(normalizeJsonNvd(encode({ volumes: [{ url: 'brain.nii.gz' }] })))
 

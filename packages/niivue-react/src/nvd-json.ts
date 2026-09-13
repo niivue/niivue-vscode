@@ -34,8 +34,12 @@ function resolveUrls(items: unknown, baseUrl: string): boolean {
   let changed = false
   for (const item of Array.isArray(items) ? items : []) {
     if (isPlainObject(item) && typeof item.url === 'string' && item.url && !hasScheme(item.url)) {
-      item.url = new URL(item.url, baseUrl).href
-      changed = true
+      try {
+        item.url = new URL(item.url, baseUrl).href
+        changed = true
+      } catch {
+        // An opaque base such as a blob: or data: URL cannot resolve links.
+      }
     }
   }
   return changed

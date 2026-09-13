@@ -188,6 +188,19 @@ export function addImageFromURLParams() {
     body: { n: imageURLs.length },
   })
   imageURLs.forEach(async (url) => {
+    // A scene document is fetched by its canvas, which resolves the document's
+    // relative links against its final URL. The absolute form keeps a relative
+    // URL with a query recognizable as a document.
+    let absolute = url
+    try {
+      absolute = new URL(url, window.location.href).href
+    } catch {
+      // Not a URL; fetch reports it below.
+    }
+    if (isNvdFile(absolute)) {
+      window.postMessage({ type: 'addImage', body: { data: '', uri: absolute } })
+      return
+    }
     try {
       const data = await (await fetch(url)).arrayBuffer()
       const body: Record<string, unknown> = { data, uri: url }

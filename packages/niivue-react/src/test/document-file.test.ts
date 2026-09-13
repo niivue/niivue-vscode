@@ -87,6 +87,26 @@ describe('documentFile', () => {
     expect(doc.volumes[0].url).toBe('https://data.example/study/brain.nii.gz')
   })
 
+  it('opens a JSON document from a blob URL, keeping its relative links', async () => {
+    const body = json({ volumes: [{ url: 'brain.nii.gz' }] })
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        url: 'blob:https://data.example/5b1c',
+        arrayBuffer: async () => body.buffer,
+      })),
+    )
+
+    const file = await documentFile({
+      name: 'scene.nvd.json',
+      url: 'blob:https://data.example/5b1c',
+    })
+
+    const doc = JSON.parse(new TextDecoder().decode(new Uint8Array(await readBytes(file))))
+    expect(doc.volumes[0].url).toBe('brain.nii.gz')
+  })
+
   it('resolves relative links in document bytes against their source URL', async () => {
     const file = await documentFile({
       name: 'scene.nvd.json',

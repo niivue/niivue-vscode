@@ -15,7 +15,7 @@ vi.mock('@niivue/niivue', () => {
   }
 })
 
-import { ExtendedNiivue, handleMessage, loadDocumentEvent } from '../events'
+import { addImageFromURLParams, ExtendedNiivue, handleMessage, loadDocumentEvent } from '../events'
 
 function makeProps() {
   return {
@@ -88,6 +88,38 @@ describe('scene documents sent as images', () => {
     await handleMessage({ type: 'loadDocument', body: { document, name: 'scene.nvd' } }, props)
 
     expect(firstCanvas(props).documentData).toEqual({ name: 'scene.nvd', data: document })
+  })
+})
+
+describe('addImageFromURLParams', () => {
+  afterEach(() => {
+    window.history.replaceState({}, '', '/')
+  })
+
+  it('lets the canvas fetch a scene document, by its absolute URL', () => {
+    const posted: unknown[] = []
+    vi.spyOn(window, 'postMessage').mockImplementation((message: unknown) => {
+      posted.push(message)
+    })
+    const fetch = vi.fn()
+    vi.stubGlobal('fetch', fetch)
+    window.history.replaceState(
+      {},
+      '',
+      '/viewer/?images=' + encodeURIComponent('/study/scene.nvd.json?token=1'),
+    )
+
+    addImageFromURLParams()
+
+    expect(posted).toEqual([
+      { type: 'initCanvas', body: { n: 1 } },
+      {
+        type: 'addImage',
+        body: { data: '', uri: `${window.location.origin}/study/scene.nvd.json?token=1` },
+      },
+    ])
+    expect(fetch).not.toHaveBeenCalled()
+    vi.unstubAllGlobals()
   })
 })
 
