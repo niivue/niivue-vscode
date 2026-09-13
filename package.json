@@ -62,7 +62,7 @@
     "@typescript-eslint/eslint-plugin": "^8.59.3",
     "@typescript-eslint/parser": "^8.59.3",
     "@vitejs/plugin-legacy": "^8.0.2",
-    "concurrently": "^9.2.1",
+    "concurrently": "^9.2.4",
     "eslint": "^10.4.0",
     "eslint-config-prettier": "^10.1.8",
     "globals": "17.12.0",
@@ -87,7 +87,7 @@
   },
   "pnpm": {
     "overrides": {
-      "fast-uri": "^3.1.2",
+      "fast-uri": "^3.1.6",
       "undici": "^7.24.0",
       "serialize-javascript": "^7.0.5",
       "underscore": "^1.13.8",
@@ -95,7 +95,15 @@
       "postcss": "^8.5.10",
       "@babel/plugin-transform-modules-systemjs": "^7.29.4",
       "flatted": "^3.4.2",
-      "effect": "^3.20.0"
+      "effect": "^3.20.0",
+      "browserslist@4": "^4.28.7",
+      "js-yaml@4": "^4.3.2",
+      "npm-run-all>minimatch": "^3.1.4",
+      "npm-run-all>shell-quote": "^1.9.0",
+      "syncpack>minimatch": "^9.0.7",
+      "vite-plugin-dts>@microsoft/api-extractor": "^7.58.1",
+      "workbox-build>ajv": "^8.18.0",
+      "workbox-build>glob": "^11.1.0"
     }
   }
 }
