@@ -265,7 +265,7 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
 
   // Export the active canvas as a NiiVue scene document. v1 scope is a single
   // canvas: the last selected one (VHP plan section 10). Two formats: native
-  // CBOR `.nvd`, and a readable JSON `.nvd.json` that re-opens through parseNvd.
+  // CBOR `.nvd`, and NiiVue's readable JSON form as `.nvd.json`.
   const sceneTarget = () => {
     const list = nvArraySelected.value
     const nv = list[list.length - 1]
@@ -285,7 +285,7 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
   const exportSceneJson = () => {
     const t = sceneTarget()
     if (!t) return
-    downloadSceneJson(t.nv.serializeDocument(), `${t.base || 'scene'}.nvd.json`)
+    downloadSceneJson(t.nv.serializeDocument({ format: 'json' }), `${t.base || 'scene'}.nvd.json`)
   }
 
   // PNG of the tiles as laid out on screen: all of them, or just the scene

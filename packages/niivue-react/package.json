@@ -69,8 +69,7 @@
     "@fontsource/jetbrains-mono": "^5.0.0",
     "@niivue/dcm2niix": "^1.2.0",
     "@niivue/minc-loader": "^1.0.0",
-    "@niivue/viewer-protocol": "workspace:*",
-    "cbor-x": "^1.6.0"
+    "@niivue/viewer-protocol": "workspace:*"
   },
   "devDependencies": {
     "@preact/signals": "^2.11.2",

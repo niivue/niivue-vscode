@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { isNvdFile, parseNvd, readNvdFile } from '../document'
 
 /**
- * Phase 0 of the Viewer-Host Protocol work: pin the scene contract. NiiVue v1.0
- * removed the old JSON document API; the `.nvd` payload is now the opaque CBOR
- * byte blob from `nv.serializeDocument()`, loaded via `nv.loadDocument(File)`.
+ * Phase 0 of the Viewer-Host Protocol work: pin the scene contract. In NiiVue
+ * v1 the `.nvd` payload is the opaque CBOR byte blob from
+ * `nv.serializeDocument()` (or its JSON form), loaded via `nv.loadDocument(File)`.
  * Producing those bytes needs a live (GL) NiiVue instance, so this golden no
  * longer runs at the document-data layer.
  *
@@ -46,6 +46,13 @@ describe('document.ts .nvd byte round-trip (Phase 0 golden, GL-free)', () => {
     const out = parseNvd(buffer)
     expect(out).toBeInstanceOf(Uint8Array)
     expect(Array.from(out)).toEqual(expected)
+  })
+
+  it('parseNvd hands a JSON document to NiiVue as completed JSON, not CBOR', () => {
+    const json = new TextEncoder().encode(JSON.stringify({ volumes: [{ url: 'brain.nii.gz' }] }))
+    const doc = JSON.parse(new TextDecoder().decode(parseNvd(json.buffer)))
+    expect(doc.volumes).toEqual([{ url: 'brain.nii.gz' }])
+    expect(doc.layout).toEqual({})
   })
 
   it('wrapping bytes in a .nvd File and reading them back is byte-identical', async () => {
