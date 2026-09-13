@@ -56,14 +56,14 @@
     "@niivue/dicom-loader": "^1.0.0",
     "@niivue/niivue": "1.0.0-rc.13",
     "@niivue/react": "workspace:*",
-    "@preact/signals": "^2.9.0",
-    "preact": "^10.29.2"
+    "@preact/signals": "^2.11.2",
+    "preact": "^10.29.8"
   },
   "devDependencies": {
     "@babel/core": "^7.29.6",
     "@niivue/dcm2niix": "^1.2.0",
     "@playwright/test": "^1.56.1",
-    "@preact/preset-vite": "^2.10.5",
+    "@preact/preset-vite": "^2.10.6",
     "@tailwindcss/postcss": "^4.3.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/preact": "^3.2.4",
