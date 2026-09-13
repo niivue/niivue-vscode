@@ -6,6 +6,9 @@ import type { AppInfo } from './AppProps'
 
 // Canonical source repo, used when a host doesn't supply its own `repoUrl`.
 const DEFAULT_REPO_URL = 'https://github.com/niivue/niivue-vscode'
+const CITATION_DOI_URL = 'https://doi.org/10.52294/001c.167815'
+const CITATION_TEXT =
+  'Eckstein K, Androulakis A, Dao TT, et al. Seamless neuroimaging visualization: The NiiVue wrapper ecosystem. Aperture Neuro. 2026;6.'
 
 /**
  * The brand menu's "About" dialog: what niivue Viewer is, its credits, the data
@@ -73,6 +76,20 @@ export const AboutDialog = ({
 
         <p className="nv-about-text">
           Runs entirely on your machine. No image data is uploaded, sent, or stored remotely.
+        </p>
+
+        <p className="nv-about-text" data-testid="about-citation">
+          Using it in published work? Please cite{' '}
+          <a
+            className="nv-about-link"
+            href={CITATION_DOI_URL}
+            title={CITATION_TEXT}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Eckstein et al., Aperture Neuro 2026
+          </a>
+          .
         </p>
 
         <div className="nv-about-links">

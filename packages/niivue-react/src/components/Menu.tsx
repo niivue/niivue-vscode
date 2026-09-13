@@ -778,7 +778,8 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
         <div className="nv-topbar-left">
           <BrandMenu
             showSubtext={!isVscode}
-            interactive={!isVscode && !!settings.value.menuItems?.home}
+            interactive={isVscode || !!settings.value.menuItems?.home}
+            showReset={!isVscode && !!settings.value.menuItems?.home}
             onReset={homeEvent}
             onAbout={() => (aboutDialog.value = true)}
           />
@@ -807,17 +808,21 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
 // activeMenu key reserved for the brand dropdown.
 const BRAND_KEY = '__brand__'
 
-// The niivue logo + wordmark. On standalone hosts (`interactive`) it doubles as
-// a dropdown trigger for viewer-level actions (Reset Viewer, About); elsewhere
-// (vscode, embedded Streamlit) it renders as a static brand, unchanged.
+// The niivue logo + wordmark. When `interactive` it doubles as a dropdown
+// trigger for viewer-level actions: About everywhere, plus Reset Viewer on
+// standalone hosts (`showReset`), since reloading a webview host (VS Code,
+// JupyterLab) would drop the files it opened. Embedded Streamlit keeps a
+// static brand.
 const BrandMenu = ({
   showSubtext,
   interactive,
+  showReset,
   onReset,
   onAbout,
 }: {
   showSubtext: boolean
   interactive: boolean
+  showReset: boolean
   onReset: () => void
   onAbout: () => void
 }) => {
@@ -855,7 +860,7 @@ const BrandMenu = ({
       </button>
       {open.value && (
         <div className="nv-menu-panel absolute left-0 z-50 min-w-[180px]">
-          <MenuEntry label="Reset Viewer" onClick={onReset} />
+          {showReset && <MenuEntry label="Reset Viewer" onClick={onReset} />}
           <MenuEntry label="About" onClick={onAbout} />
         </div>
       )}

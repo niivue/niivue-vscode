@@ -1,7 +1,7 @@
 import { SLICE_TYPE } from '@niivue/niivue'
 import { signal } from '@preact/signals'
 import { cleanup, fireEvent, render, screen } from '@testing-library/preact'
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { AppProps, SelectionMode } from '../components/AppProps'
 import { Menu } from '../components/Menu'
 import { activeMenu } from '../components/MenuElements'
@@ -167,5 +167,32 @@ describe('Brand menu', () => {
   it('stays a static brand (no trigger) when the home flag is off', () => {
     render(<Menu {...makeProps({ home: false })} />)
     expect(screen.queryByTestId('menu-brand')).toBeNull()
+  })
+})
+
+describe('Brand menu in a webview host (VS Code, JupyterLab)', () => {
+  beforeAll(() => {
+    ;(globalThis as any).vscode = { postMessage: vi.fn() }
+  })
+  afterAll(() => {
+    delete (globalThis as any).vscode
+  })
+
+  it('offers About but not Reset Viewer, regardless of the home flag', async () => {
+    render(<Menu {...makeProps({ home: false })} />)
+
+    fireEvent.click(screen.getByTestId('menu-brand'))
+
+    expect(await screen.findByText('About')).toBeTruthy()
+    expect(screen.queryByText('Reset Viewer')).toBeNull()
+  })
+
+  it('About opens the about dialog', async () => {
+    render(<Menu {...makeProps({ home: true })} />)
+
+    fireEvent.click(screen.getByTestId('menu-brand'))
+    fireEvent.click(await screen.findByText('About'))
+
+    expect(HTMLDialogElement.prototype.showModal).toHaveBeenCalled()
   })
 })

@@ -144,6 +144,28 @@ pnpm test
 
 See [DEVELOPMENT.md](DEVELOPMENT.md) for detailed development instructions.
 
+## Citation
+
+If you use the VS Code extension, the JupyterLab extension, the web app or the Streamlit component in published work, please cite:
+
+> Eckstein K, Androulakis A, Dao TT, Drake C, Hanayik T, O'Reilly C, Prahm C, Wang Z, Wighton P, Dalca A, Bollmann S, Rorden C. Seamless neuroimaging visualization: The NiiVue wrapper ecosystem. _Aperture Neuro_. 2026;6. [doi:10.52294/001c.167815](https://doi.org/10.52294/001c.167815)
+
+<details>
+<summary>BibTeX</summary>
+
+```bibtex
+@article{eckstein2026niivue,
+  title   = {Seamless neuroimaging visualization: The {NiiVue} wrapper ecosystem},
+  author  = {Eckstein, Korbinian and Androulakis, Anthony and Dao, Thuy T. and Drake, Chris and Hanayik, Taylor and O'Reilly, Christian and Prahm, Cosima and Wang, Zhengjia and Wighton, Paul and Dalca, Adrian and Bollmann, Steffen and Rorden, Chris},
+  journal = {Aperture Neuro},
+  volume  = {6},
+  year    = {2026},
+  doi     = {10.52294/001c.167815}
+}
+```
+
+</details>
+
 ## Support This Project
 
 If you find these tools useful, please consider supporting development:
