@@ -226,6 +226,19 @@ describe('NiiVueEditorProvider.uriToImageBody', () => {
     expect(workspace.fs.readFile).not.toHaveBeenCalled()
   })
 
+  it('sends a scene document in the workspace as a URL without reading it', async () => {
+    workspace.workspaceFolders = [{ uri: Uri.parse('file:///home/user/proj') }]
+    const webview = makeWebview()
+
+    const body = await NiiVueEditorProvider.uriToImageBody(
+      Uri.parse('file:///home/user/proj/scene.nvd'),
+      webview as any,
+    )
+
+    expect(body).toEqual({ uri: 'https://cdn.vscode-cdn.net/home/user/proj/scene.nvd?scheme=file' })
+    expect(workspace.fs.readFile).not.toHaveBeenCalled()
+  })
+
   it('produces a fresh ArrayBuffer (not a view onto a pooled Node Buffer)', async () => {
     // VS Code returns Uint8Array views that on Node are backed by a shared
     // ArrayBuffer pool — handing that to postMessage would leak unrelated
@@ -407,6 +420,54 @@ describe('NiiVueEditorProvider.sendInitialImage', () => {
   })
 })
 
+describe('NiiVueEditorProvider.openDocument', () => {
+  function makePanel() {
+    return { webview: { ...makeWebview(), postMessage: vi.fn() } }
+  }
+
+  it('offers scene documents and sends the picked one like an image', async () => {
+    workspace.workspaceFolders = [{ uri: Uri.parse('file:///home/user/proj') }]
+    window.showOpenDialog.mockResolvedValue([Uri.parse('file:///home/user/proj/scene.nvd')])
+    const panel = makePanel()
+
+    await NiiVueEditorProvider.openDocument(panel as any)
+
+    expect(window.showOpenDialog.mock.calls[0][0]).toMatchObject({
+      canSelectMany: false,
+      filters: { 'NiiVue Documents': ['nvd', 'json'], 'All Files': ['*'] },
+    })
+    expect(panel.webview.postMessage.mock.calls.map((call) => call[0])).toEqual([
+      { type: 'initCanvas', body: { n: 1 } },
+      {
+        type: 'addImage',
+        body: { uri: 'https://cdn.vscode-cdn.net/home/user/proj/scene.nvd?scheme=file' },
+      },
+    ])
+  })
+
+  it('does nothing when the dialog is cancelled', async () => {
+    window.showOpenDialog.mockResolvedValue(undefined)
+    const panel = makePanel()
+
+    await NiiVueEditorProvider.openDocument(panel as any)
+
+    expect(panel.webview.postMessage).not.toHaveBeenCalled()
+  })
+
+  it('reports a document it cannot read', async () => {
+    window.showOpenDialog.mockResolvedValue([
+      Uri.parse('vscode-remote://ssh-remote%2Bmyhost/data/scene.nvd'),
+    ])
+    workspace.fs.readFile.mockRejectedValue(new Error('ENOENT'))
+    const panel = makePanel()
+
+    await NiiVueEditorProvider.openDocument(panel as any)
+
+    expect(panel.webview.postMessage).not.toHaveBeenCalled()
+    expect(window.showErrorMessage).toHaveBeenCalledWith('Could not open scene.nvd: ENOENT')
+  })
+})
+
 describe('NiiVueEditorProvider.saveFile', () => {
   // What the webview's Screenshot button sends: PNG bytes as base64.
   const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 255])
@@ -530,11 +591,29 @@ describe('NiiVueEditorProvider.saveFile', () => {
     window.showSaveDialog.mockResolvedValue(undefined)
 
     await NiiVueEditorProvider.saveFile(
-      { ...body, filename: 'scene.nvd', mimeType: 'application/octet-stream' },
+      { ...body, filename: 'data.bin', mimeType: 'application/octet-stream' },
       Uri.parse('file:///scans/brain.nii.gz'),
     )
 
-    expect(dialogOptions()).toEqual({ defaultUri: 'file:///scans/scene.nvd', filters: undefined })
+    expect(dialogOptions()).toEqual({ defaultUri: 'file:///scans/data.bin', filters: undefined })
+  })
+
+  it('offers a filter for scene documents, binary and JSON', async () => {
+    workspace.fs.isWritableFileSystem.mockReturnValue(true)
+    window.showSaveDialog.mockResolvedValue(undefined)
+    const source = Uri.parse('file:///scans/brain.nii.gz')
+
+    await NiiVueEditorProvider.saveFile(
+      { ...body, filename: 'brain.nvd', mimeType: 'application/octet-stream' },
+      source,
+    )
+    await NiiVueEditorProvider.saveFile(
+      { ...body, filename: 'brain.nvd.json', mimeType: 'application/json' },
+      source,
+    )
+
+    const filters = window.showSaveDialog.mock.calls.map((call) => (call[0] as any).filters)
+    expect(filters).toEqual([{ 'NiiVue Document': ['nvd'] }, { 'JSON Document': ['json'] }])
   })
 
   it('ignores a message without data', async () => {
@@ -544,7 +623,7 @@ describe('NiiVueEditorProvider.saveFile', () => {
     expect(window.showSaveDialog).not.toHaveBeenCalled()
   })
 
-  it('handles saveFile messages from the webview of an opened document', async () => {
+  it('handles saveFile and openDocument messages from the webview of an opened document', async () => {
     const listeners: ((message: unknown) => unknown)[] = []
     const panel = {
       webview: {
@@ -572,5 +651,10 @@ describe('NiiVueEditorProvider.saveFile', () => {
 
     expect(window.showSaveDialog).toHaveBeenCalledTimes(1)
     expect(dialogOptions().defaultUri).toBe('file:///study/sub-01/brain_screenshot.png')
+
+    window.showOpenDialog.mockResolvedValue(undefined)
+    await Promise.all(listeners.map((listener) => listener({ type: 'openDocument' })))
+
+    expect(window.showOpenDialog).toHaveBeenCalledTimes(1)
   })
 })

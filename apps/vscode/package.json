@@ -334,6 +334,9 @@
           },
           {
             "filenamePattern": "*.graphml"
+          },
+          {
+            "filenamePattern": "*.nvd"
           }
         ]
       }

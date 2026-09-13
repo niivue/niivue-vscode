@@ -193,6 +193,9 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
               }
             })
           return
+        case 'openDocument':
+          await NiiVueEditorProvider.openDocument(panel)
+          return
         case 'saveFile':
           await NiiVueEditorProvider.saveFile(e.body, sourceUri)
           return
@@ -200,7 +203,43 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     })
   }
 
-  private static readonly saveFilters = new Map([['image/png', { 'PNG Image': ['png'] }]])
+  /**
+   * Let the user pick a scene document and send it to the webview like an
+   * image; the webview recognizes the name and loads it as a scene.
+   */
+  static async openDocument(panel: vscode.WebviewPanel): Promise<void> {
+    const uris = await vscode.window.showOpenDialog({
+      canSelectFiles: true,
+      canSelectFolders: false,
+      canSelectMany: false,
+      openLabel: 'Open Document',
+      filters: { 'NiiVue Documents': ['nvd', 'json'], 'All Files': ['*'] },
+    })
+    if (!uris || uris.length === 0) {
+      return
+    }
+    try {
+      const body = await NiiVueEditorProvider.uriToImageBody(uris[0], panel.webview)
+      panel.webview.postMessage({ type: 'initCanvas', body: { n: 1 } })
+      panel.webview.postMessage({ type: 'addImage', body })
+    } catch (error) {
+      vscode.window.showErrorMessage(
+        `Could not open ${uris[0].path.split('/').pop()}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      )
+    }
+  }
+
+  private static readonly saveFilters = new Map<string, Record<string, string[]>>([
+    ['image/png', { 'PNG Image': ['png'] }],
+    ['application/json', { 'JSON Document': ['json'] }],
+  ])
+
+  /** Filters for types a MIME type does not pin down, by file extension. */
+  private static readonly saveFiltersByExtension = new Map<string, Record<string, string[]>>([
+    ['.nvd', { 'NiiVue Document': ['nvd'] }],
+  ])
 
   /**
    * Save a file the webview produced (e.g. a screenshot), since a webview
@@ -224,9 +263,12 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
       const folder = vscode.workspace.fs.isWritableFileSystem(sourceUri.scheme)
         ? NiiVueEditorProvider.parentDir(sourceUri)
         : vscode.workspace.workspaceFolders?.[0]?.uri
+      const extension = /\.[^.]+$/.exec(filename.toLowerCase())?.[0] ?? ''
       const target = await vscode.window.showSaveDialog({
         defaultUri: folder ? vscode.Uri.joinPath(folder, filename) : undefined,
-        filters: NiiVueEditorProvider.saveFilters.get(mimeType),
+        filters:
+          NiiVueEditorProvider.saveFilters.get(mimeType) ??
+          NiiVueEditorProvider.saveFiltersByExtension.get(extension),
       })
       if (!target) {
         return
@@ -341,6 +383,8 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     '.npz',
     '.raw',
     '.graphml',
+    '.nvd',
+    '.nvd.json',
   ]
 
   static hasKnownExtension(lowerCasePath: string): boolean {
