@@ -8,7 +8,7 @@
 '@niivue/tauri': patch
 ---
 
-Upgrade the NiiVue core to the v1.0 release candidate (`@niivue/niivue@1.0.0-rc.12`,
+Upgrade the NiiVue core to the v1.0 release candidate (`@niivue/niivue@1.0.0-rc.13`,
 from the new `niivue/mono` monorepo).
 
 This is a breaking dependency change. v1.0 is a WebGPU/WebGL2 rewrite: the `Niivue`
