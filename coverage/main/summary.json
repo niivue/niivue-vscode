@@ -2,42 +2,42 @@
   "shared-core": {
     "label": "Shared core (`packages/niivue-react`)",
     "stats": {
-      "statements": 51.4,
-      "branches": 48.9,
-      "functions": 48.2,
-      "lines": 52.1
+      "statements": 52,
+      "branches": 50,
+      "functions": 49,
+      "lines": 52.7
     },
     "counts": {
       "statements": {
-        "covered": 1766,
-        "total": 3437
+        "covered": 1808,
+        "total": 3480
       },
       "branches": {
-        "covered": 1237,
-        "total": 2532
+        "covered": 1304,
+        "total": 2606
       },
       "functions": {
-        "covered": 433,
-        "total": 899
+        "covered": 444,
+        "total": 906
       },
       "lines": {
-        "covered": 1669,
-        "total": 3206
+        "covered": 1711,
+        "total": 3249
       }
     }
   },
   "pwa-glue": {
     "label": "`apps/pwa`",
     "stats": {
-      "statements": 28.3,
+      "statements": 29.8,
       "branches": 30,
       "functions": 52.9,
-      "lines": 29.5
+      "lines": 31.1
     },
     "counts": {
       "statements": {
-        "covered": 13,
-        "total": 46
+        "covered": 14,
+        "total": 47
       },
       "branches": {
         "covered": 9,
@@ -48,8 +48,8 @@
         "total": 17
       },
       "lines": {
-        "covered": 13,
-        "total": 44
+        "covered": 14,
+        "total": 45
       }
     }
   },
@@ -164,27 +164,27 @@
   "_overall": {
     "label": "Overall",
     "stats": {
-      "statements": 47.3,
-      "branches": 45,
-      "functions": 44.6,
-      "lines": 47.7
+      "statements": 47.9,
+      "branches": 46.1,
+      "functions": 45.3,
+      "lines": 48.3
     },
     "counts": {
       "statements": {
-        "covered": 2007,
-        "total": 4240
+        "covered": 2050,
+        "total": 4284
       },
       "branches": {
-        "covered": 1348,
-        "total": 2998
+        "covered": 1415,
+        "total": 3072
       },
       "functions": {
-        "covered": 484,
-        "total": 1086
+        "covered": 495,
+        "total": 1093
       },
       "lines": {
-        "covered": 1902,
-        "total": 3987
+        "covered": 1945,
+        "total": 4031
       }
     }
   }
