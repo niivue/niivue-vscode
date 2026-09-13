@@ -60,7 +60,7 @@
     "preact": "^10.29.2"
   },
   "devDependencies": {
-    "@babel/core": "^7.29.0",
+    "@babel/core": "^7.29.6",
     "@niivue/dcm2niix": "^1.2.0",
     "@playwright/test": "^1.56.1",
     "@preact/preset-vite": "^2.10.5",
@@ -70,7 +70,7 @@
     "@types/node": "^26.1.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@vite-pwa/assets-generator": "^1.0.2",
+    "@vite-pwa/assets-generator": "^1.0.3",
     "@vitest/coverage-v8": "^4.1.6",
     "@vitest/ui": "^4.1.6",
     "autoprefixer": "^10.5.0",
