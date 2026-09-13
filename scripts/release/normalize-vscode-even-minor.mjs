@@ -11,10 +11,9 @@
  * An odd-minor stable sits in the lane reserved for pre-releases, which is a
  * latent collision: the next stable minor bump (e.g. 2.10.0 → 2.11.0) would
  * land on a minor that pre-releases have already published as `2.11.<run>`.
- * The Marketplace keeps a single strictly-increasing version line shared by
- * the stable and pre-release channels (the very reason the even/odd split
- * exists), so a stable `2.11.0` published below an existing `2.11.<run>`
- * pre-release would be rejected, or buried beneath it.
+ * The Marketplace accepts such a lower stable, but it would be numbered below
+ * betas that are already out, and the two channels would no longer be
+ * distinguishable by minor.
  *
  * This script runs from the root `version` script, immediately after
  * `changeset version`. If changesets bumped `apps/vscode` (the `niivue`

@@ -1,6 +1,6 @@
 # JupyterLab NiiVue
 
-**WebGL 2.0 medical image viewer for JupyterLab**
+**WebGPU/WebGL2 medical image viewer for JupyterLab**
 
 A JupyterLab extension that uses [NiiVue](https://github.com/niivue/niivue) to display neuroimaging files directly in JupyterLab. View NIfTI files, meshes, tractography, and DICOM images with an interactive, hardware-accelerated viewer integrated into your JupyterLab environment.
 
@@ -43,8 +43,8 @@ pip install jupyterlab-niivue
 
 ### Crosshair Movement
 
-- **H**: Move crosshair to R (Right)
-- **L**: Move crosshair to L (Left)
+- **H**: Move crosshair to L (Left)
+- **L**: Move crosshair to R (Right)
 - **J**: Move crosshair to P (Posterior)
 - **K**: Move crosshair to A (Anterior)
 - **Ctrl+U**: Move crosshair to S (Superior)
@@ -62,7 +62,7 @@ NiiVue can open several formats popular with brain imaging:
 ## Requirements
 
 - JupyterLab >= 4.0.0
-- A modern web browser with WebGL 2.0 support (Chrome, Firefox, Edge, Safari)
+- A modern web browser with WebGPU or WebGL2 support (Chrome, Firefox, Edge, Safari)
 
 ## Troubleshooting
 

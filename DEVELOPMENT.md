@@ -96,7 +96,7 @@ turbo build
 pnpm install
 
 # Run command in specific workspace
-pnpm --filter @niivue/vscode build
+pnpm --filter niivue build
 ```
 
 ## @niivue/react Package
@@ -134,22 +134,6 @@ pnpm versions:check
 pnpm versions:fix
 ```
 
-### Automatic Formatting on Commit
-
-This repository uses **Husky** and **lint-staged** to automatically format code before commits:
-
-- **What happens**: When you commit, prettier automatically formats all staged files
-- **Files affected**: `.js`, `.jsx`, `.ts`, `.tsx`, `.json`, `.css`, `.md`
-- **No action needed**: The formatting happens automatically - you don't need to run `pnpm format` manually
-
-If you need to bypass the hook (not recommended):
-
-```bash
-git commit --no-verify -m "your message"
-```
-
-The hooks are set up automatically when you run `pnpm install`.
-
 ## Contributing
 
 Issues and pull-requests are welcome.
@@ -167,7 +151,7 @@ A bot will comment on your PR with the preview URL once deployment completes. Th
 
 ## Resources
 
-- [Release Process](RELEASE.md)
+- [Release Process](Release.md)
 - [Turborepo Documentation](https://turbo.build/repo/docs)
 - [pnpm Workspaces](https://pnpm.io/workspaces)
 - [NiiVue Core Library](https://github.com/niivue/niivue)

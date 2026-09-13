@@ -32,7 +32,9 @@ Follow the interactive prompts to:
 Commit the generated `.changeset/*.md` file with your PR.
 
 ### 2. The "Version Packages" PR
-When your changes are merged to `main`, **Release Coordinator** (`.github/workflows/release-coordinator.yml`) automatically opens — or updates — a PR titled **"Version Packages"**. It aggregates every unreleased `.changeset/*.md`, bumps versions in the respective `package.json` files, rewrites the affected `CHANGELOG.md` files, and (via the root `version` script) keeps `apps/streamlit/pyproject.toml` in lock-step with its `package.json`. Review the diff to confirm the next versions look right before merging.
+When your changes are merged to `main`, **Release Coordinator** (`.github/workflows/release-coordinator.yml`) automatically opens (or updates) a PR titled **"chore(release): version packages"**. It aggregates every unreleased `.changeset/*.md`, bumps versions in the respective `package.json` files, rewrites the affected `CHANGELOG.md` files, and (via the root `version` script) keeps `apps/streamlit/pyproject.toml` in lock-step with its `package.json`. Review the diff to confirm the next versions look right before merging.
+
+> **CI on the version PR:** the release PR branch is pushed with `GITHUB_TOKEN`, which does not trigger `pull_request` workflows. After creating or updating the PR, Release Coordinator therefore dispatches CI (`ci.yml`) on the release branch, and the required checks report on the PR head commit. If the checks still do not appear, close and reopen the PR right before merging, after the last coordinator update.
 
 ### 3. Publish
 When you are ready to ship a stable release, **merge** the "Version Packages" PR.
@@ -144,7 +146,7 @@ All three published apps (`apps/vscode`, `apps/jupyter`, `apps/streamlit`) are m
 
 ## VS Code even-minor normalization
 
-The VS Code Marketplace recommends stable releases on an **even** minor and pre-releases on an **odd** minor. Changesets does plain sequential semver, so a `minor` bump can land stable on an odd minor; this is how `niivue@2.9.0` shipped, an odd-minor stable sitting in the pre-release lane. Left unfixed it is a latent collision: the next stable minor bump (`2.10.0 → 2.11.0`) would land on a minor that pre-releases have already published as `2.11.<run>`, and the Marketplace (which keeps a single strictly-increasing version line shared by both channels) would reject the lower stable.
+The VS Code Marketplace recommends stable releases on an **even** minor and pre-releases on an **odd** minor. Changesets does plain sequential semver, so a `minor` bump can land stable on an odd minor; this is how `niivue@2.9.0` shipped, an odd-minor stable sitting in the pre-release lane. Left unfixed it is a latent collision: the next stable minor bump (`2.10.0 → 2.11.0`) would land on a minor that pre-releases have already published as `2.11.<run>`, numbering the stable below betas that are already out. The Marketplace does not reject such a lower stable (`2.9.0` went live after the `2.9.13` pre-release), so the cost is not a failed publish but two channels that are no longer distinguishable by minor.
 
 `scripts/release/normalize-vscode-even-minor.mjs`, run by the root `version` script immediately after `changeset version`, enforces the convention. If the freshly bumped `apps/vscode/package.json` is on an odd minor, it rounds up to the next even minor (patch reset to 0) and retitles the matching `apps/vscode/CHANGELOG.md` heading so the two agree. The diff is committed into the Version Packages PR, so the even minor is what you review and ship.
 
@@ -182,7 +184,7 @@ When a new app joins the monorepo (changesets discovers it automatically from th
 4. Add publish steps to `.github/workflows/prerelease.yml` (pre-release lane), gated on `steps.encode.outputs.<app> == 'true'`. If the app needs a multi-platform build (like the Tauri desktop app), follow the desktop pattern instead: expose the version as a `prerelease` job output, make `release_<app>.yml` reusable via `workflow_call`, and add a `needs: prerelease` job in `prerelease.yml` that calls it and attaches the artifacts to the `prerelease-<sha>` release.
 5. Add a dispatch line to `release-coordinator.yml`'s "Dispatch per-app release workflows" step so the stable lane fires when the version bumps:
    ```bash
-   dispatch <app-dir> release_<app>.yml
+   dispatch '<package-name>' release_<app>.yml
    ```
 6. If the app is a Python app using setuptools (or any backend without dynamic versioning), add it to the `targets` array in `scripts/release/sync-pyproject-versions.mjs` so its `pyproject.toml` stays in sync with `package.json`.
 7. If the app's build reads its version from a manifest changesets does **not** bump (e.g. Tauri reads `src-tauri/tauri.conf.json` / `Cargo.toml`, not `package.json`), add a stamping step to `release_<app>.yml` for the **stable** lane: derive the version from `package.json` and rewrite the build manifests before building, mirroring `scripts/release/set-desktop-version.mjs`. Otherwise the stable build ships whatever version was last committed to that manifest rather than the tagged one. The pre-release lane already passes an explicit `version`, so only the stable lane (empty `version` input) needs the package.json-derived fallback.
