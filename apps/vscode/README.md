@@ -149,6 +149,12 @@ For development instructions, see [DEVELOPMENT.md](DEVELOPMENT.md).
 
 If you encounter issues or have feature requests, please [open an issue on GitHub](https://github.com/niivue/niivue-vscode/issues).
 
+## Citation
+
+If you use this extension in published work, please cite:
+
+Eckstein K, Androulakis A, Dao TT, et al. Seamless neuroimaging visualization: The NiiVue wrapper ecosystem. _Aperture Neuro_. 2026;6. [doi:10.52294/001c.167815](https://doi.org/10.52294/001c.167815)
+
 ## Support This Project
 
 If you find this extension useful, please consider supporting its development:

@@ -320,6 +320,12 @@ python -m build
 
 This compiles frontend assets into `niivue_component/frontend/build/`, which is then bundled into the Python package.
 
+## 📝 Citation
+
+If you use this component in published work, please cite:
+
+Eckstein K, Androulakis A, Dao TT, et al. Seamless neuroimaging visualization: The NiiVue wrapper ecosystem. _Aperture Neuro_. 2026;6. [doi:10.52294/001c.167815](https://doi.org/10.52294/001c.167815)
+
 ## 📄 License
 
 BSD-2-Clause

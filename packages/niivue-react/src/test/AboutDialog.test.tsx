@@ -53,3 +53,13 @@ describe('AboutDialog version line', () => {
     expect(source.getAttribute('href')).toBe('https://github.com/niivue/niivue-vscode')
   })
 })
+
+describe('AboutDialog citation', () => {
+  it('links the ecosystem paper by its DOI', () => {
+    render(<AboutDialog isOpen={signal(true)} />)
+
+    const link = anchorIn('about-citation')
+    expect(link.getAttribute('href')).toBe('https://doi.org/10.52294/001c.167815')
+    expect(link.getAttribute('title')).toContain('The NiiVue wrapper ecosystem')
+  })
+})
