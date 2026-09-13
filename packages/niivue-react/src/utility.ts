@@ -64,6 +64,11 @@ export function differenceInNames(names: string[], rec = true) {
   if (names.length === 0) {
     return []
   }
+  // A lone name has nothing to differ from; stripping the "common" part would
+  // leave it empty, so show its file name instead.
+  if (names.length === 1) {
+    return [names[0].split('/').pop() ?? '']
+  }
   const minLen = Math.min(...names.map((name) => name.length))
   let startCommon = minLen
   outer: while (startCommon > 0) {
