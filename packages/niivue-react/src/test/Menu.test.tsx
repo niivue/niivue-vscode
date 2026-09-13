@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AppProps, SelectionMode } from '../components/AppProps'
 import { Menu } from '../components/Menu'
 
-// Mock canvas and niivue to avoid webgl context issues in jsdom.
+// Mock canvas and NiiVue to avoid webgl context issues in jsdom.
 // v1 surface: the package's default export is the NiiVueGPU class (events.ts does
 // `import NiiVue from '@niivue/niivue'` and `extends NiiVue`), plus the DRAG_MODE
 // and SLICE_TYPE value enums. NVImage/NVMesh are types-only now, so they are not

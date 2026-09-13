@@ -196,7 +196,7 @@ export const useStreamlitNiivue = (args: StreamlitArgs) => {
     loadedMeshOverlaysRef.current = [] // Reset mesh overlays when meshes change
   }, [appProps.nvArray.value, appProps.nvArray.value[0]?.isLoaded, meshId])
 
-  // Load mesh overlays (only from the first mesh, since niivue targets meshes[0])
+  // Load mesh overlays (only from the first mesh, since NiiVue targets meshes[0])
   useEffect(() => {
     const nv = appProps.nvArray.value[0]
     if (!nv || !nv.isLoaded || !args.meshes || args.meshes.length === 0) {

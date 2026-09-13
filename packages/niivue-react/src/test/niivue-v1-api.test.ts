@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 /**
  * Characterization tests for the three riskiest @niivue/niivue v1 transforms,
- * driven through the public message bus (handleMessage) with a mocked niivue
+ * driven through the public message bus (handleMessage) with a mocked NiiVue
  * instance. These lock the new call shapes so a regression in the loader/overlay
  * rewrites is caught without a WebGL context:
  *   (a) addMeshOverlay -> nv.addMeshLayer(0, { colormap, opacity, calMin, calMax })
@@ -139,7 +139,7 @@ describe('(b) overlay loader wraps in-memory buffers in a File', () => {
 
   it('image overlay with empty data loads from the URL (regression: url is the uri, not "")', async () => {
     // A URL-load overlay carries data: '' (empty string). url must fall back to
-    // item.uri; an empty string would make niivue throw "prepareVolume requires
+    // item.uri; an empty string would make NiiVue throw "prepareVolume requires
     // a url or an NVImage object".
     const nv = makeMeshNv()
     await handleMessage(

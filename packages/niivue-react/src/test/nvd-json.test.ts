@@ -6,10 +6,10 @@ import { cborNvdToJson, jsonNvdToCbor, looksLikeJsonNvd } from '../nvd-json'
  * GL-free tests for the JSON <-> CBOR `.nvd` transcoder. These guard that a
  * JSON scene authored in an editor produces the exact CBOR `nv.loadDocument`
  * expects, and that the inverse export is readable JSON - without a WebGL
- * context or a live niivue instance.
+ * context or a live NiiVue instance.
  */
 
-// Same encoder niivue's `decode` consumes (plain CBOR, no record extension).
+// Same encoder NiiVue's `decode` consumes (plain CBOR, no record extension).
 const enc = new Encoder({ useRecords: false })
 const b64 = (nums: number[]) => Buffer.from(nums).toString('base64')
 

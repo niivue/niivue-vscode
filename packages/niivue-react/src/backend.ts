@@ -2,9 +2,9 @@ import type { BackendType } from '@niivue/niivue'
 import type { ExtendedNiivue } from './events'
 
 /**
- * WebGL2 escape hatch for the niivue v1 WebGPU migration.
+ * WebGL2 escape hatch for the NiiVue v1 WebGPU migration.
  *
- * niivue only falls back to WebGL2 when `navigator.gpu` is absent, so a browser
+ * NiiVue only falls back to WebGL2 when `navigator.gpu` is absent, so a browser
  * that advertises WebGPU but cannot render still picks it and draws nothing.
  * `?backend=webgl2` forces the working backend on those machines.
  *
@@ -25,7 +25,7 @@ export function backendOverride(): BackendType | undefined {
  * Attach `nv` to `canvas`, honoring a `?backend=` override.
  *
  * Nothing may be awaited before `attachToCanvas`: attaching on the original tick
- * is what keeps niivue's canvas key handling working.
+ * is what keeps NiiVue's canvas key handling working.
  */
 export function attachWithBackend(
   nv: ExtendedNiivue,

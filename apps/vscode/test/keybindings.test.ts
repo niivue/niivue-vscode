@@ -10,12 +10,12 @@ type Keybinding = { command: string; key: string; mac?: string; when?: string }
 const keybindings: Keybinding[] = pkg.contributes?.keybindings ?? []
 
 describe('contributed keybindings', () => {
-  it('contributes the niivue shortcut keybindings', () => {
+  it('contributes the NiiVue shortcut keybindings', () => {
     expect(keybindings.length).toBeGreaterThan(0)
     expect(keybindings.every((k) => k.command.startsWith('niivue.'))).toBe(true)
   })
 
-  // Regression test for niivue/niivue-vscode#223: the niivue commands are
+  // Regression test for niivue/niivue-vscode#223: the NiiVue commands are
   // no-ops (the webview's own keydown listener does the work), so a binding
   // that stays active while a VS Code input box is focused merely *swallows*
   // the key. Without `!inputFocus`, single-key bindings like "1" or "s" eat
@@ -25,7 +25,7 @@ describe('contributed keybindings', () => {
       expect(kb.when, `keybinding for ${kb.command} must declare a when-clause`).toBeTruthy()
       expect(
         kb.when,
-        `keybinding for ${kb.command} ("${kb.key}") must require the niivue editor`,
+        `keybinding for ${kb.command} ("${kb.key}") must require the NiiVue editor`,
       ).toContain('activeCustomEditorId == niiVue.default')
       expect(
         kb.when,

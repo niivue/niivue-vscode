@@ -9,7 +9,7 @@
 
 Drop redundant GL refreshes after overlay and colorbar changes.
 
-niivue v1's `setVolume` and `setMeshLayerProperty` assign the properties and refresh the GL
+NiiVue v1's `setVolume` and `setMeshLayerProperty` assign the properties and refresh the GL
 volume themselves, so the trailing `updateGLVolume()` calls in ScalingBox were redundant; the
 mesh branch was refreshing twice outright. `addMeshLayer` likewise refreshes internally, so
 setting the colorbar flag before the call removes another refresh. The view-mode toggles in

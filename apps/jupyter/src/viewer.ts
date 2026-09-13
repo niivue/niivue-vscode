@@ -45,7 +45,7 @@ export class NiivueWidget extends Widget {
   private _initializeViewer(): void {
     try {
       const filePath = this._context.path
-      console.log('Initializing this.onResize Niivue viewer for file:', filePath)
+      console.log('Initializing this.onResize NiiVue viewer for file:', filePath)
 
       const html = this._getHtmlForViewer()
 
@@ -69,9 +69,9 @@ export class NiivueWidget extends Widget {
         }, 100)
       }
 
-      console.log('Niivue viewer initialized successfully')
+      console.log('NiiVue viewer initialized successfully')
     } catch (error) {
-      console.error('Failed to initialize Niivue viewer:', error)
+      console.error('Failed to initialize NiiVue viewer:', error)
       this._showError(
         `Failed to initialize viewer: ${error instanceof Error ? error.message : 'Unknown error'}`,
       )
@@ -434,7 +434,7 @@ export namespace NiivueViewer {
     protected createNewWidget(
       context: DocumentRegistry.IContext<DocumentRegistry.IModel>,
     ): DocumentWidget {
-      console.log('Creating new Niivue widget for context:', context)
+      console.log('Creating new NiiVue widget for context:', context)
       const content = new NiivueWidget(context, this._docManager, this._serverSettings)
       const widget = new DocumentWidget({ content, context })
       return widget

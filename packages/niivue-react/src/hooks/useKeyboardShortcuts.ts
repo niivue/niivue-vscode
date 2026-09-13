@@ -33,8 +33,8 @@ export interface KeyboardShortcutHandlers {
 
 /**
  * Hook to handle keyboard shortcuts for NiiVue UI actions
- * Note: this also handles niivue's built-in default keys (V, C, arrows, H/J/K/L,
- * Ctrl+U/D), since niivue's own window listener is removed after attach
+ * Note: this also handles NiiVue's built-in default keys (V, C, arrows, H/J/K/L,
+ * Ctrl+U/D), since NiiVue's own window listener is removed after attach
  * (removeBuiltinKeyHandler in events.ts)
  *
  * @param handlers - Object containing callback functions for each shortcut action
@@ -86,7 +86,7 @@ export function useKeyboardShortcuts(handlers: KeyboardShortcutHandlers, enabled
         matchesShortcut(event, NIIVUE_CORE_SHORTCUTS.CYCLE_VIEW_MODE) &&
         handlers.onCycleViewMode
       ) {
-        // We don't necessarily want to preventDefault here if we want Niivue Core to also handle it,
+        // We don't necessarily want to preventDefault here if we want NiiVue core to also handle it,
         // but since we want to sync our signal, we might handle it entirely in UI or just sync after.
         // If we handle it in UI, we SHOULD preventDefault to avoid double-cycling.
         event.preventDefault()

@@ -104,7 +104,7 @@ export const NiiVueCanvas = ({
       })
   }, [nv.body])
 
-  // Import a niivue scene document (.nvd). Mirrors the nv.body path above: runs
+  // Import a NiiVue scene document (.nvd). Mirrors the nv.body path above: runs
   // after the canvas/GL is attached, so nv.loadDocument has a context to use.
   useEffect(() => {
     if (!nv.documentData || nv.isLoading) {
@@ -253,7 +253,7 @@ async function loadDicomSeries(
   }
   const [first, ...rest] = loadedFiles
   // v1: addVolume takes load options; url is string | File, so wrap the decoded
-  // NIfTI buffer in a File (keep first.name so niivue infers the format).
+  // NIfTI buffer in a File (keep first.name so NiiVue infers the format).
   await nv.addVolume({
     url: new File([ensureArrayBuffer(first.data)], first.name),
     name: first.name,
@@ -408,8 +408,8 @@ async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSetting
   // Converted here rather than through nv.useLoader: as of 1.0.0-rc.12 a
   // registered npy converter is not reached before the built-in reader throws
   // "Unsupported NPY dtype: <i8". Converting the bytes up front keeps this
-  // working whichever way niivue resolves its readers. The output is still a
-  // .npy, so niivue's own reader parses it.
+  // working whichever way NiiVue resolves its readers. The output is still a
+  // .npy, so NiiVue's own reader parses it.
   if (isNpyName(item.uri)) {
     if (!item.data) {
       item.data = await (await fetch(item.uri)).arrayBuffer()
@@ -480,7 +480,7 @@ async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSetting
       return
     }
     // v1: wrap the synthesized .mha header bytes in a File (the .mha name lets
-    // niivue parse it; ElementDataFile points at the .raw the user dropped).
+    // NiiVue parse it; ElementDataFile points at the .raw the user dropped).
     await nv.addVolume({
       url: new File([header], `${item.uri}.mha`),
       name: `${item.uri}.mha`,
@@ -512,7 +512,7 @@ async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSetting
         const blobUrl = URL.createObjectURL(new Blob([pairedBuffer]))
         try {
           // v1: url is string | File; wrap the header buffer in a File named for
-          // the .mhd so niivue parses the detached format, urlImageData = the raw.
+          // the .mhd so NiiVue parses the detached format, urlImageData = the raw.
           await nv.addVolume({
             url: new File([buffer], item.uri),
             urlImageData: blobUrl,

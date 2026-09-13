@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AppProps, SelectionMode } from '../components/AppProps'
 import { Menu } from '../components/Menu'
 
-// jsdom has no WebGL; stub the niivue module surface the menu imports.
+// jsdom has no WebGL; stub the NiiVue module surface the menu imports.
 vi.mock('@niivue/niivue', () => {
   class NiiVueGPU {}
   return {

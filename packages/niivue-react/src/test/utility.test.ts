@@ -289,7 +289,7 @@ describe('graphmlToConnectome', () => {
 })
 
 describe('getNames', () => {
-  // The source treats each `item` as a Niivue instance with `volumes` and `meshes` arrays.
+  // The source treats each `item` as a NiiVue instance with `volumes` and `meshes` arrays.
   // We synthesize the minimum shape that getNames inspects.
   const makeVol = (name: string) => ({ name })
   const makeMesh = (name: string, layers: { name: string }[] = []) => ({ name, layers })

@@ -19,7 +19,7 @@ afterEach(() => {
 })
 
 describe('attachWithBackend', () => {
-  it('leaves opts.backend to niivue when no override is given', async () => {
+  it('leaves opts.backend to NiiVue when no override is given', async () => {
     const { attachWithBackend } = await loadBackend()
     const nv: any = { opts: {}, attachToCanvas: vi.fn().mockResolvedValue(undefined) }
     await attachWithBackend(nv, {} as HTMLCanvasElement)
@@ -29,7 +29,7 @@ describe('attachWithBackend', () => {
 
   it('calls attachToCanvas synchronously, before any await', async () => {
     // Regression guard for #272: delaying the attach past its original tick
-    // breaks niivue's canvas key handling.
+    // breaks NiiVue's canvas key handling.
     const { attachWithBackend } = await loadBackend()
     const attachToCanvas = vi.fn().mockResolvedValue(undefined)
     const nv: any = { opts: {}, attachToCanvas }

@@ -10,7 +10,7 @@
 Fold the Home button into the brand, and add an NVDocument Save/Load split button.
 
 - The standalone "Home" menu-bar button is gone. On standalone hosts (web, desktop)
-  the niivue logo + wordmark is now a dropdown: **Reset Viewer** (the old Home
+  the NiiVue logo + wordmark is now a dropdown: **Reset Viewer** (the old Home
   action) and **About** (a dialog with the app's purpose, NiiVue + NeuroDesk
   credits, the data-privacy note, and the build version linking to its commit).
   Embedded Streamlit, which sets `menuItems.home: false`, keeps a static brand.

@@ -14,7 +14,7 @@ View neuroimaging files directly in Visual Studio Code. Works seamlessly in remo
 
 - **Install**: Search for "niivue" in VS Code Extensions
 - **Release**: [Marketplace - Release Page and Docs](https://marketplace.visualstudio.com/items?itemName=KorbinianEckstein.niivue)
-- **Usage**: Open image files like code files, or select multiple and right click -> `Niivue: Compare`
+- **Usage**: Open image files like code files, or select multiple and right click -> `NiiVue: Compare`
 
 ```bash
 # Or via terminal

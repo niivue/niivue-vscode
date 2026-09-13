@@ -2,7 +2,7 @@
   "name": "@niivue/jupyter",
   "private": true,
   "version": "0.2.7",
-  "description": "A JupyterLab extension for viewing NIfTI files with Niivue",
+  "description": "A JupyterLab extension for viewing NIfTI files with NiiVue",
   "keywords": [
     "jupyter",
     "jupyterlab",

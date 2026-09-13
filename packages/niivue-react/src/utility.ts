@@ -2,7 +2,7 @@ import NiiVue from '@niivue/niivue'
 import type { NVImage, NVConnectomeOptions } from '@niivue/niivue'
 import { isNiftiName, NIFTI_PEEK_BYTES, niftiTooLargeWarning } from './nifti'
 
-// This function computes the display names for each Niivue instance in the array
+// This function computes the display names for each NiiVue instance in the array
 // It handles duplicate names by using overlay or layer names of the last item
 export function getNames(nvArray: NiiVue[]) {
   // Get base names (first volume or mesh)
@@ -456,7 +456,7 @@ export interface ImageMetadata {
 }
 
 /**
- * Replacement for the removed per-image metadata accessor (niivue v1). Reads the
+ * Replacement for the removed per-image metadata accessor (NiiVue v1). Reads the
  * matrix size and voxel dimensions straight off the NIfTI header dims/pixDims
  * (1-based, matching the old return shape: nx,ny,nz,nt and dx,dy,dz). Returns an
  * empty object when there is no header (mirrors the old undefined-when-absent).

@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AppProps } from '../components/AppProps'
 
 // The facade is a thin wrapper over the message bus; mock it so these are true
-// unit tests (no niivue, no WebGL). handleMessage is the only runtime import.
+// unit tests (no NiiVue, no WebGL). handleMessage is the only runtime import.
 const handleMessage = vi.fn(async (..._args: unknown[]) => true)
 vi.mock('../events', () => ({
   handleMessage: (...args: unknown[]) => handleMessage(...args),

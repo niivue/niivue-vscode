@@ -9,11 +9,11 @@ export interface KeyboardShortcut {
   shift?: boolean
   alt?: boolean
   description: string
-  isNiivueCore?: boolean // true for niivue.js built-in default keys
+  isNiivueCore?: boolean // true for NiiVue built-in default keys
 }
 
 /**
- * niivue.js built-in default keys. niivue's own listener is removed after attach
+ * NiiVue's built-in default keys. NiiVue's own listener is removed after attach
  * (see removeBuiltinKeyHandler), so the app handles these with the same mapping.
  */
 export const NIIVUE_CORE_SHORTCUTS: Record<string, KeyboardShortcut> = {
