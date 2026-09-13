@@ -6,6 +6,7 @@ import {
   getNames,
   getNumberOfPoints,
   graphmlToConnectome,
+  imageBaseName,
   isDicomData,
   isImageType,
 } from '../utility'
@@ -50,6 +51,26 @@ describe('isImageType', () => {
   it('preserves preceding path components — only inspects the suffix', () => {
     expect(isImageType('/some/path/scan.nii.gz')).toBe('.nii.gz')
     expect(isImageType('http://host/img.nrrd')).toBe('.nrrd')
+  })
+})
+
+describe('imageBaseName', () => {
+  it.each([
+    ['brain.nii.gz', 'brain'],
+    ['sub-01_T1w.NII', 'sub-01_T1w'],
+    ['data/scans/brain.mgz', 'brain'],
+    ['C:\\data\\brain.nii', 'brain'],
+    ['https://host/my%20scan.nrrd', 'my scan'],
+    ['csi_template_zf.mnc', 'csi_template_zf'],
+    ['labels.npy', 'labels'],
+    ['vessels.graphml', 'vessels'],
+    ['lh.pial', 'lh.pial'],
+    ['100%.nii', '100%'],
+    ['.nii.gz', ''],
+    ['', ''],
+    [undefined, ''],
+  ])('given %s, returns %j', (name, expected) => {
+    expect(imageBaseName(name)).toBe(expected)
   })
 })
 

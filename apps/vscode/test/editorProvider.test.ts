@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { NiiVueEditorProvider } from '../src/editorProvider'
-import { __resetMock, FileType, Uri, workspace } from './vscode-mock'
+import { __resetMock, FileType, Uri, window, workspace } from './vscode-mock'
 
 /** 140-byte buffer with the DICOM Part 10 magic ("DICM" at offset 128). */
 function dicomBytes(): Uint8Array {
@@ -404,5 +404,173 @@ describe('NiiVueEditorProvider.sendInitialImage', () => {
     // .nii.gz is never read for DICOM sniffing
     expect(workspace.fs.readDirectory).not.toHaveBeenCalled()
     expect(workspace.fs.readFile).not.toHaveBeenCalled()
+  })
+})
+
+describe('NiiVueEditorProvider.saveFile', () => {
+  // What the webview's Screenshot button sends: PNG bytes as base64.
+  const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 255])
+  const body = {
+    filename: 'brain_screenshot.png',
+    mimeType: 'image/png',
+    data: Buffer.from(png).toString('base64'),
+  }
+
+  function dialogOptions() {
+    const options = window.showSaveDialog.mock.calls[0][0] as any
+    return { defaultUri: options.defaultUri?.toString(), filters: options.filters }
+  }
+
+  it("suggests the opened file's folder and writes the decoded bytes where the user chose", async () => {
+    workspace.fs.isWritableFileSystem.mockReturnValue(true)
+    const target = Uri.parse('file:///home/user/figures/fig1.png')
+    window.showSaveDialog.mockResolvedValue(target)
+    workspace.fs.writeFile.mockResolvedValue()
+
+    await NiiVueEditorProvider.saveFile(body, Uri.parse('file:///home/user/scans/brain.nii.gz'))
+
+    expect(dialogOptions()).toEqual({
+      defaultUri: 'file:///home/user/scans/brain_screenshot.png',
+      filters: { 'PNG Image': ['png'] },
+    })
+    expect(workspace.fs.writeFile).toHaveBeenCalledTimes(1)
+    const [uri, bytes] = workspace.fs.writeFile.mock.calls[0]
+    expect(uri).toBe(target)
+    expect(Array.from(bytes)).toEqual(Array.from(png))
+    expect(window.showInformationMessage).toHaveBeenCalledWith('Saved fig1.png')
+    expect(window.showErrorMessage).not.toHaveBeenCalled()
+  })
+
+  it('keeps the scheme and authority of a remote file', async () => {
+    workspace.fs.isWritableFileSystem.mockReturnValue(true)
+    window.showSaveDialog.mockResolvedValue(undefined)
+
+    await NiiVueEditorProvider.saveFile(
+      body,
+      Uri.parse('vscode-remote://ssh-remote%2Bmyhost/data/sub-01/brain.nii.gz'),
+    )
+
+    expect(workspace.fs.isWritableFileSystem).toHaveBeenCalledWith('vscode-remote')
+    expect(dialogOptions().defaultUri).toBe(
+      'vscode-remote://ssh-remote%2Bmyhost/data/sub-01/brain_screenshot.png',
+    )
+  })
+
+  it('suggests the workspace folder when the opened file is a web link', async () => {
+    workspace.fs.isWritableFileSystem.mockReturnValue(undefined)
+    workspace.workspaceFolders = [{ uri: Uri.parse('file:///home/user/proj') }]
+    window.showSaveDialog.mockResolvedValue(undefined)
+
+    await NiiVueEditorProvider.saveFile(body, Uri.parse('https://example.com/data/brain.nii.gz'))
+
+    expect(dialogOptions().defaultUri).toBe('file:///home/user/proj/brain_screenshot.png')
+  })
+
+  it('leaves the location to the dialog without a writable folder or workspace', async () => {
+    workspace.fs.isWritableFileSystem.mockReturnValue(undefined)
+    window.showSaveDialog.mockResolvedValue(undefined)
+
+    await NiiVueEditorProvider.saveFile(body, Uri.parse('https://example.com/data/brain.nii.gz'))
+
+    expect(dialogOptions().defaultUri).toBeUndefined()
+  })
+
+  it('does nothing when the dialog is cancelled', async () => {
+    workspace.fs.isWritableFileSystem.mockReturnValue(true)
+    window.showSaveDialog.mockResolvedValue(undefined)
+
+    await NiiVueEditorProvider.saveFile(body, Uri.parse('file:///scans/brain.nii.gz'))
+
+    expect(workspace.fs.writeFile).not.toHaveBeenCalled()
+    expect(window.showInformationMessage).not.toHaveBeenCalled()
+    expect(window.showErrorMessage).not.toHaveBeenCalled()
+  })
+
+  it('reports a failed write', async () => {
+    workspace.fs.isWritableFileSystem.mockReturnValue(true)
+    window.showSaveDialog.mockResolvedValue(Uri.parse('file:///readonly/fig.png'))
+    workspace.fs.writeFile.mockRejectedValue(new Error('EACCES: permission denied'))
+
+    await NiiVueEditorProvider.saveFile(body, Uri.parse('file:///scans/brain.nii.gz'))
+
+    expect(window.showErrorMessage).toHaveBeenCalledWith(
+      'Could not save fig.png: EACCES: permission denied',
+    )
+    expect(window.showInformationMessage).not.toHaveBeenCalled()
+  })
+
+  it('reports a failing save dialog and ignores a non-string MIME type', async () => {
+    workspace.fs.isWritableFileSystem.mockReturnValue(true)
+    window.showSaveDialog.mockRejectedValue(new Error('dialog unavailable'))
+
+    await NiiVueEditorProvider.saveFile(
+      { ...body, filename: 'fig.png', mimeType: { toString: 0, valueOf: 0 } },
+      Uri.parse('file:///scans/brain.nii.gz'),
+    )
+
+    expect(dialogOptions().filters).toBeUndefined()
+    expect(window.showErrorMessage).toHaveBeenCalledWith('Could not save fig.png: dialog unavailable')
+    expect(workspace.fs.writeFile).not.toHaveBeenCalled()
+  })
+
+  it('reduces a suggested name to its last path segment', async () => {
+    workspace.fs.isWritableFileSystem.mockReturnValue(true)
+    window.showSaveDialog.mockResolvedValue(undefined)
+
+    await NiiVueEditorProvider.saveFile(
+      { ...body, filename: '..\\..\\other/escape.png' },
+      Uri.parse('file:///scans/brain.nii.gz'),
+    )
+
+    expect(dialogOptions().defaultUri).toBe('file:///scans/escape.png')
+  })
+
+  it('offers no filter for types it does not know', async () => {
+    workspace.fs.isWritableFileSystem.mockReturnValue(true)
+    window.showSaveDialog.mockResolvedValue(undefined)
+
+    await NiiVueEditorProvider.saveFile(
+      { ...body, filename: 'scene.nvd', mimeType: 'application/octet-stream' },
+      Uri.parse('file:///scans/brain.nii.gz'),
+    )
+
+    expect(dialogOptions()).toEqual({ defaultUri: 'file:///scans/scene.nvd', filters: undefined })
+  })
+
+  it('ignores a message without data', async () => {
+    await NiiVueEditorProvider.saveFile({ filename: 'x.png' }, Uri.parse('file:///scans/a.nii'))
+    await NiiVueEditorProvider.saveFile(undefined, Uri.parse('file:///scans/a.nii'))
+
+    expect(window.showSaveDialog).not.toHaveBeenCalled()
+  })
+
+  it('handles saveFile messages from the webview of an opened document', async () => {
+    const listeners: ((message: unknown) => unknown)[] = []
+    const panel = {
+      webview: {
+        options: {},
+        html: '',
+        cspSource: 'vscode-resource:',
+        asWebviewUri: (uri: Uri) => ({ toString: () => `https://cdn.vscode-cdn.net${uri.path}` }),
+        postMessage: vi.fn(),
+        onDidReceiveMessage: (listener: (message: unknown) => unknown) => {
+          listeners.push(listener)
+          return { dispose: () => {} }
+        },
+      },
+      onDidDispose: () => ({ dispose: () => {} }),
+    }
+    const provider = new NiiVueEditorProvider({ extensionUri: Uri.file('/ext') } as any)
+    await provider.resolveCustomEditor(
+      { uri: Uri.parse('file:///study/sub-01/brain.nii.gz') } as any,
+      panel as any,
+    )
+    workspace.fs.isWritableFileSystem.mockReturnValue(true)
+    window.showSaveDialog.mockResolvedValue(undefined)
+
+    await Promise.all(listeners.map((listener) => listener({ type: 'saveFile', body })))
+
+    expect(window.showSaveDialog).toHaveBeenCalledTimes(1)
+    expect(dialogOptions().defaultUri).toBe('file:///study/sub-01/brain_screenshot.png')
   })
 })

@@ -2,13 +2,11 @@ import './AboutDialog.css'
 import { type Signal, effect } from '@preact/signals'
 import { useRef } from 'preact/hooks'
 import { niivueLogo } from '../assets/niivue-logo'
+import { CITATION_DOI_URL, CITATION_TEXT } from '../citation'
 import type { AppInfo } from './AppProps'
 
 // Canonical source repo, used when a host doesn't supply its own `repoUrl`.
 const DEFAULT_REPO_URL = 'https://github.com/niivue/niivue-vscode'
-const CITATION_DOI_URL = 'https://doi.org/10.52294/001c.167815'
-const CITATION_TEXT =
-  'Eckstein K, Androulakis A, Dao TT, et al. Seamless neuroimaging visualization: The NiiVue wrapper ecosystem. Aperture Neuro. 2026;6.'
 
 /**
  * The brand menu's "About" dialog: what NiiVue Viewer is, its credits, the data

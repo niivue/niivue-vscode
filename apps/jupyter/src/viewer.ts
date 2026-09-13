@@ -3,6 +3,7 @@ import { ABCWidgetFactory, DocumentRegistry, DocumentWidget } from '@jupyterlab/
 import { FileDialog } from '@jupyterlab/filebrowser'
 import { ServerConnection } from '@jupyterlab/services'
 import { Widget } from '@lumino/widgets'
+import { downloadFile } from './save-file'
 import {
   fetchArrayBuffer,
   fetchJson,
@@ -213,6 +214,9 @@ export class NiivueWidget extends Widget {
         break
       case 'addDcmFolder':
         await this._handleAddDcmFolder()
+        break
+      case 'saveFile':
+        downloadFile(message.body)
         break
     }
   }
