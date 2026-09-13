@@ -28,6 +28,7 @@ import { mnc2nii } from '@niivue/minc-loader'
 import { Signal } from '@preact/signals'
 import { useEffect, useRef } from 'preact/hooks'
 import { attachWithBackend } from '../backend'
+import { documentFile } from '../document'
 import { ExtendedNiivue, notifyImageLoaded, removeBuiltinKeyHandler } from '../events'
 import { isNiftiName, NIFTI_PEEK_BYTES, niftiTooLargeWarning } from '../nifti'
 import { convertNpy, convertNpz, isNpyName } from '../npy'
@@ -110,12 +111,13 @@ export const NiiVueCanvas = ({
     if (!nv.documentData || nv.isLoading) {
       return
     }
-    const docFile = nv.documentData
+    const source = nv.documentData
     nv.isLoading = true
-    // v1: nv.loadDocument takes a string | File. document.ts hands us the `.nvd`
-    // CBOR bytes already wrapped in a File, so we load it directly (no JSON layer).
+    // Reading the document (fetching a URL, completing a JSON document) fails
+    // into the same on-canvas error as the load itself.
     Promise.resolve(nv.attached)
-      .then(() => nv.loadDocument(docFile))
+      .then(() => documentFile(source))
+      .then((file) => nv.loadDocument(file))
       .then(() => {
         nv.isLoaded = true
         nv.isLoading = false

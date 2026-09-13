@@ -1,6 +1,7 @@
 import { useSignal } from '@preact/signals'
 import { ComponentChildren } from 'preact'
-import { isNvdFile, readNvdFile } from '../document'
+import { isNvdFile } from '../document'
+import { postDocument } from '../events'
 import { buildImageMessageBodies } from '../utility'
 
 export const ImageDrop = ({ children }: { children: ComponentChildren }) => {
@@ -31,11 +32,7 @@ export const ImageDrop = ({ children }: { children: ComponentChildren }) => {
     // Scene documents (.nvd) import a whole scene into a new canvas, regardless
     // of the shift modifier. Everything else flows through the image pipeline.
     for (const file of fileArray.filter((f) => isNvdFile(f.name))) {
-      readNvdFile(file)
-        .then((document) =>
-          window.postMessage({ type: 'loadDocument', body: { document, name: file.name } }),
-        )
-        .catch((err) => console.error(`Failed to read .nvd file ${file.name}:`, err))
+      postDocument(file)
     }
     const otherFiles = fileArray.filter((f) => !isNvdFile(f.name))
     if (otherFiles.length === 0) return

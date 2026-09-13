@@ -279,13 +279,18 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
     if (!t) return
     // v1: serializeDocument() returns the .nvd as CBOR bytes (nv.json() is gone).
     const doc: SceneDocument = t.nv.serializeDocument()
-    downloadNvd(doc, `${t.base || 'scene'}.nvd`)
+    downloadNvd(doc, `${t.base || 'scene'}.nvd`).catch((error) =>
+      console.error('Saving the scene failed:', error),
+    )
   }
 
   const exportSceneJson = () => {
     const t = sceneTarget()
     if (!t) return
-    downloadSceneJson(t.nv.serializeDocument({ format: 'json' }), `${t.base || 'scene'}.nvd.json`)
+    downloadSceneJson(
+      t.nv.serializeDocument({ format: 'json' }),
+      `${t.base || 'scene'}.nvd.json`,
+    ).catch((error) => console.error('Saving the scene failed:', error))
   }
 
   // PNG of the tiles as laid out on screen: all of them, or just the scene
@@ -296,7 +301,7 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
     try {
       const panels = scope === 'all' ? nvArray.value : [t.nv]
       const png = await captureScreenshot(panels, nvArray.value[0]?.backgroundColor)
-      if (png) saveFile(png, `${t.base || 'niivue'}_screenshot.png`, 'image/png')
+      if (png) await saveFile(png, `${t.base || 'niivue'}_screenshot.png`, 'image/png')
     } catch (error) {
       console.error('Screenshot failed:', error)
     }
@@ -563,11 +568,12 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
     {
       // NVDocument (.nvd) scene file. The label is the default action (Save);
       // the chevron opens Save / Load. Load is also reachable by dropping a
-      // `.nvd`, but the explicit entry pairs naturally with Save here.
+      // `.nvd` or opening one like an image, but the explicit entry pairs
+      // naturally with Save here. Webview hosts save and pick files themselves.
       key: 'saveScene',
       type: 'menu',
       label: 'NVDocument',
-      visible: !!settings.value.menuItems?.saveScene && !isVscode && isVolumeOrMesh.value,
+      visible: !!settings.value.menuItems?.saveScene && isVolumeOrMesh.value,
       onClick: saveScene,
       children: (
         <>

@@ -1,7 +1,7 @@
 import NiiVue, { DRAG_MODE, SLICE_TYPE } from '@niivue/niivue'
 import { Signal } from '@preact/signals'
 import { AppProps } from './components/AppProps'
-import { isNvdFile, readNvdFile } from './document'
+import { DocumentSource, isNvdFile } from './document'
 import { readyStateManager } from './readyState'
 import { NiiVueSettings } from './settings'
 import { buildImageMessageBodies, isImageType } from './utility'
@@ -68,6 +68,12 @@ export async function handleMessage(message: any, appProps: AppProps) {
           // (Volume.tsx) instead of attempting a doomed load.
           nv.loadError = body.loadError
           notifyImageLoaded()
+        } else if (typeof body.uri === 'string' && isNvdFile(body.uri)) {
+          // A scene document opened like an image: from a host's file browser
+          // or open dialog, an OS launch, a URL parameter or a drop on a tile.
+          nv.documentData = body.data
+            ? { name: body.uri, data: body.data }
+            : { name: body.uri, url: body.uri }
         } else {
           nv.body = body
         }
@@ -78,14 +84,12 @@ export async function handleMessage(message: any, appProps: AppProps) {
         // Import a NiiVue scene document (.nvd) into a fresh canvas. The actual
         // nv.loadDocument call is deferred to NiiVueCanvas, which fires once the
         // canvas (and its GL context) is attached - mirroring the addImage path.
+        // The message carries the document's bytes, CBOR or JSON.
         const nv = getUnitinializedNvInstance(nvArray)
         const name = body.name || 'document.nvd'
         nv.uri = name
         nv.isNew = false
-        // v1: nv.loadDocument takes a File. The message carries the .nvd CBOR
-        // bytes (Uint8Array); wrap them in a File for NiiVueCanvas to load once
-        // the canvas/GL is attached.
-        nv.documentData = new File([body.document], name)
+        nv.documentData = { name, data: body.document }
       }
       break
     case 'initCanvas':
@@ -359,12 +363,7 @@ export function addImagesEvent() {
       // Scene documents (.nvd) load a whole scene; route them to the document
       // importer and let the rest flow through the image pipeline.
       for (const file of files.filter((f) => isNvdFile(f.name))) {
-        try {
-          const document = await readNvdFile(file)
-          window.postMessage({ type: 'loadDocument', body: { document, name: file.name } })
-        } catch (err) {
-          console.error(`Failed to read .nvd file ${file.name}:`, err)
-        }
+        await postDocument(file)
       }
       const imageFiles = files.filter((f) => !isNvdFile(f.name))
       if (imageFiles.length === 0) return
@@ -382,25 +381,34 @@ export function addImagesEvent() {
   }
 }
 
+/** Import a picked or dropped scene document file into a fresh canvas. */
+export async function postDocument(file: File) {
+  try {
+    const document = new Uint8Array(await file.arrayBuffer())
+    window.postMessage({ type: 'loadDocument', body: { document, name: file.name } })
+  } catch (err) {
+    console.error(`Failed to read .nvd file ${file.name}:`, err)
+  }
+}
+
 /**
- * Open a file picker for a NiiVue scene document (.nvd) and import it into a
- * fresh canvas via the `loadDocument` message. This is the browser-host
- * counterpart to `saveScene`'s download; vscode hosts persist scenes through
- * their own services, so the menu gates this to non-vscode.
+ * Pick a NiiVue scene document (.nvd, .nvd.json) and import it into a fresh
+ * canvas. Webview hosts show their own dialog, which browses the workspace
+ * (also a remote one), and send the file back like an image.
  */
 export function loadDocumentEvent() {
+  if (typeof vscode === 'object') {
+    vscode.postMessage({ type: 'openDocument' })
+    return
+  }
   const input = document.createElement('input')
   input.type = 'file'
-  input.accept = '.nvd'
+  input.accept = '.nvd,.json'
 
   input.onchange = async (e) => {
     const file = (e.target as HTMLInputElement)?.files?.[0]
-    if (!file) return
-    try {
-      const document = await readNvdFile(file)
-      window.postMessage({ type: 'loadDocument', body: { document, name: file.name } })
-    } catch (err) {
-      console.error(`Failed to read .nvd file ${file.name}:`, err)
+    if (file) {
+      await postDocument(file)
     }
   }
 
@@ -461,7 +469,7 @@ export class ExtendedNiivue extends NiiVue {
   uri = ''
   key = NaN
   body = null
-  documentData: File | null = null // pending .nvd import (CBOR bytes wrapped in a File), consumed by NiiVueCanvas
+  documentData: DocumentSource | null = null // pending .nvd import, consumed by NiiVueCanvas
   onVolumeUpdated = () => { }
   onFrameUpdate = (frame: number) => { }
   // v1: cross-canvas pan/3D sync is handled natively by `nv.broadcastTo(targets)`

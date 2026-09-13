@@ -50,7 +50,7 @@ export function createViewerClient(appProps: AppProps): ViewerClient {
       // Route through the bus so the deferred canvas-load lifecycle (GL must be
       // attached before nv.loadDocument) is reused. Resolves once the load is
       // enqueued; completion is observable via the loadedCount hook / the
-      // documentChanged event. `doc` is the opaque `.nvd` CBOR byte payload.
+      // documentChanged event. `doc` is the `.nvd` document's bytes, CBOR or JSON.
       await handleMessage(
         { type: 'loadDocument', body: { document: doc, name: 'document.nvd' } },
         appProps,

@@ -134,3 +134,81 @@ test.describe('NVDocument (.nvd) import/export', () => {
     expect(await sceneState(page)).toEqual({ canvases: 1, volumes: 1, loadError: '' })
   })
 })
+
+test.describe('NVDocument (.nvd) opened like an image', () => {
+  // A JSON scene document that links the test volume by a relative URL.
+  const serveLinkedScene = (page: Page) =>
+    page.route('**/linked-scene.nvd.json', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ volumes: [{ url: 'lesion.nii.gz', colormap: 'hot' }] }),
+      }),
+    )
+
+  test('an addImage message with only a document URL opens the scene', async ({ page }) => {
+    await serveLinkedScene(page)
+    await page.goto(BASE_URL)
+    await page.waitForLoadState('networkidle')
+
+    // How VS Code sends a file it can serve to the webview.
+    await page.evaluate(
+      (uri) => window.postMessage({ type: 'addImage', body: { data: '', uri } }, '*'),
+      `${BASE_URL}linked-scene.nvd.json`,
+    )
+    await waitForImageLoad(page)
+
+    expect(await sceneState(page)).toEqual({ canvases: 1, volumes: 1, loadError: '' })
+  })
+
+  test('the images URL parameter opens a scene document', async ({ page }) => {
+    await serveLinkedScene(page)
+
+    await page.goto(`${BASE_URL}?images=${encodeURIComponent(`${BASE_URL}linked-scene.nvd.json`)}`)
+    await page.waitForFunction(() => ((window as any).__niivue?.loadedCount ?? 0) > 0)
+
+    expect(await sceneState(page)).toEqual({ canvases: 1, volumes: 1, loadError: '' })
+  })
+
+  test('NVDocument > Load opens the picked document in a new tile', async ({ page }) => {
+    const nvdBytes = await exportScene(page)
+
+    const chooser = page.waitForEvent('filechooser')
+    await page.getByTestId('menu-item-dropdown-NVDocument').click()
+    await page.getByText('Load', { exact: true }).click()
+    await (
+      await chooser
+    ).setFiles({
+      name: 'scene.nvd',
+      mimeType: 'application/octet-stream',
+      buffer: Buffer.from(nvdBytes),
+    })
+    await waitForImageLoad(page)
+
+    expect(await sceneState(page)).toMatchObject({ canvases: 2, loadError: '' })
+  })
+
+  test('dropping a document on a tile opens it in a new tile', async ({ page }) => {
+    const nvdBytes = await exportScene(page)
+
+    await page.evaluate((bytes) => {
+      const dt = new DataTransfer()
+      dt.items.add(new File([new Uint8Array(bytes)], 'scene.nvd'))
+      const canvas = document.querySelector('canvas')
+      if (!canvas) throw new Error('no canvas')
+      canvas.dispatchEvent(new DragEvent('dragover', { dataTransfer: dt, bubbles: true }))
+      canvas.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true }))
+    }, nvdBytes)
+    await waitForImageLoad(page)
+
+    const tiles = await page.evaluate(() =>
+      (window as any).appProps.nvArray.value.map((nv: any) => ({
+        volumes: nv.volumes.length,
+        loadError: nv.loadError,
+      })),
+    )
+    expect(tiles).toEqual([
+      { volumes: 1, loadError: '' },
+      { volumes: 1, loadError: '' },
+    ])
+  })
+})

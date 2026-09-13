@@ -34,8 +34,8 @@ vi.mock('@niivue/niivue', () => {
 
 // Stub the download helpers so "Save" / "Save as JSON" can be asserted without a
 // real Blob/anchor.
-const downloadNvd = vi.fn()
-const downloadSceneJson = vi.fn()
+const downloadNvd = vi.fn(async (..._args: unknown[]) => {})
+const downloadSceneJson = vi.fn(async (..._args: unknown[]) => {})
 vi.mock('../document', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../document')>()),
   downloadNvd: (...args: unknown[]) => downloadNvd(...args),
@@ -180,6 +180,14 @@ describe('Brand menu in a webview host (VS Code, JupyterLab)', () => {
   })
   afterAll(() => {
     delete (globalThis as any).vscode
+  })
+
+  it('shows NVDocument, whose Save goes through the host', () => {
+    render(<Menu {...makeProps({ saveScene: true })} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'NVDocument' }))
+
+    expect(downloadNvd).toHaveBeenCalledTimes(1)
   })
 
   it('offers About but not Reset Viewer, regardless of the home flag', async () => {
