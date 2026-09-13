@@ -57,7 +57,7 @@
   "devDependencies": {
     "@changesets/cli": "^3.0.1",
     "@eslint/js": "^10.0.1",
-    "@preact/preset-vite": "^2.10.5",
+    "@preact/preset-vite": "^2.10.6",
     "@types/node": "^26.1.2",
     "@typescript-eslint/eslint-plugin": "^8.59.3",
     "@typescript-eslint/parser": "^8.59.3",
