@@ -9,9 +9,9 @@
  * (garbage / all-black); on niivue v1 it throws "Unsupported NPY dtype". Either
  * way the volume never displays. See https://github.com/niivue/niivue-vscode/issues/90.
  *
- * These converters are registered with `nv.useLoader(..., 'npy'|'npz', 'npy')`
- * (the same hook used for the MINC loader). They run before NiiVue's reader and
- * down-cast the element types it can't take to ones it can:
+ * loadVolume (NiiVueCanvas.tsx) runs these converters on the bytes before handing
+ * them to NiiVue, and their output is still a `.npy` that NiiVue's reader parses.
+ * They down-cast the element types that reader can't take to ones it can:
  *   - int64  -> int32   (or float64 if any value overflows the int32 range)
  *   - uint64 -> uint32  (or float64 if any value overflows the uint32 range)
  * Int32 is preferred over float64 so the data keeps integer semantics (label-map
