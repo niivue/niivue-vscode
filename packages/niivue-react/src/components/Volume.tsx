@@ -341,9 +341,11 @@ export const Volume = (props: AppProps & VolumeProps) => {
       )}
       {hideUI.value > 0 && !nv.loadError && (
         <>
-          <div className="nv-pane-label">
-            <span className="nv-pane-label-text">{dispName}</span>
-          </div>
+          {dispName && (
+            <div className="nv-pane-label">
+              <span className="nv-pane-label-text">{dispName}</span>
+            </div>
+          )}
           <div className="nv-readout">
             <span className="nv-readout-k">POS</span>
             <span className="nv-readout-v">{location_local.value}</span>
