@@ -274,6 +274,88 @@ describe('captureScreenshot', () => {
     ])
   })
 
+  it("scales each crosshair by its tile's own on-screen ratio", async () => {
+    mockEncoder()
+    setPixelRatio(2)
+    const crosshair = (p: ReturnType<typeof panel>, id: string) => {
+      let width = 1
+      Object.defineProperty(p, 'crosshairWidth', {
+        get: () => width,
+        set: (value: number) => {
+          width = value
+          log.push(`crosshair ${id} ${value}`)
+        },
+      })
+      return p
+    }
+    // `forced` renders at a fixed ratio of 1 on this ratio-2 display.
+    const forced = crosshair(panel('forced', { left: 0, top: 0, width: 10, height: 10 }), 'forced')
+    forced.view.forceDevicePixelRatio = 1
+    Object.assign(forced.canvas!, { width: 10, height: 10 })
+    const plain = crosshair(panel('plain', { left: 20, top: 0, width: 10, height: 10 }), 'plain')
+
+    await captureScreenshot([forced, plain])
+
+    expect(log.filter((l) => /^(ratio|crosshair) /.test(l))).toEqual([
+      'ratio forced 4',
+      'crosshair forced 4',
+      'crosshair forced 1',
+      'ratio forced 1',
+      'ratio plain 4',
+      'crosshair plain 2',
+      'crosshair plain 1',
+      'ratio plain -1',
+    ])
+  })
+
+  it('doubles the sharpest on-screen ratio when a tile forces a higher one', async () => {
+    mockEncoder()
+    const sharp = panel('sharp', { left: 0, top: 0, width: 10, height: 10 })
+    sharp.view.forceDevicePixelRatio = 2
+    Object.assign(sharp.canvas!, { width: 20, height: 20 })
+
+    await captureScreenshot([sharp, panel('plain', { left: 20, top: 0, width: 10, height: 10 })])
+
+    expect(log.filter((l) => l.startsWith('ratio '))).toEqual([
+      'ratio sharp 4',
+      'ratio sharp 2',
+      'ratio plain 4',
+      'ratio plain -1',
+    ])
+  })
+
+  it('keeps every tile within its GPU limit when tiles render at different ratios', async () => {
+    mockEncoder()
+    const sharp = panel('sharp', { left: 0, top: 0, width: 100, height: 100 })
+    sharp.view.forceDevicePixelRatio = 4
+    Object.assign(sharp.canvas!, { width: 400, height: 400 })
+    const wide = panel('wide', { left: 100, top: 0, width: 3000, height: 100 })
+    Object.assign(wide.view, { device: { limits: { maxTextureDimension2D: 8192 } } })
+
+    await captureScreenshot([sharp, wide])
+
+    expect(log).toContain(`ratio wide ${8192 / 3000}`)
+    expect(log.find((l) => l.startsWith('draw wide'))).toMatch(/ 8192x273$/)
+  })
+
+  it('restores the canvas size when restoring the crosshair width throws', async () => {
+    mockEncoder()
+    const a = panel('a', { left: 0, top: 0, width: 10, height: 10 })
+    let width = 1
+    Object.defineProperty(a, 'crosshairWidth', {
+      get: () => width,
+      set: (value: number) => {
+        if (value === 1) throw new Error('drawScene failed')
+        width = value
+      },
+    })
+
+    await expect(captureScreenshot([a])).rejects.toThrow('drawScene failed')
+
+    expect(log[log.length - 1]).toBe('ratio a -1')
+    expect(a.canvas).toMatchObject({ width: 10, height: 10 })
+  })
+
   it('measures the layout only once every tile is ready', async () => {
     const encoded = mockEncoder()
     const rect = { left: 0, top: 0, width: 10, height: 10 }

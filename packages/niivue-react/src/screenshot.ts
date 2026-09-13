@@ -97,6 +97,12 @@ export async function waitUntilRenderable(
   }
 }
 
+/** Device pixels per CSS pixel a panel renders at on screen. */
+function screenRatio({ view }: ScreenshotPanel): number {
+  const forced = view?.forceDevicePixelRatio ?? -1
+  return forced > 0 ? forced : window.devicePixelRatio || 1
+}
+
 /** The longest canvas side a panel's GPU can render. */
 function maxCanvasSide({ view }: ScreenshotPanel): number {
   const gl = view?.gl
@@ -109,11 +115,12 @@ function maxCanvasSide({ view }: ScreenshotPanel): number {
 
 /**
  * Device pixels per CSS pixel for the export: SCREENSHOT_SCALE times the
- * display's ratio, reduced to stay within the GPU limits and the pixel budget,
- * but never below what is already on screen.
+ * sharpest on-screen ratio, reduced to stay within the GPU limits and the pixel
+ * budget, but never below the least sharp on-screen ratio, at which every tile
+ * is no larger than it already is on screen.
  */
 function exportRatio(shown: ShownPanel[]): number {
-  const screenRatio = window.devicePixelRatio || 1
+  const onScreen = shown.map(({ nv }) => screenRatio(nv))
   const sideLimit = Math.min(
     ...shown.map(({ nv, rect }) => maxCanvasSide(nv) / Math.max(rect.width, rect.height)),
   )
@@ -124,7 +131,10 @@ function exportRatio(shown: ShownPanel[]): number {
     Math.max(...shown.map(({ rect }) => rect.bottom)) -
     Math.min(...shown.map(({ rect }) => rect.top))
   const budgetLimit = Math.sqrt(MAX_EXPORT_PIXELS / (width * height))
-  return Math.max(screenRatio, Math.min(screenRatio * SCREENSHOT_SCALE, sideLimit, budgetLimit))
+  return Math.max(
+    Math.min(...onScreen),
+    Math.min(Math.max(...onScreen) * SCREENSHOT_SCALE, sideLimit, budgetLimit),
+  )
 }
 
 /** `tEXt` metadata written into every screenshot PNG. */
@@ -214,9 +224,9 @@ function compositeAtExportResolution(
   ctx.fillRect(0, 0, out.width, out.height)
 
   // One tile at a time, so only one canvas holds enlarged GPU buffers.
-  const enlargement = ratio / (window.devicePixelRatio || 1)
   for (const { nv, canvas, x, y } of placed) {
     const previousRatio = nv.view?.forceDevicePixelRatio ?? -1
+    const enlargement = ratio / screenRatio(nv)
     const crosshairWidth = nv.crosshairWidth
     try {
       nv.devicePixelRatio = ratio
@@ -235,10 +245,15 @@ function compositeAtExportResolution(
       nv.view?.render()
       ctx.drawImage(canvas, x, y)
     } finally {
-      if (crosshairWidth) {
-        nv.crosshairWidth = crosshairWidth
+      // The crosshair setter draws the scene, which can throw; the canvas size
+      // is restored regardless.
+      try {
+        if (crosshairWidth) {
+          nv.crosshairWidth = crosshairWidth
+        }
+      } finally {
+        nv.devicePixelRatio = previousRatio
       }
-      nv.devicePixelRatio = previousRatio
     }
   }
   return out
