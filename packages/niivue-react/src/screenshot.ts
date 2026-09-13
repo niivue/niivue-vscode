@@ -4,8 +4,53 @@ import { addPngTextChunks } from './png'
 /** The part of a niivue instance a screenshot needs. */
 export interface ScreenshotPanel {
   canvas: HTMLCanvasElement | null
-  view: { render(): void } | null
+  // `isBusy` and `fontRenderer` are niivue view internals: render() defers
+  // itself to a later frame while `isBusy`, and on WebGPU also until the font
+  // renderer is ready.
+  view: { render(): void; isBusy?: boolean; fontRenderer?: { isReady?: boolean } } | null
+  opts?: { backend?: string }
   drawScene(): void
+}
+
+interface ShownPanel {
+  nv: ScreenshotPanel
+  canvas: HTMLCanvasElement
+  rect: DOMRect
+}
+
+/** The panels whose canvas is on screen and has pixels to copy. */
+function shownPanels(panels: ScreenshotPanel[]): ShownPanel[] {
+  return panels.flatMap((nv) => {
+    const canvas = nv.canvas
+    const rect = canvas?.isConnected ? canvas.getBoundingClientRect() : null
+    // drawImage throws for a canvas with an empty backing store.
+    const hasPixels = !!canvas && canvas.width > 0 && canvas.height > 0
+    return canvas && hasPixels && rect && rect.width > 0 && rect.height > 0
+      ? [{ nv, canvas, rect }]
+      : []
+  })
+}
+
+const isRenderable = ({ view, opts }: ScreenshotPanel) =>
+  !view ||
+  (!view.isBusy && (opts?.backend === 'webgl2' || view.fontRenderer?.isReady !== false))
+
+/**
+ * Wait until no shown panel's view would defer its render (a GPU upload in
+ * progress, or the WebGPU font atlas still loading); copying such a canvas
+ * captures a blank tile.
+ */
+export async function waitUntilRenderable(
+  panels: ScreenshotPanel[],
+  timeoutMs = 5000,
+): Promise<void> {
+  const deadline = Date.now() + timeoutMs
+  while (!shownPanels(panels).every(({ nv }) => isRenderable(nv))) {
+    if (Date.now() >= deadline) {
+      throw new Error('The viewer is still busy; try the screenshot again')
+    }
+    await new Promise((resolve) => setTimeout(resolve, 50))
+  }
 }
 
 /** `tEXt` metadata written into every screenshot PNG. */
@@ -34,11 +79,7 @@ export function compositePanels(
   panels: ScreenshotPanel[],
   backgroundColor?: ArrayLike<number> | null,
 ): HTMLCanvasElement | null {
-  const shown = panels.flatMap((nv) => {
-    const canvas = nv.canvas
-    const rect = canvas?.isConnected ? canvas.getBoundingClientRect() : null
-    return canvas && rect && rect.width > 0 && rect.height > 0 ? [{ nv, canvas, rect }] : []
-  })
+  const shown = shownPanels(panels)
   if (shown.length === 0) {
     return null
   }
@@ -83,6 +124,7 @@ export async function captureScreenshot(
   panels: ScreenshotPanel[],
   backgroundColor?: ArrayLike<number> | null,
 ): Promise<Uint8Array<ArrayBuffer> | null> {
+  await waitUntilRenderable(panels)
   const canvas = compositePanels(panels, backgroundColor)
   if (!canvas) {
     return null

@@ -8,6 +8,7 @@ import {
   captureScreenshot,
   compositePanels,
   rgbaToCss,
+  waitUntilRenderable,
 } from '../screenshot'
 
 type Rect = { left: number; top: number; width: number; height: number }
@@ -21,6 +22,8 @@ function panel(id: string, rect: Rect | null, overrides: Partial<ScreenshotPanel
   const canvas = rect && {
     id,
     isConnected: true,
+    width: rect.width,
+    height: rect.height,
     getBoundingClientRect: () => ({
       ...rect,
       right: rect.left + rect.width,
@@ -141,6 +144,15 @@ describe('compositePanels', () => {
     ])
   })
 
+  it('skips a canvas whose backing store is empty although it is laid out', () => {
+    const empty = panel('empty', { left: 0, top: 0, width: 10, height: 10 })
+    ;(empty.canvas as any).width = 0
+    const out = compositePanels([empty, panel('shown', { left: 20, top: 0, width: 10, height: 10 })])!
+
+    expect([out.width, out.height]).toEqual([10, 10])
+    expect(log).not.toContain('draw empty 0,0,10,10')
+  })
+
   it('still copies a panel whose view is not attached yet', () => {
     compositePanels([panel('a', { left: 0, top: 0, width: 10, height: 10 }, { view: null })])
 
@@ -201,6 +213,50 @@ describe('captureScreenshot', () => {
     expect(text).toContain(`Comment\0${SCREENSHOT_METADATA.Comment}`)
     expect(SCREENSHOT_METADATA.Comment).toContain(CITATION_DOI_URL)
     expect(SCREENSHOT_METADATA.Comment).toContain('The NiiVue wrapper ecosystem')
+  })
+
+  it('waits for a busy view before rendering and copying it', async () => {
+    const encoded = new NodeBlob([tinyPng], { type: 'image/png' }) as unknown as Blob
+    vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation((callback) => callback(encoded))
+    const view = { isBusy: true, render: () => log.push('render a') }
+    const busy = panel('a', { left: 0, top: 0, width: 10, height: 10 }, { view })
+    setTimeout(() => {
+      log.push('idle')
+      view.isBusy = false
+    }, 80)
+
+    await captureScreenshot([busy])
+
+    expect(log.indexOf('idle')).toBeLessThan(log.indexOf('render a'))
+  })
+
+  it('does not wait for a busy panel that is not on screen', async () => {
+    const hidden = panel('hidden', { left: 0, top: 0, width: 10, height: 10 }, {
+      view: { isBusy: true, render: () => log.push('render hidden') },
+    })
+    ;(hidden.canvas as any).isConnected = false
+
+    await expect(
+      waitUntilRenderable([hidden, panel('a', { left: 0, top: 0, width: 10, height: 10 })], 120),
+    ).resolves.toBeUndefined()
+  })
+
+  it('does not wait for the font renderer on WebGL2, which renders without it', async () => {
+    const view = { render: () => log.push('render a'), fontRenderer: { isReady: false } }
+    const webgl2 = panel('a', { left: 0, top: 0, width: 10, height: 10 }, {
+      view,
+      opts: { backend: 'webgl2' },
+    })
+
+    await expect(waitUntilRenderable([webgl2], 120)).resolves.toBeUndefined()
+  })
+
+  it('gives up with an error when a view stays busy', async () => {
+    const view = { render: () => log.push('render a'), fontRenderer: { isReady: false } }
+    const stuck = panel('a', { left: 0, top: 0, width: 10, height: 10 }, { view })
+
+    await expect(waitUntilRenderable([stuck], 120)).rejects.toThrow('still busy')
+    expect(log).toEqual([])
   })
 
   it('resolves to null without encoding when nothing is on screen', async () => {
