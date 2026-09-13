@@ -15,9 +15,9 @@ NiiVue's numpy reader only understands a fixed set of element types
 which the reader cannot handle, so those volumes came through corrupt/all-black
 (silently mis-read on the old line) or simply failed to display.
 
-A small loader shim (`packages/niivue-react/src/npy.ts`) is now registered via
-`nv.useLoader` for `.npy`/`.npz`. It runs before NiiVue's reader and down-casts the
-element types it can't take to ones it can:
+`.npy`/`.npz` data is now converted (`packages/niivue-react/src/npy.ts`) before it is
+handed to NiiVue; the result is still a `.npy` that NiiVue's own reader parses. Element
+types the reader can't take are down-cast to ones it can:
 
 - int64 -> int32 (or float64 if any value overflows the int32 range)
 - uint64 -> uint32 (or float64 if any value overflows the uint32 range)
