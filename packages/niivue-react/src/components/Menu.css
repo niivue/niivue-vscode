@@ -77,6 +77,8 @@
 }
 .nv-brand-trigger:hover,
 .nv-brand-trigger.is-active { background: var(--bg-3); }
+/* Keeps the trigger within the compact VS Code bar height. */
+.nv-form-vscode .nv-brand-trigger { padding-top: 2px; padding-bottom: 2px; }
 .nv-brand-caret { color: var(--fg-3); margin-left: 2px; flex-shrink: 0; }
 
 .nv-btn {
