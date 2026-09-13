@@ -170,7 +170,7 @@ export default defineConfig({
             name: 'Open Example Image',
             short_name: 'Example',
             description: 'Load MNI152 example image',
-            url: `${baseUrl}?example=mni152`,
+            url: `${baseUrl}?images=https://niivue.github.io/niivue-demo-images/mni152.nii.gz`,
             icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }],
           },
         ],
