@@ -14,15 +14,20 @@ async function copyText(text: string, container: HTMLElement | null): Promise<bo
     await navigator.clipboard.writeText(text)
     return true
   } catch {
+    // Selecting moves focus to the textarea; it goes back to the button.
+    const focused = document.activeElement as HTMLElement | null
     const area = document.createElement('textarea')
     area.value = text
     area.setAttribute('readonly', '')
     area.className = 'nv-cite-copy-source'
     ;(container ?? document.body).appendChild(area)
-    area.select()
-    const copied = document.execCommand('copy')
-    area.remove()
-    return copied
+    try {
+      area.select()
+      return document.execCommand('copy')
+    } finally {
+      area.remove()
+      focused?.focus()
+    }
   }
 }
 

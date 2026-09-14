@@ -518,6 +518,51 @@ describe('NiiVueEditorProvider.saveFile', () => {
     ])
   })
 
+  it('keeps file and folder names from forming links in the notice', async () => {
+    workspace.fs.isWritableFileSystem.mockReturnValue(true)
+    workspace.workspaceFolders = [{ uri: Uri.parse('file:///repo') }]
+    window.showSaveDialog.mockResolvedValue(
+      Uri.file('/repo/[Open paper](command:workbench.action.closeWindow)/fig.png'),
+    )
+    workspace.fs.writeFile.mockResolvedValue()
+
+    await NiiVueEditorProvider.saveFile({ ...body, cite: true }, Uri.parse('file:///repo/a.nii'))
+
+    const message = window.showInformationMessage.mock.calls[0][0] as string
+    expect(message).toBe(
+      'Saved \uff3bOpen paper\uff3d(command:workbench.action.closeWindow)/fig.png. If you publish this figure, please cite [Eckstein et al., Aperture Neuro 2026](https://doi.org/10.52294/001c.167815).',
+    )
+  })
+
+  it('keeps an unmatched bracket from joining the citation link', async () => {
+    workspace.fs.isWritableFileSystem.mockReturnValue(true)
+    workspace.workspaceFolders = [{ uri: Uri.parse('file:///repo') }]
+    window.showSaveDialog.mockResolvedValue(Uri.file('/repo/[session/fig.png'))
+    workspace.fs.writeFile.mockResolvedValue()
+
+    await NiiVueEditorProvider.saveFile({ ...body, cite: true }, Uri.parse('file:///repo/a.nii'))
+
+    const message = window.showInformationMessage.mock.calls[0][0] as string
+    // The citation is the only text in square brackets, so the only link.
+    expect(message.match(/\[/g)).toHaveLength(1)
+    expect(message).toContain('Saved \uff3bsession/fig.png.')
+  })
+
+  it('keeps a file system error from forming links in the error notice', async () => {
+    workspace.fs.isWritableFileSystem.mockReturnValue(true)
+    const target = Uri.file('/repo/[Open paper](command:workbench.action.closeWindow)/fig.png')
+    window.showSaveDialog.mockResolvedValue(target)
+    workspace.fs.writeFile.mockRejectedValue(
+      new Error(`EACCES: permission denied '${target.path}'`),
+    )
+
+    await NiiVueEditorProvider.saveFile(body, Uri.parse('file:///repo/a.nii'))
+
+    const message = window.showErrorMessage.mock.calls[0][0] as string
+    expect(message).not.toMatch(/[[\]]/)
+    expect(message).toContain('\uff3bOpen paper\uff3d(command:workbench.action.closeWindow)')
+  })
+
   it('keeps the scheme and authority of a remote file', async () => {
     workspace.fs.isWritableFileSystem.mockReturnValue(true)
     window.showSaveDialog.mockResolvedValue(undefined)

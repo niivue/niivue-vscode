@@ -276,7 +276,7 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
       }
       name = target.path.split('/').pop() ?? filename
       await vscode.workspace.fs.writeFile(target, NiiVueEditorProvider.base64ToBytes(body.data))
-      const saved = `Saved ${vscode.workspace.asRelativePath(target)}`
+      const saved = `Saved ${NiiVueEditorProvider.plainText(vscode.workspace.asRelativePath(target))}`
       vscode.window.showInformationMessage(
         body.cite === true
           ? `${saved}. If you publish this figure, please cite [${CITATION_SHORT}](${CITATION_DOI_URL}).`
@@ -284,9 +284,21 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
       )
     } catch (error) {
       vscode.window.showErrorMessage(
-        `Could not save ${name}: ${error instanceof Error ? error.message : String(error)}`,
+        NiiVueEditorProvider.plainText(
+          `Could not save ${name}: ${error instanceof Error ? error.message : String(error)}`,
+        ),
       )
     }
+  }
+
+  /**
+   * Text for a notification that must not take part in a link: VS Code turns
+   * `[label](target)` into a link (command: links included), and an unmatched
+   * `[` would join the link that follows. Square brackets become full-width
+   * ones. Paths and file system errors carry folder names anyone can choose.
+   */
+  static plainText(text: string): string {
+    return text.replace(/\[/g, '\uff3b').replace(/\]/g, '\uff3d')
   }
 
   // atob rather than Buffer: the extension also runs in the browser (vscode.dev).
