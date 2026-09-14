@@ -1,0 +1,31 @@
+/* Cite NiiVue dialog (brand menu); builds on the About dialog styles. */
+
+.nv-cite-reference {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line-2);
+  border-radius: 7px;
+  background: var(--bg-3);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--fg-0);
+  user-select: text;
+}
+
+.nv-cite-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.nv-cite-actions .nv-about-close {
+  align-self: auto;
+  margin-top: 4px;
+}
+
+/* Off-screen source for the copy fallback. */
+.nv-cite-copy-source {
+  position: fixed;
+  left: -9999px;
+  opacity: 0;
+}
