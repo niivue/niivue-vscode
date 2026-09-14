@@ -65,6 +65,9 @@
     "test:coverage": "vitest run --coverage",
     "coverage": "pnpm run test:coverage"
   },
+  "dependencies": {
+    "@niivue/react": "workspace:*"
+  },
   "devDependencies": {
     "@types/vscode": "1.70.0",
     "@vitest/coverage-v8": "^4.1.6",
