@@ -98,8 +98,8 @@ jobs:
       - name: Coverage aggregator unit tests
         run: pnpm coverage:report:test
 
-      - name: Release version normalizer unit tests
-        run: pnpm versions:normalize:test
+      - name: Release script unit tests
+        run: pnpm release:test
 
   build:
     runs-on: ubuntu-latest
