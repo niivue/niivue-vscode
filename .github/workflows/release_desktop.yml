@@ -4,26 +4,23 @@ on:
   push:
     tags:
       - '@niivue/tauri@*'
+      - '!@niivue/tauri@*-*'
   workflow_dispatch:
-  # Reusable entry point for the pre-release lane (prerelease.yml). When
-  # `version` is set, the build stamps it into the manifests; when
-  # `release_tag` is set, bundles are attached to that existing pre-release
-  # instead of creating a new stable release from a git tag.
+  # Pre-release lane, called from prerelease.yml with the beta version and its
+  # release notes. Without them the run releases the version in package.json.
   workflow_call:
     inputs:
       version:
         description: >-
-          Explicit version to stamp into the desktop manifests before building
-          (pre-release lane). Empty = build the version already in the
-          checked-out manifests (stable tag lane).
+          Beta version to stamp into the desktop manifests. Empty = release the
+          version in apps/desktop-tauri/package.json.
         type: string
         required: false
         default: ''
-      release_tag:
+      notes:
         description: >-
-          Existing GitHub release to attach the built bundles to (pre-release
-          lane). Empty = create a release from the triggering git tag (stable
-          lane).
+          Release notes of the beta. A stable release takes its section of
+          apps/desktop-tauri/CHANGELOG.md.
         type: string
         required: false
         default: ''
@@ -136,9 +133,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: desktop-windows-${{ matrix.target }}
-          path: |
-            apps/desktop-tauri/src-tauri/target/${{ matrix.target }}/release/bundle/msi/*.msi
-            apps/desktop-tauri/src-tauri/target/${{ matrix.target }}/release/bundle/nsis/*.exe
+          path: apps/desktop-tauri/src-tauri/target/${{ matrix.target }}/release/bundle/nsis/*.exe
 
   release:
     needs: build
@@ -147,40 +142,44 @@ jobs:
       contents: write
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
+
       - name: Download all artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           path: artifacts
 
-      # Pre-release lane: attach the installers to the rolling pre-release
-      # created by prerelease.yml (do NOT recreate it, so the release body
-      # listing the other apps survives). Bundle filenames contain spaces
-      # ("NiiVue Tauri_..."), so collect them null-delimited. Only the
-      # distributable installers are uploaded — the raw macOS `.app` bundle
-      # directory is skipped.
-      - name: Attach bundles to existing pre-release
-        if: ${{ inputs.release_tag }}
+      - name: Prepare release notes
+        id: release
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BETA_VERSION: ${{ inputs.version }}
+          BETA_NOTES: ${{ inputs.notes }}
         run: |
-          mapfile -d '' -t files < <(find artifacts -type f \
-            \( -name '*.deb' -o -name '*.AppImage' -o -name '*.dmg' \
-               -o -name '*.msi' -o -name '*.exe' \) -print0)
-          echo "Uploading ${#files[@]} file(s) to ${{ inputs.release_tag }}:"
-          printf '  %s\n' "${files[@]}"
-          gh release upload "${{ inputs.release_tag }}" "${files[@]}" \
-            --clobber --repo "$GITHUB_REPOSITORY"
+          if [ -n "$BETA_VERSION" ]; then
+            version=$BETA_VERSION
+            printf '%s\n' "$BETA_NOTES" > notes.md
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            version=$(node -p "require('./apps/desktop-tauri/package.json').version")
+            node scripts/release/changelog-section.mjs apps/desktop-tauri/CHANGELOG.md "$version" > notes.md
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
-      # Stable lane: create the release from the triggering git tag.
+      # Desktop is the only app released on GitHub, so its latest stable is the
+      # repository's latest release.
       - name: Create GitHub Release
-        if: ${{ ! inputs.release_tag }}
         uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3
         with:
+          tag_name: '@niivue/tauri@${{ steps.release.outputs.version }}'
+          target_commitish: ${{ github.sha }}
+          name: NiiVue Desktop ${{ steps.release.outputs.version }}
+          body_path: notes.md
+          prerelease: ${{ steps.release.outputs.prerelease }}
+          make_latest: ${{ steps.release.outputs.prerelease == 'false' }}
           files: |
             artifacts/**/*.deb
             artifacts/**/*.AppImage
             artifacts/**/*.dmg
-            artifacts/**/*.msi
             artifacts/**/*.exe
-          generate_release_notes: true
-          prerelease: ${{ contains(github.ref, '-beta.') || contains(github.ref, '-rc.') || contains(github.ref, '-alpha.') }}
