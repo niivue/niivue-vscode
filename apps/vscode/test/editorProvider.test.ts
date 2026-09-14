@@ -498,8 +498,24 @@ describe('NiiVueEditorProvider.saveFile', () => {
     const [uri, bytes] = workspace.fs.writeFile.mock.calls[0]
     expect(uri).toBe(target)
     expect(Array.from(bytes)).toEqual(Array.from(png))
-    expect(window.showInformationMessage).toHaveBeenCalledWith('Saved fig1.png')
+    expect(window.showInformationMessage).toHaveBeenCalledWith('Saved /home/user/figures/fig1.png')
     expect(window.showErrorMessage).not.toHaveBeenCalled()
+  })
+
+  it('shows the path relative to the workspace, and the paper to cite for a figure', async () => {
+    workspace.fs.isWritableFileSystem.mockReturnValue(true)
+    workspace.workspaceFolders = [{ uri: Uri.parse('file:///home/user/proj') }]
+    window.showSaveDialog.mockResolvedValue(Uri.parse('file:///home/user/proj/figures/fig1.png'))
+    workspace.fs.writeFile.mockResolvedValue()
+    const source = Uri.parse('file:///home/user/proj/brain.nii.gz')
+
+    await NiiVueEditorProvider.saveFile({ ...body, cite: true }, source)
+    await NiiVueEditorProvider.saveFile({ ...body, filename: 'brain.nvd', cite: false }, source)
+
+    expect(window.showInformationMessage.mock.calls.map((call) => call[0])).toEqual([
+      'Saved figures/fig1.png. If you publish this figure, please cite [Eckstein et al., Aperture Neuro 2026](https://doi.org/10.52294/001c.167815).',
+      'Saved figures/fig1.png',
+    ])
   })
 
   it('keeps the scheme and authority of a remote file', async () => {

@@ -1,4 +1,5 @@
 import * as vscode from 'vscode'
+import { CITATION_DOI_URL, CITATION_SHORT } from './citation'
 import { NiiVueDocument } from './document'
 import { getHtmlForWebview } from './html'
 
@@ -248,7 +249,7 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
    * (a web link). Writing through `workspace.fs` also works remotely.
    */
   static async saveFile(
-    body: { filename?: unknown; mimeType?: unknown; data?: unknown } | undefined,
+    body: { filename?: unknown; mimeType?: unknown; data?: unknown; cite?: unknown } | undefined,
     sourceUri: vscode.Uri,
   ): Promise<void> {
     if (typeof body?.data !== 'string') {
@@ -275,7 +276,12 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
       }
       name = target.path.split('/').pop() ?? filename
       await vscode.workspace.fs.writeFile(target, NiiVueEditorProvider.base64ToBytes(body.data))
-      vscode.window.showInformationMessage(`Saved ${name}`)
+      const saved = `Saved ${vscode.workspace.asRelativePath(target)}`
+      vscode.window.showInformationMessage(
+        body.cite === true
+          ? `${saved}. If you publish this figure, please cite [${CITATION_SHORT}](${CITATION_DOI_URL}).`
+          : saved,
+      )
     } catch (error) {
       vscode.window.showErrorMessage(
         `Could not save ${name}: ${error instanceof Error ? error.message : String(error)}`,

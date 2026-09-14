@@ -11,7 +11,8 @@ import { ABCWidgetFactory, DocumentRegistry, DocumentWidget } from '@jupyterlab/
 import { FileDialog } from '@jupyterlab/filebrowser'
 import { ServerConnection } from '@jupyterlab/services'
 import { Widget } from '@lumino/widgets'
-import { isNotFound, saveToWorkspace } from './save-file'
+import { CITATION_DOI_URL } from './citation'
+import { isNotFound, savedMessage, saveToWorkspace } from './save-file'
 import {
   fetchArrayBuffer,
   fetchJson,
@@ -272,7 +273,18 @@ export class NiivueWidget extends Widget {
         await contents.save(path, { type: 'file', format: 'base64', content: base64 })
       },
       saved: (path) => {
-        Notification.success(`Saved ${path}`, { autoClose: 5000 })
+        const cite = (body as { cite?: unknown } | null)?.cite === true
+        Notification.success(savedMessage(path, cite), {
+          autoClose: cite ? 10000 : 5000,
+          actions: cite
+            ? [
+                {
+                  label: 'Open paper',
+                  callback: () => window.open(CITATION_DOI_URL, '_blank', 'noopener'),
+                },
+              ]
+            : [],
+        })
       },
       failed: (path, error) => {
         showErrorMessage(`Could not save ${path}`, error as Error)
