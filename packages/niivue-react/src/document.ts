@@ -88,12 +88,15 @@ function triggerDownload(blob: Blob, name: string): void {
   setTimeout(() => URL.revokeObjectURL(url), 0)
 }
 
-/** Saves bytes as a file for a host that should not rely on a browser download. */
+/**
+ * Saves bytes as a file for a host that should not rely on a browser download.
+ * Resolves to where the file went, or null when the user cancelled.
+ */
 export type FileSaver = (
   bytes: Uint8Array<ArrayBuffer>,
   filename: string,
   mimeType: string,
-) => void | Promise<void>
+) => Promise<string | null>
 
 let hostFileSaver: FileSaver | null = null
 
@@ -105,22 +108,31 @@ export function setFileSaver(saver: FileSaver | null): void {
 /**
  * Save bytes as a file: through a saver the host registered, or in webview
  * hosts (VS Code, JupyterLab), which cannot start a download, as a base64
- * `saveFile` message to the host; every other host downloads them.
+ * `saveFile` message to the host; every other host downloads them. With
+ * `cite`, a webview host adds the citation to its own "saved" notice.
+ *
+ * Resolves to where the file went, for the viewer to report: the download's
+ * file name or the host saver's location. Null when the user cancelled or a
+ * webview host reports the save itself.
  */
 export async function saveFile(
   bytes: Uint8Array<ArrayBuffer>,
   filename: string,
   mimeType: string,
-): Promise<void> {
+  options: { cite?: boolean } = {},
+): Promise<string | null> {
   if (hostFileSaver) {
-    await hostFileSaver(bytes, filename, mimeType)
-    return
+    return hostFileSaver(bytes, filename, mimeType)
   }
   if (typeof vscode === 'object') {
-    vscode.postMessage({ type: 'saveFile', body: { filename, mimeType, data: toBase64(bytes) } })
-    return
+    vscode.postMessage({
+      type: 'saveFile',
+      body: { filename, mimeType, data: toBase64(bytes), cite: options.cite === true },
+    })
+    return null
   }
   triggerDownload(new Blob([bytes], { type: mimeType }), filename)
+  return filename
 }
 
 function toBase64(bytes: Uint8Array): string {
@@ -133,7 +145,7 @@ function toBase64(bytes: Uint8Array): string {
 }
 
 /** Save a scene document as native CBOR `.nvd` bytes (the output of `nv.serializeDocument()`). */
-export function downloadNvd(doc: SceneDocument, filename = 'scene.nvd'): Promise<void> {
+export function downloadNvd(doc: SceneDocument, filename = 'scene.nvd'): Promise<string | null> {
   const name = isNvdFile(filename) ? filename : `${filename}.nvd`
   // Copy into a fresh ArrayBuffer-backed view so the file owns standalone bytes.
   return saveFile(new Uint8Array(doc), name, 'application/octet-stream')
@@ -144,7 +156,10 @@ export function downloadNvd(doc: SceneDocument, filename = 'scene.nvd'): Promise
  * (`nv.serializeDocument({ format: 'json' })`), indented. It re-opens here and
  * in anything else built on NiiVue.
  */
-export function downloadSceneJson(json: Uint8Array, filename = 'scene.nvd.json'): Promise<void> {
+export function downloadSceneJson(
+  json: Uint8Array,
+  filename = 'scene.nvd.json',
+): Promise<string | null> {
   const name = filename.toLowerCase().endsWith('.json') ? filename : `${filename}.json`
   return saveFile(new Uint8Array(indentJsonNvd(json)), name, 'application/json')
 }

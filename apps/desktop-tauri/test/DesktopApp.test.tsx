@@ -50,7 +50,7 @@ describe('saveWithNativeDialog', () => {
     mockInvoke.mockResolvedValue('/scans/brain.nvd')
     const bytes = new Uint8Array([7, 8])
 
-    await saveWithNativeDialog(bytes, 'brain.nvd')
+    expect(await saveWithNativeDialog(bytes, 'brain.nvd')).toBe('/scans/brain.nvd')
 
     expect(mockInvoke).toHaveBeenCalledWith('save_file', bytes, {
       headers: { 'x-file-name': 'brain.nvd' },
@@ -61,7 +61,7 @@ describe('saveWithNativeDialog', () => {
   it('shows why a file could not be saved', async () => {
     mockInvoke.mockRejectedValue('Failed to write /readonly/brain.nvd: Access is denied.')
 
-    await saveWithNativeDialog(new Uint8Array([7]), 'brain.nvd')
+    expect(await saveWithNativeDialog(new Uint8Array([7]), 'brain.nvd')).toBeNull()
 
     expect(message).toHaveBeenCalledWith('Failed to write /readonly/brain.nvd: Access is denied.', {
       title: 'Could not save brain.nvd',

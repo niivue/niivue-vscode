@@ -498,8 +498,69 @@ describe('NiiVueEditorProvider.saveFile', () => {
     const [uri, bytes] = workspace.fs.writeFile.mock.calls[0]
     expect(uri).toBe(target)
     expect(Array.from(bytes)).toEqual(Array.from(png))
-    expect(window.showInformationMessage).toHaveBeenCalledWith('Saved fig1.png')
+    expect(window.showInformationMessage).toHaveBeenCalledWith('Saved /home/user/figures/fig1.png')
     expect(window.showErrorMessage).not.toHaveBeenCalled()
+  })
+
+  it('shows the path relative to the workspace, and the paper to cite for a figure', async () => {
+    workspace.fs.isWritableFileSystem.mockReturnValue(true)
+    workspace.workspaceFolders = [{ uri: Uri.parse('file:///home/user/proj') }]
+    window.showSaveDialog.mockResolvedValue(Uri.parse('file:///home/user/proj/figures/fig1.png'))
+    workspace.fs.writeFile.mockResolvedValue()
+    const source = Uri.parse('file:///home/user/proj/brain.nii.gz')
+
+    await NiiVueEditorProvider.saveFile({ ...body, cite: true }, source)
+    await NiiVueEditorProvider.saveFile({ ...body, filename: 'brain.nvd', cite: false }, source)
+
+    expect(window.showInformationMessage.mock.calls.map((call) => call[0])).toEqual([
+      'Saved figures/fig1.png. If you publish this figure, please cite [Eckstein et al., Aperture Neuro 2026](https://doi.org/10.52294/001c.167815).',
+      'Saved figures/fig1.png',
+    ])
+  })
+
+  it('keeps file and folder names from forming links in the notice', async () => {
+    workspace.fs.isWritableFileSystem.mockReturnValue(true)
+    workspace.workspaceFolders = [{ uri: Uri.parse('file:///repo') }]
+    window.showSaveDialog.mockResolvedValue(
+      Uri.file('/repo/[Open paper](command:workbench.action.closeWindow)/fig.png'),
+    )
+    workspace.fs.writeFile.mockResolvedValue()
+
+    await NiiVueEditorProvider.saveFile({ ...body, cite: true }, Uri.parse('file:///repo/a.nii'))
+
+    const message = window.showInformationMessage.mock.calls[0][0] as string
+    expect(message).toBe(
+      'Saved \uff3bOpen paper\uff3d(command:workbench.action.closeWindow)/fig.png. If you publish this figure, please cite [Eckstein et al., Aperture Neuro 2026](https://doi.org/10.52294/001c.167815).',
+    )
+  })
+
+  it('keeps an unmatched bracket from joining the citation link', async () => {
+    workspace.fs.isWritableFileSystem.mockReturnValue(true)
+    workspace.workspaceFolders = [{ uri: Uri.parse('file:///repo') }]
+    window.showSaveDialog.mockResolvedValue(Uri.file('/repo/[session/fig.png'))
+    workspace.fs.writeFile.mockResolvedValue()
+
+    await NiiVueEditorProvider.saveFile({ ...body, cite: true }, Uri.parse('file:///repo/a.nii'))
+
+    const message = window.showInformationMessage.mock.calls[0][0] as string
+    // The citation is the only text in square brackets, so the only link.
+    expect(message.match(/\[/g)).toHaveLength(1)
+    expect(message).toContain('Saved \uff3bsession/fig.png.')
+  })
+
+  it('keeps a file system error from forming links in the error notice', async () => {
+    workspace.fs.isWritableFileSystem.mockReturnValue(true)
+    const target = Uri.file('/repo/[Open paper](command:workbench.action.closeWindow)/fig.png')
+    window.showSaveDialog.mockResolvedValue(target)
+    workspace.fs.writeFile.mockRejectedValue(
+      new Error(`EACCES: permission denied '${target.path}'`),
+    )
+
+    await NiiVueEditorProvider.saveFile(body, Uri.parse('file:///repo/a.nii'))
+
+    const message = window.showErrorMessage.mock.calls[0][0] as string
+    expect(message).not.toMatch(/[[\]]/)
+    expect(message).toContain('\uff3bOpen paper\uff3d(command:workbench.action.closeWindow)')
   })
 
   it('keeps the scheme and authority of a remote file', async () => {

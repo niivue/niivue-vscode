@@ -84,6 +84,10 @@ test.describe('Screenshot', () => {
     )
     const png = await readFile((await download.path()) as string)
     expect(await canvasesAtScreenResolution(page)).toBe(true)
+    // A short note names the file and the paper to cite.
+    await expect(page.getByTestId('save-hint')).toContainText(
+      `Saved ${download.suggestedFilename()}. If you publish this figure, please cite`,
+    )
 
     expect([...png.subarray(0, 8)]).toEqual([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
     const chunks = pngChunks(png)

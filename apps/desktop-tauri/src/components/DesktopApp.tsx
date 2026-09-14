@@ -39,12 +39,17 @@ export const DesktopApp = ({ appProps }: { appProps: AppProps }) => {
 /**
  * Save a file from the viewer (a scene document or a screenshot) through the
  * native save dialog, as a desktop app does, instead of a webview download.
+ * Resolves to the saved path, which the viewer shows, or null.
  */
-export async function saveWithNativeDialog(bytes: Uint8Array, filename: string): Promise<void> {
+export async function saveWithNativeDialog(
+  bytes: Uint8Array,
+  filename: string,
+): Promise<string | null> {
   try {
-    await saveFileWithDialog(bytes, filename)
+    return await saveFileWithDialog(bytes, filename)
   } catch (error) {
     await message(String(error), { title: `Could not save ${filename}`, kind: 'error' })
+    return null
   }
 }
 

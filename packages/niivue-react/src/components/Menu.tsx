@@ -19,6 +19,7 @@ import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
 import { captureScreenshot } from '../screenshot'
 import { getImageMetadata, imageBaseName } from '../utility'
 import { AboutDialog } from './AboutDialog'
+import { CiteDialog } from './CiteDialog'
 import { AppInfo, AppProps, SelectionMode } from './AppProps'
 import { HeaderBox } from './HeaderBox'
 import {
@@ -33,6 +34,7 @@ import {
 import { BarItem, MenuBar } from './MenuBar'
 import { DEFAULT_TILE_SPACING } from '../settings'
 import { ScalingBox } from './ScalingBox'
+import { SaveHint, type SavedFigure } from './SaveHint'
 
 export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
   const { selection, selectionMode, nvArray, sliceType, hideUI, settings, appInfo } = props
@@ -41,6 +43,8 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
   // State
   const headerDialog = useSignal(false)
   const aboutDialog = useSignal(false)
+  const citeDialog = useSignal(false)
+  const savedFigure = useSignal<SavedFigure | null>(null)
   const selectedOverlayNumber = useSignal(0)
   const overlayMenu = useSignal(false)
   const setHeaderMenu = useSignal(false)
@@ -301,7 +305,10 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
     try {
       const panels = scope === 'all' ? nvArray.value : [t.nv]
       const png = await captureScreenshot(panels, nvArray.value[0]?.backgroundColor)
-      if (png) await saveFile(png, `${t.base || 'niivue'}_screenshot.png`, 'image/png')
+      if (!png) return
+      const name = `${t.base || 'niivue'}_screenshot.png`
+      const location = await saveFile(png, name, 'image/png', { cite: true })
+      if (location) savedFigure.value = { location }
     } catch (error) {
       console.error('Screenshot failed:', error)
     }
@@ -831,10 +838,10 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
         <div className="nv-topbar-left">
           <BrandMenu
             showSubtext={!isVscode}
-            interactive={isVscode || !!settings.value.menuItems?.home}
             showReset={!isVscode && !!settings.value.menuItems?.home}
             onReset={homeEvent}
             onAbout={() => (aboutDialog.value = true)}
+            onCite={() => (citeDialog.value = true)}
           />
           <MenuBar items={barItems} />
         </div>
@@ -854,6 +861,8 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
       <HeaderBox nvArraySelected={nvArraySelected} nvArray={nvArray} visible={setHeaderMenu} />
       <HeaderDialog nvArraySelected={nvArraySelected} isOpen={headerDialog} />
       <AboutDialog isOpen={aboutDialog} appInfo={appInfo} />
+      <CiteDialog isOpen={citeDialog} />
+      <SaveHint saved={savedFigure} />
     </>
   )
 }
@@ -861,23 +870,22 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
 // activeMenu key reserved for the brand dropdown.
 const BRAND_KEY = '__brand__'
 
-// The NiiVue logo + wordmark. When `interactive` it doubles as a dropdown
-// trigger for viewer-level actions: About everywhere, plus Reset Viewer on
-// standalone hosts (`showReset`), since reloading a webview host (VS Code,
-// JupyterLab) would drop the files it opened. Embedded Streamlit keeps a
-// static brand.
+// The NiiVue logo + wordmark, a dropdown trigger for viewer-level actions:
+// About and Cite NiiVue everywhere, plus Reset Viewer on standalone hosts
+// (`showReset`), since reloading a webview host (VS Code, JupyterLab) or an
+// embedded Streamlit component would drop the files it was given.
 const BrandMenu = ({
   showSubtext,
-  interactive,
   showReset,
   onReset,
   onAbout,
+  onCite,
 }: {
   showSubtext: boolean
-  interactive: boolean
   showReset: boolean
   onReset: () => void
   onAbout: () => void
+  onCite: () => void
 }) => {
   const open = computed(() => activeMenu.value === BRAND_KEY)
   const inner = (
@@ -889,10 +897,6 @@ const BrandMenu = ({
       </div>
     </>
   )
-
-  if (!interactive) {
-    return <div className="nv-brand">{inner}</div>
-  }
 
   return (
     <div className="relative group">
@@ -915,6 +919,7 @@ const BrandMenu = ({
         <div className="nv-menu-panel absolute left-0 z-50 min-w-[180px]">
           {showReset && <MenuEntry label="Reset Viewer" onClick={onReset} />}
           <MenuEntry label="About" onClick={onAbout} />
+          <MenuEntry label="Cite NiiVue" onClick={onCite} />
         </div>
       )}
     </div>

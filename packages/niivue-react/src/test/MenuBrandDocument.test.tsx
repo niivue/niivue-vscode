@@ -157,6 +157,20 @@ describe('Brand menu', () => {
 
     expect(await screen.findByText('Reset Viewer')).toBeTruthy()
     expect(await screen.findByText('About')).toBeTruthy()
+    expect(await screen.findByRole('button', { name: 'Cite NiiVue' })).toBeTruthy()
+  })
+
+  it('Cite NiiVue opens the cite dialog with the reference', async () => {
+    render(<Menu {...makeProps({ home: true })} />)
+
+    fireEvent.click(screen.getByTestId('menu-brand'))
+    fireEvent.click(await screen.findByRole('button', { name: 'Cite NiiVue' }))
+
+    expect(HTMLDialogElement.prototype.showModal).toHaveBeenCalled()
+    expect(screen.getByTestId('cite-reference').textContent).toContain('Aperture Neuro. 2026;6.')
+    expect(screen.getByTestId('cite-reference').querySelector('a')?.getAttribute('href')).toBe(
+      'https://doi.org/10.52294/001c.167815',
+    )
   })
 
   it('About opens the about dialog', async () => {
@@ -168,9 +182,14 @@ describe('Brand menu', () => {
     expect(HTMLDialogElement.prototype.showModal).toHaveBeenCalled()
   })
 
-  it('stays a static brand (no trigger) when the home flag is off', () => {
+  it('offers About and Cite NiiVue without Reset Viewer when the home flag is off', async () => {
     render(<Menu {...makeProps({ home: false })} />)
-    expect(screen.queryByTestId('menu-brand')).toBeNull()
+
+    fireEvent.click(screen.getByTestId('menu-brand'))
+
+    expect(await screen.findByText('About')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Cite NiiVue' })).toBeTruthy()
+    expect(screen.queryByText('Reset Viewer')).toBeNull()
   })
 })
 

@@ -24,6 +24,23 @@ test.describe('Menu', () => {
     expect(await page.textContent('text=/NeuroDesk/i')).toBeTruthy()
   })
 
+  test('brand menu Cite NiiVue copies the citation', { tag: '@dom' }, async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+    await page.goto(BASE_URL)
+
+    await page.click('data-testid=menu-brand')
+    await page.getByRole('button', { name: 'Cite NiiVue' }).click()
+
+    const dialog = page.getByTestId('cite-dialog')
+    await expect(dialog).toBeVisible()
+    await expect(dialog.getByTestId('cite-reference')).toContainText('Aperture Neuro. 2026;6.')
+    await dialog.getByRole('button', { name: 'Copy BibTeX' }).click()
+    await expect(dialog.getByRole('button', { name: 'Copied' })).toBeVisible()
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toContain(
+      'doi     = {10.52294/001c.167815}',
+    )
+  })
+
   test('menubar updates with loading images', async ({ page }) => {
     await page.goto(BASE_URL)
 

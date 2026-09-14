@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   isNotFound,
   isSaveFileBody,
+  savedMessage,
   saveToWorkspace,
   suggestedSavePath,
   WorkspaceSaver,
@@ -106,6 +107,15 @@ describe('saveToWorkspace', () => {
     }
 
     expect(saver.askPath).not.toHaveBeenCalled()
+  })
+})
+
+describe('savedMessage', () => {
+  it('names the saved path, and the paper to cite for a figure', () => {
+    expect(savedMessage('study/brain_screenshot.png', true)).toBe(
+      'Saved study/brain_screenshot.png. If you publish this figure, please cite Eckstein et al., Aperture Neuro 2026 (https://doi.org/10.52294/001c.167815).',
+    )
+    expect(savedMessage('study/brain.nvd', false)).toBe('Saved study/brain.nvd')
   })
 })
 

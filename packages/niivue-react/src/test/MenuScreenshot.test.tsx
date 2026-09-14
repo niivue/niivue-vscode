@@ -5,6 +5,8 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import { AppProps, SelectionMode } from '../components/AppProps'
 import { Menu } from '../components/Menu'
 import { activeMenu } from '../components/MenuElements'
+import { SAVE_HINT_MS } from '../components/SaveHint'
+import { setFileSaver } from '../document'
 
 // jsdom has no WebGL; the menu only needs the package's class and enums.
 vi.mock('@niivue/niivue', () => {
@@ -243,8 +245,72 @@ describe('Screenshot in a webview host (VS Code, JupyterLab)', () => {
         filename: 'brain_screenshot.png',
         mimeType: 'image/png',
         data: Buffer.from(PNG_BYTES).toString('base64'),
+        cite: true,
       },
     })
     expect(downloads).toHaveLength(0)
+    // The host reports the save and the citation itself.
+    expect(screen.queryByTestId('save-hint')).toBeNull()
+  })
+})
+
+describe('Hint after saving a screenshot', () => {
+  afterEach(() => {
+    setFileSaver(null)
+    vi.useRealTimers()
+  })
+
+  it('names the downloaded file and the paper to cite', async () => {
+    render(<Menu {...makeProps([makeNv('brain.nii.gz')])} />)
+
+    fireEvent.click(screenshotButton()!)
+
+    const hint = await screen.findByTestId('save-hint')
+    expect(hint.textContent).toContain('Saved brain_screenshot.png.')
+    expect(hint.textContent).toContain('please cite Eckstein et al., Aperture Neuro 2026')
+    expect(hint.querySelector('a')?.getAttribute('href')).toBe(
+      'https://doi.org/10.52294/001c.167815',
+    )
+  })
+
+  it('shows where a host saver put the file, and nothing when it was cancelled', async () => {
+    const saver = vi.fn(async () => '/home/user/figures/brain_screenshot.png')
+    setFileSaver(saver)
+    render(<Menu {...makeProps([makeNv('brain.nii.gz')])} />)
+
+    fireEvent.click(screenshotButton()!)
+
+    expect((await screen.findByTestId('save-hint')).textContent).toContain(
+      'Saved /home/user/figures/brain_screenshot.png.',
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }))
+    expect(screen.queryByTestId('save-hint')).toBeNull()
+
+    saver.mockResolvedValueOnce(null as unknown as string)
+    fireEvent.click(screenshotButton()!)
+    await waitFor(() => expect(saver).toHaveBeenCalledTimes(2))
+    expect(screen.queryByTestId('save-hint')).toBeNull()
+  })
+
+  it('hides itself after a while', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    render(<Menu {...makeProps([makeNv('brain.nii.gz')])} />)
+
+    fireEvent.click(screenshotButton()!)
+    await screen.findByTestId('save-hint')
+    await vi.advanceTimersByTimeAsync(SAVE_HINT_MS + 100)
+
+    await waitFor(() => expect(screen.queryByTestId('save-hint')).toBeNull())
+  })
+
+  it('does not appear after saving a scene document', async () => {
+    const nv = makeNv('brain.nii.gz', { serializeDocument: () => new Uint8Array([1, 2]) })
+    render(<Menu {...makeProps([nv], { saveScene: true, screenshot: true })} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'NVDocument' }))
+
+    await waitFor(() => expect(downloads.map((d) => d.name)).toEqual(['brain.nvd']))
+    expect(screen.queryByTestId('save-hint')).toBeNull()
   })
 })

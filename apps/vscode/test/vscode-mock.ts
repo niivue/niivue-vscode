@@ -93,6 +93,11 @@ export const workspace = {
     isWritableFileSystem: vi.fn<(scheme: string) => boolean | undefined>(),
   },
   getConfiguration: vi.fn(),
+  /** Like VS Code: relative to the containing workspace folder, else the path. */
+  asRelativePath: (uri: Uri) => {
+    const folder = workspace.workspaceFolders?.find((f) => uri.path.startsWith(`${f.uri.path}/`))
+    return folder ? uri.path.slice(folder.uri.path.length + 1) : uri.path
+  },
 }
 
 export const window = {

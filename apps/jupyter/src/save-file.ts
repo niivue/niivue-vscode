@@ -1,8 +1,12 @@
+import { CITATION_DOI_URL, CITATION_SHORT } from './citation'
+
 /** A file the viewer asks its host to save (e.g. a screenshot), bytes in base64. */
 export interface SaveFileBody {
   filename: string
   mimeType: string
   data: string
+  /** A figure: the saved notice also names the paper to cite. */
+  cite?: boolean
 }
 
 export function isSaveFileBody(body: unknown): body is SaveFileBody {
@@ -28,6 +32,13 @@ export interface WorkspaceSaver {
   write(path: string, base64: string): Promise<void>
   saved(path: string): void
   failed(path: string, error: unknown): void
+}
+
+/** The notice after a save; for a figure it also names the paper to cite. */
+export function savedMessage(path: string, cite: boolean): string {
+  return cite
+    ? `Saved ${path}. If you publish this figure, please cite ${CITATION_SHORT} (${CITATION_DOI_URL}).`
+    : `Saved ${path}`
 }
 
 /** Whether a contents API request failed because nothing exists at the path. */
