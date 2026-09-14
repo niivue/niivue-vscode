@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   release:
@@ -30,17 +30,6 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Check Pre-release
-        id: prerelease
-        run: |
-          if [[ "${{ github.ref }}" == *"-beta."* ]] || [[ "${{ github.ref }}" == *"-rc."* ]] || [[ "${{ github.ref }}" == *"-alpha."* ]]; then
-            echo "is_prerelease=true" >> $GITHUB_OUTPUT
-            echo "TWINE_ARGS=--repository testpypi" >> $GITHUB_ENV
-          else
-             echo "is_prerelease=false" >> $GITHUB_OUTPUT
-             echo "TWINE_ARGS=" >> $GITHUB_ENV
-          fi
-
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -58,27 +47,12 @@ jobs:
         working-directory: ./apps/streamlit
         run: python -m twine check dist/*
 
-      - name: Publish to PyPI/TestPyPI
+      - name: Publish to PyPI
         working-directory: ./apps/streamlit
-        run: python -m twine upload ${{ env.TWINE_ARGS }} dist/*
+        run: python -m twine upload dist/*
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-
-      # Use the package's tag (created by changesets/action) so we attach the
-      # wheel to the existing release rather than failing on `github.ref_name`
-      # being "main" under workflow_dispatch.
-      - name: Resolve release tag
-        id: release_tag
-        run: echo "tag=@niivue/streamlit@$(node -p "require('./apps/streamlit/package.json').version")" >> "$GITHUB_OUTPUT"
-
-      - name: Attach wheel to GitHub Release
-        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3
-        with:
-          tag_name: ${{ steps.release_tag.outputs.tag }}
-          files: apps/streamlit/dist/*
-          generate_release_notes: true
-          prerelease: ${{ steps.prerelease.outputs.is_prerelease == 'true' }}
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
