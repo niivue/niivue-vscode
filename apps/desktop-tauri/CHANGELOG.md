@@ -1,34 +1,16 @@
-# @niivue/pwa
+# @niivue/tauri
 
 ## 0.2.0
 
 ### Minor Changes
 
-- c4511cd: Fold the Home button into the brand, and add an NVDocument Save/Load split button.
+- aabde73: Add Tauri-based standalone desktop application for NiiVue medical image viewing with native filesystem access, recent files management, and cross-platform release workflow.
+- fa88b90: Scene documents (NVDocument, `.nvd` and `.nvd.json`) work in every host, not only the web app.
 
-  - The standalone "Home" menu-bar button is gone. On standalone hosts (web, desktop)
-    the NiiVue logo + wordmark is now a dropdown: **Reset Viewer** (the old Home
-    action) and **About** (a dialog with the app's purpose, NiiVue + NeuroDesk
-    credits, the data-privacy note, and the build version linking to its commit).
-    Embedded Streamlit, which sets `menuItems.home: false`, keeps a static brand.
-  - An **NVDocument** split button: clicking the label saves the active scene as a
-    `.nvd`, while the dropdown offers **Save**, **Save as JSON** and **Load** (a
-    `.nvd` file picker, complementing drag-and-drop).
-  - Hosts can pass an optional `appInfo` ({ version, buildDate, repoUrl }) to
-    `Menu`; the PWA wires in its build-time git metadata. The About dialog degrades
-    gracefully (omits the version line) when a host supplies none.
-  - The standalone home screens (PWA and desktop) now share a `HomeSection`
-    primitive for consistent styling while keeping their host-specific copy (PWA:
-    install / bookmarklet / update; desktop: native Open File). Both drop their
-    "Data Privacy" section, and the PWA also drops its version footer, since the
-    brand menu's About dialog now carries that information.
-
-- 4ccaf11: Compact the viewer top bar, unify the status readout, and drive every app icon from a single committed master.
-
-  - **Top bar (VS Code).** Wire the previously-unused `.nv-form-vscode` density tokens onto the webview so the bar drops from 48px to 36px. The brand mark keeps its size; only the empty space above and below it shrinks.
-  - **One status strip.** A new shared `StatusBar` merges the image-metadata line (formerly under the top bar) and the crosshair `mm` readout (formerly a separate footer) into one slim bottom strip, used across the VS Code, PWA, desktop, and Streamlit hosts. The global mm readout now populates on load even if NiiVue's initial location event fires before the canvas selection is initialized (previously it could stay blank until the first crosshair move).
-  - **Scrollbar fix.** The canvas now sizes off a `ResizeObserver` on its container instead of only `window.onresize`, so a menu-bar reflow (overflow into "More", the status strip toggling) no longer leaves a stale, oversized canvas with scrollbars on both axes.
-  - **Icons.** Every app icon (VS Code file-type + marketplace, Jupyter, Tauri, PWA, and the in-app viewer logo) is now generated from one committed master, `branding/niivue-icon.png`, via `pnpm generate:icons`. The file-type and viewer icons become a transparent neon mark (no more dark tile); generated outputs are gitignored and rebuilt by each app's build. The one committed generated file, `niivue-logo.ts`, stamps the master's hash so CI catches drift.
+  - **Open**: a `.nvd` opens as a scene wherever an image opens: clicking it in the VS Code Explorer (a `.nvd.json` through right-click "NiiVue: Open"), double-clicking it in the JupyterLab file browser, the desktop app's Open File dialog, the installed web app's file handling, the `images` URL parameter, a drop on a tile, and in Streamlit by passing it with a `.nvd` file name.
+  - **Load**: NVDocument > Load shows the host's own open dialog in VS Code (which browses the workspace, remote ones included) and in JupyterLab, and a file picker elsewhere. In Streamlit, Load and file drops now work; before, they did nothing.
+  - **Save**: the NVDocument menu is no longer hidden in VS Code and JupyterLab. VS Code saves through its save dialog. JupyterLab writes the file into the workspace, asking for the path and suggesting the opened file's folder; this also applies to screenshots, which JupyterLab used to download through the browser. The desktop app saves through the native save dialog.
+  - **JSON**: Save as JSON writes NiiVue's own JSON document format, which other NiiVue-based tools read, and a sparse hand-written JSON scene that links its images by URL loads.
 
 ### Patch Changes
 
@@ -53,6 +35,25 @@
   to succeed, so a machine with no usable GPU keeps loading as before (headless
   Chromium exposes `navigator.gpu` but returns a null adapter, so NiiVue stays on
   WebGPU and throws; without a device the volume simply never reaches the GPU).
+
+- c4511cd: Fold the Home button into the brand, and add an NVDocument Save/Load split button.
+
+  - The standalone "Home" menu-bar button is gone. On standalone hosts (web, desktop)
+    the NiiVue logo + wordmark is now a dropdown: **Reset Viewer** (the old Home
+    action) and **About** (a dialog with the app's purpose, NiiVue + NeuroDesk
+    credits, the data-privacy note, and the build version linking to its commit).
+    Embedded Streamlit, which sets `menuItems.home: false`, keeps a static brand.
+  - An **NVDocument** split button: clicking the label saves the active scene as a
+    `.nvd`, while the dropdown offers **Save**, **Save as JSON** and **Load** (a
+    `.nvd` file picker, complementing drag-and-drop).
+  - Hosts can pass an optional `appInfo` ({ version, buildDate, repoUrl }) to
+    `Menu`; the PWA wires in its build-time git metadata. The About dialog degrades
+    gracefully (omits the version line) when a host supplies none.
+  - The standalone home screens (PWA and desktop) now share a `HomeSection`
+    primitive for consistent styling while keeping their host-specific copy (PWA:
+    install / bookmarklet / update; desktop: native Open File). Both drop their
+    "Data Privacy" section, and the PWA also drops its version footer, since the
+    brand menu's About dialog now carries that information.
 
 - 54ef003: Center the About and Header dialogs in the viewport.
 
@@ -89,19 +90,6 @@
     every DICOM file in its folder, so the full series loads together. The
     "Open DICOM Folder" path now sends a correct file array (it previously
     passed a single URI string alongside the data array).
-
-- 00880fa: Add drag-and-drop reordering for loaded images.
-
-  - New `reorderImages<T>()` helper in `@niivue/react/utility` and a
-    `reorder(fromIndex, toIndex)` callback wired through `Container` to each
-    `Volume`.
-  - When the UI is fully visible (`hideUI > 2`), a thin grab strip appears at
-    the top of each canvas; drag a volume onto another to insert it at the
-    drop target's position.
-  - Drags use a custom MIME type (`application/x-niivue-reorder`) so the
-    existing file-import drop path is unaffected.
-
-  Mouse-only for now; keyboard reorder is a follow-up.
 
 - 3d99cec: Drop redundant GL refreshes after overlay and colorbar changes.
 
@@ -195,19 +183,6 @@
   actionable error instead of rendering black. `.npz` archives are unzipped directly
   (both stored and deflate-compressed members) and their first array is converted.
 
-- fa88b90: Scene documents (NVDocument, `.nvd` and `.nvd.json`) work in every host, not only the web app.
-
-  - **Open**: a `.nvd` opens as a scene wherever an image opens: clicking it in the VS Code Explorer (a `.nvd.json` through right-click "NiiVue: Open"), double-clicking it in the JupyterLab file browser, the desktop app's Open File dialog, the installed web app's file handling, the `images` URL parameter, a drop on a tile, and in Streamlit by passing it with a `.nvd` file name.
-  - **Load**: NVDocument > Load shows the host's own open dialog in VS Code (which browses the workspace, remote ones included) and in JupyterLab, and a file picker elsewhere. In Streamlit, Load and file drops now work; before, they did nothing.
-  - **Save**: the NVDocument menu is no longer hidden in VS Code and JupyterLab. VS Code saves through its save dialog. JupyterLab writes the file into the workspace, asking for the path and suggesting the opened file's folder; this also applies to screenshots, which JupyterLab used to download through the browser. The desktop app saves through the native save dialog.
-  - **JSON**: Save as JSON writes NiiVue's own JSON document format, which other NiiVue-based tools read, and a sparse hand-written JSON scene that links its images by URL loads.
-
-- 4afacc9: Modernise app icons across the monorepo.
-
-  - **PWA**: icons come from `@vite-pwa/assets-generator` (integrated `pwaAssets` mode) and show the canonical neon brand icon instead of the legacy grayscale brain. The manifest now uses correct per-purpose icons instead of the old `purpose: 'any maskable'` on an unpadded transparent PNG, and the icons ship palette-quantized for a smaller download.
-  - **VS Code extension and JupyterLab extension**: the Marketplace, file-type and Jupyter icons show the same neon brand mark.
-  - **Top bar (`@niivue/react`)**: the menu-bar brand mark shows the neon brain logo in place of the placeholder "N".
-
 - 6c641d6: Add a **Screenshot** button to the viewer menu bar that saves the visible tiles as a PNG figure.
 
   - Clicking the label captures all tiles as they are laid out on screen, rendered again at twice the on-screen resolution (labels, text and the crosshair keep their on-screen proportions; very large layouts are reduced to stay within GPU limits), with the gaps between them filled with the viewer background. The dropdown offers **All tiles** and, when more than one tile is shown, **Selected tile**. Only the rendered images are captured; overlays such as the tile name and the POS/VAL readout are not.
@@ -233,6 +208,13 @@
   - PWA: normalize the Windows backslash path in the Tailwind `content` glob so the
     `@niivue/react` source is scanned on Windows too (its utility classes were
     silently dropped from local Windows builds).
+
+- 4ccaf11: Compact the viewer top bar, unify the status readout, and drive every app icon from a single committed master.
+
+  - **Top bar (VS Code).** Wire the previously-unused `.nv-form-vscode` density tokens onto the webview so the bar drops from 48px to 36px. The brand mark keeps its size; only the empty space above and below it shrinks.
+  - **One status strip.** A new shared `StatusBar` merges the image-metadata line (formerly under the top bar) and the crosshair `mm` readout (formerly a separate footer) into one slim bottom strip, used across the VS Code, PWA, desktop, and Streamlit hosts. The global mm readout now populates on load even if NiiVue's initial location event fires before the canvas selection is initialized (previously it could stay blank until the first crosshair move).
+  - **Scrollbar fix.** The canvas now sizes off a `ResizeObserver` on its container instead of only `window.onresize`, so a menu-bar reflow (overflow into "More", the status strip toggling) no longer leaves a stale, oversized canvas with scrollbars on both axes.
+  - **Icons.** Every app icon (VS Code file-type + marketplace, Jupyter, Tauri, PWA, and the in-app viewer logo) is now generated from one committed master, `branding/niivue-icon.png`, via `pnpm generate:icons`. The file-type and viewer icons become a transparent neon mark (no more dark tile); generated outputs are gitignored and rebuilt by each app's build. The one committed generated file, `niivue-logo.ts`, stamps the master's hash so CI catches drift.
 
 - dd0ab01: Add `.nvd` (NiiVue NVDocument) scene import/export, and the Viewer-Host Protocol foundation it runs on.
 
@@ -307,29 +289,3 @@
 - Updated dependencies [a3e3be2]
 - Updated dependencies [3e0bfaf]
   - @niivue/react@1.0.0
-
-## 0.1.0
-
-### Minor Changes
-
-- 62ecdef: Add keyboard shortcuts
-
-### Patch Changes
-
-- e98248f: Add monorepo-aware test coverage reporting with Vitest v8 coverage for all packages, Playwright V8 coverage via monocart-reporter for e2e tests, and a coverage aggregation script that produces a unified HTML report and per-package summary table.
-- 23028fd: shift+drop adds files as overlays to the last canvas instead of creating new ones
-  overlay handler resolves index -1 to last canvas with bounds check
-  HeaderBox now uses signal effect instead of stale useEffect dependency
-  added onVolumeUpdated callback to ExtendedNiivue, called after load
-- a4517f2: Extend MHD detached-header support beyond the VS Code extension. The PWA, Jupyter and Streamlit apps now resolve a `.mhd` header's `ElementDataFile` reference and fetch (or forward) the paired `.raw` voxel data: PWA via drag/drop and `?images=` URL auto-fetch, Jupyter via the Contents API in the iframe, Streamlit via a new `paired_data` Python argument. When the paired raw file is missing or the reference is unsafe (path traversal, nested dirs), a clear "Missing paired data file…" warning is surfaced in the existing on-canvas error overlay instead of a silent black render. The VS Code path also rejects non-sibling references for consistency.
-- 13147d5: Fix MHD files loading as a black image. MHD is a detached format where voxel data lives in a separate `.raw` file referenced by `ElementDataFile` in the header. NiiVue's URL-based loader does not auto-detect the paired `.raw` URL for MHD files, so the extension now parses the header, resolves the raw file URI, and passes it to the webview as `urlImgData` (URL path) or `pairedData` (binary-data path). The webview forwards `urlImgData` to NiiVue's `loadImages` call and uses a Blob URL to load `pairedData` when binary buffers are provided.
-- 79610b8: Initial configuration for automated independent releases via Changesets.
-- ddc9f52: Tooling: enable Istanbul reporter for Playwright/monocart e2e coverage so per-PR coverage HTML reports include e2e data alongside Vitest unit coverage. No runtime behavior change in the PWA itself.
-- Updated dependencies [e98248f]
-- Updated dependencies [27432cf]
-- Updated dependencies [23028fd]
-- Updated dependencies [a4517f2]
-- Updated dependencies [13147d5]
-- Updated dependencies [79610b8]
-- Updated dependencies [62ecdef]
-  - @niivue/react@0.2.0
