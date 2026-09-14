@@ -5,6 +5,8 @@
  * Tidies the sections `changeset version` just added to CHANGELOG.md files:
  *   - headings users understand: "Breaking changes", "New features",
  *     "Fixes and improvements" instead of Major/Minor/Patch Changes
+ *   - entries of a bundled library move from Patch Changes to the heading
+ *     their bump marker names (see changelog.mjs)
  *   - an entry listed twice (a changeset naming both a bundled library and the
  *     app) is kept only under its first heading
  *   - headings left without entries are dropped
@@ -49,27 +51,37 @@ export const sectionBody = (markdown, version) => {
   return section.lines.slice(section.start + 1, section.end).join('\n').trim()
 }
 
-/** Rename headings, drop repeated entries and empty headings in a section body. */
+const BUMP_HEADINGS = { minor: 'New features', patch: 'Fixes and improvements' }
+const ORDER = ['Breaking changes', 'New features', 'Fixes and improvements']
+const BUMP_MARKER = / ?<!-- bump:(minor|patch) -->/
+
+/**
+ * Rename headings, file entries of bundled libraries under the heading their
+ * bump marker names (see changelog.mjs), and drop repeated entries and empty
+ * headings in a section body.
+ */
 export const polishSection = (body) => {
-  const groups = []
-  let group = null
+  const groups = new Map()
+  const add = (title, entry) => {
+    if (!groups.has(title)) groups.set(title, [])
+    groups.get(title).push(entry)
+  }
+  let title = ''
   let entry = null
   const closeEntry = () => {
-    if (entry) group.entries.push(entry.join('\n').trimEnd())
+    if (!entry) return
+    const text = entry.join('\n').trimEnd()
+    const bump = text.match(BUMP_MARKER)?.[1]
+    add(bump ? BUMP_HEADINGS[bump] : title, text.replace(BUMP_MARKER, ''))
     entry = null
   }
   for (const line of body.split('\n')) {
     const heading = line.match(/^### (.+)$/)
     if (heading) {
       closeEntry()
-      group = { title: HEADINGS[heading[1].trim()] ?? heading[1].trim(), entries: [] }
-      groups.push(group)
+      title = HEADINGS[heading[1].trim()] ?? heading[1].trim()
     } else if (line.startsWith('- ')) {
       closeEntry()
-      if (!group) {
-        group = { title: null, entries: [] }
-        groups.push(group)
-      }
       entry = [line]
     } else if (entry) {
       entry.push(line)
@@ -77,11 +89,13 @@ export const polishSection = (body) => {
   }
   closeEntry()
 
+  const rank = (t) => (ORDER.includes(t) ? ORDER.indexOf(t) : ORDER.length)
   const seen = new Set()
-  return groups
-    .map((g) => ({ ...g, entries: g.entries.filter((e) => !seen.has(e) && seen.add(e)) }))
-    .filter((g) => g.entries.length > 0)
-    .map((g) => (g.title ? `### ${g.title}\n\n` : '') + g.entries.join('\n'))
+  return [...groups.keys()]
+    .sort((a, b) => rank(a) - rank(b))
+    .map((t) => ({ t, entries: groups.get(t).filter((e) => !seen.has(e) && seen.add(e)) }))
+    .filter(({ entries }) => entries.length > 0)
+    .map(({ t, entries }) => (t ? `### ${t}\n\n` : '') + entries.join('\n'))
     .join('\n\n')
 }
 

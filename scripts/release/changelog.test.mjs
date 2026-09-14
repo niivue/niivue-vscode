@@ -8,7 +8,7 @@
  *   node scripts/release/changelog.test.mjs
  */
 import assert from 'node:assert/strict'
-import { formatEntry } from './changelog.mjs'
+import { bumpMarker, formatEntry } from './changelog.mjs'
 import { polishChangelog, polishSection, sectionBody } from './polish-changelogs.mjs'
 
 let passed = 0
@@ -45,6 +45,20 @@ test('without a pull request the entry has no link', () => {
   assert.equal(formatEntry('Fix the colorbar.', null), '- Fix the colorbar.')
 })
 
+console.log('bumpMarker')
+
+const react = [{ name: '@niivue/react' }]
+const changeset = (...releases) => ({ releases: releases.map(([name, type]) => ({ name, type })) })
+
+test('carries the bump of the bundled library', () => {
+  assert.equal(bumpMarker(changeset(['@niivue/react', 'minor']), react), '<!-- bump:minor -->')
+  assert.equal(bumpMarker(changeset(['@niivue/react', 'patch'], ['niivue', 'minor']), react), '<!-- bump:patch -->')
+})
+
+test('a breaking library change counts as a feature of the app', () => {
+  assert.equal(bumpMarker(changeset(['@niivue/react', 'major']), react), '<!-- bump:minor -->')
+})
+
 console.log('polishSection')
 
 test('renames the Changesets headings', () => {
@@ -57,6 +71,20 @@ test('renames the Changesets headings', () => {
 test('keeps a repeated entry only under its first heading and drops the empty heading', () => {
   assert.equal(
     polishSection('### Minor Changes\n\n- Add GraphML.\n\n### Patch Changes\n\n- Add GraphML.'),
+    '### New features\n\n- Add GraphML.',
+  )
+})
+
+test('files library entries under the heading of their bump marker', () => {
+  assert.equal(
+    polishSection('### Patch Changes\n\n- Fix scroll.\n- Add GraphML. <!-- bump:minor -->\n- Fix drop. <!-- bump:patch -->'),
+    '### New features\n\n- Add GraphML.\n\n### Fixes and improvements\n\n- Fix scroll.\n- Fix drop.',
+  )
+})
+
+test('a library entry repeats an app entry only once', () => {
+  assert.equal(
+    polishSection('### Minor Changes\n\n- Add GraphML.\n\n### Patch Changes\n\n- Add GraphML. <!-- bump:minor -->'),
     '### New features\n\n- Add GraphML.',
   )
 })
