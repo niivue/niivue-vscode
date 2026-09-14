@@ -126,44 +126,18 @@ pnpm --filter niivue test
 
 ## Publishing
 
-Releases are automated via Changesets — see the monorepo's [Release.md](../../Release.md) for the standard flow. The commands below are only for manual emergency releases.
-
-### Setup
-
-```bash
-# Install publishing tools
-npm install -g @vscode/vsce ovsx
-```
-
-Get access tokens:
-- [VS Code Marketplace](https://marketplace.visualstudio.com/manage) - Create PAT with Marketplace (publish) scope
-- [Open VSX Registry](https://open-vsx.org/) - Create access token
-
-### Package and Publish
+Releases and betas are published by CI, which keeps stable versions on even
+minors and betas on odd minors; see the monorepo's [Release.md](../../Release.md).
+Do not publish a version by hand. To build a package locally:
 
 ```bash
 cd apps/vscode
-
-# Update version in vscode package.json
-
-# Build the extension
 pnpm build
-
-# Package as .vsix
-vsce package
-
-# Publish to VS Code Marketplace
-vsce publish --packagePath niivue-x.y.z.vsix
-
-# Publish to Open VSX Registry
-pnpm ovsx publish niivue-x.y.z.vsix --pat <your-token>
+pnpm exec vsce package --no-dependencies
 ```
 
-#### Pre-release Versions
-
-```bash
-vsce publish --pre-release
-```
+`--no-dependencies` is required: the extension bundles `@niivue/react`, and
+vsce's dependency scan fails on pnpm workspace links.
 
 ## Marketplace-Specific Requirements
 
