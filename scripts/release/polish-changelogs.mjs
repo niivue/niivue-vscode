@@ -113,8 +113,9 @@ const invokedDirectly =
   process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])
 
 if (invokedDirectly) {
-  const git = (...args) => execFileSync('git', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
-  const repoRoot = git('rev-parse', '--show-toplevel').trim()
+  const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
+  const git = (...args) =>
+    execFileSync('git', args, { cwd: repoRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
   const files = git('ls-files', '--cached', '--others', '--exclude-standard', '--', '*CHANGELOG.md')
     .split('\n')
     .filter((file) => file && !file.includes('node_modules/'))
