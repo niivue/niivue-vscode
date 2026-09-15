@@ -60,10 +60,13 @@
     "type-check": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "package": "pnpm run build && vsce package",
-    "publish": "pnpm run build && vsce publish",
+    "package": "pnpm run build && vsce package --no-dependencies",
+    "publish": "pnpm run build && vsce publish --no-dependencies",
     "test:coverage": "vitest run --coverage",
     "coverage": "pnpm run test:coverage"
+  },
+  "dependencies": {
+    "@niivue/react": "workspace:*"
   },
   "devDependencies": {
     "@types/vscode": "1.70.0",

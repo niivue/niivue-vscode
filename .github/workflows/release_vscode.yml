@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   release:
@@ -31,23 +31,12 @@ jobs:
       - name: Build dependencies
         run: pnpm turbo build --filter=niivue
 
-      - name: Check Pre-release
-        id: prerelease
-        run: |
-          if [[ "${{ github.ref }}" == *"-beta."* ]] || [[ "${{ github.ref }}" == *"-rc."* ]] || [[ "${{ github.ref }}" == *"-alpha."* ]]; then
-            echo "is_prerelease=true" >> $GITHUB_OUTPUT
-            echo "VSCE_FLAGS=--pre-release" >> $GITHUB_ENV
-          else
-             echo "is_prerelease=false" >> $GITHUB_OUTPUT
-             echo "VSCE_FLAGS=" >> $GITHUB_ENV
-          fi
-
       - name: Package extension
-        run: pnpm vsce package ${{ env.VSCE_FLAGS }}
+        run: pnpm vsce package --no-dependencies
         working-directory: ./apps/vscode
 
       - name: Publish to VS Code Marketplace
-        run: pnpm vsce publish ${{ env.VSCE_FLAGS }}
+        run: pnpm vsce publish --packagePath *.vsix
         working-directory: ./apps/vscode
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
@@ -57,21 +46,6 @@ jobs:
         working-directory: ./apps/vscode
         env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
-
-      # Use the package's tag (created by changesets/action) so we attach the
-      # .vsix to the existing release rather than failing on `github.ref_name`
-      # being "main" under workflow_dispatch.
-      - name: Resolve release tag
-        id: release_tag
-        run: echo "tag=niivue@$(node -p "require('./apps/vscode/package.json').version")" >> "$GITHUB_OUTPUT"
-
-      - name: Attach VSIX to GitHub Release
-        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3
-        with:
-          tag_name: ${{ steps.release_tag.outputs.tag }}
-          files: apps/vscode/*.vsix
-          generate_release_notes: true
-          prerelease: ${{ steps.prerelease.outputs.is_prerelease == 'true' }}
 
       - name: Upload extension artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7

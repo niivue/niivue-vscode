@@ -1,5 +1,5 @@
 ---
-"@niivue/tauri": minor
+'@niivue/tauri': minor
 ---
 
-Add Tauri-based standalone desktop application for NiiVue medical image viewing with native filesystem access, recent files management, and cross-platform release workflow.
+First release of NiiVue Desktop, a standalone viewer for Windows, macOS and Linux that opens files from your computer and remembers recently opened files.

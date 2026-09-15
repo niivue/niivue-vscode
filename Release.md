@@ -1,190 +1,139 @@
 # Release Process
 
-The `@niivue/monorepo` uses **Independent Versioning** managed by [Changesets](https://github.com/changesets/changesets).
+Each app in this monorepo has its own version and is released only when a change
+reaches it. Versions and changelogs are managed by
+[Changesets](https://github.com/changesets/changesets); how to write a changeset
+is described in [.changeset/README.md](.changeset/README.md).
 
-Because this monorepo contains multiple different applications (VS Code extension, Jupyter extension, PWA, Streamlit), they do not share the same version number. However, changes to shared dependencies (like `@niivue/react`) correctly and automatically trigger cascading version bumps for the apps that depend on them.
+| App | Package | Stable release | Beta |
+| --- | --- | --- | --- |
+| VS Code extension | `niivue` | VS Code Marketplace, Open VSX | Marketplace and Open VSX pre-release, `<major>.<odd minor>.<run>` |
+| JupyterLab extension | `@niivue/jupyter` | PyPI `jupyterlab_niivue` | PyPI `<next stable>.dev<run>` |
+| Streamlit component | `@niivue/streamlit` | PyPI `niivue-streamlit` | PyPI `<next stable>.dev<run>` |
+| Desktop app | `@niivue/tauri` | GitHub release with installers, marked latest | GitHub pre-release, `<next stable>-beta.<run>` |
+| Web app | `@niivue/pwa` | GitHub Pages, deployed from `main` | none |
 
-There are **two release tracks**, each fully automated:
+The bundled libraries (`@niivue/react`, `@niivue/viewer-protocol`) and the
+Streamlit frontend are versioned and tagged but never published. Every app
+declares the libraries it bundles as `dependencies`, so a change to a library
+releases each app that ships it.
 
-| Track | Trigger | Channel |
-| --- | --- | --- |
-| **Pre-release** | Daily at 03:00 UTC, if `main` carries pending changesets (max one per day) | VS Code Marketplace pre-release · PyPI (requires `--pre`) · GitHub Releases (desktop installers) |
-| **Stable** | Merging the auto-generated "Version Packages" PR | VS Code Marketplace stable · PyPI default |
+## Stable releases
 
-You do **not** need to enter or exit a "pre-release mode" — both tracks coexist permanently.
+1. A pull request that changes something users notice adds a changeset
+   (`pnpm changeset`).
+2. After it merges, the Release Coordinator (`release-coordinator.yml`) opens or
+   updates the **chore(release): version packages** pull request. It runs the
+   root `version` script:
+   - `changeset version` bumps versions and writes the changelogs
+   - `normalize-vscode-even-minor.mjs` moves the VS Code version to an even minor
+   - `polish-changelogs.mjs` tidies the new changelog sections
+   - `sync-pyproject-versions.mjs` copies the Streamlit version into `pyproject.toml`
+3. CI runs on the version PR like on any other. Review the versions and
+   changelogs, then merge it.
+4. The coordinator runs `changeset publish`, which tags every bumped package as
+   `<package>@<version>`. Each tag starts that app's release workflow:
+   `release_vscode.yml`, `release_jupyterlab.yml`, `release_streamlit.yml` or
+   `release_desktop.yml`. All of them can also be started by hand
+   (`workflow_dispatch`) to repeat a release of the version in `package.json`.
 
-> **Status note (May 2026):** the stable release flow described below was rebuilt around `changesets/action` and has not yet shipped a full stable release end-to-end. The pre-release lane has been running successfully for some time. The first merged Version Packages PR will validate the stable path; if anything regresses, check that section first.
+The desktop release takes its notes from the new section of
+`apps/desktop-tauri/CHANGELOG.md`. Tauri reads the installer version from
+`src-tauri/tauri.conf.json` and `Cargo.toml`, which Changesets does not bump,
+so the workflow stamps the version from `package.json` into them before
+building (`set-desktop-version.mjs`).
 
----
+### Version rules
 
-## 🚀 Standard (stable) releases
+- **VS Code**: the Marketplace allows only `M.m.p` and recommends even minors for
+  stable releases and odd minors for pre-releases. `normalize-vscode-even-minor.mjs`
+  rounds an odd minor up (`2.11.0` becomes `2.12.0`). A stable release may be
+  numbered below the current beta (`2.10.0` after `2.11.149`): VS Code keeps
+  beta users on the beta until a higher stable ships. Open VSX still labels the
+  highest version `latest` (eclipse-openvsx/openvsx#1675); VS Code and its
+  forks are not affected.
+- **PyPI**: PEP 440. Betas are `.devN`, which `pip install` skips unless `--pre`
+  is given.
+- **Desktop**: betas are `<next stable>-beta.<run>`, which sorts below that
+  stable. Windows gets the NSIS installer only; MSI rejects pre-release versions.
 
-### 1. Document your changes
-When you finish a feature or bug fix, run the changeset command from the root of the repository:
-```bash
-pnpm changeset
-```
-Follow the interactive prompts to:
-1. Select the packages you modified (e.g., `@niivue/react`, `niivue`).
-2. Choose the type of bump (major, minor, or patch).
-3. Write a short description of the change. This text will appear in the `CHANGELOG.md`.
+## Betas
 
-Commit the generated `.changeset/*.md` file with your PR.
+`prerelease.yml` runs every Monday at 03:00 UTC, and on demand from the Actions
+tab. It skips a commit the previous successful run already built, and does
+nothing when no changesets are pending. Otherwise it:
 
-### 2. The "Version Packages" PR
-When your changes are merged to `main`, **Release Coordinator** (`.github/workflows/release-coordinator.yml`) automatically opens (or updates) a PR titled **"chore(release): version packages"**. It aggregates every unreleased `.changeset/*.md`, bumps versions in the respective `package.json` files, rewrites the affected `CHANGELOG.md` files, and (via the root `version` script) keeps `apps/streamlit/pyproject.toml` in lock-step with its `package.json`. Review the diff to confirm the next versions look right before merging.
+1. reads the release plan (`changeset status --output`),
+2. runs `changeset version` and `polish-changelogs.mjs` in the checkout, so the
+   betas carry the changelog of the next stable (nothing is committed),
+3. encodes the beta version of each app in that plan
+   (`encode-prerelease-versions.mjs`, which also retitles the VS Code changelog
+   section to `2.11.<run> (pre-release)`),
+4. publishes only those apps. The desktop installers are built by
+   `release_desktop.yml` on a platform matrix and published as a GitHub
+   pre-release.
 
-> **CI on the version PR:** the release PR branch is pushed with `GITHUB_TOKEN`, which does not trigger `pull_request` workflows. After creating or updating the PR, Release Coordinator therefore dispatches CI (`ci.yml`) on the release branch, and the required checks report on the PR head commit. If the checks still do not appear, close and reopen the PR right before merging, after the last coordinator update.
+`<run>` is the run number of `prerelease.yml`. Renaming the workflow file
+restarts it at 1, which would number new VS Code betas below published ones.
 
-### 3. Publish
-When you are ready to ship a stable release, **merge** the "Version Packages" PR.
-
-The Release Coordinator then:
-
-1. **Creates git tags** per private app package via `changeset publish`:
-   - **VS Code Extension**: `niivue@<version>` (matches the package's npm name)
-   - **JupyterLab**: `@niivue/jupyter@<version>`
-   - **Streamlit**: `@niivue/streamlit@<version>`
-
-   The apps are marked `"private": true` in their `package.json` so npm publish is skipped. Tags are still created because `.changeset/config.json` opts into `privatePackages.tag: true`.
-
-2. **Dispatches each app's release workflow** for the apps whose tag was just created in this run. The coordinator snapshots `git tag -l` before and after `changeset publish`, computes the diff, and matches new tags against each registered app (e.g. a new `niivue@*` tag → dispatch `release_vscode.yml --ref <tag>`). This uses `gh workflow run` rather than the tag-push trigger, because GitHub's recursion guard prevents tags pushed by `GITHUB_TOKEN` from triggering other workflows. `workflow_dispatch` is the documented exception. The tag-based detection is robust to the case where the version bump and the publish happen in different coordinator runs (e.g. an earlier publish failed and left versions un-tagged; a later push then triggers the catch-up publish).
-
-3. The per-app workflows (`release_vscode.yml`, `release_jupyterlab.yml`, `release_streamlit.yml`) each check out `main`, build, and publish the version recorded in `apps/<app>/package.json` (or `pyproject.toml` for Python apps) to the relevant registry:
-   - VS Code → VS Code Marketplace and Open VSX
-   - JupyterLab → PyPI
-   - Streamlit → PyPI
-
-   The per-app workflows also accept a matching tag push and `workflow_dispatch`, so a maintainer can manually trigger a re-release or hotfix without going through Release Coordinator.
-
-4. **The desktop app** (`release_desktop.yml`) is dispatched the same way when a `@niivue/tauri@<version>` tag is created, but instead of publishing to a registry it builds native installers with Tauri and attaches them to a GitHub Release created from the tag. One wrinkle: Tauri reads the bundle/installer version from `src-tauri/tauri.conf.json` (which overrides `Cargo.toml`), while changesets only bumps `apps/desktop-tauri/package.json` and never touches the Tauri manifests. So before `tauri build`, the stable lane re-stamps all three (`package.json`, `tauri.conf.json`, `Cargo.toml`) from `package.json`'s version via `scripts/release/set-desktop-version.mjs`, so the installer is labeled with the tagged version rather than whatever was last committed to `tauri.conf.json`. (The pre-release lane stamps the same three manifests, but from the explicit beta version `prerelease.yml` passes in via the `version` input; see [Pre-releases](#-pre-releases).)
-
-*(Note: The **PWA** is deployed to GitHub Pages directly from `main`, outside the tag workflow.)*
-
-### Version format conventions
-
-Stable versions ship as-is — whatever changesets computed. No re-encoding is needed:
-
-- **VS Code Marketplace / Open VSX**: bare semver `M.m.p`. The Marketplace recommends (but does not enforce) that **stable releases use an even minor and pre-releases use an odd minor**. Changesets does plain sequential semver and is unaware of this, so a `minor` bump can land stable on an odd minor (that is how `niivue@2.9.0` shipped). You no longer need to hand-pick bumps to stay even: the root `version` script normalizes the VS Code version to the next even minor automatically (see [VS Code even-minor normalization](#vs-code-even-minor-normalization)). The pre-release encoder rounds the same next-stable up to the next *odd* minor, so pre-release minors stay exactly one above stable and never collide (see `encode-prerelease-versions.mjs`).
-- **PyPI** (jupyter and streamlit): bare PEP 440 `M.m.p`. Pre-releases use `.devN` (see below) which `pip install` ignores by default.
-
----
-
-## 🧪 Pre-releases
-
-`.github/workflows/prerelease.yml` runs on a daily schedule (03:00 UTC) and, if there are pending changeset files, publishes a pre-release across all four published apps (VS Code, JupyterLab, Streamlit, and the Tauri desktop app). Running on a timer rather than on every push caps pre-releases at **one per day**, regardless of how many times `main` is pushed (frequent dependabot merges previously produced a beta each). **No manual flag, no mode switch, no remembering to merge anything** — and you can trigger the workflow manually (`workflow_dispatch`) to force an off-schedule beta.
-
-The desktop app is the exception to the "one workflow does everything" rule: because its installers need a per-OS build matrix and Rust toolchains, `prerelease.yml` delegates to the reusable `release_desktop.yml` (`workflow_call`) when a changeset bumped `@niivue/tauri`. That job stamps the computed beta version into the desktop manifests, builds the Linux/macOS/Windows installers, and attaches them to the same GitHub pre-release. The bundles land a few minutes after the rest, once the cross-platform build finishes.
-
-### How versions are computed
-
-The workflow asks Changesets for the pending release plan via `pnpm changeset status --output=changeset-status.json` — that file lists `{name, oldVersion, newVersion, type}` for every package that would be bumped if the Version Packages PR merged right now. The encoder reads that plan and rewrites each affected app's manifest to the per-target format:
-
-> **Why not `changeset version --snapshot`?** Changesets' snapshot mode discards the next-stable computation and always writes `0.0.0-<tag>-<datetime>` as the base (see [changesets docs](https://github.com/changesets/changesets/blob/main/docs/snapshot-releases.md)). Driving the pre-release encoder off that string yielded `0.1.<run>` for VS Code (the only `niivue` pre-release that ever shipped under the broken path was `0.1.46` from PR #107). The `status --output` flow recovers the real next-stable and is also non-mutating, so the changeset files survive for the eventual stable release.
-
-
-| Target | Format | Example (next stable = `2.10.0`, run #42) |
-| --- | --- | --- |
-| VS Code Marketplace | `<major>.<next-odd-minor>.<run>` | `2.11.42` |
-| Open VSX | same as VS Code | `2.11.42` |
-| PyPI (jupyter / streamlit) | `<next-stable>.dev<run>` (PEP 440) | `0.3.0.dev42` |
-| Desktop (Tauri) | `<major>.<minor>.<run>` (plain numeric) | `0.2.42` (next stable `0.2.0`) |
-
-Desktop uses a plain numeric version rather than a `-beta.<run>` suffix because the Windows MSI and macOS bundlers reject SemVer pre-release identifiers. The beta is marked solely by living on the GitHub pre-release; the installer metadata stays a valid `M.m.p`.
-
-The odd-minor convention for VS Code follows Microsoft's recommended pattern: pre-release minors are always one greater than the next stable's minor (and odd). Pre-releases share the major but are unambiguously distinct from any stable.
-
-If the changesets next-stable lands on an odd minor, the encoder skips ahead one more step (e.g. next-stable `2.9.0` → pre `2.11.<run>`) to avoid collision with prior pre-releases on the same minor. The stable lane now [normalizes itself to an even minor](#vs-code-even-minor-normalization), so new odd-minor stables are no longer created; `niivue@2.9.0` (shipped before that normalization existed) is the one legacy case.
-
-`.devN` versions on PyPI are ignored by plain `pip install <pkg>` — only `pip install --pre <pkg>` resolves them. This matches the VS Code Marketplace separation of stable vs pre-release channels.
-
-### Installing pre-releases
+Installing betas:
 
 ```bash
-# VS Code: toggle the "Pre-Release Version" switch on the extension page,
-# or via command-line:
 code --install-extension KorbinianEckstein.niivue --pre-release
-
-# JupyterLab:
 pip install --pre jupyterlab_niivue
-
-# Streamlit:
 pip install --pre niivue-streamlit
 ```
 
-For the **desktop app**, download the installer for your platform (`.dmg`, `.msi`/`.exe`, `.deb`/`.AppImage`) from the latest pre-release on the [Releases page](https://github.com/niivue/niivue-vscode/releases).
+Desktop betas are on the [releases page](https://github.com/niivue/niivue-vscode/releases).
 
-### When no pre-release fires
+## Changelogs
 
-The workflow exits without publishing when any of:
-- There are no pending `.changeset/*.md` files at the scheduled run (e.g. right after the Version Packages PR was merged, or a day of doc-only commits that added no changeset).
-- For a given app: no changeset directly or transitively bumped it. Each app is published independently — a PWA-only changeset will not produce a new VS Code / Jupyter / Streamlit / desktop pre-release. The desktop installers only build when `@niivue/tauri` itself was bumped.
+Each package's `CHANGELOG.md` is written by Changesets with
+`scripts/release/changelog.mjs`:
 
-### Cost model
+- an entry is the changeset summary with a link to the pull request that added it
+- a library change appears in the changelog of every app that bundles it,
+  instead of an "Updated dependencies" line
+- `polish-changelogs.mjs` groups the new section under **Breaking changes**,
+  **New features** and **Fixes and improvements**, and removes repeated entries
 
-Each pre-release burns one version slot on PyPI per affected package (PyPI does not allow re-uploads of the same version, even after yanking). VS Code Marketplace pre-releases reuse the same channel and do not burn anything user-visible. If pre-release slot consumption on PyPI becomes a concern, the workflow can be switched to TestPyPI by:
+Users see them in the Changelog tab of the Marketplace, Open VSX and VS Code
+(the file ships in the extension), through the Changelog link on PyPI, and in
+the desktop release notes. `pnpm release:test` runs the unit tests of these
+scripts; CI runs it too.
 
-1. Adding a new repo secret `TESTPYPI_API_TOKEN`.
-2. In `prerelease.yml`, changing `TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}` to `TWINE_PASSWORD: ${{ secrets.TESTPYPI_API_TOKEN }}` for both Python publish steps.
-3. Appending `--repository testpypi` to both `python -m twine upload dist/*` commands.
+## Release app
 
-Users would then need `--index-url https://test.pypi.org/simple/` when installing pre-releases.
+Pushes, pull requests and tags made with a workflow's `GITHUB_TOKEN` start no
+other workflows. The Release Coordinator and the Dependabot auto-merge
+therefore act through a GitHub App, so the version PR gets CI, release tags
+start the release workflows, and Dependabot merges run the workflows on `main`.
 
-Desktop pre-releases burn no registry slots (the installers are just GitHub release assets), but each one runs a full four-platform Tauri build, so they only run on days a `@niivue/tauri` changeset is pending — not on every scheduled run.
+One-time setup, by a repository admin:
 
----
+1. Under your GitHub account's **Settings > Developer settings > GitHub Apps**,
+   create a new app. Deactivate the webhook. Grant the repository permissions
+   **Contents: Read and write** and **Pull requests: Read and write**, nothing
+   else. Allow installation on **any account**.
+2. Note the **Client ID** and generate a **private key**.
+3. From the app's **Install App** page, install it on the `niivue` organization
+   with access to only `niivue-vscode`.
+4. In the repository settings, add the Actions variable `RELEASE_APP_CLIENT_ID`,
+   the Actions secret `RELEASE_APP_PRIVATE_KEY` (the whole `.pem` file), and
+   the same private key as the Dependabot secret `RELEASE_APP_PRIVATE_KEY`.
 
-## Why apps are private packages
+The key does not expire. To rotate it, generate a new key, update both secrets,
+then delete the old key in the app settings.
 
-All three published apps (`apps/vscode`, `apps/jupyter`, `apps/streamlit`) are marked `"private": true` in their `package.json`. This is deliberate:
+## Adding a published app
 
-- They are not npm packages. VS Code ships via the Marketplace, the Python apps ship via PyPI.
-- Without `private`, `changeset publish` would attempt to push them to npm, which fails with `ENEEDAUTH` and (in the case of `apps/vscode`, whose package name is the bare `niivue`) would collide with an unrelated upstream library on npm.
-- `.changeset/config.json` sets `privatePackages.tag: true` so the apps still get versioned and tagged by changesets — just not pushed to npm.
-
----
-
-## VS Code even-minor normalization
-
-The VS Code Marketplace recommends stable releases on an **even** minor and pre-releases on an **odd** minor. Changesets does plain sequential semver, so a `minor` bump can land stable on an odd minor; this is how `niivue@2.9.0` shipped, an odd-minor stable sitting in the pre-release lane. Left unfixed it is a latent collision: the next stable minor bump (`2.10.0 → 2.11.0`) would land on a minor that pre-releases have already published as `2.11.<run>`, numbering the stable below betas that are already out. The Marketplace does not reject such a lower stable (`2.9.0` went live after the `2.9.13` pre-release), so the cost is not a failed publish but two channels that are no longer distinguishable by minor.
-
-`scripts/release/normalize-vscode-even-minor.mjs`, run by the root `version` script immediately after `changeset version`, enforces the convention. If the freshly bumped `apps/vscode/package.json` is on an odd minor, it rounds up to the next even minor (patch reset to 0) and retitles the matching `apps/vscode/CHANGELOG.md` heading so the two agree. The diff is committed into the Version Packages PR, so the even minor is what you review and ship.
-
-```jsonc
-// package.json
-"version": "changeset version && node scripts/release/normalize-vscode-even-minor.mjs && node scripts/release/sync-pyproject-versions.mjs && pnpm install --no-frozen-lockfile"
-```
-
-The script is idempotent: a version already on an even minor (or any `patch` bump, which never changes the minor) is a no-op, so on most releases it does nothing. Only the VS Code extension is normalized; PyPI (jupyter/streamlit) and the Tauri desktop bundles have no even/odd convention. The pure parity transform is unit-tested via `pnpm versions:normalize:test` (run in CI), which also pins the invariant that the pre-release minor stays exactly one above the normalized stable minor.
-
----
-
-## Streamlit pyproject.toml version sync
-
-`apps/streamlit/pyproject.toml` uses setuptools with a static `version = "<X>"` line, while changesets bumps `apps/streamlit/package.json`. The two are kept in lock-step by `scripts/release/sync-pyproject-versions.mjs`, which the root `version` script runs after `changeset version`:
-
-```jsonc
-// package.json
-"version": "changeset version && node scripts/release/normalize-vscode-even-minor.mjs && node scripts/release/sync-pyproject-versions.mjs && pnpm install --no-frozen-lockfile"
-```
-
-The script is idempotent — running it when versions are already in sync is a no-op. The resulting `pyproject.toml` diff is committed to the Version Packages PR.
-
-JupyterLab (`apps/jupyter`) does not need this — its `pyproject.toml` declares `dynamic = ["version", ...]` and derives version from `package.json` at build time via the `hatch-nodejs-version` plugin.
-
----
-
-## Adding a new published app
-
-When a new app joins the monorepo (changesets discovers it automatically from the workspace manifest):
-
-1. Mark `apps/<new>/package.json` as `"private": true` if it ships to a non-npm registry, so `changeset publish` skips npm but still tags it (thanks to `privatePackages.tag: true`).
-2. Add a new `.github/workflows/release_<app>.yml` triggered by `<package-name>@*` tag push and by `workflow_dispatch`. Be careful to use the package's *npm name*, not its directory name — that's what changesets puts in the tag.
-3. Extend `scripts/release/encode-prerelease-versions.mjs` with the target's version-encoding rule, and add a corresponding entry to the emitted `prerelease-targets.json`.
-4. Add publish steps to `.github/workflows/prerelease.yml` (pre-release lane), gated on `steps.encode.outputs.<app> == 'true'`. If the app needs a multi-platform build (like the Tauri desktop app), follow the desktop pattern instead: expose the version as a `prerelease` job output, make `release_<app>.yml` reusable via `workflow_call`, and add a `needs: prerelease` job in `prerelease.yml` that calls it and attaches the artifacts to the `prerelease-<sha>` release.
-5. Add a dispatch line to `release-coordinator.yml`'s "Dispatch per-app release workflows" step so the stable lane fires when the version bumps:
-   ```bash
-   dispatch '<package-name>' release_<app>.yml
-   ```
-6. If the app is a Python app using setuptools (or any backend without dynamic versioning), add it to the `targets` array in `scripts/release/sync-pyproject-versions.mjs` so its `pyproject.toml` stays in sync with `package.json`.
-7. If the app's build reads its version from a manifest changesets does **not** bump (e.g. Tauri reads `src-tauri/tauri.conf.json` / `Cargo.toml`, not `package.json`), add a stamping step to `release_<app>.yml` for the **stable** lane: derive the version from `package.json` and rewrite the build manifests before building, mirroring `scripts/release/set-desktop-version.mjs`. Otherwise the stable build ships whatever version was last committed to that manifest rather than the tagged one. The pre-release lane already passes an explicit `version`, so only the stable lane (empty `version` input) needs the package.json-derived fallback.
+1. Mark the app `"private": true` so `changeset publish` tags it without
+   publishing to npm, and list the workspace packages it bundles in
+   `dependencies`.
+2. Add `.github/workflows/release_<app>.yml`, triggered by the tag
+   `<package name>@*` and by `workflow_dispatch`.
+3. Add its beta version rule to `encode-prerelease-versions.mjs` and publish
+   steps to `prerelease.yml`.
+4. If its build reads the version from a file Changesets does not bump, stamp
+   it before building, as `set-desktop-version.mjs` does for the desktop app, or
+   add it to `sync-pyproject-versions.mjs` for a static `pyproject.toml` version.

@@ -13,11 +13,11 @@ name: Dependabot Auto-merge
 
 on: pull_request
 
-# Dependabot-triggered runs get a read-only token unless the workflow asks for
-# more. Both scopes are needed to queue a merge.
+# The merge is queued with the release app's token; GITHUB_TOKEN only reads
+# the pull request metadata.
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
+  pull-requests: read
 
 jobs:
   auto-merge:
@@ -31,6 +31,16 @@ jobs:
         uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # GitHub merges as whoever queued the merge, and a merge queued with
+      # GITHUB_TOKEN starts no workflows on main. Dependabot runs only read
+      # Dependabot secrets, so the app key is stored there as well.
+      - name: Create release app token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
 
       # Dev dependencies and workflow actions cannot reach users: a bad bump
       # breaks CI, not a release. Runtime deps and every major stay manual.
@@ -47,4 +57,4 @@ jobs:
         run: gh pr merge --auto --squash "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}

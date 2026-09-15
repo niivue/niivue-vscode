@@ -205,6 +205,9 @@ importers:
       '@niivue/niivue':
         specifier: 1.0.0-rc.13
         version: 1.0.0-rc.13
+      '@niivue/react':
+        specifier: workspace:*
+        version: link:../../packages/niivue-react
     devDependencies:
       '@jupyterlab/builder':
         specifier: ^4.5.7
@@ -212,9 +215,6 @@ importers:
       '@niivue/dicom-loader':
         specifier: ^1.0.0
         version: 1.0.0
-      '@niivue/react':
-        specifier: workspace:*
-        version: link:../../packages/niivue-react
       '@preact/signals':
         specifier: ^2.11.2
         version: 2.11.2(preact@10.29.8)
@@ -388,7 +388,14 @@ importers:
         specifier: ^7.4.1
         version: 7.4.1
 
-  apps/streamlit: {}
+  apps/streamlit:
+    dependencies:
+      '@niivue/react':
+        specifier: workspace:*
+        version: link:../../packages/niivue-react
+      niivue_viewer_frontend:
+        specifier: workspace:*
+        version: link:niivue_component/frontend
 
   apps/streamlit/niivue_component/frontend:
     dependencies:
@@ -467,6 +474,10 @@ importers:
         version: 4.1.11(@types/node@26.2.0)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@30.0.1)(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(less@4.9.1)(terser@5.50.0)(yaml@2.9.0))
 
   apps/vscode:
+    dependencies:
+      '@niivue/react':
+        specifier: workspace:*
+        version: link:../../packages/niivue-react
     devDependencies:
       '@tailwindcss/cli':
         specifier: ^4.3.0
@@ -4322,9 +4333,6 @@ packages:
 
   cbor-x@1.6.4:
     resolution: {integrity: sha512-UGKHjp6RHC6QuZ2yy5LCKm7MojM4716DwoSaqwQpaH4DvZvbBTGcoDNTiG9Y2lByXZYFEs9WRkS5tLl96IrF1Q==}
-
-  cbor-x@1.6.6:
-    resolution: {integrity: sha512-8QiD9PGOxyQHo7s2pzwTBH6lTjqekxPdl9Aq6fXvZgCuCJHOht1puDEA/fTr6mciB76c+M+Gi0qT2i1a4pm4Wg==}
 
   chai@6.2.2:
     resolution: {integrity: sha512-NUPRluOfOiTKBKvWPtSD4PhFvWCqOi0BGStNWs57X9js7XGTprSmFoz5F0tWhR4WPjNeR9jXqdC7/UpSJTnlRg==}
@@ -12731,10 +12739,6 @@ snapshots:
     optional: true
 
   cbor-x@1.6.4:
-    optionalDependencies:
-      cbor-extract: 2.2.2
-
-  cbor-x@1.6.6:
     optionalDependencies:
       cbor-extract: 2.2.2
 
