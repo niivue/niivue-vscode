@@ -1,0 +1,73 @@
+name: Prepare pre-release
+description: >-
+  Install the JS dependencies, write the changelog sections of the next stable
+  and stamp the beta version of every app the pending changesets bump. The
+  result depends only on the commit and the run number, so every job of a run
+  prepares the same versions. Needs a checkout with full history, whose
+  changelog entries link the pull request that added each changeset.
+
+outputs:
+  vscode:
+    description: "'true' when the VS Code extension gets a beta"
+    value: ${{ steps.encode.outputs.vscode }}
+  jupyter:
+    description: "'true' when the JupyterLab extension gets a beta"
+    value: ${{ steps.encode.outputs.jupyter }}
+  streamlit:
+    description: "'true' when the Streamlit component gets a beta"
+    value: ${{ steps.encode.outputs.streamlit }}
+  desktop:
+    description: "'true' when the desktop app gets a beta"
+    value: ${{ steps.encode.outputs.desktop }}
+  desktop_version:
+    description: Beta version of the desktop app
+    value: ${{ steps.encode.outputs.desktop_version }}
+  desktop_notes:
+    description: Release notes of the desktop beta
+    value: ${{ steps.encode.outputs.desktop_notes }}
+
+runs:
+  using: composite
+  steps:
+    - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+    - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+      with:
+        node-version: '22'
+        cache: 'pnpm'
+
+    - name: Install JS dependencies
+      shell: bash
+      run: pnpm install --frozen-lockfile
+
+    # `changeset status --output` writes the release plan ({name, oldVersion,
+    # newVersion, type} per bumped package) without touching any file.
+    - name: Compute release plan
+      shell: bash
+      run: pnpm changeset status --output=changeset-status.json
+
+    # Nothing is committed; the files only go into this run's packages.
+    - name: Write changelog sections
+      shell: bash
+      run: |
+        pnpm changeset version
+        node scripts/release/polish-changelogs.mjs
+
+    - name: Encode pre-release versions per target
+      id: encode
+      shell: bash
+      run: |
+        node scripts/release/encode-prerelease-versions.mjs ${{ github.run_number }}
+        target() { node -p "require('./prerelease-targets.json').$1 || ''"; }
+        {
+          echo "vscode=$(target vscode)"
+          echo "jupyter=$(target jupyter)"
+          echo "streamlit=$(target streamlit)"
+          echo "desktop=$(target desktop)"
+          echo "desktop_version=$(target desktopVersion)"
+          if [ "$(target desktop)" = "true" ]; then
+            echo 'desktop_notes<<NOTES_EOF'
+            node scripts/release/changelog-section.mjs apps/desktop-tauri/CHANGELOG.md
+            echo 'NOTES_EOF'
+          fi
+        } >> "$GITHUB_OUTPUT"

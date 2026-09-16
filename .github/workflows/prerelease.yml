@@ -8,6 +8,10 @@ name: Pre-release
 # Each beta ships the changelog section of that next stable. Stable releases
 # go through the version PR (release-coordinator.yml). workflow_dispatch
 # publishes a beta off schedule.
+#
+# Every app builds and publishes in its own job, so a failing registry does not
+# hold back the others. Publishing skips versions that are already out, so a
+# failed job can be re-run on its own.
 
 on:
   schedule:
@@ -20,17 +24,18 @@ permissions:
   actions: read
 
 jobs:
-  prerelease:
-    name: Build and publish pre-releases
+  plan:
+    name: Plan pre-releases
     runs-on: ubuntu-latest
     outputs:
-      desktop: ${{ steps.encode.outputs.desktop }}
-      desktop_version: ${{ steps.encode.outputs.desktop_version }}
-      desktop_notes: ${{ steps.encode.outputs.desktop_notes }}
+      vscode: ${{ steps.prepare.outputs.vscode }}
+      jupyter: ${{ steps.prepare.outputs.jupyter }}
+      streamlit: ${{ steps.prepare.outputs.streamlit }}
+      desktop: ${{ steps.prepare.outputs.desktop }}
+      desktop_version: ${{ steps.prepare.outputs.desktop_version }}
+      desktop_notes: ${{ steps.prepare.outputs.desktop_notes }}
 
     steps:
-      # Full history: changelog entries link the pull request that added each
-      # changeset.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
         with:
           fetch-depth: 0
@@ -69,123 +74,121 @@ jobs:
             echo "No pending changesets; skipping pre-release."
           fi
 
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - name: Prepare pre-release
+        id: prepare
         if: steps.detect.outputs.has_changesets == 'true'
+        uses: ./.github/actions/prepare-prerelease
 
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
-        if: steps.detect.outputs.has_changesets == 'true'
+  vscode:
+    name: VS Code pre-release
+    needs: plan
+    if: needs.plan.outputs.vscode == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
         with:
-          node-version: '22'
-          cache: 'pnpm'
+          fetch-depth: 0
 
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v6
-        if: steps.detect.outputs.has_changesets == 'true'
-        with:
-          python-version: '3.11'
+      - uses: ./.github/actions/prepare-prerelease
 
-      - name: Install JS dependencies
-        if: steps.detect.outputs.has_changesets == 'true'
-        run: pnpm install --frozen-lockfile
+      - name: Build
+        run: pnpm turbo build --filter=niivue
 
-      - name: Install Python build tools
-        if: steps.detect.outputs.has_changesets == 'true'
-        run: python -m pip install "jupyterlab>=4.0.0,<5" build twine
-
-      # `changeset status --output` writes the release plan ({name, oldVersion,
-      # newVersion, type} per bumped package) without touching any file.
-      - name: Compute release plan
-        if: steps.detect.outputs.has_changesets == 'true'
-        run: pnpm changeset status --output=changeset-status.json
-
-      # Nothing is committed; the files only go into this run's packages.
-      - name: Write changelog sections
-        if: steps.detect.outputs.has_changesets == 'true'
-        run: |
-          pnpm changeset version
-          node scripts/release/polish-changelogs.mjs
-
-      - name: Encode pre-release versions per target
-        if: steps.detect.outputs.has_changesets == 'true'
-        id: encode
-        run: |
-          node scripts/release/encode-prerelease-versions.mjs ${{ github.run_number }}
-          target() { node -p "require('./prerelease-targets.json').$1 || ''"; }
-          {
-            echo "vscode=$(target vscode)"
-            echo "jupyter=$(target jupyter)"
-            echo "streamlit=$(target streamlit)"
-            echo "desktop=$(target desktop)"
-            echo "desktop_version=$(target desktopVersion)"
-            if [ "$(target desktop)" = "true" ]; then
-              echo 'desktop_notes<<NOTES_EOF'
-              node scripts/release/changelog-section.mjs apps/desktop-tauri/CHANGELOG.md
-              echo 'NOTES_EOF'
-            fi
-          } >> "$GITHUB_OUTPUT"
-
-      - name: Build all apps
-        if: steps.detect.outputs.has_changesets == 'true'
-        run: pnpm turbo build
-
-      # ── VS Code ────────────────────────────────────────────────────────────
-      - name: Package VS Code extension
-        if: steps.encode.outputs.vscode == 'true'
+      - name: Package
+        id: package
         run: pnpm vsce package --pre-release --no-dependencies
         working-directory: ./apps/vscode
 
       - name: Publish to VS Code Marketplace
-        if: steps.encode.outputs.vscode == 'true'
-        run: pnpm vsce publish --pre-release --packagePath *.vsix
+        run: pnpm vsce publish --pre-release --packagePath *.vsix --skip-duplicate
         working-directory: ./apps/vscode
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
 
       - name: Publish to Open VSX
-        if: steps.encode.outputs.vscode == 'true'
-        run: pnpm ovsx publish *.vsix --pre-release
+        if: ${{ !cancelled() && steps.package.outcome == 'success' }}
+        run: pnpm ovsx publish *.vsix --pre-release --skip-duplicate
         working-directory: ./apps/vscode
         env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
 
-      # ── JupyterLab ─────────────────────────────────────────────────────────
-      - name: Build JupyterLab Python package
-        if: steps.encode.outputs.jupyter == 'true'
+  jupyter:
+    name: JupyterLab pre-release
+    needs: plan
+    if: needs.plan.outputs.jupyter == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/prepare-prerelease
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v6
+        with:
+          python-version: '3.11'
+
+      # The extension build runs `jupyter labextension build`.
+      - name: Install Python build tools
+        run: python -m pip install "jupyterlab>=4.0.0,<5" build twine
+
+      - name: Build
+        run: pnpm turbo build --filter=@niivue/jupyter
+
+      - name: Build Python package
         run: python -m build
         working-directory: ./apps/jupyter
 
-      - name: Publish JupyterLab to PyPI
-        if: steps.encode.outputs.jupyter == 'true'
-        run: python -m twine upload dist/*
+      - name: Publish to PyPI
+        run: python -m twine upload --skip-existing dist/*
         working-directory: ./apps/jupyter
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
 
-      # ── Streamlit ──────────────────────────────────────────────────────────
-      - name: Build Streamlit Python package
-        if: steps.encode.outputs.streamlit == 'true'
+  streamlit:
+    name: Streamlit pre-release
+    needs: plan
+    if: needs.plan.outputs.streamlit == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/prepare-prerelease
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v6
+        with:
+          python-version: '3.11'
+
+      - name: Install Python build tools
+        run: python -m pip install build twine
+
+      - name: Build
+        run: pnpm turbo build --filter=@niivue/streamlit
+
+      - name: Build Python package
         run: python -m build
         working-directory: ./apps/streamlit
 
-      - name: Publish Streamlit to PyPI
-        if: steps.encode.outputs.streamlit == 'true'
-        run: python -m twine upload dist/*
+      - name: Publish to PyPI
+        run: python -m twine upload --skip-existing dist/*
         working-directory: ./apps/streamlit
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
 
-  # ── Desktop (Tauri) ────────────────────────────────────────────────────────
   # The installers need a platform matrix, so release_desktop.yml builds them
   # and creates the GitHub pre-release.
   desktop:
-    name: Build and publish desktop pre-release
-    needs: prerelease
-    if: needs.prerelease.outputs.desktop == 'true'
+    name: Desktop pre-release
+    needs: plan
+    if: needs.plan.outputs.desktop == 'true'
     permissions:
       contents: write
     uses: ./.github/workflows/release_desktop.yml
     with:
-      version: ${{ needs.prerelease.outputs.desktop_version }}
-      notes: ${{ needs.prerelease.outputs.desktop_notes }}
+      version: ${{ needs.plan.outputs.desktop_version }}
+      notes: ${{ needs.plan.outputs.desktop_notes }}
     secrets: inherit
