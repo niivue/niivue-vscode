@@ -60,8 +60,9 @@ building (`set-desktop-version.mjs`).
 ## Betas
 
 `prerelease.yml` runs every Monday at 03:00 UTC, and on demand from the Actions
-tab. It skips a commit the previous successful run already built, and does
-nothing when no changesets are pending. Otherwise it:
+tab. A scheduled run skips a commit an earlier run already planned, even if
+some of that run's jobs failed, and nothing happens when no changesets are
+pending. Otherwise it:
 
 1. reads the release plan (`changeset status --output`),
 2. runs `changeset version` and `polish-changelogs.mjs` in the checkout, so the
@@ -69,9 +70,15 @@ nothing when no changesets are pending. Otherwise it:
 3. encodes the beta version of each app in that plan
    (`encode-prerelease-versions.mjs`, which also retitles the VS Code changelog
    section to `2.11.<run> (pre-release)`),
-4. publishes only those apps. The desktop installers are built by
-   `release_desktop.yml` on a platform matrix and published as a GitHub
-   pre-release.
+4. builds and publishes each of those apps in its own job. The desktop
+   installers are built by `release_desktop.yml` on a platform matrix and
+   published as a GitHub pre-release.
+
+A failing registry does not hold back the other apps. Every publish skips a
+version that is already out, so a failed job can be re-run on its own
+(**Re-run failed jobs**); the stable release workflows behave the same way.
+Steps 1 to 3 live in the `prepare-prerelease` composite action, which every
+job runs.
 
 `<run>` is the run number of `prerelease.yml`. Renaming the workflow file
 restarts it at 1, which would number new VS Code betas below published ones.

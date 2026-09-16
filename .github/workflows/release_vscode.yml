@@ -32,17 +32,21 @@ jobs:
         run: pnpm turbo build --filter=niivue
 
       - name: Package extension
+        id: package
         run: pnpm vsce package --no-dependencies
         working-directory: ./apps/vscode
 
       - name: Publish to VS Code Marketplace
-        run: pnpm vsce publish --packagePath *.vsix
+        run: pnpm vsce publish --packagePath *.vsix --skip-duplicate
         working-directory: ./apps/vscode
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
 
+      # Open VSX does not wait for the Marketplace; skipping published versions
+      # lets a failed run be re-run.
       - name: Publish to Open VSX Registry
-        run: pnpm ovsx publish *.vsix
+        if: ${{ !cancelled() && steps.package.outcome == 'success' }}
+        run: pnpm ovsx publish *.vsix --skip-duplicate
         working-directory: ./apps/vscode
         env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
