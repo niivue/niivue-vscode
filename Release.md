@@ -60,8 +60,9 @@ building (`set-desktop-version.mjs`).
 ## Betas
 
 `prerelease.yml` runs every Monday at 03:00 UTC, and on demand from the Actions
-tab. It skips a commit the previous successful run already built, and does
-nothing when no changesets are pending. Otherwise it:
+tab. A scheduled run skips a commit an earlier run already planned, even if
+some of that run's jobs failed, and nothing happens when no changesets are
+pending. Otherwise it:
 
 1. reads the release plan (`changeset status --output`),
 2. runs `changeset version` and `polish-changelogs.mjs` in the checkout, so the

@@ -40,20 +40,27 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Changesets with empty frontmatter bump nothing and do not count.
+      # A scheduled run skips a commit that an earlier run already planned, even
+      # if some of its app jobs failed: those are re-run on their own, and a new
+      # run would publish the other apps again under a new number. Changesets
+      # with empty frontmatter bump nothing and do not count.
       - name: Detect whether a pre-release is needed
         id: detect
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           if [ "${{ github.event_name }}" = "schedule" ]; then
-            last=$(gh run list --workflow prerelease.yml --status success --limit 1 \
-              --json headSha --jq '.[0].headSha // ""')
-            if [ "$last" = "$GITHUB_SHA" ]; then
-              echo "has_changesets=false" >> "$GITHUB_OUTPUT"
-              echo "The last successful run already built $GITHUB_SHA; skipping."
-              exit 0
-            fi
+            for id in $(gh run list --workflow prerelease.yml --commit "$GITHUB_SHA" --limit 50 \
+                --json databaseId --jq '.[].databaseId'); do
+              [ "$id" = "$GITHUB_RUN_ID" ] && continue
+              planned=$(gh run view "$id" --json jobs \
+                --jq '[.jobs[] | select(.name == "Plan pre-releases" and .conclusion == "success")] | length')
+              if [ "$planned" -gt 0 ]; then
+                echo "has_changesets=false" >> "$GITHUB_OUTPUT"
+                echo "Run $id already planned pre-releases for $GITHUB_SHA; re-run its failed jobs instead."
+                exit 0
+              fi
+            done
           fi
 
           shopt -s nullglob
