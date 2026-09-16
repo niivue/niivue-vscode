@@ -58,6 +58,7 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     const colorbar = config.get<boolean>('colorbar', false)
     const radiologicalConvention = config.get<boolean>('radiologicalConvention', false)
     const zoomDragMode = config.get<boolean>('zoomDragMode', false)
+    const worldSpace = config.get<boolean>('worldSpace', false)
     const defaultVolumeColormap = config.get<string>('defaultVolumeColormap', 'gray')
     const defaultOverlayColormap = config.get<string>('defaultOverlayColormap', 'redyell')
     const defaultOverlayOpacity = config.get<number>('defaultOverlayOpacity', 0.5)
@@ -71,6 +72,7 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
         colorbar,
         radiologicalConvention,
         zoomDragMode,
+        worldSpace,
         defaultVolumeColormap,
         defaultOverlayColormap,
         defaultOverlayOpacity,

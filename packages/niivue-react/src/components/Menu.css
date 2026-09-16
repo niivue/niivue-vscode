@@ -10,7 +10,6 @@
   min-height: var(--topbar-h);
 }
 .nv-topbar-left { display: flex; align-items: center; gap: 20px; min-width: 0; flex: 1; }
-.nv-topbar-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 
 /* Adaptive menu bar: a single non-wrapping row that overflows into a "More"
    menu instead of wrapping to a second line. */
