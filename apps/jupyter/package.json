@@ -73,12 +73,12 @@
     "@jupyterlab/services": "^7.5.7",
     "@jupyterlab/translation": "^4.5.7",
     "@lumino/widgets": "^2.7.5",
-    "@niivue/niivue": "1.0.0-rc.13"
+    "@niivue/niivue": "1.0.0-rc.13",
+    "@niivue/react": "workspace:*"
   },
   "devDependencies": {
     "@jupyterlab/builder": "^4.5.7",
     "@niivue/dicom-loader": "^1.0.0",
-    "@niivue/react": "workspace:*",
     "@preact/signals": "^2.11.2",
     "@vitest/coverage-v8": "^4.1.6",
     "copy-webpack-plugin": "^14.0.0",
@@ -112,6 +112,9 @@
     "extension": true,
     "outputDir": "jupyterlab_niivue/labextension",
     "schemaDir": "schema",
-    "webpackConfig": "./webpack.config.js"
+    "webpackConfig": "./webpack.config.js",
+    "sharedPackages": {
+      "@niivue/react": false
+    }
   }
 }

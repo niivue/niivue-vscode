@@ -28,9 +28,11 @@
  *   - package.json holds a semver-compatible mirror (`<base>-dev.<run>`) so
  *     pnpm/turbo/changesets keep parsing the manifest. The authoritative
  *     PyPI version is written to pyproject.toml.
- *   - Desktop (Tauri): plain numeric `<major>.<minor>.<run>`. Windows MSI and
- *     macOS bundlers reject SemVer pre-release identifiers, so we mirror the
- *     VS Code style (bare numeric, run number as the distinguishing part).
+ *   - Desktop (Tauri): `<next-stable>-beta.<run>`. It sorts below the stable it
+ *     leads to, so the updater moves beta users to that stable. The app ships
+ *     the NSIS installer; MSI rejects pre-release identifiers.
+ *   - The VS Code extension ships its CHANGELOG.md. When `changeset version`
+ *     ran before this script, its new section is retitled to the pre-release.
  *
  * Outputs:
  *   prerelease-targets.json — { vscode, jupyter, streamlit, desktop } booleans
@@ -87,12 +89,7 @@ const toVscodePreRelease = (nextStable) => {
 const toPep440Dev = (nextStable) => `${nextStable}.dev${runNumber}`
 const toSemverDev = (nextStable) => `${nextStable}-dev.${runNumber}`
 
-// Desktop (Tauri) bundles use a plain numeric M.m.p version (see header):
-// keep the next-stable major.minor and use the run number as the patch.
-const toDesktopPreRelease = (nextStable) => {
-  const [major, minor] = nextStable.split('.').map(Number)
-  return `${major}.${minor}.${runNumber}`
-}
+const toDesktopPreRelease = (nextStable) => `${nextStable}-beta.${runNumber}`
 
 // Override pyproject.toml's version statically. For jupyter, this also
 // removes `version` from `[project].dynamic` so hatch-nodejs-version does
@@ -139,7 +136,15 @@ const targets = {
 // ── VS Code extension ───────────────────────────────────────────────────────
 const vscodeNext = nextStable('niivue')
 if (vscodeNext) {
-  writePkgVersion('apps/vscode/package.json', toVscodePreRelease(vscodeNext))
+  const preRelease = toVscodePreRelease(vscodeNext)
+  writePkgVersion('apps/vscode/package.json', preRelease)
+  const changelogPath = path.join(repoRoot, 'apps/vscode/CHANGELOG.md')
+  const changelog = readFileSync(changelogPath, 'utf8')
+  const heading = `## ${vscodeNext}\n`
+  if (changelog.includes(heading)) {
+    writeFileSync(changelogPath, changelog.replace(heading, `## ${preRelease} (pre-release)\n`))
+    console.log(`  apps/vscode/CHANGELOG.md: ## ${preRelease} (pre-release)`)
+  }
   targets.vscode = true
 } else {
   console.log('  apps/vscode: not in release plan, skipping')

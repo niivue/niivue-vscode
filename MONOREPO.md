@@ -65,15 +65,14 @@ The monorepo uses:
 
 ## Deployment & Releases
 
-We use **Changesets** for independent versioning and automated releases. Read the full guide here:
+Each app has its own version, managed with **Changesets**. Read the full guide here:
 - **[Release Process Details](Release.md)**
 
 High-level overview:
-- Developers run `pnpm changeset` to document changes.
-- Merging the auto-generated "Version Packages" PR triggers Release Coordinator to tag the bumped apps and dispatch their per-app release workflows.
-- Each per-app workflow publishes to its registry:
-  - **VS Code**: VS Code Marketplace & Open VSX
-  - **Jupyter & Streamlit**: PyPI
-  - **PWA**: GitHub Pages (deployed directly from `main`, no tag involved)
-  - **Desktop (Tauri)**: Cross-platform binaries published to GitHub Releases (Linux .deb/.AppImage, macOS .dmg, Windows .msi/.exe)
-- A daily scheduled job (03:00 UTC) publishes a pre-release when `main` has pending changesets — capped at one per day (Marketplace pre-release channel / PyPI `--pre` / desktop installers on GitHub Releases).
+- Developers run `pnpm changeset` to describe user-facing changes ([guidelines](.changeset/README.md)).
+- Merging the auto-generated version PR makes the Release Coordinator tag the bumped apps. Each tag starts that app's release workflow:
+  - **VS Code**: VS Code Marketplace and Open VSX
+  - **Jupyter and Streamlit**: PyPI
+  - **Desktop (Tauri)**: GitHub release with installers (Linux .deb/.AppImage, macOS .dmg, Windows .exe)
+  - **PWA**: GitHub Pages, deployed directly from `main`
+- Every Monday, a scheduled job publishes betas of the apps with pending changesets (Marketplace pre-release channel, PyPI `--pre`, desktop GitHub pre-release).

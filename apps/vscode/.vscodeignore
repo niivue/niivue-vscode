@@ -1,6 +1,8 @@
 # Development and build files
 src/
 tsconfig.json
+build-webview.mjs
+vitest.config.ts
 postcss.config.js
 tailwind.config.js
 .turbo/
@@ -25,9 +27,6 @@ BrainMesh_ICBM152.lh.mz3
 csi_template.mnc
 enh.dcm
 imag_spec_walinet_small.nii
-
-# Documentation
-CHANGELOG.md
 
 # Screenshots (now hosted on GitHub, no need in package)
 media/

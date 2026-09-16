@@ -30,8 +30,8 @@
  * collide.
  *
  * Only the VS Code extension is affected. PyPI (jupyter/streamlit) and the
- * Tauri desktop bundles have no even/odd convention; their pre-release
- * encodings (`.devN`, plain numeric) already keep the channels distinct.
+ * Tauri desktop app have no even/odd convention; their pre-releases
+ * (`.devN`, `-beta.N`) sort below the stable they lead to.
  *
  * Idempotent: a version already on an even minor is left untouched, so this
  * is a no-op on the common path (a `minor` bump that already lands even, or

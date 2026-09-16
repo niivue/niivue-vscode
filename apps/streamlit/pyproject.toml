@@ -37,10 +37,10 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/niivue/niivue"
-Documentation = "https://niivue.github.io/niivue/"
-Repository = "https://github.com/niivue/niivue"
-Issues = "https://github.com/niivue/niivue/issues"
+Homepage = "https://github.com/niivue/niivue-vscode/tree/main/apps/streamlit"
+Changelog = "https://github.com/niivue/niivue-vscode/blob/main/apps/streamlit/CHANGELOG.md"
+Issues = "https://github.com/niivue/niivue-vscode/issues"
+Repository = "https://github.com/niivue/niivue-vscode"
 
 [tool.setuptools.packages.find]
 include = ["niivue_component*"]

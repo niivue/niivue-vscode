@@ -1,81 +1,60 @@
 name: Pre-release
 
-# Auto-publish pre-releases on a daily schedule (03:00 UTC) whenever main has
-# pending changesets. Running on a timer instead of on every push caps beta
-# releases at a maximum of one per day, no matter how many times main is
-# pushed (frequent dependabot merges previously produced a beta each).
-# Versions are derived from the same source of truth as the next stable (the
-# queued changesets), so beta numbers always reflect what the next stable
-# will be. Scheme:
-#   - VS Code: <major>.<next-odd-minor>.<run>  (e.g. stable 2.10.0 → pre 2.11.<run>)
-#   - PyPI:    <next-stable>.dev<run>          (PEP 440 development release)
-#
-# The job no-ops when there are no pending changesets (e.g. after a day of
-# doc-only commits), when main has not advanced since the previous beta (a
-# commit already pre-released is recognised by its `prerelease-<sha>` tag, so
-# an unchanged main does not republish on the timer), and skips publish for
-# any individual app that changesets did not bump. Use the workflow_dispatch
-# trigger to force an off-schedule beta (it bypasses the unchanged-main check).
-# Stable releases stay on the Release Coordinator path (merge the "Version
-# Packages" PR).
+# Weekly betas of the apps that pending changesets bump. Beta versions derive
+# from the next stable those changesets describe:
+#   - VS Code: <major>.<next odd minor>.<run>  (next stable 2.10.0 -> 2.11.<run>)
+#   - PyPI:    <next stable>.dev<run>         (installed only with `pip install --pre`)
+#   - Desktop: <next stable>-beta.<run>, as a GitHub pre-release with installers
+# Each beta ships the changelog section of that next stable. Stable releases
+# go through the version PR (release-coordinator.yml). workflow_dispatch
+# publishes a beta off schedule.
 
 on:
   schedule:
-    # Daily at 03:00 UTC. Caps pre-releases at one per day; GitHub runs
-    # scheduled workflows against the latest commit on the default branch.
-    - cron: '0 3 * * *'
+    # Mondays at 03:00 UTC.
+    - cron: '0 3 * * 1'
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
+  actions: read
 
 jobs:
   prerelease:
     name: Build and publish pre-releases
     runs-on: ubuntu-latest
-    # Exposed for the desktop job below: whether @niivue/tauri was bumped and
-    # the beta version to stamp into its cross-platform build.
     outputs:
       desktop: ${{ steps.encode.outputs.desktop }}
       desktop_version: ${{ steps.encode.outputs.desktop_version }}
+      desktop_notes: ${{ steps.encode.outputs.desktop_notes }}
 
     steps:
+      # Full history: changelog entries link the pull request that added each
+      # changeset.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
         with:
-          fetch-depth: 2
+          fetch-depth: 0
 
-      # Bail early if there are no pending changesets. Without any, there's
-      # nothing semantically new to pre-release on top of the last stable.
-      # Empty-frontmatter changesets (used as test-only / docs-only markers
-      # that satisfy the "every PR touching packages/apps needs a changeset"
-      # rule without bumping a version) are skipped here too — they have no
-      # package bumps so the pre-release would publish nothing.
+      # Changesets with empty frontmatter bump nothing and do not count.
       - name: Detect whether a pre-release is needed
         id: detect
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          # Scheduled runs fire daily against the latest commit on main, and
-          # each run stamps a fresh beta version from the run number. Without a
-          # guard a new beta would publish every day even when main has not
-          # moved since the previous beta (the "new release every day" bug).
-          # Each pre-release is tagged `prerelease-<sha>`, so if origin already
-          # has that tag for HEAD this exact commit was already pre-released and
-          # there is nothing new to ship. Only the schedule trigger is guarded;
-          # workflow_dispatch still force-publishes a beta on the same commit.
-          if [ "${{ github.event_name }}" = "schedule" ] \
-             && git ls-remote --exit-code --tags origin \
-                  "refs/tags/prerelease-${{ github.sha }}" >/dev/null; then
-            echo "has_changesets=false" >> "$GITHUB_OUTPUT"
-            echo "Commit ${{ github.sha }} was already pre-released; skipping."
-            exit 0
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            last=$(gh run list --workflow prerelease.yml --status success --limit 1 \
+              --json headSha --jq '.[0].headSha // ""')
+            if [ "$last" = "$GITHUB_SHA" ]; then
+              echo "has_changesets=false" >> "$GITHUB_OUTPUT"
+              echo "The last successful run already built $GITHUB_SHA; skipping."
+              exit 0
+            fi
           fi
 
           shopt -s nullglob
           count=0
           for f in .changeset/*.md; do
             [ "$(basename "$f")" = "README.md" ] && continue
-            # A changeset is "empty" if its frontmatter (everything between
-            # the first pair of `---` lines) has no non-blank content lines —
-            # i.e. no `"<package>": <bump>` entries.
             if ! awk '/^---$/{c++; next} c==1 && NF>0' "$f" | grep -q .; then
               echo "  skipping empty changeset: $(basename "$f")"
               continue
@@ -87,7 +66,7 @@ jobs:
             echo "Found $count pending changeset(s)."
           else
             echo "has_changesets=false" >> "$GITHUB_OUTPUT"
-            echo "No pending changesets — skipping pre-release."
+            echo "No pending changesets; skipping pre-release."
           fi
 
       - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
@@ -112,28 +91,38 @@ jobs:
         if: steps.detect.outputs.has_changesets == 'true'
         run: python -m pip install "jupyterlab>=4.0.0,<5" build twine
 
-      # Compute "what would the next stable be?" via `changeset status
-      # --output`, which writes a ReleasePlan JSON ({name, oldVersion,
-      # newVersion, type} per bumped package) without mutating any files.
-      # Snapshot mode is unsuitable here: by default it uses 0.0.0 as the
-      # base (not the calculated next-stable), so reading the bumped
-      # version back can't recover the intended pre-release base.
+      # `changeset status --output` writes the release plan ({name, oldVersion,
+      # newVersion, type} per bumped package) without touching any file.
       - name: Compute release plan
         if: steps.detect.outputs.has_changesets == 'true'
         run: pnpm changeset status --output=changeset-status.json
+
+      # Nothing is committed; the files only go into this run's packages.
+      - name: Write changelog sections
+        if: steps.detect.outputs.has_changesets == 'true'
+        run: |
+          pnpm changeset version
+          node scripts/release/polish-changelogs.mjs
 
       - name: Encode pre-release versions per target
         if: steps.detect.outputs.has_changesets == 'true'
         id: encode
         run: |
           node scripts/release/encode-prerelease-versions.mjs ${{ github.run_number }}
-          echo "vscode=$(node -p "require('./prerelease-targets.json').vscode")"       >> "$GITHUB_OUTPUT"
-          echo "jupyter=$(node -p "require('./prerelease-targets.json').jupyter")"     >> "$GITHUB_OUTPUT"
-          echo "streamlit=$(node -p "require('./prerelease-targets.json').streamlit")" >> "$GITHUB_OUTPUT"
-          echo "desktop=$(node -p "require('./prerelease-targets.json').desktop")"     >> "$GITHUB_OUTPUT"
-          echo "desktop_version=$(node -p "require('./prerelease-targets.json').desktopVersion || ''")" >> "$GITHUB_OUTPUT"
+          target() { node -p "require('./prerelease-targets.json').$1 || ''"; }
+          {
+            echo "vscode=$(target vscode)"
+            echo "jupyter=$(target jupyter)"
+            echo "streamlit=$(target streamlit)"
+            echo "desktop=$(target desktop)"
+            echo "desktop_version=$(target desktopVersion)"
+            if [ "$(target desktop)" = "true" ]; then
+              echo 'desktop_notes<<NOTES_EOF'
+              node scripts/release/changelog-section.mjs apps/desktop-tauri/CHANGELOG.md
+              echo 'NOTES_EOF'
+            fi
+          } >> "$GITHUB_OUTPUT"
 
-      # ── Build everything ───────────────────────────────────────────────────
       - name: Build all apps
         if: steps.detect.outputs.has_changesets == 'true'
         run: pnpm turbo build
@@ -141,12 +130,12 @@ jobs:
       # ── VS Code ────────────────────────────────────────────────────────────
       - name: Package VS Code extension
         if: steps.encode.outputs.vscode == 'true'
-        run: pnpm vsce package --pre-release
+        run: pnpm vsce package --pre-release --no-dependencies
         working-directory: ./apps/vscode
 
       - name: Publish to VS Code Marketplace
         if: steps.encode.outputs.vscode == 'true'
-        run: pnpm vsce publish --pre-release
+        run: pnpm vsce publish --pre-release --packagePath *.vsix
         working-directory: ./apps/vscode
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
@@ -186,65 +175,9 @@ jobs:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
 
-      # ── GitHub Release ─────────────────────────────────────────────────────
-      # The release lists only the apps that were actually bumped. Apps that
-      # were skipped (no changeset touched them) do not appear in the notes.
-      - name: Prepare release notes
-        if: steps.detect.outputs.has_changesets == 'true' &&
-            (steps.encode.outputs.vscode == 'true' ||
-             steps.encode.outputs.jupyter == 'true' ||
-             steps.encode.outputs.streamlit == 'true' ||
-             steps.encode.outputs.desktop == 'true')
-        id: notes
-        run: |
-          {
-            echo 'body<<EOF'
-            echo "Automated pre-release from commit ${{ github.sha }}."
-            echo ""
-            if [ "${{ steps.encode.outputs.vscode }}" = "true" ]; then
-              v=$(node -p "require('./apps/vscode/package.json').version")
-              echo "- **VS Code**: \`$v\` — install via Marketplace (pre-release channel) or download \`.vsix\` below"
-            fi
-            if [ "${{ steps.encode.outputs.jupyter }}" = "true" ]; then
-              v=$(node -p "require('./apps/jupyter/package.json').version")
-              echo "- **JupyterLab**: \`$v\` — \`pip install --pre jupyterlab_niivue\`"
-            fi
-            if [ "${{ steps.encode.outputs.streamlit }}" = "true" ]; then
-              v=$(node -p "require('./apps/streamlit/package.json').version")
-              echo "- **Streamlit**: \`$v\` — \`pip install --pre niivue-streamlit\`"
-            fi
-            if [ "${{ steps.encode.outputs.desktop }}" = "true" ]; then
-              echo "- **Desktop (Tauri)**: \`${{ steps.encode.outputs.desktop_version }}\` — download the installer for your platform from the assets below (built separately; appears a few minutes after this release is published)"
-            fi
-            echo 'EOF'
-          } >> "$GITHUB_OUTPUT"
-
-      - name: Create GitHub pre-release
-        if: steps.detect.outputs.has_changesets == 'true' &&
-            (steps.encode.outputs.vscode == 'true' ||
-             steps.encode.outputs.jupyter == 'true' ||
-             steps.encode.outputs.streamlit == 'true' ||
-             steps.encode.outputs.desktop == 'true')
-        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3
-        with:
-          tag_name: prerelease-${{ github.sha }}
-          prerelease: true
-          make_latest: false
-          name: "Pre-release ${{ github.run_number }}"
-          body: ${{ steps.notes.outputs.body }}
-          fail_on_unmatched_files: false
-          files: |
-            apps/vscode/*.vsix
-            apps/jupyter/dist/*
-            apps/streamlit/dist/*
-
   # ── Desktop (Tauri) ────────────────────────────────────────────────────────
-  # The cross-platform Tauri installers (Linux/macOS/Windows) are built by the
-  # reusable release_desktop.yml. It runs only when a changeset bumped
-  # @niivue/tauri, stamps the computed beta version into the manifests, and
-  # attaches the installers to the pre-release created above. Kept as a separate
-  # job because the desktop build needs a platform matrix and Rust toolchains
-  # the single-runner publish job above cannot provide.
+  # The installers need a platform matrix, so release_desktop.yml builds them
+  # and creates the GitHub pre-release.
   desktop:
     name: Build and publish desktop pre-release
     needs: prerelease
@@ -254,5 +187,5 @@ jobs:
     uses: ./.github/workflows/release_desktop.yml
     with:
       version: ${{ needs.prerelease.outputs.desktop_version }}
-      release_tag: prerelease-${{ github.sha }}
+      notes: ${{ needs.prerelease.outputs.desktop_notes }}
     secrets: inherit

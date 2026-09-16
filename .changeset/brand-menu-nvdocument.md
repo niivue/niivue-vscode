@@ -1,27 +1,6 @@
 ---
-'@niivue/react': minor
-'@niivue/pwa': minor
 '@niivue/tauri': patch
-'niivue': patch
-'@niivue/streamlit': patch
-'@niivue/jupyter': patch
+'@niivue/pwa': patch
 ---
 
-Fold the Home button into the brand, and add an NVDocument Save/Load split button.
-
-- The standalone "Home" menu-bar button is gone. On standalone hosts (web, desktop)
-  the NiiVue logo + wordmark is now a dropdown: **Reset Viewer** (the old Home
-  action) and **About** (a dialog with the app's purpose, NiiVue + NeuroDesk
-  credits, the data-privacy note, and the build version linking to its commit).
-  Embedded Streamlit, which sets `menuItems.home: false`, keeps a static brand.
-- An **NVDocument** split button: clicking the label saves the active scene as a
-  `.nvd`, while the dropdown offers **Save**, **Save as JSON** and **Load** (a
-  `.nvd` file picker, complementing drag-and-drop).
-- Hosts can pass an optional `appInfo` ({ version, buildDate, repoUrl }) to
-  `Menu`; the PWA wires in its build-time git metadata. The About dialog degrades
-  gracefully (omits the version line) when a host supplies none.
-- The standalone home screens (PWA and desktop) now share a `HomeSection`
-  primitive for consistent styling while keeping their host-specific copy (PWA:
-  install / bookmarklet / update; desktop: native Open File). Both drop their
-  "Data Privacy" section, and the PWA also drops its version footer, since the
-  brand menu's About dialog now carries that information.
+The NiiVue logo in the menu bar opens **Reset Viewer** and **About**.
