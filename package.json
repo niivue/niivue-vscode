@@ -32,6 +32,7 @@
     "generate:icons:tauri": "pnpm --filter @niivue/tauri run generate:icons:tauri",
     "test": "turbo test",
     "lint": "turbo lint",
+    "lint:wording": "node scripts/check-citation-wording.mjs",
     "type-check": "turbo type-check",
     "dev": "turbo dev --parallel",
     "dev:vscode": "pnpm --filter niivue dev",
