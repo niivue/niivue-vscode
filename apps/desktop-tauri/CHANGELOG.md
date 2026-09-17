@@ -1,25 +1,26 @@
-# Change Log
+# @niivue/tauri
 
-## 2.10.0
+## 0.2.0
 
 ### New features
 
+- First release of NiiVue Desktop, a standalone viewer for Windows, macOS and Linux that opens files from your computer and remembers recently opened files. ([#146](https://github.com/niivue/niivue-vscode/pull/146))
 - Show how to cite the NiiVue wrapper ecosystem paper: the **About** dialog and a new **Cite NiiVue VS Code** entry in the NiiVue logo menu give the reference, with buttons to copy it as text or BibTeX. After a screenshot is saved, a short note names the file and the paper to cite. ([#305](https://github.com/niivue/niivue-vscode/pull/305))
-- Open DICOM files that have no file extension. In VS Code, opening one DICOM file loads the whole series from its folder. ([#230](https://github.com/niivue/niivue-vscode/pull/230))
-- Open GraphML files (`.graphml`), such as vessel skeletons and brain networks, as a network of nodes and edges. ([#257](https://github.com/niivue/niivue-vscode/pull/257))
 - Update the NiiVue core to 1.0 (release candidate). It renders with WebGPU where available and with WebGL2 elsewhere. ([#252](https://github.com/niivue/niivue-vscode/pull/252))
 - Open NiiVue documents (`.nvd`, `.nvd.json`) like images: from the VS Code Explorer, the JupyterLab file browser, the desktop Open File dialog or the Streamlit component. **Save as JSON** writes the JSON document format that other NiiVue tools read. ([#304](https://github.com/niivue/niivue-vscode/pull/304))
 - Add a **Screenshot** button that saves the visible tiles as a PNG figure at twice the screen resolution. With several tiles open, the dropdown can save only the selected tile. VS Code and JupyterLab ask where in the workspace to save it. ([#300](https://github.com/niivue/niivue-vscode/pull/300))
 - Save the current scene as a NiiVue document (`.nvd`) from the new **NVDocument** menu, and open it again to restore its images and view settings. ([#235](https://github.com/niivue/niivue-vscode/pull/235))
+- Open DICOM files that have no file extension. In VS Code, opening one DICOM file loads the whole series from its folder. ([#230](https://github.com/niivue/niivue-vscode/pull/230))
 - Reorder images by dragging the grab strip at the top of a tile onto another tile. ([#107](https://github.com/niivue/niivue-vscode/pull/107))
+- Open GraphML files (`.graphml`), such as vessel skeletons and brain networks, as a network of nodes and edges. ([#257](https://github.com/niivue/niivue-vscode/pull/257))
 - Add **View > Tile Spacing** to set the gap between tiles, and fix the last tile spilling off screen when several images are open. ([#238](https://github.com/niivue/niivue-vscode/pull/238))
 
 ### Fixes and improvements
 
-- Fix keyboard shortcuts acting twice on the focused tile. The crosshair keys (`H`, `J`, `K`, `L`, `Ctrl+U`, `Ctrl+D`) move the crosshair in every selected tile. In VS Code, viewer shortcuts only work while the viewer has focus, so they no longer take keys typed into Quick Open or the Command Palette. ([#242](https://github.com/niivue/niivue-vscode/pull/242))
-- Make the menu bar more compact.
+- The NiiVue logo in the menu bar opens **Reset Viewer** and **About**. ([#250](https://github.com/niivue/niivue-vscode/pull/250))
 - Fix "Failed to load image" appearing at random when several images are opened in a row. ([#267](https://github.com/niivue/niivue-vscode/pull/267))
 - Center the About and Header dialogs in the window.
+- Fix keyboard shortcuts acting twice on the focused tile. The crosshair keys (`H`, `J`, `K`, `L`, `Ctrl+U`, `Ctrl+D`) move the crosshair in every selected tile. In VS Code, viewer shortcuts only work while the viewer has focus, so they no longer take keys typed into Quick Open or the Command Palette. ([#242](https://github.com/niivue/niivue-vscode/pull/242))
 - Warn right away when a NIfTI image is too large to display (more than 2 GB uncompressed), instead of failing after a long load. ([#256](https://github.com/niivue/niivue-vscode/pull/256))
 - Fix NumPy `.npy` and `.npz` files with 64-bit integers, NumPy's default, showing as black or corrupt images. ([#259](https://github.com/niivue/niivue-vscode/pull/259))
 - Show the NiiVue brain logo as the app icon, the file icon and in the menu bar. ([#169](https://github.com/niivue/niivue-vscode/pull/169))
@@ -29,33 +30,3 @@
 - Refresh the look of the menu bar and tiles. Menus that do not fit collapse into **More** instead of wrapping onto a second line. ([#151](https://github.com/niivue/niivue-vscode/pull/151))
 - When WebGL2 is unavailable, the error on the tile explains that the graphics setup is the cause, not the file, and links to how to fix it. ([#251](https://github.com/niivue/niivue-vscode/pull/251))
 - When the graphics backend fails to start, the error on the tile says which one failed. In the web app, `?backend=webgl2` forces WebGL2. ([#272](https://github.com/niivue/niivue-vscode/pull/272))
-
-## 2.9.0
-
-### Minor Changes
-
-- 62ecdef: Add keyboard shortcuts
-
-### Patch Changes
-
-- e98248f: Add monorepo-aware test coverage reporting with Vitest v8 coverage for all packages, Playwright V8 coverage via monocart-reporter for e2e tests, and a coverage aggregation script that produces a unified HTML report and per-package summary table.
-- 23028fd: shift+drop adds files as overlays to the last canvas instead of creating new ones
-  overlay handler resolves index -1 to last canvas with bounds check
-  HeaderBox now uses signal effect instead of stale useEffect dependency
-  added onVolumeUpdated callback to ExtendedNiivue, called after load
-- a4517f2: Extend MHD detached-header support beyond the VS Code extension. The PWA, Jupyter and Streamlit apps now resolve a `.mhd` header's `ElementDataFile` reference and fetch (or forward) the paired `.raw` voxel data: PWA via drag/drop and `?images=` URL auto-fetch, Jupyter via the Contents API in the iframe, Streamlit via a new `paired_data` Python argument. When the paired raw file is missing or the reference is unsafe (path traversal, nested dirs), a clear "Missing paired data file…" warning is surfaced in the existing on-canvas error overlay instead of a silent black render. The VS Code path also rejects non-sibling references for consistency.
-- 13147d5: Fix MHD files loading as a black image. MHD is a detached format where voxel data lives in a separate `.raw` file referenced by `ElementDataFile` in the header. NiiVue's URL-based loader does not auto-detect the paired `.raw` URL for MHD files, so the extension now parses the header, resolves the raw file URI, and passes it to the webview as `urlImgData` (URL path) or `pairedData` (binary-data path). The webview forwards `urlImgData` to NiiVue's `loadImages` call and uses a Blob URL to load `pairedData` when binary buffers are provided.
-- 932d631: Fix **Add Image** / **Add Overlay** silently failing on VS Code Remote-SSH (and any session where the picked file sits outside `localResourceRoots`). Centralise the URL-vs-binary decision in a new `uriToImageBody` helper used by every load entry point, harden `isUriAccessible` to match on scheme + authority + path (so a `file://` workspace can't claim to host a `vscode-remote://` file in single-file mode), and fall back to `vscode.workspace.fs.readFile` whenever `webview.asWebviewUri` can't serve the file.
-- 79610b8: Initial configuration for automated independent releases via Changesets.
-
-## 2.7.0
-
-### Added
-
-- New 4D navigation panel.
-- Improved error handling in canvas with descriptive error messages.
-- Added support for `.mnc` files in JupyterLab extension.
-
-### Fixed
-
-- Fixed double loading issue for images where files would open twice.
