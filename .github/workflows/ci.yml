@@ -101,6 +101,9 @@ jobs:
       - name: Release script unit tests
         run: pnpm release:test
 
+      - name: Citation wording
+        run: pnpm lint:wording
+
   build:
     runs-on: ubuntu-latest
     steps:

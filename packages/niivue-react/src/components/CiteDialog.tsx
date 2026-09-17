@@ -32,7 +32,7 @@ async function copyText(text: string, container: HTMLElement | null): Promise<bo
 }
 
 /**
- * The brand menu's "Cite NiiVue" dialog: the reference for the NiiVue wrapper
+ * The brand menu's "Cite NiiVue VS Code" dialog: the reference for the NiiVue wrapper
  * ecosystem paper, with buttons to copy it as text or BibTeX. `isOpen` is a
  * trigger signal like AboutDialog's.
  */
@@ -58,7 +58,7 @@ export const CiteDialog = ({ isOpen }: { isOpen: Signal<boolean> }) => {
   return (
     <dialog ref={dialogRef} className="nv-about" data-testid="cite-dialog">
       <form method="dialog" className="nv-about-body">
-        <h2 className="nv-about-title">Cite NiiVue</h2>
+        <h2 className="nv-about-title">Cite NiiVue VS Code</h2>
         <p className="nv-about-text">If you use NiiVue Viewer in published work, please cite:</p>
         <p className="nv-cite-reference" data-testid="cite-reference">
           {CITATION_TEXT}{' '}
