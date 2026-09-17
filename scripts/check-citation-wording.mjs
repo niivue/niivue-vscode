@@ -4,8 +4,9 @@
  *
  * The paper users are asked to cite describes the NiiVue wrapper ecosystem
  * that this repository ships, not the NiiVue core library. A request to cite
- * that leaves out "VS Code" reads as the core, so the viewer, docs and
- * changesets say "Cite NiiVue VS Code". Fails on any tracked text that doesn't.
+ * the bare name reads as the core, so the viewer, docs and changesets say
+ * "Cite NiiVue VS Code" or name the NiiVue Viewer. Fails on any tracked text
+ * that doesn't.
  *
  *   node scripts/check-citation-wording.mjs
  */
@@ -16,7 +17,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const AMBIGUOUS = /\bcite\s+niivue\b(?!\s+vs\s*code)/i
+const AMBIGUOUS = /\bcite\s+niivue\b(?!\s+(?:vs\s*code|viewer)\b)/i
 const TEXT_FILE = /\.(md|mdx|ts|tsx|js|mjs|cjs|css|html|json|py|rs|toml|ya?ml|cff)$/
 
 // -z keeps paths with non-ASCII characters unquoted.
@@ -37,7 +38,7 @@ for (const file of files) {
 
 if (hits.length > 0) {
   console.error(
-    'Write "Cite NiiVue VS Code": the paper covers the wrapper ecosystem, not the NiiVue core.',
+    'Write "Cite NiiVue VS Code" or "NiiVue Viewer": the paper covers the wrapper ecosystem, not the NiiVue core.',
   )
   console.error(hits.join('\n'))
   process.exit(1)
