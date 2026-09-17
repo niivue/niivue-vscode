@@ -871,7 +871,7 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
 const BRAND_KEY = '__brand__'
 
 // The NiiVue logo + wordmark, a dropdown trigger for viewer-level actions:
-// About and Cite NiiVue everywhere, plus Reset Viewer on standalone hosts
+// About and Cite NiiVue VS Code everywhere, plus Reset Viewer on standalone hosts
 // (`showReset`), since reloading a webview host (VS Code, JupyterLab) or an
 // embedded Streamlit component would drop the files it was given.
 const BrandMenu = ({
@@ -919,7 +919,7 @@ const BrandMenu = ({
         <div className="nv-menu-panel absolute left-0 z-50 min-w-[180px]">
           {showReset && <MenuEntry label="Reset Viewer" onClick={onReset} />}
           <MenuEntry label="About" onClick={onAbout} />
-          <MenuEntry label="Cite NiiVue" onClick={onCite} />
+          <MenuEntry label="Cite NiiVue VS Code" onClick={onCite} />
         </div>
       )}
     </div>

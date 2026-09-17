@@ -24,12 +24,12 @@ test.describe('Menu', () => {
     expect(await page.textContent('text=/NeuroDesk/i')).toBeTruthy()
   })
 
-  test('brand menu Cite NiiVue copies the citation', { tag: '@dom' }, async ({ page, context }) => {
+  test('brand menu Cite NiiVue VS Code copies the citation', { tag: '@dom' }, async ({ page, context }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write'])
     await page.goto(BASE_URL)
 
     await page.click('data-testid=menu-brand')
-    await page.getByRole('button', { name: 'Cite NiiVue' }).click()
+    await page.getByRole('button', { name: 'Cite NiiVue VS Code', exact: true }).click()
 
     const dialog = page.getByTestId('cite-dialog')
     await expect(dialog).toBeVisible()

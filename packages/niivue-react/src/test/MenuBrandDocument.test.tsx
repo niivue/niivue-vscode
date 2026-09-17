@@ -157,14 +157,14 @@ describe('Brand menu', () => {
 
     expect(await screen.findByText('Reset Viewer')).toBeTruthy()
     expect(await screen.findByText('About')).toBeTruthy()
-    expect(await screen.findByRole('button', { name: 'Cite NiiVue' })).toBeTruthy()
+    expect(await screen.findByRole('button', { name: 'Cite NiiVue VS Code' })).toBeTruthy()
   })
 
-  it('Cite NiiVue opens the cite dialog with the reference', async () => {
+  it('Cite NiiVue VS Code opens the cite dialog with the reference', async () => {
     render(<Menu {...makeProps({ home: true })} />)
 
     fireEvent.click(screen.getByTestId('menu-brand'))
-    fireEvent.click(await screen.findByRole('button', { name: 'Cite NiiVue' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Cite NiiVue VS Code' }))
 
     expect(HTMLDialogElement.prototype.showModal).toHaveBeenCalled()
     expect(screen.getByTestId('cite-reference').textContent).toContain('Aperture Neuro. 2026;6.')
@@ -182,13 +182,13 @@ describe('Brand menu', () => {
     expect(HTMLDialogElement.prototype.showModal).toHaveBeenCalled()
   })
 
-  it('offers About and Cite NiiVue without Reset Viewer when the home flag is off', async () => {
+  it('offers About and Cite NiiVue VS Code without Reset Viewer when the home flag is off', async () => {
     render(<Menu {...makeProps({ home: false })} />)
 
     fireEvent.click(screen.getByTestId('menu-brand'))
 
     expect(await screen.findByText('About')).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Cite NiiVue' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Cite NiiVue VS Code' })).toBeTruthy()
     expect(screen.queryByText('Reset Viewer')).toBeNull()
   })
 })
