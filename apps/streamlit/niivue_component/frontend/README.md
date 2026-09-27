@@ -58,6 +58,5 @@ This package is part of a pnpm workspace and depends on:
 
 - `@niivue/react`: Shared React components
 - `@niivue/niivue`: Core NiiVue library
-- `@niivue/dicom-loader`: DICOM file support
 
 Due to pnpm workspace structure, the build scripts reference the root `node_modules/.bin`.

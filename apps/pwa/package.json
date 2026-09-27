@@ -53,7 +53,6 @@
     "ci": "pnpm run lint && pnpm run type-check && pnpm run test:coverage && pnpm run test:e2e"
   },
   "dependencies": {
-    "@niivue/dicom-loader": "^1.0.0",
     "@niivue/niivue": "1.0.0-rc.13",
     "@niivue/react": "workspace:*",
     "@preact/signals": "^2.11.2",

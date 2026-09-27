@@ -44,7 +44,7 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ['@niivue/niivue', '@preact/signals', 'preact'],
-    exclude: ['@niivue/dicom-loader', '@niivue/react'], // Exclude local package from pre-bundling
+    exclude: ['@niivue/react'], // Exclude local package from pre-bundling
   },
   resolve: {
     alias: {

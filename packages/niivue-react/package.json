@@ -94,7 +94,6 @@
     "workbox-window": "^7.4.1"
   },
   "peerDependencies": {
-    "@niivue/dicom-loader": "^1.0.0",
     "@niivue/niivue": "1.0.0-rc.13",
     "@preact/signals": "^2.11.2",
     "preact": "^10.29.8"
