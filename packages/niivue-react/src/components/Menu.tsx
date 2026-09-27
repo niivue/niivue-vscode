@@ -3,7 +3,7 @@ import './Menu.css'
 import { niivueLogo } from '../assets/niivue-logo'
 import { DRAG_MODE, SLICE_TYPE } from '@niivue/niivue'
 import type { SceneDocument } from '@niivue/viewer-protocol'
-import { Signal, computed, effect, useSignal } from '@preact/signals'
+import { Signal, computed, useSignal } from '@preact/signals'
 import { useMemo } from 'preact/hooks'
 import { NIIVUE_CORE_SHORTCUTS, UI_SHORTCUTS, formatShortcut } from '../constants/keyboardShortcuts'
 import { downloadNvd, downloadSceneJson, saveFile } from '../document'
@@ -15,6 +15,7 @@ import {
     loadDocumentEvent,
     openImageFromURL,
 } from '../events'
+import { useImmediateSignalEffect } from '../hooks/useImmediateSignalEffect'
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
 import { captureScreenshot } from '../screenshot'
 import { getImageMetadata, imageBaseName } from '../utility'
@@ -90,16 +91,16 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
   )
 
   // Effects that occur when state or computed changes
-  effect(() => applySelectionModeChange(selectionMode, selectionActive, selectMultiple))
-  effect(() => ensureValidSelection(selection, nvArray, selectionMode))
-  effect(() => applyInterpolation(nvArray, interpolation))
-  effect(() => applyCrosshairWidth(nvArray, crosshair))
-  effect(() => applyRadiologicalConvention(nvArray, radiologicalConvention))
-  effect(() => applyColorbar(nvArray, colorbar))
-  effect(() => applyDragMode(nvArray, zoomDragMode))
+  useImmediateSignalEffect(() => applySelectionModeChange(selectionMode, selectionActive, selectMultiple))
+  useImmediateSignalEffect(() => ensureValidSelection(selection, nvArray, selectionMode))
+  useImmediateSignalEffect(() => applyInterpolation(nvArray, interpolation))
+  useImmediateSignalEffect(() => applyCrosshairWidth(nvArray, crosshair))
+  useImmediateSignalEffect(() => applyRadiologicalConvention(nvArray, radiologicalConvention))
+  useImmediateSignalEffect(() => applyColorbar(nvArray, colorbar))
+  useImmediateSignalEffect(() => applyDragMode(nvArray, zoomDragMode))
 
   // Sync settings global value to local signals (e.g. for Streamlit)
-  effect(() => {
+  useImmediateSignalEffect(() => {
     interpolation.value = settings.value.interpolation
     crosshair.value = settings.value.showCrosshairs
     radiologicalConvention.value = settings.value.radiologicalConvention
@@ -109,7 +110,7 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
   })
 
   // Sync local signal changes back to global settings
-  effect(() => {
+  useImmediateSignalEffect(() => {
     if (
       settings.value.interpolation !== interpolation.value ||
       settings.value.showCrosshairs !== crosshair.value ||
