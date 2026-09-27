@@ -62,6 +62,7 @@ export const NiiVueCanvas = ({
     Promise.resolve(nv.attached)
       .then(() => loadVolume(nv, body, settings.value))
       .then(async () => {
+        if (nv.isDestroyed) return // the tile was closed while loading
         nv.isLoaded = true
         nv.isLoading = false
         nv.body = null
@@ -72,6 +73,7 @@ export const NiiVueCanvas = ({
         notifyImageLoaded()
       })
       .catch((error) => {
+        if (nv.isDestroyed) return
         console.error('Load Error:', error)
         nv.loadError = error.message || 'Unknown error loading file'
         nv.isLoading = false
@@ -94,6 +96,7 @@ export const NiiVueCanvas = ({
       .then(() => documentFile(source))
       .then((file) => nv.loadDocument(file))
       .then(() => {
+        if (nv.isDestroyed) return // the tile was closed while loading
         nv.isLoaded = true
         nv.isLoading = false
         nv.documentData = null
@@ -104,6 +107,7 @@ export const NiiVueCanvas = ({
         notifyImageLoaded()
       })
       .catch((error) => {
+        if (nv.isDestroyed) return
         console.error('Load Document Error:', error)
         nv.loadError = error.message || 'Unknown error loading document'
         nv.isLoading = false

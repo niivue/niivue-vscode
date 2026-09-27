@@ -75,6 +75,19 @@ export const Volume = (props: AppProps & VolumeProps) => {
     return () => nv.removeEventListener('locationChange', onLoc)
   }, [])
 
+  // Release the NiiVue instance (GPU resources, animation frame, resize and
+  // window listeners) once its tile is closed. Volume is keyed by nv.key, so it
+  // unmounts with the tile; if the nv is still in nvArray, only the viewer
+  // around it is unmounting and the instance is kept.
+  useEffect(
+    () => () => {
+      if (!props.nvArray.peek().includes(nv)) {
+        nv.destroy()
+      }
+    },
+    [],
+  )
+
   // Stop playback when volume is deselected or editing begins
   useEffect(() => {
     if ((!selected.value || isEditingVol4D.value) && isPlaying.value) {
