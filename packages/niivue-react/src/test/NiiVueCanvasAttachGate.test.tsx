@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@niivue/dcm2niix', () => ({ Dcm2niix: class { init() {} } }))
 vi.mock('dcm2niix-worker', () => ({ default: 'blob:dcm2niix-worker' }))
-vi.mock('@niivue/dicom-loader', () => ({ dicomLoader: vi.fn() }))
+vi.mock('../dicom', () => ({ dicomToNifti: vi.fn() }))
 vi.mock('@niivue/minc-loader', () => ({ mnc2nii: vi.fn() }))
 
 const calls: string[] = []

@@ -93,7 +93,10 @@ export default defineConfig({
       },
       includeAssets: ['favicon.ico', '*.png'],
       workbox: {
-        maximumFileSizeToCacheInBytes: 3000000,
+        // The main chunk inlines the dcm2niix worker and its WASM (about
+        // 1.3 MB as base64) and is over 3 MB. Files above this limit are left
+        // out of the precache, so the app would not start offline.
+        maximumFileSizeToCacheInBytes: 4000000,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,wasm}'],
         // Don't intercept navigations that aren't part of the PWA. `/pr-N/`
         // is the per-PR PWA preview; `/coverage/` is the Istanbul report,

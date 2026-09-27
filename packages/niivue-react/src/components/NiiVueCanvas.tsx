@@ -1,33 +1,8 @@
-/// <reference types="../types/virtual-modules" />
-// Patch Dcm2niix for worker inlining before importing dicom-loader
-import { Dcm2niix } from '@niivue/dcm2niix'
-import workerUrl from 'dcm2niix-worker'
-
-const originalInit = Dcm2niix.prototype.init
-
-Dcm2niix.prototype.init = function () {
-  this.worker = new Worker(workerUrl, { type: 'module' })
-
-  return new Promise((resolve, reject) => {
-    if (this.worker) {
-      this.worker.onmessage = (event: MessageEvent) => {
-        if (event.data?.type === 'ready') {
-          resolve(true)
-        }
-      }
-
-      this.worker.onerror = (error: ErrorEvent) => {
-        reject(new Error(`Worker failed to load: ${error.message || 'Unknown error'}`))
-      }
-    }
-  })
-}
-
-import { dicomLoader } from '@niivue/dicom-loader'
 import { mnc2nii } from '@niivue/minc-loader'
 import { Signal } from '@preact/signals'
 import { useEffect, useRef } from 'preact/hooks'
 import { attachWithBackend } from '../backend'
+import { dicomToNifti } from '../dicom'
 import { documentFile } from '../document'
 import { ExtendedNiivue, notifyImageLoaded, removeBuiltinKeyHandler } from '../events'
 import { isNiftiName, NIFTI_PEEK_BYTES, niftiTooLargeWarning } from '../nifti'
@@ -249,7 +224,7 @@ async function loadDicomSeries(
     }
   }
   const dicomInput = names.map((name, i) => ({ data: ensureArrayBuffer(data[i]), name }))
-  const loadedFiles = await dicomLoader(dicomInput)
+  const loadedFiles = await dicomToNifti(dicomInput)
   if (!loadedFiles || loadedFiles.length === 0) {
     throw new Error('No DICOM volume could be decoded from the provided files')
   }
