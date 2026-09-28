@@ -5,12 +5,6 @@ Each item names the files involved; line numbers are approximate and drift as
 the code changes. Items marked _(not re-checked)_ come from a code review and
 were not reproduced; confirm them before starting.
 
-Fixed on the `claude/repository-improvement-analysis-i5xusc` branch: JPEG 2000
-and JPEG-LS DICOM decoding and the leaked dcm2niix workers, signal effects
-started on every render, NiiVue instances kept after closing a tile, the VS
-Code webview CSP blocking fonts, Jupyter unit tests that could not fail CI, and
-the Streamlit package's MIT license and Python floor.
-
 ## Bugs users can hit
 
 - [ ] **VS Code: "Open web link" is probably broken.** `uriToImageBody` in

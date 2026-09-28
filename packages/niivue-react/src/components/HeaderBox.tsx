@@ -12,8 +12,7 @@ export const HeaderBox = (props: any) => {
 
   const headerInfo = useSignal({ pixDims: [3, 1, 1, 1], qoffset: [0, 0, 0] } as HeaderInfo)
 
-  // Re-read the header each time the box opens, dropping edits that were not
-  // applied, as when the box only rendered while open.
+  // Re-read the header each time the box opens, dropping edits that were not applied.
   useImmediateSignalEffect(() => {
     if (visible && !visible.value) return
     if (nvArraySelected.value.length > 0 && nvArraySelected.value[0]?.volumes?.[0]) {

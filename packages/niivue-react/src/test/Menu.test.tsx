@@ -172,8 +172,7 @@ describe('Menu keyboard wiring (key -> view / UI value)', () => {
   })
 })
 
-// Menu used to call effect() in its body, so every re-render added another set
-// of effects that were never disposed, and all of them ran on every change.
+// Menu's signal effects must start once, not once per render.
 describe('Menu effects', () => {
   it('apply a change once, however often Menu re-rendered', () => {
     let reads = 0
