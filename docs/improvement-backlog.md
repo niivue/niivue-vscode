@@ -53,6 +53,12 @@ the Streamlit package's MIT license and Python floor.
       every language, rejects when there is no link instead of returning
       `undefined`, and its local path pattern drops directories
       (`data/sub-01/T1w.nii.gz` becomes `/T1w.nii.gz`).
+- [ ] **Streamlit: a new image under the same `key` adds a tile.** When
+      `nifti_data` changes and the key stays, `useStreamlitNiivue` calls
+      `initCanvas`, which appends a NiiVue instance, so the previous image
+      stays next to the new one, and overlays still go to the first tile
+      (`nvArray.value[0]`). Seen in Streamlit 1.64: two canvases after
+      switching images. A key per image avoids it.
 - [ ] **Tile indices go stale after removing or reordering** _(not
       re-checked)_. `Volume.tsx` registers its location listener once with the
       first `volumeIndex`, and `remove` / `swap` / `insertAt` do not remap
