@@ -46,7 +46,8 @@ def niivue_viewer(
     styled=True,
     settings=None,
     update_interval_ms=100,
-    key=None
+    key=None,
+    load_events=False,
 ):
     """Create a NiiVue viewer component.
 
@@ -96,16 +97,28 @@ def niivue_viewer(
         and is recommended whenever the return value is not consumed.
     key : str or None
         Unique key for the component
-        
+    load_events : bool
+        If True, also report when loading finishes (default: False). The
+        viewer then returns ``{'type': 'base_loaded', ...}`` once the main
+        image (or first mesh) is shown, and ``{'type': 'fully_loaded', ...}``
+        once every overlay and mesh passed with it has finished loading too.
+        Each event re-runs the script, like a click. The return value only
+        holds the latest event and keeps it across re-runs, so give each
+        image its own ``key`` to wait for that image's events.
+
     Returns:
     --------
     dict or None
-        Component return value with click event data if any:
+        The latest event from the viewer, if any. A click:
         - type: 'voxel_click'
         - voxel: [x, y, z] voxel coordinates
         - mm: [x, y, z] mm coordinates
         - value: voxel value at click position
         - filename: name of the file
+        With ``load_events=True``, also a finished load:
+        - type: 'base_loaded' or 'fully_loaded'
+        - filename: name of the file
+        - timestamp: time in the browser, in milliseconds since the epoch
     """
     # Convert nifti_data to base64 if provided
     nifti_base64 = ""
@@ -192,6 +205,7 @@ def niivue_viewer(
         styled=styled,
         settings=settings or {},
         update_interval_ms=update_interval_ms,
+        load_events=bool(load_events),
         default=None,
         key=key
     )
