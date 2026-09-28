@@ -52,9 +52,11 @@ export interface ClickEventData {
 export interface LoadEventData {
   // base_loaded: the main image (or first mesh) is shown.
   // fully_loaded: every overlay and mesh passed with it has finished loading too.
-  type: 'base_loaded' | 'fully_loaded'
+  // load_error: the main image failed to load; error holds the message.
+  type: 'base_loaded' | 'fully_loaded' | 'load_error'
   filename: string
   timestamp: number // Date.now() in the browser
+  error?: string
 }
 
 export const VIEW_MODE_TO_SLICE_TYPE: Record<string, number> = {

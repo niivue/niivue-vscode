@@ -187,7 +187,19 @@ Each event re-runs the script, like a click. The return value only holds the
 latest event and keeps it across re-runs: a new `key` per image starts from
 `None`, so a value never belongs to the previous image. When there is nothing
 more to load, `fully_loaded` follows right after `base_loaded`, and the script
-may only see the later one, so accept either as "shown".
+may only see the later one, so accept either as "shown". `fully_loaded` is
+sent again when new overlays or meshes are loaded for the same image, for
+example when a slider sets an overlay's opacity.
+
+If the main image fails to load, the viewer sends `load_error` instead, with
+the message in `error`, and no other event for that image. An overlay or mesh
+that fails to load still ends in `fully_loaded`; its error goes to the browser
+console.
+
+Because every event re-runs the script, pass the same arguments on each run.
+Image bytes rebuilt on every run (a freshly written `.nii.gz` carries a new
+timestamp) count as a new image, which loads and sends an event again, without
+end. Cache them, for example with `st.cache_data`.
 
 ## ⚡ Performance
 
@@ -271,7 +283,7 @@ viewer()
   mouse interaction.
 - `key` (str, optional): Component key
 - `load_events` (bool): send `base_loaded` and `fully_loaded` events when
-  loading finishes (default: False). See
+  loading finishes, or `load_error` when it fails (default: False). See
   [Waiting for the Image to Load](#waiting-for-the-image-to-load).
 
 **Returns:**
@@ -286,9 +298,10 @@ dict or None: the latest event from the viewer. A click:
 
 With `load_events=True`, also a finished load:
 
-- `type`: 'base_loaded' or 'fully_loaded'
+- `type`: 'base_loaded', 'fully_loaded' or 'load_error'
 - `filename`: str
 - `timestamp`: int, time in the browser in milliseconds since the epoch
+- `error`: str, only for 'load_error'
 
 ## 🛠️ Development
 

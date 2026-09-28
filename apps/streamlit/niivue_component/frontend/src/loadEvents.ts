@@ -1,19 +1,17 @@
-export type LoadEventType = 'base_loaded' | 'fully_loaded'
+export type LoadEventType = 'base_loaded' | 'fully_loaded' | 'load_error'
 
 export interface LoadState {
   /** The instance that received the current base image has finished loading it. */
   baseLoaded: boolean
+  /** Loading the current base image failed. */
+  baseFailed: boolean
   /** Every overlay and mesh the current arguments ask for has been started. */
   allStarted: boolean
 }
 
 /**
- * Decides when the base image, and then everything else requested for it, has
- * finished loading, and reports each moment once per load.
- *
- * `baseStarted` opens a new load. Overlay and mesh loads started for it go
- * through `track`. `check` is called after every render and whenever a tracked
- * load settles; it reads the current state from `getState`.
+ * Reports once per base image when it has loaded or failed, and then when every
+ * overlay and mesh load passed to `track` for it has settled.
  */
 export class LoadTracker {
   private generation = 0
@@ -55,8 +53,21 @@ export class LoadTracker {
     })
   }
 
+  /** Stop reporting, also for loads that settle later. */
+  dispose() {
+    this.generation++
+    this.awaitingBase = false
+    this.awaitingAll = false
+  }
+
   check() {
-    const { baseLoaded, allStarted } = this.getState()
+    const { baseLoaded, baseFailed, allStarted } = this.getState()
+    if (this.awaitingBase && baseFailed) {
+      this.awaitingBase = false
+      this.awaitingAll = false
+      this.emit('load_error')
+      return
+    }
     if (this.awaitingBase && baseLoaded) {
       this.awaitingBase = false
       this.emit('base_loaded')

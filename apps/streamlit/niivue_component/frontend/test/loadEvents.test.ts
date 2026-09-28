@@ -18,7 +18,7 @@ let events: LoadEventType[]
 let tracker: LoadTracker
 
 beforeEach(() => {
-  state = { baseLoaded: false, allStarted: true }
+  state = { baseLoaded: false, baseFailed: false, allStarted: true }
   events = []
   tracker = new LoadTracker(
     () => state,
@@ -127,5 +127,35 @@ describe('LoadTracker', () => {
     current.resolve()
     await flush()
     expect(events).toEqual(['base_loaded', 'base_loaded', 'fully_loaded'])
+  })
+
+  it('reports load_error instead of the load events when the base image fails', () => {
+    tracker.baseStarted()
+    state.baseFailed = true
+    tracker.check()
+    tracker.check()
+    expect(events).toEqual(['load_error'])
+
+    // The next base image is reported as usual.
+    tracker.baseStarted()
+    state.baseFailed = false
+    state.baseLoaded = true
+    tracker.check()
+    expect(events).toEqual(['load_error', 'base_loaded', 'fully_loaded'])
+  })
+
+  it('reports nothing once disposed, also for loads that settle later', async () => {
+    tracker.baseStarted()
+    state.baseLoaded = true
+    const overlay = deferred()
+    tracker.track(overlay.promise)
+    tracker.check()
+    expect(events).toEqual(['base_loaded'])
+
+    tracker.dispose()
+    overlay.resolve()
+    await flush()
+    tracker.check()
+    expect(events).toEqual(['base_loaded'])
   })
 })

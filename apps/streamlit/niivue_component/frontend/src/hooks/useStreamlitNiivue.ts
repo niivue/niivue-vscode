@@ -61,26 +61,35 @@ export const useStreamlitNiivue = (args: StreamlitArgs) => {
   const argsRef = useRef(args)
   argsRef.current = args
   const baseNvRef = useRef<(typeof appProps.nvArray.value)[number] | null>(null)
+  const baseFilenameRef = useRef('')
   const trackerRef = useRef<LoadTracker | null>(null)
   if (!trackerRef.current) {
     trackerRef.current = new LoadTracker(
       () => {
         const { overlays, meshes } = argsRef.current
         const meshOverlays = meshes?.[0]?.overlays ?? []
+        // Mesh overlays wait for a mesh to apply them to; if every mesh failed there is none.
+        const hasMesh = (appProps.nvArray.value[0]?.meshes.length ?? 0) > 0
         return {
           baseLoaded: baseNvRef.current?.isLoaded === true,
+          baseFailed: !!baseNvRef.current?.loadError,
           allStarted:
             (!overlays?.length || sameIds(volumeOverlayIds(overlays), loadedOverlaysRef.current)) &&
             (!meshes?.length || meshListId(meshes) === loadedMeshesRef.current) &&
-            (!meshOverlays.length || sameIds(meshOverlayIds(meshOverlays), loadedMeshOverlaysRef.current)),
+            (!meshOverlays.length ||
+              !hasMesh ||
+              sameIds(meshOverlayIds(meshOverlays), loadedMeshOverlaysRef.current)),
         }
       },
       (type: LoadEventType) => {
         if (argsRef.current.load_events === true) {
           const event: LoadEventData = {
             type,
-            filename: argsRef.current.filename || '',
+            filename: baseFilenameRef.current,
             timestamp: Date.now(),
+          }
+          if (type === 'load_error') {
+            event.error = baseNvRef.current?.loadError || ''
           }
           Streamlit.setComponentValue(event)
         }
@@ -88,6 +97,7 @@ export const useStreamlitNiivue = (args: StreamlitArgs) => {
     )
   }
   const tracker = trackerRef.current
+  useEffect(() => () => tracker.dispose(), [])
 
   // The viewer posts its own actions (NVDocument > Load, dropped files) to this
   // window. Only those are handled; Streamlit talks to the component through
@@ -151,6 +161,7 @@ export const useStreamlitNiivue = (args: StreamlitArgs) => {
     initCanvas(appProps, 1)
     // addImage fills the first instance that has no image yet, as found here.
     baseNvRef.current = appProps.nvArray.value.find((nv) => nv.isNew) ?? null
+    baseFilenameRef.current = args.filename || ''
     tracker.baseStarted()
 
     if (args.nifti_data) {

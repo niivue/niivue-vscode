@@ -101,8 +101,11 @@ def niivue_viewer(
         If True, also report when loading finishes (default: False). The
         viewer then returns ``{'type': 'base_loaded', ...}`` once the main
         image (or first mesh) is shown, and ``{'type': 'fully_loaded', ...}``
-        once every overlay and mesh passed with it has finished loading too.
-        Each event re-runs the script, like a click. The return value only
+        once every overlay and mesh passed with it has finished loading too,
+        or ``{'type': 'load_error', ...}`` if the main image fails to load
+        (a failed overlay or mesh still ends in ``fully_loaded``).
+        Each event re-runs the script, like a click, so pass the same
+        arguments on every run (cache rebuilt image bytes). The return value only
         holds the latest event and keeps it across re-runs, so give each
         image its own ``key`` to wait for that image's events.
 
@@ -116,9 +119,10 @@ def niivue_viewer(
         - value: voxel value at click position
         - filename: name of the file
         With ``load_events=True``, also a finished load:
-        - type: 'base_loaded' or 'fully_loaded'
+        - type: 'base_loaded', 'fully_loaded' or 'load_error'
         - filename: name of the file
         - timestamp: time in the browser, in milliseconds since the epoch
+        - error: the error message, only for 'load_error'
     """
     # Convert nifti_data to base64 if provided
     nifti_base64 = ""

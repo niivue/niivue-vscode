@@ -11,6 +11,7 @@ import { StreamlitArgs } from '../src/types'
 type FakeNv = {
   isNew: boolean
   isLoaded: boolean
+  loadError: string
   volumes: unknown[]
   meshes: unknown[]
   updateGLVolume: () => void
@@ -24,7 +25,7 @@ interface FakeAppProps {
 
 const mocks = vi.hoisted(() => ({
   setComponentValue: vi.fn(),
-  overlayLoads: [] as Array<() => void>,
+  overlayLoads: [] as Array<(error?: Error) => void>,
   appProps: null as unknown as FakeAppProps,
 }))
 
@@ -40,6 +41,7 @@ vi.mock('@niivue/react', () => ({
       const nv: FakeNv = {
         isNew: true,
         isLoaded: false,
+        loadError: '',
         volumes: [{}],
         meshes: [],
         updateGLVolume: () => {},
@@ -47,14 +49,24 @@ vi.mock('@niivue/react', () => ({
       appProps.nvArray.value = [...appProps.nvArray.value, nv]
     }
   },
-  handleMessage: (message: { type: string }, appProps: FakeAppProps) => {
+  handleMessage: (message: { type: string; body: { uri?: string; loadError?: string } }, appProps: FakeAppProps) => {
     if (message.type === 'addImage') {
-      appProps.nvArray.value.find((nv) => nv.isNew)!.isNew = false
+      const nv = appProps.nvArray.value.find((nv) => nv.isNew)!
+      nv.isNew = false
+      nv.loadError = message.body.loadError ?? ''
       appProps.nvArray.value = [...appProps.nvArray.value]
       return Promise.resolve(true)
     }
-    return new Promise((resolve) => {
-      mocks.overlayLoads.push(() => {
+    // A failed load rejects before nvArray is reassigned, as in @niivue/react.
+    return new Promise((resolve, reject) => {
+      mocks.overlayLoads.push((error) => {
+        if (error) {
+          reject(error)
+          return
+        }
+        if (message.type === 'overlay' && message.body.uri?.endsWith('.pial')) {
+          appProps.nvArray.value[0].meshes.push({ layers: [] })
+        }
         appProps.nvArray.value = [...appProps.nvArray.value]
         resolve(true)
       })
@@ -78,6 +90,13 @@ async function finishBaseLoad() {
   })
 }
 
+async function failBaseLoad(message: string) {
+  await act(() => {
+    mocks.appProps.nvArray.value[0].loadError = message
+    mocks.appProps.nvArray.value = [...mocks.appProps.nvArray.value]
+  })
+}
+
 const base64 = btoa('image bytes')
 const overlays = [
   { data: btoa('overlay one'), name: 'one.nii.gz' },
@@ -94,7 +113,10 @@ beforeEach(() => {
   }
 })
 
-afterEach(() => cleanup())
+afterEach(() => {
+  cleanup()
+  vi.restoreAllMocks()
+})
 
 describe('useStreamlitNiivue load events', () => {
   it('reports base_loaded, then fully_loaded once the overlays have loaded', async () => {
@@ -142,5 +164,99 @@ describe('useStreamlitNiivue load events', () => {
     await act(() => mocks.overlayLoads.forEach((finish) => finish()))
 
     expect(loadEvents()).toEqual([])
+  })
+
+  it('reports load_error with the message when the image fails to load', async () => {
+    render(<Probe args={{ nifti_data: base64, filename: 'broken.nii', load_events: true }} />)
+
+    await failBaseLoad('Unsupported datatype')
+
+    expect(loadEvents()).toEqual([
+      { type: 'load_error', filename: 'broken.nii', timestamp: expect.any(Number), error: 'Unsupported datatype' },
+    ])
+  })
+
+  it('reports load_error for an MHD file without its paired data', async () => {
+    render(<Probe args={{ nifti_data: base64, filename: 'scan.mhd', load_events: true }} />)
+    await act(() => {})
+
+    expect(loadEvents()).toEqual([
+      { type: 'load_error', filename: 'scan.mhd', timestamp: expect.any(Number), error: expect.stringContaining('paired_data') },
+    ])
+  })
+
+  it('waits for the mesh overlays once the mesh has loaded', async () => {
+    const meshes = [
+      { data: btoa('mesh'), name: 'lh.pial', overlays: [{ data: btoa('thickness'), name: 'lh.thickness' }] },
+    ]
+    render(<Probe args={{ nifti_data: base64, filename: 'brain.nii', meshes, load_events: true }} />)
+    await finishBaseLoad()
+
+    // In the app the mesh load settles before the effects that start its overlays run.
+    await act(async () => {
+      mocks.overlayLoads[0]()
+      await Promise.resolve()
+    })
+    expect(loadEvents().map((e) => e.type)).toEqual(['base_loaded'])
+    expect(mocks.overlayLoads).toHaveLength(2)
+
+    await act(() => mocks.overlayLoads[1]())
+    expect(loadEvents().map((e) => e.type)).toEqual(['base_loaded', 'fully_loaded'])
+  })
+
+  it('reports fully_loaded after the mesh overlays in mesh-only mode', async () => {
+    const meshes = [
+      { data: btoa('mesh'), name: 'lh.pial', overlays: [{ data: btoa('thickness'), name: 'lh.thickness' }] },
+    ]
+    render(<Probe args={{ meshes, load_events: true }} />)
+
+    await act(() => {
+      const nv = mocks.appProps.nvArray.value[0]
+      nv.meshes = [{ layers: [] }]
+      nv.isLoaded = true
+      mocks.appProps.nvArray.value = [...mocks.appProps.nvArray.value]
+    })
+    expect(loadEvents().map((e) => e.type)).toEqual(['base_loaded'])
+    expect(mocks.overlayLoads).toHaveLength(1)
+
+    await act(() => mocks.overlayLoads[0]())
+    expect(loadEvents().map((e) => e.type)).toEqual(['base_loaded', 'fully_loaded'])
+  })
+
+  it('reports fully_loaded when the only mesh fails, even with mesh overlays requested', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    const meshes = [
+      { data: btoa('mesh'), name: 'lh.pial', overlays: [{ data: btoa('thickness'), name: 'lh.thickness' }] },
+    ]
+    render(<Probe args={{ nifti_data: base64, filename: 'brain.nii', meshes, load_events: true }} />)
+
+    await finishBaseLoad()
+    expect(mocks.overlayLoads).toHaveLength(1)
+
+    await act(() => mocks.overlayLoads[0](new Error('bad mesh')))
+    expect(loadEvents().map((e) => e.type)).toEqual(['base_loaded', 'fully_loaded'])
+  })
+
+  it('reports fully_loaded again when the overlays change for the same image', async () => {
+    const args: StreamlitArgs = { nifti_data: base64, filename: 'brain.nii', overlays, load_events: true }
+    const { rerender } = render(<Probe args={args} />)
+    await finishBaseLoad()
+    await act(() => mocks.overlayLoads.forEach((finish) => finish()))
+
+    await act(() => rerender(<Probe args={{ ...args, overlays: [overlays[0]] }} />))
+    expect(mocks.overlayLoads).toHaveLength(3)
+    await act(() => mocks.overlayLoads[2]())
+
+    expect(loadEvents().map((e) => e.type)).toEqual(['base_loaded', 'fully_loaded', 'fully_loaded'])
+  })
+
+  it('reports nothing after unmounting, even when a load settles later', async () => {
+    const { unmount } = render(<Probe args={{ nifti_data: base64, filename: 'brain.nii', overlays, load_events: true }} />)
+    await finishBaseLoad()
+
+    unmount()
+    await act(() => mocks.overlayLoads.forEach((finish) => finish()))
+
+    expect(loadEvents().map((e) => e.type)).toEqual(['base_loaded'])
   })
 })
