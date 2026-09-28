@@ -1,5 +1,5 @@
 import { signal } from '@preact/signals'
-import { cleanup, fireEvent, render, screen } from '@testing-library/preact'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/preact'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AppProps, SelectionMode } from '../components/AppProps'
 import { Container } from '../components/Container'
@@ -17,9 +17,10 @@ vi.mock('@niivue/niivue', () => ({
   DRAG_MODE: { crosshair: 8 },
 }))
 
-function makeNv(key: number) {
+function makeNv(key: number, attached?: Promise<void>) {
   return {
     key,
+    attached,
     volumes: [],
     meshes: [],
     loadError: '',
@@ -60,7 +61,7 @@ afterEach(() => {
 })
 
 describe('Container', () => {
-  it('destroys the NiiVue instance of a closed tile and keeps the others', () => {
+  it('destroys the NiiVue instance of a closed tile and keeps the others', async () => {
     const [first, second] = [makeNv(1), makeNv(2)]
     const props = makeProps([first, second])
     render(<Container {...props} />)
@@ -68,15 +69,29 @@ describe('Container', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Close' })[0])
 
     expect(props.nvArray.value).toEqual([second])
-    expect(first.destroy).toHaveBeenCalledTimes(1)
+    await waitFor(() => expect(first.destroy).toHaveBeenCalledTimes(1))
     expect(second.destroy).not.toHaveBeenCalled()
   })
 
-  it('keeps the instances when the viewer unmounts with its tiles', () => {
+  it('destroys a tile closed during GPU init only once it is attached', async () => {
+    let finishAttach!: () => void
+    const nv = makeNv(1, new Promise<void>((resolve) => (finishAttach = resolve)))
+    render(<Container {...makeProps([nv])} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }))
+    await Promise.resolve()
+    expect(nv.destroy).not.toHaveBeenCalled()
+
+    finishAttach()
+    await waitFor(() => expect(nv.destroy).toHaveBeenCalledTimes(1))
+  })
+
+  it('keeps the instances when the viewer unmounts with its tiles', async () => {
     const nv = makeNv(1)
     const { unmount } = render(<Container {...makeProps([nv])} />)
 
     unmount()
+    await new Promise((resolve) => setTimeout(resolve, 0))
 
     expect(nv.destroy).not.toHaveBeenCalled()
   })

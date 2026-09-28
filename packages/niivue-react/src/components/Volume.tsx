@@ -75,14 +75,13 @@ export const Volume = (props: AppProps & VolumeProps) => {
     return () => nv.removeEventListener('locationChange', onLoc)
   }, [])
 
-  // Release the NiiVue instance (GPU resources, animation frame, resize and
-  // window listeners) once its tile is closed. Volume is keyed by nv.key, so it
-  // unmounts with the tile; if the nv is still in nvArray, only the viewer
-  // around it is unmounting and the instance is kept.
+  // Volume is keyed by nv.key and unmounts with its tile; an nv still in nvArray
+  // only lost the viewer around it. destroy() waits for attachToCanvas, which
+  // would otherwise finish attaching an instance destroyed during GPU init.
   useEffect(
     () => () => {
       if (!props.nvArray.peek().includes(nv)) {
-        nv.destroy()
+        Promise.resolve(nv.attached).then(() => nv.destroy())
       }
     },
     [],

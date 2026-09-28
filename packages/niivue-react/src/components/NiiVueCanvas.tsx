@@ -28,6 +28,8 @@ export const NiiVueCanvas = ({
   settings,
 }: AppProps & NiiVueCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  // Volume destroys the nv of a closed tile once it is attached; nothing may load into it.
+  const isClosed = () => !nvArray.peek().includes(nv)
 
   useEffect(() => {
     if (!canvasRef.current || nv.canvas) {
@@ -60,9 +62,9 @@ export const NiiVueCanvas = ({
     nv.isLoading = true
     const body = nv.body
     Promise.resolve(nv.attached)
-      .then(() => loadVolume(nv, body, settings.value))
+      .then(() => (isClosed() ? undefined : loadVolume(nv, body, settings.value)))
       .then(async () => {
-        if (nv.isDestroyed) return // the tile was closed while loading
+        if (isClosed()) return
         nv.isLoaded = true
         nv.isLoading = false
         nv.body = null
@@ -73,7 +75,7 @@ export const NiiVueCanvas = ({
         notifyImageLoaded()
       })
       .catch((error) => {
-        if (nv.isDestroyed) return
+        if (isClosed()) return
         console.error('Load Error:', error)
         nv.loadError = error.message || 'Unknown error loading file'
         nv.isLoading = false
@@ -93,10 +95,9 @@ export const NiiVueCanvas = ({
     // Reading the document (fetching a URL, completing a JSON document) fails
     // into the same on-canvas error as the load itself.
     Promise.resolve(nv.attached)
-      .then(() => documentFile(source))
-      .then((file) => nv.loadDocument(file))
+      .then(() => (isClosed() ? undefined : documentFile(source).then((file) => nv.loadDocument(file))))
       .then(() => {
-        if (nv.isDestroyed) return // the tile was closed while loading
+        if (isClosed()) return
         nv.isLoaded = true
         nv.isLoading = false
         nv.documentData = null
@@ -107,7 +108,7 @@ export const NiiVueCanvas = ({
         notifyImageLoaded()
       })
       .catch((error) => {
-        if (nv.isDestroyed) return
+        if (isClosed()) return
         console.error('Load Document Error:', error)
         nv.loadError = error.message || 'Unknown error loading document'
         nv.isLoading = false

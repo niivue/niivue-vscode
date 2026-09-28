@@ -5,8 +5,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 // Regression test: a load starting before attachToCanvas settled hit a
 // half-initialized view and threw in createBindGroup. See niivue/mono#61.
 
-vi.mock('@niivue/dcm2niix', () => ({ Dcm2niix: class { init() {} } }))
-vi.mock('dcm2niix-worker', () => ({ default: 'blob:dcm2niix-worker' }))
 vi.mock('../dicom', () => ({ dicomToNifti: vi.fn() }))
 vi.mock('@niivue/minc-loader', () => ({ mnc2nii: vi.fn() }))
 
@@ -57,7 +55,7 @@ import { defaultSettings } from '../settings'
 
 function mountCanvas(nv: any) {
   nv.onVolumeUpdated = vi.fn()
-  const nvArray = signal([nv])
+  const nvArray = signal<any[]>([nv])
   render(
     <NiiVueCanvas
       nv={nv}
@@ -70,6 +68,7 @@ function mountCanvas(nv: any) {
       {...({} as any)}
     />,
   )
+  return nvArray
 }
 
 describe('NiiVueCanvas attach gate', () => {
@@ -113,5 +112,20 @@ describe('NiiVueCanvas attach gate', () => {
     expect(calls).toEqual(['attach:start', 'attach:failed', 'addVolume'])
     expect(nv.loadError).toBe('')
     expect(nv.isLoaded).toBe(true)
+  })
+
+  it('does not load into a tile closed while attaching', async () => {
+    const nv = new ExtendedNiivue({}) as any
+    nv.body = { data: new ArrayBuffer(64), uri: 'volume.nrrd' }
+    const nvArray = mountCanvas(nv)
+
+    await waitFor(() => expect(calls).toContain('attach:start'))
+    nvArray.value = []
+    resolveAttach()
+    await new Promise((r) => setTimeout(r, 50))
+
+    expect(nv.addVolume).not.toHaveBeenCalled()
+    expect(nv.isLoaded).toBe(false)
+    expect(nv.loadError).toBe('')
   })
 })
