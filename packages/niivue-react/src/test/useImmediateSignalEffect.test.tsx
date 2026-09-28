@@ -1,4 +1,5 @@
 import { signal } from '@preact/signals'
+import { render as preactRender } from 'preact'
 import { cleanup, render } from '@testing-library/preact'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useImmediateSignalEffect } from '../hooks/useImmediateSignalEffect'
@@ -54,5 +55,17 @@ describe('useImmediateSignalEffect', () => {
 
     expect(runs).toEqual([1])
     expect(cleanups).toEqual([1])
+  })
+
+  it('stops when the component unmounts before its effects were flushed', () => {
+    const source = signal(1)
+    const onRun = vi.fn()
+    const container = document.createElement('div')
+    // Outside act(), so passive effects are still pending at unmount.
+    preactRender(<Probe source={source} onRun={onRun} />, container)
+    preactRender(null, container)
+
+    source.value = 2
+    expect(onRun.mock.calls).toEqual([[1]])
   })
 })
