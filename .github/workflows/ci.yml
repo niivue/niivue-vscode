@@ -63,6 +63,8 @@ jobs:
               - 'pnpm-lock.yaml'
             desktop-rust:
               - 'apps/desktop-tauri/src-tauri/**'
+              - 'apps/desktop-tauri/package.json'
+              - 'branding/niivue-icon.png'
               - '.github/workflows/ci.yml'
 
   lint-and-typecheck:
@@ -440,8 +442,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev
 
-      - name: Install Rust stable
-        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+      # Pinned, so a lint added in a new Rust release cannot fail a PR that did not cause it.
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@ce678459e9fc7500d337468f904b95f1b5c10b5e # 1.98.1
         with:
           components: rustfmt, clippy
 
@@ -454,10 +457,10 @@ jobs:
         run: cargo fmt --check
 
       - name: cargo clippy
-        run: cargo clippy --all-targets -- -D warnings
+        run: cargo clippy --locked --all-targets -- -D warnings
 
       - name: cargo test
-        run: cargo test
+        run: cargo test --locked
 
   e2e-tests:
     needs: [changes, build]
