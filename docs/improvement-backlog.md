@@ -3,23 +3,25 @@
 Findings from a repository review in September 2026 that are not fixed yet.
 Each item names the files involved; line numbers are approximate and drift as
 the code changes. Items marked _(not re-checked)_ come from a code review and
-were not reproduced; confirm them before starting.
+were not reproduced; confirm them before starting. An item that names a pull
+request has a fix under review there.
 
 ## Bugs users can hit
 
-- [ ] **VS Code: "Open web link" is probably broken.** `uriToImageBody` in
+- [ ] **VS Code: "Open web link" is probably broken** (#318). `uriToImageBody` in
       `apps/vscode/src/editorProvider.ts` passes `https://` URIs to
       `workspace.fs.readFile`, which has no https provider, and nothing catches
       the error, so the panel stays blank. The webview CSP `connect-src` does
       not allow `https:` either. Check by hand in VS Code first. Fix: fetch in
       the extension host and post the bytes, and report failures.
-- [ ] **VS Code: opening a folder can exhaust the extension host's memory.**
+- [ ] **VS Code: opening a folder can exhaust the extension host's memory**
+      (#323 caps folders at 2 GB; the double read remains).
       The fallback in `openDcmFolder` reads every file in the folder at once
       with `Promise.all`, with no size or count limit. Checking an
       extension-less file for DICOM reads the whole file to look at 4 bytes,
       and a clicked `.dcm` is read twice. Fix: `stat()` first, limit the
       fallback to DICOM-like names, cap the count and warn.
-- [ ] **VS Code: `localResourceRoots` is too broad.** It is the parent of the
+- [ ] **VS Code: `localResourceRoots` is too broad** (#323). It is the parent of the
       first workspace folder, or `/` without a folder (`createPanel` and
       `resolveCustomEditor`). In a multi-root workspace, files in another
       folder get a webview URI that is then refused. `isUriAccessible` matches
@@ -47,7 +49,7 @@ were not reproduced; confirm them before starting.
       every language, rejects when there is no link instead of returning
       `undefined`, and its local path pattern drops directories
       (`data/sub-01/T1w.nii.gz` becomes `/T1w.nii.gz`).
-- [ ] **Streamlit: a new image under the same `key` adds a tile.** When
+- [ ] **Streamlit: a new image under the same `key` adds a tile** (#319). When
       `nifti_data` changes and the key stays, `useStreamlitNiivue` calls
       `initCanvas`, which appends a NiiVue instance, so the previous image
       stays next to the new one, and overlays still go to the first tile
@@ -76,7 +78,7 @@ were not reproduced; confirm them before starting.
 
 ## CI and process
 
-- [ ] **Run the desktop app's Rust tests in CI.**
+- [ ] **Run the desktop app's Rust tests in CI** (#321).
       `apps/desktop-tauri/src-tauri/src/lib.rs` has 8 unit tests, including
       the file-access allowlist, and no workflow runs `cargo`. Add
       `cargo fmt --check`, `cargo clippy` and `cargo test` (needs the GTK and
@@ -86,7 +88,7 @@ were not reproduced; confirm them before starting.
       or `prepare` script. CI runs neither `format:check` nor
       `versions:check`. The Streamlit frontend's `lint` script only echoes
       "Lint passed". Format once in its own commit, then add the checks.
-- [ ] **gh-pages preview cleanup loses runs.** `cleanup_pwa_preview.yml`,
+- [ ] **gh-pages preview cleanup loses runs** (#320). `cleanup_pwa_preview.yml`,
       `cleanup_coverage_preview.yml`, `coverage_report.yml` and
       `deploy_pwa_preview.yml` share the concurrency group
       `gh-pages-mutation`, and GitHub cancels older queued runs in a group
@@ -95,17 +97,17 @@ were not reproduced; confirm them before starting.
       `deploy_pwa_production.yml` pushes to the same branch under the group
       `pages`. Fix: a scheduled sweep that deletes `pr-N` folders of closed
       PRs, and one group for everything that pushes to gh-pages.
-- [ ] **The production PWA deploy builds current `main`,** not the commit CI
+- [ ] **The production PWA deploy builds current `main`** (#322), not the commit CI
       tested: `deploy_pwa_production.yml` checks out without
       `ref: ${{ github.event.workflow_run.head_sha }}`.
-- [ ] **Turbo can replay a stale test result.** `test.inputs` in `turbo.json`
+- [ ] **Turbo can replay a stale test result** (#324). `test.inputs` in `turbo.json`
       leave out `test/**/*.tsx` and `vitest.config.ts`; the desktop and PWA
       apps have `.tsx` tests. Use `$TURBO_DEFAULT$`.
 - [ ] **Enable `eslint-plugin-react-hooks`.** It is installed but not in
       `eslint.config.js`. Enabling it reports rules-of-hooks errors in
       `ScalingBox.tsx` (hooks after an early return) and exhaustive-deps
       warnings.
-- [ ] **Align the pinned pnpm with the lockfile.** `packageManager` pins pnpm
+- [ ] **Align the pinned pnpm with the lockfile** (#325). `packageManager` pins pnpm
       10.18.3, but the lockfile was written by a newer pnpm 10 (it has `libc`
       fields), so an install with the pinned version rewrites unrelated lines.
 - [ ] **CI job setup.** Test jobs get build output through `actions/cache`
