@@ -1,0 +1,53 @@
+# Remove the PWA previews and coverage reports of closed PRs from gh-pages.
+# The per-PR cleanup workflows run once when a PR closes, and GitHub cancels a
+# queued run when another joins the gh-pages-mutation group; this sweep catches
+# what they missed.
+name: Sweep gh-pages Previews
+
+on:
+  schedule:
+    - cron: '30 4 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: gh-pages-mutation
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout gh-pages branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
+        with:
+          ref: gh-pages
+
+      - name: Remove directories of closed PRs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          open_prs=$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --limit 1000 --json number --jq '.[].number')
+          removed=()
+          for dir in pr-* coverage/pr-*; do
+            number=${dir##*pr-}
+            if [ ! -d "$dir" ] || ! [[ "$number" =~ ^[0-9]+$ ]]; then
+              continue
+            fi
+            if ! grep -qx "$number" <<< "$open_prs"; then
+              git rm -rq --ignore-unmatch "$dir"
+              removed+=("$dir")
+            fi
+          done
+          if git diff --cached --quiet; then
+            echo "Nothing to remove"
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git commit -q -m "Remove previews of closed PRs" -m "${removed[*]}"
+          git push
+          echo "Removed: ${removed[*]}"
