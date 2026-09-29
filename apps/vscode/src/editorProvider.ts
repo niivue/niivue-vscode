@@ -444,7 +444,7 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
    * the file as binary when the URI is not reachable via the webview resource
    * proxy — i.e. remote workspaces where the file sits outside
    * `localResourceRoots`, or formats that NiiVue can only ingest as bytes
-   * (`.dcm`, `.mnc`).
+   * (`.dcm`, `.ima`, `.mnc`).
    *
    * Files without a recognized extension are read and sniffed for the DICOM
    * magic bytes; matches are shipped as binary so the webview routes them
@@ -460,6 +460,7 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     const lowerCasePath = uri.path.toLowerCase()
     if (
       lowerCasePath.endsWith('.dcm') ||
+      lowerCasePath.endsWith('.ima') ||
       lowerCasePath.endsWith('.mnc') ||
       !NiiVueEditorProvider.isUriAccessible(uri, webview)
     ) {

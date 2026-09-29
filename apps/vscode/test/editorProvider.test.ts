@@ -246,6 +246,20 @@ describe('NiiVueEditorProvider.uriToImageBody', () => {
     expect(webview.asWebviewUri).not.toHaveBeenCalled()
   })
 
+  it('forces binary for a Siemens .IMA file in the workspace', async () => {
+    // The viewer loads .ima as DICOM under a .dcm name, which a URL cannot serve.
+    workspace.workspaceFolders = [{ uri: Uri.parse('file:///home/user/proj') }]
+    workspace.fs.readFile.mockResolvedValueOnce(dicomBytes())
+    const webview = makeWebview()
+    const uri = Uri.parse('file:///home/user/proj/IM0001.IMA')
+
+    const body = await NiiVueEditorProvider.uriToImageBody(uri, webview as any)
+
+    expect(body.data).toBeInstanceOf(ArrayBuffer)
+    expect(body.uri).toBe('file:///home/user/proj/IM0001.IMA')
+    expect(webview.asWebviewUri).not.toHaveBeenCalled()
+  })
+
   it('ships binary for an extension-less file whose content is DICOM', async () => {
     // Scanner exports often have no extension (IM_0001) or a bare UID as the
     // name. The custom-editor selector can't match those, but "NiiVue: Open"
