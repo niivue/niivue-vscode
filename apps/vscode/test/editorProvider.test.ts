@@ -413,6 +413,78 @@ describe('NiiVueEditorProvider.collectDicomFolder', () => {
   })
 })
 
+describe('folder size limit', () => {
+  const GiB = 1024 ** 3
+
+  function makePanel() {
+    return { webview: { postMessage: vi.fn() } }
+  }
+
+  it('refuses DICOM candidates that add up to more than 2 GB, before reading any', async () => {
+    workspace.fs.readDirectory.mockResolvedValue([
+      ['IM_0001', FileType.File],
+      ['IM_0002', FileType.File],
+    ])
+    workspace.fs.stat.mockResolvedValue({ size: 1.5 * GiB })
+
+    await expect(
+      NiiVueEditorProvider.collectDicomFolder(Uri.parse('file:///scan')),
+    ).rejects.toThrow('the folder holds 3.0 GB of files')
+    expect(workspace.fs.readFile).not.toHaveBeenCalled()
+  })
+
+  it('shows the error in the viewer when a folder is too large to open', async () => {
+    workspace.fs.readDirectory.mockResolvedValue([
+      ['a.nii.gz', FileType.File],
+      ['b.nii.gz', FileType.File],
+    ])
+    workspace.fs.stat.mockResolvedValue({ size: 1.5 * GiB })
+    const panel = makePanel()
+
+    await NiiVueEditorProvider.openDcmFolder(Uri.parse('file:///study'), panel as any)
+
+    expect(workspace.fs.readFile).not.toHaveBeenCalled()
+    expect(panel.webview.postMessage).toHaveBeenCalledWith({
+      type: 'addImage',
+      body: {
+        uri: 'file:///study',
+        loadError: expect.stringContaining('Could not open file:///study: the folder holds 3.0 GB'),
+      },
+    })
+  })
+
+  it('shows the error in the viewer when a file of the folder cannot be read', async () => {
+    workspace.fs.readDirectory.mockResolvedValue([['a.nii.gz', FileType.File]])
+    workspace.fs.readFile.mockRejectedValue(new Error('EACCES'))
+    const panel = makePanel()
+
+    await NiiVueEditorProvider.openDcmFolder(Uri.parse('file:///study'), panel as any)
+
+    expect(panel.webview.postMessage).toHaveBeenCalledWith({
+      type: 'addImage',
+      body: { uri: 'file:///study', loadError: 'Could not open file:///study: EACCES' },
+    })
+  })
+
+  it('loads a clicked DICOM file alone, with a warning, when its folder is too large', async () => {
+    workspace.fs.readDirectory.mockResolvedValue([
+      ['001.dcm', FileType.File],
+      ['002.dcm', FileType.File],
+    ])
+    workspace.fs.readFile.mockResolvedValue(dicomBytes())
+    workspace.fs.stat.mockResolvedValue({ size: 1.5 * GiB })
+    const webview = { ...makeWebview(), postMessage: vi.fn() }
+
+    await NiiVueEditorProvider.sendInitialImage(Uri.parse('file:///study/001.dcm'), webview as any)
+
+    expect(window.showWarningMessage).toHaveBeenCalledWith(
+      expect.stringContaining('Loading only 001.dcm: the folder holds 3.0 GB'),
+    )
+    expect(webview.postMessage).toHaveBeenCalledTimes(1)
+    expect(webview.postMessage.mock.calls[0][0].body.uri).toBe('file:///study/001.dcm')
+  })
+})
+
 describe('NiiVueEditorProvider.collectDicomFolderImages', () => {
   it('expands a clicked DICOM file to every DICOM in its folder', async () => {
     workspace.fs.readDirectory.mockResolvedValue([

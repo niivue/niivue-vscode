@@ -306,32 +306,62 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
   }
 
   public static async openDcmFolder(folderUri: vscode.Uri, panel: vscode.WebviewPanel) {
-    const series = await NiiVueEditorProvider.collectDicomFolder(folderUri)
-    if (series.uris.length > 0) {
+    try {
+      const series = await NiiVueEditorProvider.collectDicomFolder(folderUri)
+      if (series.uris.length > 0) {
+        panel.webview.postMessage({
+          type: 'addImage',
+          body: { uri: series.uris, data: series.datas },
+        })
+        return
+      }
+      // Fallback: nothing sniffed as DICOM (e.g. files that lack the Part 10
+      // preamble). Send every file in the folder and let the loader decide.
+      const files = await vscode.workspace.fs.readDirectory(folderUri)
+      const fileUris = files
+        .filter(([, fileType]) => (fileType & vscode.FileType.File) !== 0)
+        .map(([name]) => vscode.Uri.joinPath(folderUri, name))
+      await NiiVueEditorProvider.checkFolderSize(fileUris)
+      const data = await Promise.all(
+        fileUris.map((uri) =>
+          vscode.workspace.fs.readFile(uri).then((d) => NiiVueEditorProvider.toArrayBuffer(d)),
+        ),
+      )
       panel.webview.postMessage({
         type: 'addImage',
-        body: { uri: series.uris, data: series.datas },
+        body: {
+          data,
+          uri: fileUris.map((u) => u.toString()),
+        },
       })
-      return
+    } catch (error) {
+      panel.webview.postMessage({
+        type: 'addImage',
+        body: {
+          uri: folderUri.toString(),
+          loadError: `Could not open ${folderUri.toString(true)}: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        },
+      })
     }
-    // Fallback: nothing sniffed as DICOM (e.g. files that lack the Part 10
-    // preamble). Send every file in the folder and let the loader decide.
-    const files = await vscode.workspace.fs.readDirectory(folderUri)
-    const fileUris = files
-      .filter(([, fileType]) => (fileType & vscode.FileType.File) !== 0)
-      .map(([name]) => vscode.Uri.joinPath(folderUri, name))
-    const data = await Promise.all(
-      fileUris.map((uri) =>
-        vscode.workspace.fs.readFile(uri).then((d) => NiiVueEditorProvider.toArrayBuffer(d)),
-      ),
+  }
+
+  /** Folders are read into memory and posted at once; NiiVue holds at most 2 GB per image. */
+  static readonly maxFolderBytes = 2 * 1024 ** 3
+
+  /** Throws, before anything is read, when the files add up to more than `maxFolderBytes`. */
+  private static async checkFolderSize(uris: vscode.Uri[]): Promise<void> {
+    const sizes = await Promise.all(
+      uris.map((uri) => vscode.workspace.fs.stat(uri).then((stat) => stat.size, () => 0)),
     )
-    panel.webview.postMessage({
-      type: 'addImage',
-      body: {
-        data,
-        uri: fileUris.map((u) => u.toString()),
-      },
-    })
+    const total = sizes.reduce((sum, size) => sum + size, 0)
+    if (total > NiiVueEditorProvider.maxFolderBytes) {
+      throw new Error(
+        `the folder holds ${(total / 1024 ** 3).toFixed(1)} GB of files, ` +
+          'more than the 2 GB that can be loaded at once',
+      )
+    }
   }
 
   async resolveCustomEditor(
@@ -477,8 +507,13 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
           })
           return
         }
-      } catch {
+      } catch (error) {
         // Fall through to a single-file load if directory scanning fails.
+        vscode.window.showWarningMessage(
+          NiiVueEditorProvider.plainText(
+            `Loading only ${name}: ${error instanceof Error ? error.message : String(error)}`,
+          ),
+        )
       }
     }
     const body = await NiiVueEditorProvider.uriToImageBody(uri, webview)
@@ -509,7 +544,7 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
   /**
    * Read every DICOM file in a directory (name pre-filtered, content
    * verified) and return their URIs and bytes, sorted by URI for a stable
-   * slice order.
+   * slice order. Throws when the candidates exceed `maxFolderBytes`.
    */
   static async collectDicomFolder(
     dirUri: vscode.Uri,
@@ -520,15 +555,15 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     } catch {
       return { uris: [], datas: [] }
     }
+    const candidates = entries
+      .filter(
+        ([name, fileType]) =>
+          (fileType & vscode.FileType.File) !== 0 && NiiVueEditorProvider.isDicomCandidateName(name),
+      )
+      .map(([name]) => vscode.Uri.joinPath(dirUri, name))
+    await NiiVueEditorProvider.checkFolderSize(candidates)
     const collected: { uri: string; data: ArrayBuffer }[] = []
-    for (const [name, fileType] of entries) {
-      if ((fileType & vscode.FileType.File) === 0) {
-        continue
-      }
-      if (!NiiVueEditorProvider.isDicomCandidateName(name)) {
-        continue
-      }
-      const fileUri = vscode.Uri.joinPath(dirUri, name)
+    for (const fileUri of candidates) {
       let bytes: Uint8Array
       try {
         bytes = await vscode.workspace.fs.readFile(fileUri)
