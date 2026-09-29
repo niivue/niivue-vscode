@@ -1,7 +1,6 @@
-# Remove the PWA previews and coverage reports of closed PRs from gh-pages.
-# The per-PR cleanup workflows run once when a PR closes, and GitHub cancels a
-# queued run when another joins the gh-pages-mutation group; this sweep catches
-# what they missed.
+# Remove the PWA previews and coverage reports of closed PRs from gh-pages. The
+# per-PR cleanups run once on close, and GitHub cancels a queued run when another
+# joins the gh-pages-mutation group, so some are missed.
 name: Sweep gh-pages Previews
 
 on:
@@ -9,6 +8,8 @@ on:
     - cron: '30 4 * * *'
   workflow_dispatch:
 
+# Like any run in this group, it can cancel a queued preview deploy, which the
+# PR's next push publishes again.
 concurrency:
   group: gh-pages-mutation
   cancel-in-progress: false
@@ -49,5 +50,6 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
           git commit -q -m "Remove previews of closed PRs" -m "${removed[*]}"
-          git push
+          # The production deploy pushes to gh-pages outside this concurrency group.
+          git push || { git pull --rebase -q origin gh-pages && git push; }
           echo "Removed: ${removed[*]}"
