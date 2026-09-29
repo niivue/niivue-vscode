@@ -36,13 +36,7 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     const panel = vscode.window.createWebviewPanel(viewType, tabName, vscode.ViewColumn.One, {
       enableScripts: true,
       retainContextWhenHidden: true,
-      localResourceRoots: [
-        context.extensionUri,
-        vscode.Uri.joinPath(
-          vscode.workspace.workspaceFolders?.[0]?.uri ?? vscode.Uri.file('/'),
-          '..',
-        ),
-      ],
+      localResourceRoots: NiiVueEditorProvider.localResourceRoots(context.extensionUri),
     })
     panel.webview.html = await getHtmlForWebview(panel.webview, context.extensionUri)
     const editor = new NiiVueEditorProvider(context)
@@ -347,13 +341,7 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     this.webviews.add(document.uri, webviewPanel)
     webviewPanel.webview.options = {
       enableScripts: true,
-      localResourceRoots: [
-        this._context.extensionUri,
-        vscode.Uri.joinPath(
-          vscode.workspace.workspaceFolders?.[0]?.uri ?? vscode.Uri.file('/'),
-          '..',
-        ),
-      ],
+      localResourceRoots: NiiVueEditorProvider.localResourceRoots(this._context.extensionUri),
     }
     webviewPanel.webview.html = await getHtmlForWebview(
       webviewPanel.webview,
@@ -443,7 +431,7 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     if (
       lowerCasePath.endsWith('.dcm') ||
       lowerCasePath.endsWith('.mnc') ||
-      !NiiVueEditorProvider.isUriAccessible(uri)
+      !NiiVueEditorProvider.isUriAccessible(uri, webview)
     ) {
       const data = await vscode.workspace.fs.readFile(uri)
       return {
@@ -584,27 +572,28 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
   }
 
   /**
-   * Whether `uri` can be served through the webview resource proxy.  Requires
-   * the same scheme *and* authority as one of the workspace folders so that a
-   * `file://` workspace never claims to host a `vscode-remote://` file (which
-   * is what broke menu-driven Add Image / Add Overlay on SSH-remote sessions
-   * in single-file mode).
+   * Whether the webview can fetch `uri` itself: inside one of its `localResourceRoots`, with the
+   * same scheme *and* authority, so a `file://` root never claims a `vscode-remote://` file.
    */
-  static isUriAccessible(uri: vscode.Uri): boolean {
-    const workspaceFolders = vscode.workspace.workspaceFolders
-    if (!workspaceFolders) {
+  static isUriAccessible(uri: vscode.Uri, webview: vscode.Webview): boolean {
+    let roots: readonly vscode.Uri[]
+    try {
+      roots = webview.options.localResourceRoots ?? []
+    } catch {
+      // The options of a closed panel throw.
       return false
     }
-    for (const folder of workspaceFolders) {
-      if (
-        uri.scheme === folder.uri.scheme &&
-        uri.authority === folder.uri.authority &&
-        uri.path.startsWith(folder.uri.path)
-      ) {
-        return true
-      }
-    }
-    return false
+    return roots.some((root) => {
+      const rootPath = root.path.endsWith('/') ? root.path : `${root.path}/`
+      return (
+        uri.scheme === root.scheme && uri.authority === root.authority && uri.path.startsWith(rootPath)
+      )
+    })
+  }
+
+  /** Fixed when the panel opens; a workspace folder added later is served as bytes. */
+  private static localResourceRoots(extensionUri: vscode.Uri): vscode.Uri[] {
+    return [extensionUri, ...(vscode.workspace.workspaceFolders ?? []).map((folder) => folder.uri)]
   }
 
   /**
@@ -667,7 +656,7 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     const rawRef = NiiVueEditorProvider.getMhdPairedRawRef(mhdText)
     const rawUri = rawRef ? NiiVueEditorProvider.resolveMhdPairedRawUri(uri, rawRef) : null
 
-    if (NiiVueEditorProvider.isUriAccessible(uri)) {
+    if (NiiVueEditorProvider.isUriAccessible(uri, webview)) {
       const mhdWebviewUri = webview.asWebviewUri(uri).toString()
       const body: Record<string, unknown> = { uri: mhdWebviewUri }
       if (rawRef) {

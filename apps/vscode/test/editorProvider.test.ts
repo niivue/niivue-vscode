@@ -23,11 +23,17 @@ function nonDicomBytes(): Uint8Array {
  * `webview.asWebviewUri(...)` URL.
  */
 
-function makeWebview(): { asWebviewUri: ReturnType<typeof vi.fn> } {
+function makeWebview(): {
+  asWebviewUri: ReturnType<typeof vi.fn>
+  options: { localResourceRoots: Uri[] }
+} {
   // Real `webview.asWebviewUri` returns a Uri whose `.toString()` is a fully
-  // proxied https://*.vscode-cdn.net URL.  Source only calls `.toString()` on
-  // the result, so a stub with just that method is sufficient.
+  // proxied https://*.vscode-cdn.net URL; source only calls `.toString()`.
+  // The roots are the ones a panel opened now gets.
   return {
+    options: {
+      localResourceRoots: [Uri.file('/ext'), ...(workspace.workspaceFolders ?? []).map((f) => f.uri)],
+    },
     asWebviewUri: vi.fn((uri: Uri) => ({
       toString: () => `https://cdn.vscode-cdn.net${uri.path}?scheme=${uri.scheme}`,
     })),
@@ -46,39 +52,109 @@ describe('NiiVueEditorProvider.isUriAccessible', () => {
   it('returns false when no workspace folder is open', () => {
     workspace.workspaceFolders = undefined
     const uri = Uri.parse('file:///home/user/data.nii.gz')
-    expect(NiiVueEditorProvider.isUriAccessible(uri)).toBe(false)
+    expect(NiiVueEditorProvider.isUriAccessible(uri, makeWebview() as any)).toBe(false)
   })
 
   it('returns true for a local file inside the workspace', () => {
     const workspaceUri = Uri.parse('file:///home/user/proj')
     workspace.workspaceFolders = [{ uri: workspaceUri }]
     const uri = Uri.parse('file:///home/user/proj/data.nii.gz')
-    expect(NiiVueEditorProvider.isUriAccessible(uri)).toBe(true)
+    expect(NiiVueEditorProvider.isUriAccessible(uri, makeWebview() as any)).toBe(true)
   })
 
   it('returns true for a remote file inside a matching remote workspace', () => {
     const workspaceUri = Uri.parse('vscode-remote://ssh-remote%2Bmyhost/home/user/proj')
     workspace.workspaceFolders = [{ uri: workspaceUri }]
     const uri = Uri.parse('vscode-remote://ssh-remote%2Bmyhost/home/user/proj/atlas.nii.gz')
-    expect(NiiVueEditorProvider.isUriAccessible(uri)).toBe(true)
+    expect(NiiVueEditorProvider.isUriAccessible(uri, makeWebview() as any)).toBe(true)
   })
 
   it('returns false when authorities differ (remote uri, local workspace)', () => {
     workspace.workspaceFolders = [{ uri: Uri.parse('file:///home/user/proj') }]
     const remoteUri = Uri.parse('vscode-remote://ssh-remote%2Bmyhost/home/user/proj/data.nii.gz')
-    expect(NiiVueEditorProvider.isUriAccessible(remoteUri)).toBe(false)
+    expect(NiiVueEditorProvider.isUriAccessible(remoteUri, makeWebview() as any)).toBe(false)
   })
 
   it('returns false when schemes differ', () => {
     workspace.workspaceFolders = [{ uri: Uri.parse('vscode-remote://ssh-remote%2Bmyhost/home') }]
     const fileUri = Uri.parse('file:///home/data.nii.gz')
-    expect(NiiVueEditorProvider.isUriAccessible(fileUri)).toBe(false)
+    expect(NiiVueEditorProvider.isUriAccessible(fileUri, makeWebview() as any)).toBe(false)
   })
 
   it('returns false for a sibling directory outside the workspace folder', () => {
     workspace.workspaceFolders = [{ uri: Uri.parse('file:///home/user/proj') }]
     const outsideUri = Uri.parse('file:///home/user/other-proj/data.nii.gz')
-    expect(NiiVueEditorProvider.isUriAccessible(outsideUri)).toBe(false)
+    expect(NiiVueEditorProvider.isUriAccessible(outsideUri, makeWebview() as any)).toBe(false)
+  })
+
+  it('returns false for a sibling directory whose name starts with the workspace folder name', () => {
+    workspace.workspaceFolders = [{ uri: Uri.parse('file:///home/user/proj') }]
+    const outsideUri = Uri.parse('file:///home/user/proj2/data.nii.gz')
+    expect(NiiVueEditorProvider.isUriAccessible(outsideUri, makeWebview() as any)).toBe(false)
+  })
+
+  it('returns false for a workspace folder added after the panel opened', () => {
+    workspace.workspaceFolders = [{ uri: Uri.parse('file:///home/user/code') }]
+    const webview = makeWebview()
+    workspace.workspaceFolders = [...workspace.workspaceFolders, { uri: Uri.parse('file:///data/study') }]
+    const uri = Uri.parse('file:///data/study/brain.nii.gz')
+    expect(NiiVueEditorProvider.isUriAccessible(uri, webview as any)).toBe(false)
+  })
+
+  it('returns false once the panel is closed', () => {
+    workspace.workspaceFolders = [{ uri: Uri.parse('file:///home/user/proj') }]
+    const webview = {
+      get options(): never {
+        throw new Error('Webview is disposed')
+      },
+    }
+    const uri = Uri.parse('file:///home/user/proj/data.nii.gz')
+    expect(NiiVueEditorProvider.isUriAccessible(uri, webview as any)).toBe(false)
+  })
+
+  it('returns true for a file in the second folder of a multi-root workspace', () => {
+    workspace.workspaceFolders = [
+      { uri: Uri.parse('file:///home/user/code') },
+      { uri: Uri.parse('file:///data/study') },
+    ]
+    const uri = Uri.parse('file:///data/study/sub-01/brain.nii.gz')
+    expect(NiiVueEditorProvider.isUriAccessible(uri, makeWebview() as any)).toBe(true)
+  })
+})
+
+describe('webview localResourceRoots', () => {
+  async function rootsOfOpenedEditor(): Promise<string[]> {
+    const webview = {
+      options: {} as { localResourceRoots?: Uri[] },
+      html: '',
+      cspSource: 'vscode-resource:',
+      asWebviewUri: (uri: Uri) => ({ toString: () => `https://cdn.vscode-cdn.net${uri.path}` }),
+      postMessage: vi.fn(),
+      onDidReceiveMessage: () => ({ dispose: () => {} }),
+    }
+    const provider = new NiiVueEditorProvider({ extensionUri: Uri.file('/ext') } as any)
+    await provider.resolveCustomEditor(
+      { uri: Uri.parse('file:///data/study/brain.nii.gz') } as any,
+      { webview, onDidDispose: () => ({ dispose: () => {} }) } as any,
+    )
+    return (webview.options.localResourceRoots ?? []).map((uri) => uri.toString())
+  }
+
+  it('cover every workspace folder', async () => {
+    workspace.workspaceFolders = [
+      { uri: Uri.parse('file:///home/user/code') },
+      { uri: Uri.parse('file:///data/study') },
+    ]
+    expect(await rootsOfOpenedEditor()).toEqual([
+      'file:///ext',
+      'file:///home/user/code',
+      'file:///data/study',
+    ])
+  })
+
+  it('hold only the extension without a workspace folder', async () => {
+    workspace.workspaceFolders = undefined
+    expect(await rootsOfOpenedEditor()).toEqual(['file:///ext'])
   })
 })
 
@@ -364,12 +440,7 @@ describe('NiiVueEditorProvider.collectDicomFolderImages', () => {
 
 describe('NiiVueEditorProvider.sendInitialImage', () => {
   function makeWebviewWithPost() {
-    return {
-      asWebviewUri: vi.fn((uri: Uri) => ({
-        toString: () => `https://cdn.vscode-cdn.net${uri.path}?scheme=${uri.scheme}`,
-      })),
-      postMessage: vi.fn(),
-    }
+    return { ...makeWebview(), postMessage: vi.fn() }
   }
 
   it('sends the whole DICOM series when a single DICOM file is opened', async () => {
