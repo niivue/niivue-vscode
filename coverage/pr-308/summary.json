@@ -83,27 +83,27 @@
   "streamlit-glue": {
     "label": "`apps/streamlit`",
     "stats": {
-      "statements": 19,
-      "branches": 8.1,
-      "functions": 18.8,
-      "lines": 19.2
+      "statements": 84.9,
+      "branches": 77.5,
+      "functions": 83.3,
+      "lines": 84.9
     },
     "counts": {
       "statements": {
-        "covered": 36,
-        "total": 189
+        "covered": 219,
+        "total": 258
       },
       "branches": {
-        "covered": 12,
-        "total": 148
+        "covered": 145,
+        "total": 187
       },
       "functions": {
-        "covered": 6,
-        "total": 32
+        "covered": 40,
+        "total": 48
       },
       "lines": {
-        "covered": 35,
-        "total": 182
+        "covered": 208,
+        "total": 245
       }
     }
   },
@@ -164,27 +164,27 @@
   "_overall": {
     "label": "Overall",
     "stats": {
-      "statements": 54.6,
-      "branches": 50.3,
-      "functions": 53.6,
-      "lines": 55
+      "statements": 57.6,
+      "branches": 53.6,
+      "functions": 55.6,
+      "lines": 58
     },
     "counts": {
       "statements": {
-        "covered": 2612,
-        "total": 4787
+        "covered": 2795,
+        "total": 4856
       },
       "branches": {
-        "covered": 1725,
-        "total": 3430
+        "covered": 1858,
+        "total": 3469
       },
       "functions": {
-        "covered": 674,
-        "total": 1257
+        "covered": 708,
+        "total": 1273
       },
       "lines": {
-        "covered": 2481,
-        "total": 4512
+        "covered": 2654,
+        "total": 4575
       }
     }
   }
