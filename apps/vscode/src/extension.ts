@@ -19,6 +19,7 @@ export function activate(context: vscode.ExtensionContext) {
     'niivue.toggleRadiological',
     'niivue.toggleCrosshair',
     'niivue.toggleZoomMode',
+    'niivue.toggleWorldSpace',
     'niivue.addImage',
     'niivue.addOverlay',
     'niivue.colorscale',

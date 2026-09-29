@@ -133,6 +133,7 @@ export class NiivueWidget extends Widget {
         colorbar: false,
         radiologicalConvention: false,
         zoomDragMode: false,
+        worldSpace: false,
         defaultVolumeColormap: 'gray',
         defaultOverlayColormap: 'redyell',
       }

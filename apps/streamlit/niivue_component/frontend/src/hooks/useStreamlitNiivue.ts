@@ -21,6 +21,7 @@ export const useStreamlitNiivue = (args: StreamlitArgs) => {
     interpolation: args.settings?.interpolation ?? true,
     defaultVolumeColormap: 'gray',
     zoomDragMode: false,
+    worldSpace: false,
     defaultOverlayColormap: 'red',
     defaultOverlayOpacity: 0.5,
     defaultMeshOverlayColormap: 'redyell',
