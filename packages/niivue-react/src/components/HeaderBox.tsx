@@ -1,5 +1,6 @@
-import { effect, useSignal } from '@preact/signals'
+import { useSignal } from '@preact/signals'
 import { ExtendedNiivue } from '../events'
+import { useImmediateSignalEffect } from '../hooks/useImmediateSignalEffect'
 
 type HeaderInfo = {
   pixDims: [number, number, number, number]
@@ -8,11 +9,12 @@ type HeaderInfo = {
 
 export const HeaderBox = (props: any) => {
   const { nvArraySelected, nvArray, visible } = props
-  if (visible && !visible.value) return null
 
   const headerInfo = useSignal({ pixDims: [3, 1, 1, 1], qoffset: [0, 0, 0] } as HeaderInfo)
 
-  effect(() => {
+  // Re-read the header each time the box opens, dropping edits that were not applied.
+  useImmediateSignalEffect(() => {
+    if (visible && !visible.value) return
     if (nvArraySelected.value.length > 0 && nvArraySelected.value[0]?.volumes?.[0]) {
       const hdr = nvArraySelected.value[0].volumes[0].hdr
       headerInfo.value = {
@@ -36,6 +38,9 @@ export const HeaderBox = (props: any) => {
     })
     nvArray.value = [...nvArray.value]
   }
+
+  // After the hooks, so every render calls the same hooks in the same order.
+  if (visible && !visible.value) return null
 
   return (
     <div className="absolute grid grid-cols-2 left-80 top-12 bg-gray-500 rounded-md z-50 space-y-1 space-x-1 p-1">

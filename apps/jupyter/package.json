@@ -78,7 +78,6 @@
   },
   "devDependencies": {
     "@jupyterlab/builder": "^4.5.7",
-    "@niivue/dicom-loader": "^1.0.0",
     "@preact/signals": "^2.11.2",
     "@vitest/coverage-v8": "^4.1.6",
     "copy-webpack-plugin": "^14.0.0",

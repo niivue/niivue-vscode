@@ -234,9 +234,10 @@ jobs:
           jupyter labextension list
           python -m jupyterlab.browser_check
 
+      # The only vitest run for the Jupyter extension, so a failure here must
+      # fail the job (as the VS Code and desktop coverage steps do).
       - name: Run Jupyter vitest coverage
         run: pnpm --filter=@niivue/jupyter test:coverage
-        continue-on-error: true
 
       - name: Upload Jupyter vitest coverage artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7

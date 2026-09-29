@@ -1,6 +1,7 @@
-import { computed, effect, useSignal } from '@preact/signals'
+import { computed, useSignal } from '@preact/signals'
 import { useEffect, useRef } from 'preact/hooks'
 import { ExtendedNiivue } from '../events'
+import { useImmediateSignalEffect } from '../hooks/useImmediateSignalEffect'
 import { getCanvasSize } from '../layout'
 import { DEFAULT_TILE_SPACING } from '../settings'
 import { differenceInNames, getImageMetadata, getNames, reorderImages, swapImages } from '../utility'
@@ -51,7 +52,7 @@ export const Container = (props: AppProps) => {
     ),
   )
 
-  effect(() => syncVolumes(nvArray.value))
+  useImmediateSignalEffect(() => syncVolumes(nvArray.value))
 
   const fullNames = computed(() => getNames(nvArray.value))
   const names = computed(() => differenceInNames(fullNames.value))

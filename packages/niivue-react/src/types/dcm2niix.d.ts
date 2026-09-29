@@ -1,19 +1,12 @@
 declare module '@niivue/dcm2niix' {
+  // The subset of the dcm2niix API that src/dicom.ts uses.
   export class Dcm2niix {
-    worker?: Worker
+    worker: Worker | null
 
     constructor()
 
     init(): Promise<boolean>
 
-    convert(files: File[] | ArrayBuffer[]): Promise<{
-      files: ArrayBuffer[]
-      names: string[]
-    }>
+    input(files: File[]): { run(): Promise<File[]> }
   }
-}
-
-declare module '@niivue/dcm2niix/worker.js?worker&inline' {
-  const workerUrl: string
-  export default workerUrl
 }
