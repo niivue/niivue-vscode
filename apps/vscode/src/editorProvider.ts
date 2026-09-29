@@ -425,8 +425,8 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
    * webview URI (so NiiVue can stream large volumes) but falls back to reading
    * the file as binary when the URI is not reachable via the webview resource
    * proxy — i.e. remote workspaces where the file sits outside
-   * `localResourceRoots`, or formats that NiiVue can only ingest as bytes
-   * (`.dcm`, `.mnc`).
+   * `localResourceRoots`, web links, or formats that NiiVue can only ingest
+   * as bytes (`.dcm`, `.mnc`).
    *
    * Files without a recognized extension are read and sniffed for the DICOM
    * magic bytes; matches are shipped as binary so the webview routes them
@@ -445,10 +445,10 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
       lowerCasePath.endsWith('.mnc') ||
       !NiiVueEditorProvider.isUriAccessible(uri)
     ) {
-      const data = await vscode.workspace.fs.readFile(uri)
+      const data = await NiiVueEditorProvider.readBytes(uri)
       return {
         data: NiiVueEditorProvider.toArrayBuffer(data),
-        uri: uri.toString(),
+        uri: NiiVueEditorProvider.withoutQuery(uri).toString(),
       }
     }
     if (!NiiVueEditorProvider.hasKnownExtension(lowerCasePath)) {
@@ -472,29 +472,42 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
    *   clicked slice loads its whole series. dcm2niix groups the slices and
    *   splits a multi-series folder into one volume per series.
    * - Everything else loads as a single image.
+   * - A file that cannot be read shows the error in the viewer.
    */
   static async sendInitialImage(uri: vscode.Uri, webview: vscode.Webview): Promise<void> {
-    if (uri.path.toLowerCase().endsWith('.mhd')) {
-      await NiiVueEditorProvider.sendMhdMessage(uri, webview)
-      return
-    }
-    const name = uri.path.split('/').pop() ?? ''
-    if (NiiVueEditorProvider.isDicomCandidateName(name)) {
-      try {
-        const series = await NiiVueEditorProvider.collectDicomFolderImages(uri)
-        if (series) {
-          webview.postMessage({
-            type: 'addImage',
-            body: { uri: series.uris, data: series.datas },
-          })
-          return
-        }
-      } catch {
-        // Fall through to a single-file load if directory scanning fails.
+    try {
+      if (uri.path.toLowerCase().endsWith('.mhd')) {
+        await NiiVueEditorProvider.sendMhdMessage(uri, webview)
+        return
       }
+      const name = uri.path.split('/').pop() ?? ''
+      if (NiiVueEditorProvider.isDicomCandidateName(name)) {
+        try {
+          const series = await NiiVueEditorProvider.collectDicomFolderImages(uri)
+          if (series) {
+            webview.postMessage({
+              type: 'addImage',
+              body: { uri: series.uris, data: series.datas },
+            })
+            return
+          }
+        } catch {
+          // Fall through to a single-file load if directory scanning fails.
+        }
+      }
+      const body = await NiiVueEditorProvider.uriToImageBody(uri, webview)
+      webview.postMessage({ type: 'addImage', body })
+    } catch (error) {
+      webview.postMessage({
+        type: 'addImage',
+        body: {
+          uri: NiiVueEditorProvider.withoutQuery(uri).toString(),
+          loadError: `Could not read ${NiiVueEditorProvider.withoutQuery(uri).toString(true)}: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        },
+      })
     }
-    const body = await NiiVueEditorProvider.uriToImageBody(uri, webview)
-    webview.postMessage({ type: 'addImage', body })
   }
 
   /**
@@ -646,6 +659,40 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     return vscode.Uri.joinPath(parentDir, basename)
   }
 
+  private static isWebUri(uri: vscode.Uri): boolean {
+    return uri.scheme === 'http' || uri.scheme === 'https'
+  }
+
+  /**
+   * The webview reads the format from the name's extension, so a web link
+   * loses its query and fragment, and any credentials, once its bytes are read.
+   */
+  private static withoutQuery(uri: vscode.Uri): vscode.Uri {
+    if (!NiiVueEditorProvider.isWebUri(uri)) {
+      return uri
+    }
+    return uri.with({ authority: uri.authority.replace(/^[^@]*@/, ''), query: '', fragment: '' })
+  }
+
+  /** workspace.fs has no http(s) provider, so web links are fetched instead. */
+  private static async readBytes(uri: vscode.Uri): Promise<Uint8Array> {
+    if (!NiiVueEditorProvider.isWebUri(uri)) {
+      return vscode.workspace.fs.readFile(uri)
+    }
+    let response: Response
+    try {
+      response = await fetch(uri.toString(true))
+    } catch (error) {
+      // fetch reports every network failure as "fetch failed" and keeps the reason in cause.
+      const cause = (error as { cause?: unknown }).cause
+      throw cause instanceof Error ? cause : error
+    }
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status} ${response.statusText}`.trim())
+    }
+    return new Uint8Array(await response.arrayBuffer())
+  }
+
   private static toArrayBuffer(data: Uint8Array): ArrayBuffer {
     const buffer = new ArrayBuffer(data.byteLength)
     new Uint8Array(buffer).set(data)
@@ -662,7 +709,7 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
    * and sent as binary buffers.
    */
   static async sendMhdMessage(uri: vscode.Uri, webview: vscode.Webview): Promise<void> {
-    const mhdData = await vscode.workspace.fs.readFile(uri)
+    const mhdData = await NiiVueEditorProvider.readBytes(uri)
     const mhdText = new TextDecoder().decode(mhdData)
     const rawRef = NiiVueEditorProvider.getMhdPairedRawRef(mhdText)
     const rawUri = rawRef ? NiiVueEditorProvider.resolveMhdPairedRawUri(uri, rawRef) : null
@@ -681,12 +728,12 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     } else {
       const body: Record<string, unknown> = {
         data: NiiVueEditorProvider.toArrayBuffer(mhdData),
-        uri: uri.toString(),
+        uri: NiiVueEditorProvider.withoutQuery(uri).toString(),
       }
       if (rawRef) {
         if (rawUri) {
           try {
-            const rawData = await vscode.workspace.fs.readFile(rawUri)
+            const rawData = await NiiVueEditorProvider.readBytes(rawUri)
             body.pairedData = NiiVueEditorProvider.toArrayBuffer(rawData)
           } catch (error) {
             body.loadError =
