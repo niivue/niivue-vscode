@@ -163,6 +163,44 @@ niivue_viewer(nifti_data=scene, filename="brain.nvd")
 
 In the styled viewer, **NVDocument** saves the scene as a download, and **NVDocument > Load** opens a scene document from disk.
 
+### Waiting for the Image to Load
+
+With `load_events=True`, the viewer tells Python when loading has finished:
+`base_loaded` once the main image (or first mesh) is shown, then
+`fully_loaded` once every overlay and mesh passed with it has loaded too. Use
+it to start a timer or a next step only once the image is visible.
+
+```python
+event = niivue_viewer(
+    nifti_data=image,
+    filename=f"{subject}_T1w.nii.gz",
+    overlays=[{"data": mask, "name": "mask.nii.gz"}],
+    load_events=True,
+    update_interval_ms=None,  # no click events, only load events
+    key=f"viewer-{subject}",
+)
+if event and event["type"] in ("base_loaded", "fully_loaded"):
+    st.session_state.setdefault(f"shown-{subject}", time.time())
+```
+
+Each event re-runs the script, like a click. The return value only holds the
+latest event and keeps it across re-runs: a new `key` per image starts from
+`None`, so a value never belongs to the previous image. When there is nothing
+more to load, `fully_loaded` follows right after `base_loaded`, and the script
+may only see the later one, so accept either as "shown". `fully_loaded` is
+sent again when new overlays or meshes are loaded for the same image, for
+example when a slider sets an overlay's opacity.
+
+If the main image fails to load, the viewer sends `load_error` instead, with
+the message in `error`, and no other event for that image. An overlay or mesh
+that fails to load still ends in `fully_loaded`; its error goes to the browser
+console.
+
+Because every event re-runs the script, pass the same arguments on each run.
+Image bytes rebuilt on every run (a freshly written `.nii.gz` carries a new
+timestamp) count as a new image, which loads and sends an event again, without
+end. Cache them, for example with `st.cache_data`.
+
 ## ⚡ Performance
 
 Because Streamlit re-runs the whole script whenever a component calls
@@ -244,16 +282,26 @@ viewer()
   the return value isn't consumed to avoid any Python round-trip during
   mouse interaction.
 - `key` (str, optional): Component key
+- `load_events` (bool): send `base_loaded` and `fully_loaded` events when
+  loading finishes, or `load_error` when it fails (default: False). See
+  [Waiting for the Image to Load](#waiting-for-the-image-to-load).
 
 **Returns:**
 
-dict or None with click event data:
+dict or None: the latest event from the viewer. A click:
 
 - `type`: 'voxel_click'
 - `voxel`: [x, y, z]
 - `mm`: [x, y, z]
 - `value`: float
 - `filename`: str
+
+With `load_events=True`, also a finished load:
+
+- `type`: 'base_loaded', 'fully_loaded' or 'load_error'
+- `filename`: str
+- `timestamp`: int, time in the browser in milliseconds since the epoch
+- `error`: str, only for 'load_error'
 
 ## 🛠️ Development
 

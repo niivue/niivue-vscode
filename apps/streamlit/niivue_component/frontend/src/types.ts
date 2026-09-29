@@ -37,6 +37,8 @@ export interface StreamlitArgs {
   // null disables feedback entirely — no setComponentValue calls, no Python
   // round-trips on mouse interaction.
   update_interval_ms?: number | null
+  // Send base_loaded and fully_loaded events back to Python (off by default).
+  load_events?: boolean
 }
 
 export interface ClickEventData {
@@ -45,6 +47,16 @@ export interface ClickEventData {
   mm: [number, number, number]
   value: number
   filename: string
+}
+
+export interface LoadEventData {
+  // base_loaded: the main image (or first mesh) is shown.
+  // fully_loaded: every overlay and mesh passed with it has finished loading too.
+  // load_error: the main image failed to load; error holds the message.
+  type: 'base_loaded' | 'fully_loaded' | 'load_error'
+  filename: string
+  timestamp: number // Date.now() in the browser
+  error?: string
 }
 
 export const VIEW_MODE_TO_SLICE_TYPE: Record<string, number> = {

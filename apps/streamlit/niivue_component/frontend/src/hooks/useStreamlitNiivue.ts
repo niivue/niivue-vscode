@@ -1,7 +1,8 @@
 import { handleMessage, initCanvas, isImageType, useAppState } from '@niivue/react'
 import { useEffect, useRef } from 'preact/hooks'
 import { Streamlit } from 'streamlit-component-lib'
-import { StreamlitArgs, VIEW_MODE_TO_SLICE_TYPE } from '../types'
+import { LoadEventType, LoadTracker } from '../loadEvents'
+import { LoadEventData, MeshData, MeshOverlay, StreamlitArgs, VIEW_MODE_TO_SLICE_TYPE } from '../types'
 import { base64ToArrayBuffer, buildVoxelClickPayload, throttle } from '../utils'
 
 /** Sample characters from a base64 string for fingerprinting (avoids hashing overhead) */
@@ -11,6 +12,18 @@ function dataFingerprint(data: string | undefined): string {
   const mid = Math.floor(len / 2)
   return `${len}:${data.slice(0, 8)}${data.slice(mid, mid + 8)}${data.slice(-8)}`
 }
+
+// Change-detection IDs for what the arguments ask to load.
+const volumeOverlayIds = (overlays: NonNullable<StreamlitArgs['overlays']>) =>
+  overlays.map(o => `${o.name}-${o.colormap}-${o.opacity}-${o.data?.length || 0}`)
+
+const meshListId = (meshes: MeshData[] | undefined) =>
+  meshes ? JSON.stringify(meshes.map(m => `${m.name}-${dataFingerprint(m.data)}`)) : null
+
+const meshOverlayIds = (overlays: MeshOverlay[]) =>
+  overlays.map(o => `${o.name}-${o.colormap}-${o.opacity}-${dataFingerprint(o.data)}`)
+
+const sameIds = (a: string[], b: string[]) => JSON.stringify(a) === JSON.stringify(b)
 
 /** Shared hook for Streamlit NiiVue components */
 export const useStreamlitNiivue = (args: StreamlitArgs) => {
@@ -41,6 +54,50 @@ export const useStreamlitNiivue = (args: StreamlitArgs) => {
   const loadedOverlaysRef = useRef<string[]>([])
   const loadedMeshesRef = useRef<string | null>(null)
   const loadedMeshOverlaysRef = useRef<string[]>([])
+
+  // Load events (load_events=True): report when the base image, and then every
+  // overlay and mesh requested with it, has finished loading. Promise callbacks
+  // read the latest arguments through argsRef.
+  const argsRef = useRef(args)
+  argsRef.current = args
+  const baseNvRef = useRef<(typeof appProps.nvArray.value)[number] | null>(null)
+  const baseFilenameRef = useRef('')
+  const trackerRef = useRef<LoadTracker | null>(null)
+  if (!trackerRef.current) {
+    trackerRef.current = new LoadTracker(
+      () => {
+        const { overlays, meshes } = argsRef.current
+        const meshOverlays = meshes?.[0]?.overlays ?? []
+        // Mesh overlays wait for a mesh to apply them to; if every mesh failed there is none.
+        const hasMesh = (appProps.nvArray.value[0]?.meshes.length ?? 0) > 0
+        return {
+          baseLoaded: baseNvRef.current?.isLoaded === true,
+          baseFailed: !!baseNvRef.current?.loadError,
+          allStarted:
+            (!overlays?.length || sameIds(volumeOverlayIds(overlays), loadedOverlaysRef.current)) &&
+            (!meshes?.length || meshListId(meshes) === loadedMeshesRef.current) &&
+            (!meshOverlays.length ||
+              !hasMesh ||
+              sameIds(meshOverlayIds(meshOverlays), loadedMeshOverlaysRef.current)),
+        }
+      },
+      (type: LoadEventType) => {
+        if (argsRef.current.load_events === true) {
+          const event: LoadEventData = {
+            type,
+            filename: baseFilenameRef.current,
+            timestamp: Date.now(),
+          }
+          if (type === 'load_error') {
+            event.error = baseNvRef.current?.loadError || ''
+          }
+          Streamlit.setComponentValue(event)
+        }
+      },
+    )
+  }
+  const tracker = trackerRef.current
+  useEffect(() => () => tracker.dispose(), [])
 
   // The viewer posts its own actions (NVDocument > Load, dropped files) to this
   // window. Only those are handled; Streamlit talks to the component through
@@ -83,9 +140,7 @@ export const useStreamlitNiivue = (args: StreamlitArgs) => {
   }, [settingsKey])
 
   // Compute a stable ID for the mesh list using data fingerprints (for change detection)
-  const meshId = args.meshes
-    ? JSON.stringify(args.meshes.map(m => `${m.name}-${dataFingerprint(m.data)}`))
-    : null
+  const meshId = meshListId(args.meshes)
 
   // Load base image or first mesh via the standard message system
   useEffect(() => {
@@ -104,6 +159,10 @@ export const useStreamlitNiivue = (args: StreamlitArgs) => {
 
     // Initialize canvas for 1 base image
     initCanvas(appProps, 1)
+    // addImage fills the first instance that has no image yet, as found here.
+    baseNvRef.current = appProps.nvArray.value.find((nv) => nv.isNew) ?? null
+    baseFilenameRef.current = args.filename || ''
+    tracker.baseStarted()
 
     if (args.nifti_data) {
       // Load volume as base image
@@ -142,11 +201,11 @@ export const useStreamlitNiivue = (args: StreamlitArgs) => {
     }
 
     // Include data length in overlay ID for change detection
-    const overlayIds = args.overlays.map(o => `${o.name}-${o.colormap}-${o.opacity}-${o.data?.length || 0}`)
+    const overlayIds = volumeOverlayIds(args.overlays)
     const currentIds = loadedOverlaysRef.current
     
     // If overlay list changed, clear and reload all overlays
-    if (JSON.stringify(overlayIds) !== JSON.stringify(currentIds)) {
+    if (!sameIds(overlayIds, currentIds)) {
       // Remove all overlays except base volume (index 0). v1: removal is a
       // synchronous model op (index-based); refresh the GPU once after.
       while (nv.volumes.length > 1) {
@@ -156,7 +215,7 @@ export const useStreamlitNiivue = (args: StreamlitArgs) => {
       
       // Load all overlays sequentially
       for (const overlay of args.overlays) {
-        handleMessage({
+        tracker.track(handleMessage({
           type: 'overlay',
           body: {
             data: base64ToArrayBuffer(overlay.data),
@@ -165,7 +224,7 @@ export const useStreamlitNiivue = (args: StreamlitArgs) => {
             opacity: overlay.opacity ?? 0.5,
             index: 0,
           },
-        }, appProps)
+        }, appProps))
       }
       loadedOverlaysRef.current = overlayIds
     }
@@ -196,14 +255,14 @@ export const useStreamlitNiivue = (args: StreamlitArgs) => {
 
     for (let i = startIndex; i < args.meshes.length; i++) {
       const meshEntry = args.meshes[i]
-      handleMessage({
+      tracker.track(handleMessage({
         type: 'overlay',
         body: {
           data: base64ToArrayBuffer(meshEntry.data),
           uri: meshEntry.name,
           index: 0,
         },
-      }, appProps)
+      }, appProps))
     }
     loadedMeshesRef.current = meshId
     loadedMeshOverlaysRef.current = [] // Reset mesh overlays when meshes change
@@ -229,11 +288,9 @@ export const useStreamlitNiivue = (args: StreamlitArgs) => {
       return
     }
 
-    const overlayIds = meshOverlays.map(o =>
-      `${o.name}-${o.colormap}-${o.opacity}-${dataFingerprint(o.data)}`
-    )
+    const overlayIds = meshOverlayIds(meshOverlays)
 
-    if (JSON.stringify(overlayIds) !== JSON.stringify(loadedMeshOverlaysRef.current)) {
+    if (!sameIds(overlayIds, loadedMeshOverlaysRef.current)) {
       // Clear existing mesh layers before re-adding to prevent accumulation.
       // v1: go through removeMeshLayer so the mesh colors recomposite (mutating
       // mesh.layers directly would leave the previous overlay colors baked in).
@@ -243,7 +300,7 @@ export const useStreamlitNiivue = (args: StreamlitArgs) => {
       }
 
       for (const overlay of meshOverlays) {
-        handleMessage({
+        tracker.track(handleMessage({
           type: 'addMeshOverlay',
           body: {
             data: base64ToArrayBuffer(overlay.data),
@@ -252,11 +309,18 @@ export const useStreamlitNiivue = (args: StreamlitArgs) => {
             opacity: overlay.opacity ?? 0.7,
             index: 0,
           },
-        }, appProps)
+        }, appProps))
       }
       loadedMeshOverlaysRef.current = overlayIds
     }
   }, [appProps.nvArray.value, appProps.nvArray.value[0]?.isLoaded, args.meshes])
+
+  // After the load effects above, so the loads they start in this render are
+  // already tracked. nvArray is reassigned when the base image and each
+  // overlay or mesh finish loading.
+  useEffect(() => {
+    tracker.check()
+  }, [appProps.nvArray.value])
 
   // Throttled wrapper for Streamlit.setComponentValue to avoid overwhelming
   // Python with updates during mouse drag. update_interval_ms === null
