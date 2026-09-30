@@ -505,6 +505,8 @@ function growNvArrayBy(nvArray: Signal<NiiVue[]>, n: number) {
       // NiiVue's default secondaryDragMode.
       primaryDragMode: DRAG_MODE.crosshair,
       isDragDropEnabled: false, // handled by app (Volume component)
+      // A tile is only created for an image that is on its way; errors cover it.
+      placeholderText: 'Loading…',
       // 'c' (cycle clip plane) and 'v' (cycle view mode) are handled by the
       // app's useKeyboardShortcuts hook, which broadcasts to every selected
       // canvas. v1.0 still binds its own hotkeys to window during attach, so
