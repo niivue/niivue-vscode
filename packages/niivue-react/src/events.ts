@@ -5,6 +5,7 @@ import { DocumentSource, isNvdFile, isWebUrl } from './document'
 import { readyStateManager } from './readyState'
 import { NiiVueSettings } from './settings'
 import { buildImageMessageBodies, isImageType } from './utility'
+import { loadableSource } from './webviewResource'
 
 /**
  * Increments a global counter used by E2E tests to know when an image or
@@ -308,7 +309,7 @@ async function addOverlay(nv: NiiVue, item: any, settings: NiiVueSettings) {
     // No data (empty string / undefined) means load from the URL (item.uri); a
     // non-empty string is itself a URL/path; in-memory bytes wrap in a File.
     const url = !item.data
-      ? item.uri
+      ? await loadableSource(item.uri)
       : typeof item.data === 'string'
         ? item.data
         : new File([toBlobPart(item.data)], item.uri)
@@ -319,7 +320,9 @@ async function addOverlay(nv: NiiVue, item: any, settings: NiiVueSettings) {
       opacity: overlayOpacity,
     })
   } else {
-    const url = item.data ? new File([toBlobPart(item.data)], item.uri) : item.uri
+    const url = item.data
+      ? new File([toBlobPart(item.data)], item.uri)
+      : await loadableSource(item.uri)
     await nv.addMesh({ url, name: item.uri })
   }
 }

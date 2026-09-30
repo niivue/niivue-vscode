@@ -9,6 +9,7 @@ import { isNiftiName, NIFTI_PEEK_BYTES, niftiTooLargeWarning } from '../nifti'
 import { convertNpy, convertNpz, isNpyName } from '../npy'
 import { NiiVueSettings } from '../settings'
 import { graphmlToConnectome, isDicomData, isImageType } from '../utility'
+import { loadableSource } from '../webviewResource'
 import { AppProps } from './AppProps'
 
 export interface NiiVueCanvasProps {
@@ -423,9 +424,9 @@ async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSetting
     // Pass urlImageData so NiiVue can fetch the paired raw file for detached
     // formats like MHD (ElementDataFile = <name>.raw).
     const image = {
-      url: item.uri,
+      url: await loadableSource(item.uri),
       colormap: settings.defaultVolumeColormap,
-      ...(item.urlImgData ? { urlImageData: item.urlImgData } : {}),
+      ...(item.urlImgData ? { urlImageData: await loadableSource(item.urlImgData) } : {}),
     }
     await nv.loadVolumes([image])
     return
@@ -526,13 +527,13 @@ async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSetting
         colormap: settings.defaultVolumeColormap,
       })
     } else {
-      const volumeList = [{ url: item.uri, colormap: settings.defaultVolumeColormap }]
+      const volumeList = [{ url: await loadableSource(item.uri), colormap: settings.defaultVolumeColormap }]
       await nv.loadVolumes(volumeList)
     }
   } else if (item.data) {
     await nv.addMesh({ url: new File([ensureArrayBuffer(item.data)], item.uri), name: item.uri })
   } else {
-    const meshList = [{ url: item.uri }]
+    const meshList = [{ url: await loadableSource(item.uri) }]
     await nv.loadMeshes(meshList)
   }
 }
