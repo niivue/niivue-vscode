@@ -45,7 +45,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@niivue/niivue": "1.0.0-rc.13",
+    "@niivue/niivue": "1.0.0-rc.16",
     "@niivue/react": "workspace:*",
     "@preact/signals": "^2.11.2",
     "@tauri-apps/api": "^2.11.0",

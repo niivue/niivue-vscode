@@ -94,7 +94,7 @@
     "workbox-window": "^7.4.1"
   },
   "peerDependencies": {
-    "@niivue/niivue": "1.0.0-rc.13",
+    "@niivue/niivue": "1.0.0-rc.16",
     "@preact/signals": "^2.11.2",
     "preact": "^10.29.8"
   }

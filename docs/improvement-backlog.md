@@ -161,8 +161,6 @@ request has a fix under review there.
 - [ ] Python metadata: `jupyterlab_niivue` allows Python 3.8 and lists
       classifiers up to 3.12; the Streamlit classifiers stop at 3.11 while CI
       tests 3.12.
-- [ ] `@niivue/niivue` is pinned to `1.0.0-rc.13`; newer release candidates
-      are out.
 - [ ] Vite configs use `__dirname` and an import without extension, which the
       planned native config loader will reject.
 - [ ] Close or refresh the old Copilot drafts #113, #128, #134 and #135.
