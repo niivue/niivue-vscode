@@ -2,6 +2,7 @@ import { gzipSync } from 'node:zlib'
 import { describe, expect, it } from 'vitest'
 import {
   buildImageMessageBodies,
+  ensureMhaTransform,
   getMetadataString,
   getNames,
   getNumberOfPoints,
@@ -9,6 +10,8 @@ import {
   imageBaseName,
   isDicomData,
   isImageType,
+  isMhaName,
+  rawHeaderMHA,
 } from '../utility'
 
 describe('isImageType', () => {
@@ -540,5 +543,73 @@ describe('buildImageMessageBodies (oversized NIfTI guard)', () => {
     expect(bodies).toHaveLength(1)
     expect(bodies[0].loadError).toBeUndefined()
     expect(bodies[0].data).toBeDefined()
+  })
+})
+
+describe('rawHeaderMHA', () => {
+  const text = (header: ArrayBuffer | null) => (header ? new TextDecoder().decode(header) : null)
+
+  it('puts the sizes in DimSize and the type in ElementType', () => {
+    const header = text(rawHeaderMHA('58 58 21 float'))
+    expect(header).toContain('NDims = 3')
+    expect(header).toContain('DimSize = 58 58 21\n')
+    expect(header).toContain('ElementType = MET_FLOAT')
+  })
+
+  it('defaults the type to float and tolerates extra spaces', () => {
+    const header = text(rawHeaderMHA('  64  64 39 '))
+    expect(header).toContain('DimSize = 64 64 39\n')
+    expect(header).toContain('ElementType = MET_FLOAT')
+  })
+
+  it('refuses input without valid sizes', () => {
+    expect(rawHeaderMHA('')).toBeNull()
+    expect(rawHeaderMHA('float')).toBeNull()
+    expect(rawHeaderMHA('64 x 39 float')).toBeNull()
+    expect(rawHeaderMHA('64 0 39 float')).toBeNull()
+  })
+})
+
+describe('ensureMhaTransform', () => {
+  const encode = (s: string) => new TextEncoder().encode(s).buffer as ArrayBuffer
+  const decode = (b: ArrayBuffer) => new TextDecoder('latin1').decode(b)
+  const base = 'ObjectType = Image\nNDims = 3\nDimSize = 64 64 64\nElementType = MET_UCHAR\n'
+
+  it('adds an identity TransformMatrix before ElementDataFile when it is missing', () => {
+    const out = decode(ensureMhaTransform(encode(`${base}ElementDataFile = sphere.raw\n`)))
+    expect(out).toContain('TransformMatrix = 1 0 0 0 1 0 0 0 1\nElementDataFile = sphere.raw')
+  })
+
+  it('leaves a header with a TransformMatrix unchanged', () => {
+    const bytes = encode(`${base}TransformMatrix = -1 0 0 0 -1 0 0 0 1\nElementDataFile = sphere.raw\n`)
+    expect(ensureMhaTransform(bytes)).toBe(bytes)
+  })
+
+  it('takes the matrix from the Orientation synonym', () => {
+    const out = decode(ensureMhaTransform(encode(`${base}Orientation = 0 1 0 1 0 0 0 0 1\nElementDataFile = x.raw\n`)))
+    expect(out).toContain('TransformMatrix = 0 1 0 1 0 0 0 0 1\nElementDataFile')
+  })
+
+  it('keeps the voxel data of a single-file .mha intact', () => {
+    const header = new TextEncoder().encode(`${base}ElementDataFile = LOCAL\n`)
+    const bytes = new Uint8Array(header.length + 3)
+    bytes.set(header)
+    bytes.set([0, 255, 128], header.length)
+    const out = new Uint8Array(ensureMhaTransform(bytes.buffer))
+    expect(Array.from(out.slice(-3))).toEqual([0, 255, 128])
+    expect(out.length).toBe(bytes.length + 'TransformMatrix = 1 0 0 0 1 0 0 0 1\n'.length)
+  })
+
+  it('recognises .mhd and .mha names, also in URLs', () => {
+    expect(isMhaName('scan.MHD')).toBe(true)
+    expect(isMhaName('https://host/scan.mha?x=1')).toBe(true)
+    expect(isMhaName('scan.raw')).toBe(false)
+  })
+})
+
+describe('rawHeaderMHA orientation and types', () => {
+  it('writes an identity TransformMatrix and refuses unsupported type names', () => {
+    expect(new TextDecoder().decode(rawHeaderMHA('4 4 4 short')!)).toContain('TransformMatrix = 1 0 0 0 1 0 0 0 1')
+    expect(rawHeaderMHA('4 4 4 uint8')).toBeNull()
   })
 })

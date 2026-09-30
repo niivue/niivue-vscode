@@ -57,3 +57,16 @@ describe('overlays from webview resource URLs', () => {
     expect(options.url.name).toBe('lh.pial')
   })
 })
+
+describe('MHA overlays', () => {
+  it('get the missing TransformMatrix too', async () => {
+    const { nv, props } = propsWithCanvas()
+    const header = 'ObjectType = Image\nNDims = 3\nDimSize = 1 1 1\nElementType = MET_UCHAR\nElementDataFile = LOCAL\n'
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(header + '\u0001')))
+
+    await handleMessage({ type: 'overlay', body: { uri: resource('mask.mha'), index: 0 } }, props)
+
+    const [[options]] = nv.addVolume.mock.calls as unknown as [[{ url: File }]]
+    expect(await options.url.text()).toContain('TransformMatrix = 1 0 0 0 1 0 0 0 1')
+  })
+})

@@ -4,8 +4,8 @@ import { AppProps } from './components/AppProps'
 import { DocumentSource, isNvdFile, isWebUrl } from './document'
 import { readyStateManager } from './readyState'
 import { NiiVueSettings } from './settings'
-import { buildImageMessageBodies, isImageType } from './utility'
-import { loadableSource } from './webviewResource'
+import { buildImageMessageBodies, isImageType, isMhaName } from './utility'
+import { loadableSource, mhaWithTransform } from './webviewResource'
 
 /**
  * Increments a global counter used by E2E tests to know when an image or
@@ -308,11 +308,12 @@ async function addOverlay(nv: NiiVue, item: any, settings: NiiVueSettings) {
     // v1: addVolume takes the load options directly. `url` is string | File.
     // No data (empty string / undefined) means load from the URL (item.uri); a
     // non-empty string is itself a URL/path; in-memory bytes wrap in a File.
-    const url = !item.data
+    const source = !item.data
       ? await loadableSource(item.uri)
       : typeof item.data === 'string'
         ? item.data
         : new File([toBlobPart(item.data)], item.uri)
+    const url = isMhaName(item.uri) ? await mhaWithTransform(source) : source
     await nv.addVolume({
       url,
       name: item.uri,
