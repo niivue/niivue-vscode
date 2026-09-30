@@ -89,8 +89,8 @@ fn get_file_info(
     {
         return Err("Path not authorized".to_string());
     }
-    let metadata = std::fs::metadata(&canonical)
-        .map_err(|e| format!("Failed to read metadata: {e}"))?;
+    let metadata =
+        std::fs::metadata(&canonical).map_err(|e| format!("Failed to read metadata: {e}"))?;
     let name = canonical
         .file_name()
         .map(|n| n.to_string_lossy().to_string())
@@ -126,8 +126,8 @@ fn list_directory(
     let normalised_exts: Option<Vec<String>> =
         extensions.map(|exts| exts.iter().map(|e| e.to_lowercase()).collect());
 
-    let entries = std::fs::read_dir(&dir_path)
-        .map_err(|e| format!("Failed to read directory: {e}"))?;
+    let entries =
+        std::fs::read_dir(&dir_path).map_err(|e| format!("Failed to read directory: {e}"))?;
     let mut files = Vec::new();
     for entry in entries.flatten() {
         let entry_path = entry.path();

@@ -29,6 +29,7 @@ jobs:
       vscode: ${{ steps.filter.outputs.vscode }}
       streamlit: ${{ steps.filter.outputs.streamlit }}
       desktop: ${{ steps.filter.outputs.desktop }}
+      desktop-rust: ${{ steps.filter.outputs.desktop-rust }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4
@@ -60,6 +61,11 @@ jobs:
               - 'apps/desktop-tauri/**'
               - 'packages/**'
               - 'pnpm-lock.yaml'
+            desktop-rust:
+              - 'apps/desktop-tauri/src-tauri/**'
+              - 'apps/desktop-tauri/package.json'
+              - 'branding/niivue-icon.png'
+              - '.github/workflows/ci.yml'
 
   lint-and-typecheck:
     runs-on: ubuntu-latest
@@ -398,6 +404,64 @@ jobs:
           path: apps/desktop-tauri/coverage/unit/
           if-no-files-found: ignore
           retention-days: 1
+
+  test-desktop-rust:
+    needs: changes
+    if: needs.changes.outputs.desktop-rust == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: apps/desktop-tauri/src-tauri
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        working-directory: .
+        run: pnpm install --frozen-lockfile
+
+      # tauri::generate_context! reads the bundle icons and the frontend
+      # folder at compile time; the tests need neither to be real.
+      - name: Generate icons and an empty frontend folder
+        working-directory: apps/desktop-tauri
+        run: |
+          pnpm generate:icons:tauri
+          mkdir -p build
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev
+
+      # Pinned, so a lint added in a new Rust release cannot fail a PR that did not cause it.
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@ce678459e9fc7500d337468f904b95f1b5c10b5e # 1.98.1
+        with:
+          components: rustfmt, clippy
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+        with:
+          workspaces: apps/desktop-tauri/src-tauri
+
+      - name: cargo fmt
+        run: cargo fmt --check
+
+      - name: cargo clippy
+        run: cargo clippy --locked --all-targets -- -D warnings
+
+      - name: cargo test
+        run: cargo test --locked
 
   e2e-tests:
     needs: [changes, build]
