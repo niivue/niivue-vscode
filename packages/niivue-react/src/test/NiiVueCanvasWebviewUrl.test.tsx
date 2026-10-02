@@ -79,7 +79,8 @@ describe('NiiVueCanvas with webview resource URLs', () => {
       'fetch',
       vi.fn(async (url: string) =>
         url.endsWith('.mhd')
-          ? new Response(MHD_WITHOUT_TRANSFORM)
+          ? // A Blob of the test's own realm: Node's Response.blob() is not one on every Node.
+            { ok: true, blob: async () => new Blob([MHD_WITHOUT_TRANSFORM]) }
           : new Response(new Uint8Array(400)),
       ),
     )

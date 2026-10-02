@@ -62,7 +62,8 @@ describe('MHA overlays', () => {
   it('get the missing TransformMatrix too', async () => {
     const { nv, props } = propsWithCanvas()
     const header = 'ObjectType = Image\nNDims = 3\nDimSize = 1 1 1\nElementType = MET_UCHAR\nElementDataFile = LOCAL\n'
-    vi.stubGlobal('fetch', vi.fn(async () => new Response(header + '\u0001')))
+    // A Blob of the test's own realm: Node's Response.blob() is not one on every Node.
+    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, blob: async () => new Blob([header + '\u0001']) })))
 
     await handleMessage({ type: 'overlay', body: { uri: resource('mask.mha'), index: 0 } }, props)
 
