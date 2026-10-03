@@ -172,6 +172,54 @@ export function isDicomData(data: unknown): boolean {
   )
 }
 
+/**
+ * An MHA header for a headerless .raw file, from its size and data type as
+ * entered by the user ("64 64 39 float"; the type defaults to float), or null.
+ */
+export function rawHeaderMHA(info: string): ArrayBuffer | null {
+  const tokens = info.trim().split(/\s+/)
+  const type = /^\d+$/.test(tokens[tokens.length - 1] ?? '') ? 'FLOAT' : tokens.pop()?.toUpperCase()
+  const dims = tokens.map(Number)
+  const supported = ['FLOAT', 'DOUBLE', 'CHAR', 'UCHAR', 'SHORT', 'USHORT', 'INT', 'UINT']
+  if (!type || !supported.includes(type) || dims.length === 0 || dims.some((d) => !Number.isInteger(d) || d < 1)) {
+    return null
+  }
+  const header = [
+    'ObjectType = Image',
+    `NDims = ${dims.length}`,
+    `DimSize = ${dims.join(' ')}`,
+    `ElementType = MET_${type}`,
+    'TransformMatrix = 1 0 0 0 1 0 0 0 1',
+    'ElementDataFile = image.raw',
+  ].join('\n')
+  return new TextEncoder().encode(header).buffer as ArrayBuffer
+}
+
+export function isMhaName(name: string): boolean {
+  return /\.(mhd|mha)$/i.test(name.split(/[?#]/)[0])
+}
+
+/**
+ * NiiVue's MHD/MHA reader takes the orientation only from TransformMatrix and
+ * leaves an axis NaN without it (WebGPU then refuses to draw). Adds the line when
+ * missing, from the MetaIO synonyms Rotation or Orientation, else identity.
+ */
+export function ensureMhaTransform(bytes: ArrayBuffer): ArrayBuffer {
+  // latin1 keeps one character per byte, so string offsets are byte offsets.
+  const text = new TextDecoder('latin1').decode(new Uint8Array(bytes, 0, Math.min(bytes.byteLength, 65536)))
+  const end = text.search(/^ElementDataFile\s*=/m)
+  if (end < 0 || /^TransformMatrix\s*=/m.test(text.slice(0, end))) {
+    return bytes
+  }
+  const synonym = text.slice(0, end).match(/^(?:Rotation|Orientation)\s*=\s*(.+?)\s*$/m)
+  const line = new TextEncoder().encode(`TransformMatrix = ${synonym?.[1] ?? '1 0 0 0 1 0 0 0 1'}\n`)
+  const out = new Uint8Array(bytes.byteLength + line.byteLength)
+  out.set(new Uint8Array(bytes, 0, end))
+  out.set(line, end)
+  out.set(new Uint8Array(bytes, end), end + line.byteLength)
+  return out.buffer
+}
+
 export function isImageType(item: string) {
   return [
     '.nii',
