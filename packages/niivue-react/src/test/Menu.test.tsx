@@ -196,3 +196,25 @@ describe('Menu effects', () => {
     expect(reads).toBe(1)
   })
 })
+
+describe('Header menu', () => {
+  it('lists Show Header, which opens the header of the selected image', async () => {
+    const showModal = vi.fn()
+    HTMLDialogElement.prototype.showModal = showModal
+    const nv = { ...makeKbNv(), volumes: [{ hdr: { toFormattedString: () => 'sizeof_hdr: 348' } }] }
+    render(
+      <Menu
+        {...(makeKbProps({
+          nvArray: signal([nv]),
+          settings: signal({ ...makeKbProps().settings.value, menuItems: { header: true } }),
+        }) as unknown as AppProps)}
+      />,
+    )
+
+    fireEvent.click(screen.getByTestId('menu-item-dropdown-Header'))
+    fireEvent.click(await screen.findByText('Show Header'))
+
+    expect(showModal).toHaveBeenCalled()
+    expect(await screen.findByText(/sizeof_hdr: 348/)).toBeTruthy()
+  })
+})
