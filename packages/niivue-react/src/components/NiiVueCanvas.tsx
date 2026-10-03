@@ -1,4 +1,5 @@
 import { mnc2nii } from '@niivue/minc-loader'
+import { SLICE_TYPE } from '@niivue/niivue'
 import { Signal } from '@preact/signals'
 import { useEffect, useRef } from 'preact/hooks'
 import { attachWithBackend } from '../backend'
@@ -117,8 +118,12 @@ export const NiiVueCanvas = ({
       })
   }, [nv.documentData])
 
-  if (nv.isLoaded && nv.volumes.length > 0) {
-    nv.sliceType = sliceType.value
+  if (nv.isLoaded && (nv.volumes.length > 0 || nv.meshes.length > 0)) {
+    // NiiVue 1.0 also cuts 2D slices through meshes; for a tile of meshes only,
+    // "Multiplanar + Render" shows just the render.
+    const meshesOnly = nv.volumes.length === 0
+    nv.sliceType =
+      meshesOnly && sliceType.value === SLICE_TYPE.MULTIPLANAR ? SLICE_TYPE.RENDER : sliceType.value
   }
 
   useEffect(() => {
