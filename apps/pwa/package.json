@@ -53,7 +53,7 @@
     "ci": "pnpm run lint && pnpm run type-check && pnpm run test:coverage && pnpm run test:e2e"
   },
   "dependencies": {
-    "@niivue/niivue": "1.0.0-rc.13",
+    "@niivue/niivue": "1.0.0-rc.16",
     "@niivue/react": "workspace:*",
     "@preact/signals": "^2.11.2",
     "preact": "^10.29.8"

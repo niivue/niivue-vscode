@@ -94,8 +94,8 @@ importers:
   apps/desktop-tauri:
     dependencies:
       '@niivue/niivue':
-        specifier: 1.0.0-rc.13
-        version: 1.0.0-rc.13
+        specifier: 1.0.0-rc.16
+        version: 1.0.0-rc.16
       '@niivue/react':
         specifier: workspace:*
         version: link:../../packages/niivue-react
@@ -200,8 +200,8 @@ importers:
         specifier: ^2.7.5
         version: 2.9.0
       '@niivue/niivue':
-        specifier: 1.0.0-rc.13
-        version: 1.0.0-rc.13
+        specifier: 1.0.0-rc.16
+        version: 1.0.0-rc.16
       '@niivue/react':
         specifier: workspace:*
         version: link:../../packages/niivue-react
@@ -273,8 +273,8 @@ importers:
   apps/pwa:
     dependencies:
       '@niivue/niivue':
-        specifier: 1.0.0-rc.13
-        version: 1.0.0-rc.13
+        specifier: 1.0.0-rc.16
+        version: 1.0.0-rc.16
       '@niivue/react':
         specifier: workspace:*
         version: link:../../packages/niivue-react
@@ -391,8 +391,8 @@ importers:
   apps/streamlit/niivue_component/frontend:
     dependencies:
       '@niivue/niivue':
-        specifier: 1.0.0-rc.13
-        version: 1.0.0-rc.13
+        specifier: 1.0.0-rc.16
+        version: 1.0.0-rc.16
       '@niivue/react':
         specifier: workspace:*
         version: link:../../../../packages/niivue-react
@@ -522,8 +522,8 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0
       '@niivue/niivue':
-        specifier: 1.0.0-rc.13
-        version: 1.0.0-rc.13
+        specifier: 1.0.0-rc.16
+        version: 1.0.0-rc.16
       '@niivue/viewer-protocol':
         specifier: workspace:*
         version: link:../viewer-protocol
@@ -2698,8 +2698,8 @@ packages:
   '@niivue/minc-loader@1.0.0':
     resolution: {integrity: sha512-wcrFHr+7F5aGg7cdxFoOYolJH6EHlW5xZNkh0+lAkDPnOneLAWlS8+RzPw383jcqIx5+xf+dgK4TVgU/OZ8KUQ==}
 
-  '@niivue/niivue@1.0.0-rc.13':
-    resolution: {integrity: sha512-YpahB/wRst5yPv4fztV7z2fREc99uGyDz5KEMFxowXWtT74y0Df9A/TRotMmpAKxg6g4kWX7wQJY/2rjf7nBBQ==}
+  '@niivue/niivue@1.0.0-rc.16':
+    resolution: {integrity: sha512-ACDAQtuFzP7OhDEFT9iml57nyd7oqAjMAY3g1UPAt2nCmLtxK66BYF3GxBhQvKYbNyN8jCqJBMVwqAD42bLC5g==}
 
   '@node-rs/crc32-android-arm-eabi@1.10.7':
     resolution: {integrity: sha512-mWNghDkwgoc5uJhhPx/LbgLoNAxnq6Sfz4pTxi4NWG7s5l+dPe7K+L4kXb0oOfwl3Yq3Ro7CNPGLrU4cmTXhaA==}
@@ -11115,7 +11115,7 @@ snapshots:
     dependencies:
       nifti-reader-js: 0.7.1
 
-  '@niivue/niivue@1.0.0-rc.13':
+  '@niivue/niivue@1.0.0-rc.16':
     dependencies:
       cbor-x: 1.6.4
       clipper2-ts: 2.0.1-17
