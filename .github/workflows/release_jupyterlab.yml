@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 jobs:
-  release:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -50,16 +50,33 @@ jobs:
         working-directory: ./apps/jupyter
         run: python -m twine check dist/*
 
-      - name: Publish to PyPI
-        working-directory: ./apps/jupyter
-        run: python -m twine upload --skip-existing dist/*
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-
       - name: Upload build artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: jupyter-extension
           path: apps/jupyter/dist/*
+          overwrite: true
+
+  # PyPI Trusted Publishing: PyPI trades this job's OIDC token for a
+  # short-lived upload token. Only this job may request one, so no build
+  # script runs with it.
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/jupyterlab-niivue
+    permissions:
+      id-token: write
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: jupyter-extension
+          path: dist
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
+        with:
+          skip-existing: true
 

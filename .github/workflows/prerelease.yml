@@ -10,8 +10,9 @@ name: Pre-release
 # publishes a beta off schedule.
 #
 # Every app builds and publishes in its own job, so a failing registry does not
-# hold back the others. Publishing skips versions that are already out, so a
-# failed job can be re-run on its own.
+# hold back the others; the PyPI apps publish from a follow-up job, the only
+# one allowed to request the token for PyPI Trusted Publishing. Publishing
+# skips versions that are already out, so a failed job can be re-run on its own.
 
 on:
   schedule:
@@ -137,7 +138,7 @@ jobs:
 
       # The extension build runs `jupyter labextension build`.
       - name: Install Python build tools
-        run: python -m pip install "jupyterlab>=4.0.0,<5" build twine
+        run: python -m pip install "jupyterlab>=4.0.0,<5" build
 
       - name: Build
         run: pnpm turbo build --filter=@niivue/jupyter
@@ -146,12 +147,33 @@ jobs:
         run: python -m build
         working-directory: ./apps/jupyter
 
+      - name: Upload Python package
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: jupyter-dist
+          path: apps/jupyter/dist/*
+          overwrite: true
+
+  jupyter-publish:
+    name: JupyterLab pre-release publish
+    needs: jupyter
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/jupyterlab-niivue
+    permissions:
+      id-token: write
+    steps:
+      - name: Download Python package
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: jupyter-dist
+          path: dist
+
       - name: Publish to PyPI
-        run: python -m twine upload --skip-existing dist/*
-        working-directory: ./apps/jupyter
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
+        with:
+          skip-existing: true
 
   streamlit:
     name: Streamlit pre-release
@@ -170,7 +192,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install Python build tools
-        run: python -m pip install build twine
+        run: python -m pip install build
 
       - name: Build
         run: pnpm turbo build --filter=@niivue/streamlit
@@ -179,12 +201,33 @@ jobs:
         run: python -m build
         working-directory: ./apps/streamlit
 
+      - name: Upload Python package
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: streamlit-dist
+          path: apps/streamlit/dist/*
+          overwrite: true
+
+  streamlit-publish:
+    name: Streamlit pre-release publish
+    needs: streamlit
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/niivue-streamlit
+    permissions:
+      id-token: write
+    steps:
+      - name: Download Python package
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: streamlit-dist
+          path: dist
+
       - name: Publish to PyPI
-        run: python -m twine upload --skip-existing dist/*
-        working-directory: ./apps/streamlit
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
+        with:
+          skip-existing: true
 
   # The installers need a platform matrix, so release_desktop.yml builds them
   # and creates the GitHub pre-release.
