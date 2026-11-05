@@ -76,6 +76,33 @@ test.describe('Loading DICOM images', () => {
     await expectNoLoadError(page)
   })
 
+  // Scanner and PACS exports are often compressed. Decoding these two synthetic
+  // 64x64 MR slices needs the dcm2niix build that includes OpenJPEG and CharLS.
+  for (const [fileName, codec] of [
+    ['jpeg2000.dcm', 'JPEG 2000'],
+    ['jpegls.dcm', 'JPEG-LS'],
+  ]) {
+    test(`loads a ${codec} compressed DICOM file`, async ({ page }) => {
+      await page.goto(BASE_URL)
+
+      const dicomPath = path.join(__dirname, '..', 'test', 'assets', fileName)
+      const dicomBuffer = fs.readFileSync(dicomPath)
+
+      const message = {
+        type: 'addImage',
+        body: {
+          data: Array.from(new Uint8Array(dicomBuffer)),
+          uri: fileName,
+        },
+      }
+
+      await page.evaluate((m) => window.postMessage(m, '*'), message)
+      await waitForImageLoad(page)
+
+      await expectNoLoadError(page)
+    })
+  }
+
   test('loads a DICOM series passed as an array of files', async ({ page }) => {
     // Multi-file series arrive as `uri: string[]` + `data: ArrayBuffer[]`
     // (VS Code series expansion, PWA folder drop). This path previously threw

@@ -8,7 +8,7 @@ export default defineConfig({
   clearScreen: false,
   optimizeDeps: {
     include: ['@niivue/niivue', '@preact/signals', 'preact'],
-    exclude: ['@niivue/dicom-loader', '@niivue/react'],
+    exclude: ['@niivue/react'],
   },
   resolve: {
     alias: {

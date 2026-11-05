@@ -65,7 +65,7 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       external: appTarget
         ? [] // Bundle all dependencies into the standalone app
-        : ['preact', 'preact/hooks', '@niivue/niivue', '@niivue/dicom-loader', '@preact/signals'],
+        : ['preact', 'preact/hooks', '@niivue/niivue', '@preact/signals'],
       output: {
         globals: {
           preact: 'preact',

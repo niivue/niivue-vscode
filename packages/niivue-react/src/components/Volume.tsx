@@ -75,6 +75,18 @@ export const Volume = (props: AppProps & VolumeProps) => {
     return () => nv.removeEventListener('locationChange', onLoc)
   }, [])
 
+  // Volume is keyed by nv.key and unmounts with its tile; an nv still in nvArray
+  // only lost the viewer around it. destroy() waits for attachToCanvas, which
+  // would otherwise finish attaching an instance destroyed during GPU init.
+  useEffect(
+    () => () => {
+      if (!props.nvArray.peek().includes(nv)) {
+        Promise.resolve(nv.attached).then(() => nv.destroy())
+      }
+    },
+    [],
+  )
+
   // Stop playback when volume is deselected or editing begins
   useEffect(() => {
     if ((!selected.value || isEditingVol4D.value) && isPlaying.value) {

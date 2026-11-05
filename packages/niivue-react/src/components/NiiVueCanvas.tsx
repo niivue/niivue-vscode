@@ -1,33 +1,8 @@
-/// <reference types="../types/virtual-modules" />
-// Patch Dcm2niix for worker inlining before importing dicom-loader
-import { Dcm2niix } from '@niivue/dcm2niix'
-import workerUrl from 'dcm2niix-worker'
-
-const originalInit = Dcm2niix.prototype.init
-
-Dcm2niix.prototype.init = function () {
-  this.worker = new Worker(workerUrl, { type: 'module' })
-
-  return new Promise((resolve, reject) => {
-    if (this.worker) {
-      this.worker.onmessage = (event: MessageEvent) => {
-        if (event.data?.type === 'ready') {
-          resolve(true)
-        }
-      }
-
-      this.worker.onerror = (error: ErrorEvent) => {
-        reject(new Error(`Worker failed to load: ${error.message || 'Unknown error'}`))
-      }
-    }
-  })
-}
-
-import { dicomLoader } from '@niivue/dicom-loader'
 import { mnc2nii } from '@niivue/minc-loader'
 import { Signal } from '@preact/signals'
 import { useEffect, useRef } from 'preact/hooks'
 import { attachWithBackend } from '../backend'
+import { dicomToNifti } from '../dicom'
 import { documentFile } from '../document'
 import { ExtendedNiivue, notifyImageLoaded, removeBuiltinKeyHandler } from '../events'
 import { isNiftiName, NIFTI_PEEK_BYTES, niftiTooLargeWarning } from '../nifti'
@@ -53,6 +28,8 @@ export const NiiVueCanvas = ({
   settings,
 }: AppProps & NiiVueCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  // Volume destroys the nv of a closed tile once it is attached; nothing may load into it.
+  const isClosed = () => !nvArray.peek().includes(nv)
 
   useEffect(() => {
     if (!canvasRef.current || nv.canvas) {
@@ -85,8 +62,9 @@ export const NiiVueCanvas = ({
     nv.isLoading = true
     const body = nv.body
     Promise.resolve(nv.attached)
-      .then(() => loadVolume(nv, body, settings.value))
+      .then(() => (isClosed() ? undefined : loadVolume(nv, body, settings.value)))
       .then(async () => {
+        if (isClosed()) return
         nv.isLoaded = true
         nv.isLoading = false
         nv.body = null
@@ -97,6 +75,7 @@ export const NiiVueCanvas = ({
         notifyImageLoaded()
       })
       .catch((error) => {
+        if (isClosed()) return
         console.error('Load Error:', error)
         nv.loadError = error.message || 'Unknown error loading file'
         nv.isLoading = false
@@ -116,9 +95,9 @@ export const NiiVueCanvas = ({
     // Reading the document (fetching a URL, completing a JSON document) fails
     // into the same on-canvas error as the load itself.
     Promise.resolve(nv.attached)
-      .then(() => documentFile(source))
-      .then((file) => nv.loadDocument(file))
+      .then(() => (isClosed() ? undefined : documentFile(source).then((file) => nv.loadDocument(file))))
       .then(() => {
+        if (isClosed()) return
         nv.isLoaded = true
         nv.isLoading = false
         nv.documentData = null
@@ -129,6 +108,7 @@ export const NiiVueCanvas = ({
         notifyImageLoaded()
       })
       .catch((error) => {
+        if (isClosed()) return
         console.error('Load Document Error:', error)
         nv.loadError = error.message || 'Unknown error loading document'
         nv.isLoading = false
@@ -249,7 +229,7 @@ async function loadDicomSeries(
     }
   }
   const dicomInput = names.map((name, i) => ({ data: ensureArrayBuffer(data[i]), name }))
-  const loadedFiles = await dicomLoader(dicomInput)
+  const loadedFiles = await dicomToNifti(dicomInput)
   if (!loadedFiles || loadedFiles.length === 0) {
     throw new Error('No DICOM volume could be decoded from the provided files')
   }
