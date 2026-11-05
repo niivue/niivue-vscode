@@ -1,16 +1,9 @@
 import type { BackendType } from '@niivue/niivue'
 import type { ExtendedNiivue } from './events'
 
-/**
- * WebGL2 escape hatch for the NiiVue v1 WebGPU migration.
- *
- * NiiVue only falls back to WebGL2 when `navigator.gpu` is absent, so a browser
- * that advertises WebGPU but cannot render still picks it and draws nothing.
- * `?backend=webgl2` forces the working backend on those machines.
- *
- * Falling back automatically is not possible from here: once the WebGPU context
- * exists, `getContext('webgl2')` on the same canvas returns null.
- */
+// NiiVue renders with WebGL2 unless asked for WebGPU, and falls back from WebGPU only
+// when `navigator.gpu` is absent: a browser that advertises WebGPU but cannot render
+// it draws nothing.
 
 /** `?backend=webgl2` or `?backend=webgpu` forces a backend (support / debugging). */
 export function backendOverride(): BackendType | undefined {
