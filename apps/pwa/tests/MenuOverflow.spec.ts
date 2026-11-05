@@ -12,7 +12,7 @@ test.describe('Menu overflow', () => {
   })
 
   test('narrow viewport collapses overflowing menus into the More menu', { tag: '@dom' }, async ({ page }) => {
-    await page.setViewportSize({ width: 360, height: 800 })
+    await page.setViewportSize({ width: 320, height: 800 })
     await page.goto(BASE_URL)
 
     // Items that no longer fit collapse behind a single overflow ("More") button.

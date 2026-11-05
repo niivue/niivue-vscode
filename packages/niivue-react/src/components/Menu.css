@@ -9,13 +9,13 @@
   min-width: 0;
   min-height: var(--topbar-h);
 }
-.nv-topbar-left { display: flex; align-items: center; gap: 20px; min-width: 0; flex: 1; }
+.nv-topbar-left { display: flex; align-items: center; gap: 14px; min-width: 0; flex: 1; }
 .nv-topbar-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 
 /* Adaptive menu bar: a single non-wrapping row that overflows into a "More"
    menu instead of wrapping to a second line. */
 .nv-bar { position: relative; flex: 1 1 auto; min-width: 0; }
-.nv-bar-row { display: flex; align-items: center; gap: 4px; }
+.nv-bar-row { display: flex; align-items: center; gap: 2px; }
 /* Off-screen twin used only to measure each item's natural width. Its box is
    capped to the bar and overflow-clipped so the full-width proxy row (which is
    wider than the viewport on narrow screens) never inflates the document scroll
@@ -95,9 +95,9 @@
 
 .nv-topbtn {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 6px 10px;
+  padding: 6px 8px;
   border-radius: 7px;
-  font-size: 12.5px;
+  font-size: 11.5px;
   font-weight: 500;
   color: var(--fg-1);
   background: transparent;
