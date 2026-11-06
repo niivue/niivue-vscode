@@ -496,7 +496,10 @@ describe('folder size limit', () => {
       expect.stringContaining('Loading only 001.dcm: the folder holds 3.0 GB'),
     )
     expect(webview.postMessage).toHaveBeenCalledTimes(1)
-    expect(webview.postMessage.mock.calls[0][0].body.uri).toBe('file:///study/001.dcm')
+    const body = webview.postMessage.mock.calls[0][0].body
+    expect(body.uri).toBe('file:///study/001.dcm')
+    expect(body.data).toBeInstanceOf(ArrayBuffer)
+    expect(body.loadError).toBeUndefined()
   })
 })
 
