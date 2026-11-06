@@ -110,27 +110,27 @@
   "vscode-glue": {
     "label": "`apps/vscode`",
     "stats": {
-      "statements": 54.6,
-      "branches": 49.7,
-      "functions": 64.8,
-      "lines": 54
+      "statements": 64.1,
+      "branches": 59.6,
+      "functions": 67,
+      "lines": 63.6
     },
     "counts": {
       "statements": {
-        "covered": 191,
-        "total": 350
+        "covered": 234,
+        "total": 365
       },
       "branches": {
-        "covered": 90,
-        "total": 181
+        "covered": 115,
+        "total": 193
       },
       "functions": {
-        "covered": 57,
-        "total": 88
+        "covered": 61,
+        "total": 91
       },
       "lines": {
-        "covered": 182,
-        "total": 337
+        "covered": 224,
+        "total": 352
       }
     }
   },
@@ -164,27 +164,27 @@
   "_overall": {
     "label": "Overall",
     "stats": {
-      "statements": 54.6,
-      "branches": 49.7,
-      "functions": 64.8,
-      "lines": 54
+      "statements": 64.1,
+      "branches": 59.6,
+      "functions": 67,
+      "lines": 63.6
     },
     "counts": {
       "statements": {
-        "covered": 191,
-        "total": 350
+        "covered": 234,
+        "total": 365
       },
       "branches": {
-        "covered": 90,
-        "total": 181
+        "covered": 115,
+        "total": 193
       },
       "functions": {
-        "covered": 57,
-        "total": 88
+        "covered": 61,
+        "total": 91
       },
       "lines": {
-        "covered": 182,
-        "total": 337
+        "covered": 224,
+        "total": 352
       }
     }
   }
