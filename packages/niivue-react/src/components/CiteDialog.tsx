@@ -1,8 +1,9 @@
 import './AboutDialog.css'
 import './CiteDialog.css'
-import { type Signal, effect, useSignal } from '@preact/signals'
+import { type Signal, useSignal } from '@preact/signals'
 import { useRef } from 'preact/hooks'
 import { CITATION_BIBTEX, CITATION_DOI_URL, CITATION_TEXT } from '../citation'
+import { useImmediateSignalEffect } from '../hooks/useImmediateSignalEffect'
 
 /**
  * Copy text to the clipboard. The Clipboard API can be blocked in embedded
@@ -40,7 +41,7 @@ export const CiteDialog = ({ isOpen }: { isOpen: Signal<boolean> }) => {
   const dialogRef = useRef<HTMLDialogElement | null>(null)
   const copied = useSignal<'text' | 'bibtex' | null>(null)
 
-  effect(() => {
+  useImmediateSignalEffect(() => {
     if (isOpen.value) {
       copied.value = null
       dialogRef.current?.showModal()

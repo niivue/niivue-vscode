@@ -15,7 +15,7 @@ export async function getHtmlForWebview(
           <html lang="en">
             <head>
               <meta charset="utf-8" />
-              <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data: blob: ${webview.cspSource}; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}' 'unsafe-eval'; worker-src blob:; connect-src data: blob: ${webview.cspSource};">
+              <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data: blob: ${webview.cspSource}; style-src ${webview.cspSource} 'unsafe-inline'; font-src data:; script-src 'nonce-${nonce}' 'unsafe-eval'; worker-src blob:; connect-src data: blob: ${webview.cspSource};">
               <link href="${vscodeStyleUri}" rel="stylesheet">
               <link href="${styleUri}" rel="stylesheet">
               <script type="module" crossorigin src="${scriptUri}" nonce="${nonce}"></script>

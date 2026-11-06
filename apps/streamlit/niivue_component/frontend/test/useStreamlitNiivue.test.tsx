@@ -15,6 +15,10 @@ type FakeNv = {
   volumes: unknown[]
   meshes: unknown[]
   updateGLVolume: () => void
+  canvas: object
+  listeners: Set<unknown>
+  addEventListener: (type: string, listener: unknown) => void
+  removeEventListener: (type: string, listener: unknown) => void
 }
 
 interface FakeAppProps {
@@ -38,6 +42,7 @@ vi.mock('@niivue/react', () => ({
   isImageType: () => true,
   initCanvas: (appProps: FakeAppProps, n: number) => {
     for (let i = 0; i < n; i++) {
+      const listeners = new Set<unknown>()
       const nv: FakeNv = {
         isNew: true,
         isLoaded: false,
@@ -45,6 +50,10 @@ vi.mock('@niivue/react', () => ({
         volumes: [{}],
         meshes: [],
         updateGLVolume: () => {},
+        canvas: {},
+        listeners,
+        addEventListener: (_type, listener) => listeners.add(listener),
+        removeEventListener: (_type, listener) => listeners.delete(listener),
       }
       appProps.nvArray.value = [...appProps.nvArray.value, nv]
     }
@@ -250,6 +259,30 @@ describe('useStreamlitNiivue load events', () => {
     expect(loadEvents().map((e) => e.type)).toEqual(['base_loaded', 'fully_loaded', 'fully_loaded'])
   })
 
+  it('replaces the image when new data arrives under the same key', async () => {
+    const args: StreamlitArgs = { nifti_data: base64, filename: 'sub-01.nii', overlays, load_events: true }
+    const { rerender } = render(<Probe args={args} />)
+    await finishBaseLoad()
+    await act(() => mocks.overlayLoads.forEach((finish) => finish()))
+    const first = mocks.appProps.nvArray.value[0]
+
+    await act(() => rerender(<Probe args={{ ...args, nifti_data: btoa('next image'), filename: 'sub-02.nii' }} />))
+    expect(mocks.appProps.nvArray.value).toHaveLength(1)
+    expect(mocks.appProps.nvArray.value[0]).not.toBe(first)
+    expect(mocks.overlayLoads).toHaveLength(2)
+
+    await finishBaseLoad()
+    expect(mocks.overlayLoads).toHaveLength(4)
+    await act(() => mocks.overlayLoads.slice(2).forEach((finish) => finish()))
+
+    expect(loadEvents().map((e) => [e.type, e.filename])).toEqual([
+      ['base_loaded', 'sub-01.nii'],
+      ['fully_loaded', 'sub-01.nii'],
+      ['base_loaded', 'sub-02.nii'],
+      ['fully_loaded', 'sub-02.nii'],
+    ])
+  })
+
   it('reports nothing after unmounting, even when a load settles later', async () => {
     const { unmount } = render(<Probe args={{ nifti_data: base64, filename: 'brain.nii', overlays, load_events: true }} />)
     await finishBaseLoad()
@@ -258,5 +291,21 @@ describe('useStreamlitNiivue load events', () => {
     await act(() => mocks.overlayLoads.forEach((finish) => finish()))
 
     expect(loadEvents().map((e) => e.type)).toEqual(['base_loaded'])
+  })
+})
+
+describe('useStreamlitNiivue click events', () => {
+  it('stops listening to an image replaced under the same filename', async () => {
+    const args: StreamlitArgs = { nifti_data: base64, filename: 'image.nii' }
+    const { rerender } = render(<Probe args={args} />)
+    await finishBaseLoad()
+    const first = mocks.appProps.nvArray.value[0]
+    expect(first.listeners.size).toBe(1)
+
+    await act(() => rerender(<Probe args={{ ...args, nifti_data: btoa('next image') }} />))
+    await finishBaseLoad()
+
+    expect(first.listeners.size).toBe(0)
+    expect(mocks.appProps.nvArray.value[0].listeners.size).toBe(1)
   })
 })

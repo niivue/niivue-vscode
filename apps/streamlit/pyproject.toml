@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=77.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,7 +7,8 @@ name = "niivue-streamlit"
 version = "0.3.0"
 description = "A Streamlit component for NiiVue neuroimaging viewer"
 readme = "README.md"
-license = "MIT"
+license = "BSD-2-Clause"
+license-files = ["LICENSE"]
 authors = [
     {name = "NiiVue Team"},
 ]
@@ -16,7 +17,6 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
@@ -24,7 +24,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Medical Science Apps.",
     "Topic :: Scientific/Engineering :: Visualization",
 ]
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 dependencies = [
     "streamlit>=1.28.0",
 ]

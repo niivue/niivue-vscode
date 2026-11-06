@@ -1,8 +1,9 @@
 import './AboutDialog.css'
-import { type Signal, effect } from '@preact/signals'
+import { type Signal } from '@preact/signals'
 import { useRef } from 'preact/hooks'
 import { niivueLogo } from '../assets/niivue-logo'
 import { CITATION_DOI_URL, CITATION_TEXT } from '../citation'
+import { useImmediateSignalEffect } from '../hooks/useImmediateSignalEffect'
 import type { AppInfo } from './AppProps'
 
 // Canonical source repo, used when a host doesn't supply its own `repoUrl`.
@@ -26,7 +27,7 @@ export const AboutDialog = ({
 }) => {
   const dialogRef = useRef<HTMLDialogElement | null>(null)
 
-  effect(() => {
+  useImmediateSignalEffect(() => {
     if (isOpen.value) {
       dialogRef.current?.showModal()
       isOpen.value = false

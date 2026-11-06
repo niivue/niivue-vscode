@@ -157,10 +157,10 @@ export const useStreamlitNiivue = (args: StreamlitArgs) => {
     loadedMeshesRef.current = null // Reset loaded meshes
     loadedMeshOverlaysRef.current = [] // Reset mesh overlays
 
-    // Initialize canvas for 1 base image
+    // A new image replaces the previous one: the overlay and mesh effects target nvArray[0].
+    appProps.nvArray.value = []
     initCanvas(appProps, 1)
-    // addImage fills the first instance that has no image yet, as found here.
-    baseNvRef.current = appProps.nvArray.value.find((nv) => nv.isNew) ?? null
+    baseNvRef.current = appProps.nvArray.value[0]
     baseFilenameRef.current = args.filename || ''
     tracker.baseStarted()
 
@@ -361,7 +361,9 @@ export const useStreamlitNiivue = (args: StreamlitArgs) => {
     // settable nv.onLocationChange callback was removed). Attach to every
     // instance and clean up with the same listener reference.
     const onLoc = (e: CustomEvent) => handleLocationChange(e.detail)
-    appProps.nvArray.value.forEach((nv) => {
+    // Cleanup must reach instances that have since left nvArray (a replaced image).
+    const instances = appProps.nvArray.value
+    instances.forEach((nv) => {
       if (nv.canvas) {
         nv.addEventListener('locationChange', onLoc)
       }
@@ -369,11 +371,7 @@ export const useStreamlitNiivue = (args: StreamlitArgs) => {
 
     return () => {
       throttledSetValue.current?.cancel()
-      appProps.nvArray.value.forEach((nv) => {
-        if (nv.canvas) {
-          nv.removeEventListener('locationChange', onLoc)
-        }
-      })
+      instances.forEach((nv) => nv.removeEventListener('locationChange', onLoc))
     }
   }, [appProps.nvArray.value, args.filename, feedbackDisabled, intervalMs])
 

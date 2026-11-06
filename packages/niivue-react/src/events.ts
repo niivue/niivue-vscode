@@ -4,7 +4,8 @@ import { AppProps } from './components/AppProps'
 import { DocumentSource, isNvdFile, isWebUrl } from './document'
 import { readyStateManager } from './readyState'
 import { NiiVueSettings } from './settings'
-import { buildImageMessageBodies, isImageType } from './utility'
+import { buildImageMessageBodies, isImageType, isMhaName } from './utility'
+import { loadableSource, mhaWithTransform } from './webviewResource'
 
 /**
  * Increments a global counter used by E2E tests to know when an image or
@@ -307,11 +308,12 @@ async function addOverlay(nv: NiiVue, item: any, settings: NiiVueSettings) {
     // v1: addVolume takes the load options directly. `url` is string | File.
     // No data (empty string / undefined) means load from the URL (item.uri); a
     // non-empty string is itself a URL/path; in-memory bytes wrap in a File.
-    const url = !item.data
-      ? item.uri
+    const source = !item.data
+      ? await loadableSource(item.uri)
       : typeof item.data === 'string'
         ? item.data
         : new File([toBlobPart(item.data)], item.uri)
+    const url = isMhaName(item.uri) ? await mhaWithTransform(source) : source
     await nv.addVolume({
       url,
       name: item.uri,
@@ -319,7 +321,9 @@ async function addOverlay(nv: NiiVue, item: any, settings: NiiVueSettings) {
       opacity: overlayOpacity,
     })
   } else {
-    const url = item.data ? new File([toBlobPart(item.data)], item.uri) : item.uri
+    const url = item.data
+      ? new File([toBlobPart(item.data)], item.uri)
+      : await loadableSource(item.uri)
     await nv.addMesh({ url, name: item.uri })
   }
 }
@@ -502,6 +506,8 @@ function growNvArrayBy(nvArray: Signal<NiiVue[]>, n: number) {
       // NiiVue's default secondaryDragMode.
       primaryDragMode: DRAG_MODE.crosshair,
       isDragDropEnabled: false, // handled by app (Volume component)
+      // A tile is only created for an image that is on its way; errors cover it.
+      placeholderText: 'Loading…',
       // 'c' (cycle clip plane) and 'v' (cycle view mode) are handled by the
       // app's useKeyboardShortcuts hook, which broadcasts to every selected
       // canvas. v1.0 still binds its own hotkeys to window during attach, so
