@@ -40,6 +40,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.restoreAllMocks()
+  vi.unstubAllGlobals()
 })
 
 describe('NiiVueEditorProvider.isUriAccessible', () => {
@@ -417,6 +418,107 @@ describe('NiiVueEditorProvider.sendInitialImage', () => {
     // .nii.gz is never read for DICOM sniffing
     expect(workspace.fs.readDirectory).not.toHaveBeenCalled()
     expect(workspace.fs.readFile).not.toHaveBeenCalled()
+  })
+
+  function stubFetch(responses: Record<string, Uint8Array | number>) {
+    const fetchMock = vi.fn(async (url: string) => {
+      const response = responses[url] ?? 404
+      return typeof response === 'number'
+        ? { ok: false, status: response, statusText: 'Not Found' }
+        : { ok: true, status: 200, arrayBuffer: async () => response.slice().buffer }
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    return fetchMock
+  }
+
+  it('fetches a web link in the extension host and sends its bytes', async () => {
+    const bytes = new Uint8Array([1, 2, 3])
+    const fetchMock = stubFetch({ 'https://example.org/data/mni152.nii.gz': bytes })
+    const webview = makeWebviewWithPost()
+
+    await NiiVueEditorProvider.sendInitialImage(
+      Uri.parse('https://example.org/data/mni152.nii.gz'),
+      webview as any,
+    )
+
+    expect(fetchMock).toHaveBeenCalledWith('https://example.org/data/mni152.nii.gz')
+    expect(workspace.fs.readFile).not.toHaveBeenCalled()
+    const message = webview.postMessage.mock.calls[0][0]
+    expect(message.body.uri).toBe('https://example.org/data/mni152.nii.gz')
+    expect(new Uint8Array(message.body.data)).toEqual(bytes)
+  })
+
+  it('names a fetched web link without its query, so the viewer can tell its format', async () => {
+    const fetchMock = stubFetch({ 'https://github.com/org/repo/blob/main/brain.nii.gz?raw=true': new Uint8Array([1]) })
+    const webview = makeWebviewWithPost()
+
+    await NiiVueEditorProvider.sendInitialImage(
+      Uri.parse('https://github.com/org/repo/blob/main/brain.nii.gz?raw=true'),
+      webview as any,
+    )
+
+    expect(fetchMock).toHaveBeenCalledWith('https://github.com/org/repo/blob/main/brain.nii.gz?raw=true')
+    expect(webview.postMessage.mock.calls[0][0].body.uri).toBe('https://github.com/org/repo/blob/main/brain.nii.gz')
+  })
+
+  it('reports the reason a download failed rather than a generic fetch error', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        throw new TypeError('fetch failed', { cause: new Error('getaddrinfo ENOTFOUND example.org') })
+      }),
+    )
+    const webview = makeWebviewWithPost()
+
+    await NiiVueEditorProvider.sendInitialImage(Uri.parse('https://user:secret@example.org/a.nii?sig=abc'), webview as any)
+
+    expect(webview.postMessage.mock.calls[0][0].body).toEqual({
+      uri: 'https://example.org/a.nii',
+      loadError: 'Could not read https://example.org/a.nii: getaddrinfo ENOTFOUND example.org',
+    })
+  })
+
+  it('fetches the paired data file of a web MHD', async () => {
+    stubFetch({
+      'https://example.org/data/sphere.mhd': new TextEncoder().encode('ElementDataFile = sphere.raw'),
+      'https://example.org/data/sphere.raw': new Uint8Array([7, 8]),
+    })
+    const webview = makeWebviewWithPost()
+
+    await NiiVueEditorProvider.sendInitialImage(Uri.parse('https://example.org/data/sphere.mhd'), webview as any)
+
+    const message = webview.postMessage.mock.calls[0][0]
+    expect(message.body.uri).toBe('https://example.org/data/sphere.mhd')
+    expect(new Uint8Array(message.body.pairedData)).toEqual(new Uint8Array([7, 8]))
+    expect(message.body.loadError).toBeUndefined()
+  })
+
+  it('shows a failed download in the viewer', async () => {
+    stubFetch({})
+    const webview = makeWebviewWithPost()
+
+    await NiiVueEditorProvider.sendInitialImage(Uri.parse('https://example.org/missing.nii'), webview as any)
+
+    expect(webview.postMessage.mock.calls.map((call) => call[0])).toEqual([
+      {
+        type: 'addImage',
+        body: {
+          uri: 'https://example.org/missing.nii',
+          loadError: 'Could not read https://example.org/missing.nii: HTTP 404 Not Found',
+        },
+      },
+    ])
+  })
+
+  it('shows a file it cannot read in the viewer', async () => {
+    workspace.fs.readFile.mockRejectedValue(new Error('EACCES'))
+    const webview = makeWebviewWithPost()
+
+    await NiiVueEditorProvider.sendInitialImage(Uri.parse('file:///outside/scan.mnc'), webview as any)
+
+    expect(webview.postMessage.mock.calls[0][0].body.loadError).toBe(
+      'Could not read file:///outside/scan.mnc: EACCES',
+    )
   })
 })
 
