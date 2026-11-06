@@ -1,4 +1,5 @@
 import { mnc2nii } from '@niivue/minc-loader'
+import { SLICE_TYPE } from '@niivue/niivue'
 import { Signal } from '@preact/signals'
 import { useEffect, useRef } from 'preact/hooks'
 import { attachWithBackend } from '../backend'
@@ -8,7 +9,15 @@ import { ExtendedNiivue, notifyImageLoaded, removeBuiltinKeyHandler } from '../e
 import { isNiftiName, NIFTI_PEEK_BYTES, niftiTooLargeWarning } from '../nifti'
 import { convertNpy, convertNpz, isNpyName } from '../npy'
 import { NiiVueSettings } from '../settings'
-import { graphmlToConnectome, isDicomData, isImageType } from '../utility'
+import {
+  ensureMhaTransform,
+  graphmlToConnectome,
+  isDicomData,
+  isImageType,
+  isMhaName,
+  rawHeaderMHA,
+} from '../utility'
+import { loadableSource, mhaWithTransform } from '../webviewResource'
 import { AppProps } from './AppProps'
 
 export interface NiiVueCanvasProps {
@@ -118,8 +127,12 @@ export const NiiVueCanvas = ({
       })
   }, [nv.documentData])
 
-  if (nv.isLoaded && nv.volumes.length > 0) {
-    nv.sliceType = sliceType.value
+  if (nv.isLoaded && (nv.volumes.length > 0 || nv.meshes.length > 0)) {
+    // NiiVue 1.0 also cuts 2D slices through meshes; for a tile of meshes only,
+    // "Multiplanar + Render" shows just the render.
+    const meshesOnly = nv.volumes.length === 0
+    nv.sliceType =
+      meshesOnly && sliceType.value === SLICE_TYPE.MULTIPLANAR ? SLICE_TYPE.RENDER : sliceType.value
   }
 
   useEffect(() => {
@@ -160,17 +173,6 @@ export const NiiVueCanvas = ({
   )
 }
 
-async function getMinimalHeaderMHA() {
-  const matrixSize = await getUserInput()
-  if (!matrixSize) {
-    return null
-  }
-  const dim = matrixSize.split(' ').length - 1
-  const type = matrixSize.split(' ').pop()?.toUpperCase()
-  const header = `ObjectType = Image\nNDims = ${dim}\nDimSize = ${matrixSize}\nElementType = MET_${type}\nElementDataFile = image.raw`
-  return new TextEncoder().encode(header).buffer
-}
-
 async function getUserInput() {
   const defaultInput = '64 64 39 float'
 
@@ -186,9 +188,12 @@ async function getUserInput() {
   document.body.appendChild(dialog)
   dialog.showModal()
 
-  // wait for click on the close button
-  await new Promise((resolve) => (button.onclick = resolve))
-  const matrixSize = input.value
+  // Escape closes the dialog without the button; that counts as no input.
+  const submitted = await new Promise<boolean>((resolve) => {
+    button.onclick = () => resolve(true)
+    dialog.oncancel = () => resolve(false)
+  })
+  const matrixSize = submitted ? input.value : ''
   dialog.close()
   document.body.removeChild(dialog)
   return matrixSize
@@ -423,10 +428,11 @@ async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSetting
     // If the item is an image type but has no data, load it from the URL.
     // Pass urlImageData so NiiVue can fetch the paired raw file for detached
     // formats like MHD (ElementDataFile = <name>.raw).
+    const source = await loadableSource(item.uri)
     const image = {
-      url: item.uri,
+      url: isMhaName(item.uri) ? await mhaWithTransform(source) : source,
       colormap: settings.defaultVolumeColormap,
-      ...(item.urlImgData ? { urlImageData: item.urlImgData } : {}),
+      ...(item.urlImgData ? { urlImageData: await loadableSource(item.urlImgData) } : {}),
     }
     await nv.loadVolumes([image])
     return
@@ -458,14 +464,20 @@ async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSetting
   if (item.uri.endsWith('.dcm')) {
     await loadDicomSeries(nv, [item.uri], [item.data], settings)
   } else if (item.uri.endsWith('.raw')) {
-    const header = await getMinimalHeaderMHA()
+    const header = rawHeaderMHA(await getUserInput())
     if (!header) {
-      return
+      throw new Error(
+        'Enter the size and data type of the .raw file, as in "64 64 39 float". ' +
+          'Data types: float, double, char, uchar, short, ushort, int, uint.',
+      )
     }
-    // v1: wrap the synthesized .mha header bytes in a File (the .mha name lets
-    // NiiVue parse it; ElementDataFile points at the .raw the user dropped).
+    // v1: the synthesized header goes in a File named .mha so NiiVue parses it,
+    // with the .raw bytes as its detached image data.
     await nv.addVolume({
       url: new File([header], `${item.uri}.mha`),
+      urlImageData: item.data
+        ? new File([ensureArrayBuffer(item.data)], item.uri)
+        : await loadableSource(item.uri),
       name: `${item.uri}.mha`,
       colormap: settings.defaultVolumeColormap,
       opacity: 1.0,
@@ -483,6 +495,9 @@ async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSetting
         buffer = item.data.buffer.slice(item.data.byteOffset, item.data.byteOffset + item.data.byteLength)
       } else {
         buffer = item.data.buffer
+      }
+      if (isMhaName(item.uri)) {
+        buffer = ensureMhaTransform(buffer)
       }
       if (item.pairedData) {
         // Detached format (e.g. MHD + .raw): wrap the raw pixel data in a
@@ -527,13 +542,13 @@ async function loadVolume(nv: ExtendedNiivue, item: any, settings: NiiVueSetting
         colormap: settings.defaultVolumeColormap,
       })
     } else {
-      const volumeList = [{ url: item.uri, colormap: settings.defaultVolumeColormap }]
+      const volumeList = [{ url: await loadableSource(item.uri), colormap: settings.defaultVolumeColormap }]
       await nv.loadVolumes(volumeList)
     }
   } else if (item.data) {
     await nv.addMesh({ url: new File([ensureArrayBuffer(item.data)], item.uri), name: item.uri })
   } else {
-    const meshList = [{ url: item.uri }]
+    const meshList = [{ url: await loadableSource(item.uri) }]
     await nv.loadMeshes(meshList)
   }
 }

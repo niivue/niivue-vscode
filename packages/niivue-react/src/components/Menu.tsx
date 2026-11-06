@@ -765,6 +765,11 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
       shortcut: formatShortcut(UI_SHORTCUTS.SHOW_HEADER),
       children: (
         <>
+          <MenuEntry
+            label="Show Header"
+            onClick={toggle(headerDialog)}
+            shortcut={formatShortcut(UI_SHORTCUTS.SHOW_HEADER)}
+          />
           <MenuEntry label="Set Headers to 1" onClick={setVoxelSize1AndOrigin0} />
           <MenuEntry label="Set Header" onClick={toggle(setHeaderMenu)} />
         </>
