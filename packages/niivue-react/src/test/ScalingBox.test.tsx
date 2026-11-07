@@ -28,4 +28,44 @@ describe('ScalingBox colormap list', () => {
     const options = [...container.querySelectorAll('select option')].map((o) => o.textContent)
     expect(options).toEqual(['symmetric', 'gray', 'hot'])
   })
+
+  it("selects the overlay's colormap when NiiVue lists it capitalised", () => {
+    const nv = {
+      volumes: [
+        { calMin: 0, calMax: 1, opacity: 1, colormap: 'gray' },
+        { calMin: 0, calMax: 1, opacity: 1, colormap: 'redyell' },
+      ],
+      meshes: [],
+      colormapNames: vi.fn(() => ['Gray', 'Redyell']),
+    }
+    const { container } = render(
+      <ScalingBox
+        nvArraySelected={signal([nv])}
+        selectedOverlayNumber={signal(1)}
+        overlayMenu={signal(true)}
+      />,
+    )
+
+    expect(container.querySelector('select')!.value).toBe('Redyell')
+  })
+
+  it('selects symmetric for warm with a negative colormap', () => {
+    const nv = {
+      volumes: [
+        { calMin: 0, calMax: 1, opacity: 1, colormap: 'gray' },
+        { calMin: 0, calMax: 1, opacity: 1, colormap: 'warm', colormapNegative: 'winter' },
+      ],
+      meshes: [],
+      colormapNames: vi.fn(() => ['Gray', 'Warm', 'Winter']),
+    }
+    const { container } = render(
+      <ScalingBox
+        nvArraySelected={signal([nv])}
+        selectedOverlayNumber={signal(1)}
+        overlayMenu={signal(true)}
+      />,
+    )
+
+    expect(container.querySelector('select')!.value).toBe('symmetric')
+  })
 })

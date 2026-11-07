@@ -40,6 +40,15 @@ export const ScalingBox = (props: any) => {
     }
   })
 
+  // NiiVue lists colormaps capitalised but keeps the name a layer was given.
+  const selectedColormap = computed(() => {
+    const current = String(selectedOverlay.value.colormap ?? '').toLowerCase()
+    if (current === 'warm' && selectedOverlay.value.colormapNegative) return 'symmetric'
+    return (
+      colormaps.value.find((c) => c.toLowerCase() === current) ?? selectedOverlay.value.colormap
+    )
+  })
+
   const changeColormap = (e: any) => {
     const colormap = e.target.value
     nvArraySelected.value.forEach((nv: ExtendedNiivue) => {
@@ -67,7 +76,7 @@ export const ScalingBox = (props: any) => {
       <select
         className="bg-gray-600 w-24 border-2 border-gray-600 rounded-md"
         onChange={changeColormap}
-        value={selectedOverlay.value.colormap}
+        value={selectedColormap.value}
       >
         {colormaps.value.map((c) => (
           <option key={c} value={c}>
