@@ -96,13 +96,13 @@ In the 3D render view, `H/L` and `J/K` rotate the camera instead. On macOS, `Cmd
 
 ### Images stay blank
 
-The viewer renders with WebGPU when the browser offers it and with WebGL2 otherwise. Some browsers advertise WebGPU but cannot render with it (for example with a blocklisted GPU or a driver problem), which leaves the canvas empty. Force WebGL2 by adding `?backend=webgl2` to the address:
+The viewer renders with WebGL2; `?backend=webgpu` in the address switches to WebGPU. Some browsers advertise WebGPU but cannot render with it (for example with a blocklisted GPU or a driver problem), which leaves the canvas empty. Drop the parameter, or force WebGL2 with `?backend=webgl2`:
 
 ```
 https://niivue.github.io/niivue-vscode/?backend=webgl2
 ```
 
-It combines with other parameters, e.g. `?backend=webgl2&images=<url>`. `?backend=webgpu` forces WebGPU.
+It combines with other parameters, e.g. `?backend=webgl2&images=<url>`.
 
 ## Privacy & Security
 

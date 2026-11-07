@@ -34,8 +34,7 @@ export const ScalingBox = (props: any) => {
   const colormaps = computed(() => {
     const isVolume = nvArraySelected.value[0]?.volumes?.length > 0
     if (isVolume) {
-      // v1: `colormaps` is a getter property (string[]), no longer a method.
-      return ['symmetric', ...nvArraySelected.value[0].colormaps]
+      return ['symmetric', ...nvArraySelected.value[0].colormapNames('continuous')]
     } else {
       return ['ge_color', 'gray', 'hsv', 'symmetric', 'warm']
     }

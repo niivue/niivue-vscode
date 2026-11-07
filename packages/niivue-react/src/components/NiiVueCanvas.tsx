@@ -56,11 +56,12 @@ export const NiiVueCanvas = ({
         nv.addEventListener('frameChange', (e) => nv.onFrameUpdate(e.detail.frame))
       })
       .catch((error) => {
-        console.error(
-          `attachToCanvas failed on ${nv.opts?.backend ?? 'webgpu'}.`,
-          'Retry with ?backend=webgl2 if this browser advertises WebGPU but cannot render.',
-          error,
-        )
+        const backend = nv.opts?.backend ?? 'webgl2'
+        const hint =
+          backend === 'webgpu'
+            ? ['Retry with ?backend=webgl2 if this browser advertises WebGPU but cannot render.']
+            : []
+        console.error(`attachToCanvas failed on ${backend}.`, ...hint, error)
       })
   }, [canvasRef.current])
 

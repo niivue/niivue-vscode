@@ -6,4 +6,4 @@
 '@niivue/tauri': minor
 ---
 
-Update the NiiVue core to 1.0 (release candidate). It renders with WebGPU where available and with WebGL2 elsewhere.
+Update the NiiVue core to 1.0 (release candidate). It renders with WebGL2 and without antialiasing; in the web app, `?backend=webgpu` switches to WebGPU.

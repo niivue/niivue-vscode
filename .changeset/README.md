@@ -59,4 +59,4 @@ change nothing users see. No changeset means no entry and no release.
 | --- | --- |
 | Refactor `loadVolume` to sniff DICOM magic bytes | Open DICOM files that have no file extension |
 | Fix race between attachToCanvas and loadVolume | Fix "Failed to load image" when adding several images in a row |
-| Bump @niivue/niivue to 1.0.0-rc.13 | Update the NiiVue core to 1.0, which renders with WebGPU where available |
+| Bump @niivue/niivue to 1.0.0-rc.13 | Update the NiiVue core to 1.0, which renders with WebGL2 |
