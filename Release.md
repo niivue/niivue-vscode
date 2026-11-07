@@ -70,9 +70,10 @@ pending. Otherwise it:
 3. encodes the beta version of each app in that plan
    (`encode-prerelease-versions.mjs`, which also retitles the VS Code changelog
    section to `2.11.<run> (pre-release)`),
-4. builds and publishes each of those apps in its own job. The desktop
-   installers are built by `release_desktop.yml` on a platform matrix and
-   published as a GitHub pre-release.
+4. builds and publishes each of those apps in its own job (the PyPI apps
+   publish from a second job, see [PyPI Trusted Publishing](#pypi-trusted-publishing)).
+   The desktop installers are built by `release_desktop.yml` on a platform
+   matrix and published as a GitHub pre-release.
 
 A failing registry does not hold back the other apps. Every publish skips a
 version that is already out, so a failed job can be re-run on its own
@@ -132,6 +133,26 @@ One-time setup, by a repository admin:
 The key does not expire. To rotate it, generate a new key, update both secrets,
 then delete the old key in the app settings.
 
+## PyPI Trusted Publishing
+
+The PyPI uploads use [Trusted Publishing](https://docs.pypi.org/trusted-publishers/):
+PyPI accepts a short-lived token that GitHub issues to the publishing job, so
+no PyPI API token is stored in the repository. Only the publish jobs may
+request that token. They run no build scripts and use the `pypi` environment.
+
+One-time setup:
+
+1. On PyPI, an owner of `jupyterlab-niivue` adds two GitHub publishers under
+   **Manage project > Publishing**, both with owner `niivue`, repository
+   `niivue-vscode` and environment `pypi`: one with workflow
+   `release_jupyterlab.yml`, one with `prerelease.yml`.
+2. The same for `niivue-streamlit`, with `release_streamlit.yml` and
+   `prerelease.yml`.
+3. A repository admin restricts the `pypi` environment (**Settings >
+   Environments**, created by the first run if missing) to the branch `main`
+   and the tags `@niivue/jupyter@*` and `@niivue/streamlit@*`. Required
+   reviewers would also hold the weekly betas until someone approves them.
+
 ## Adding a published app
 
 1. Mark the app `"private": true` so `changeset publish` tags it without
@@ -140,7 +161,8 @@ then delete the old key in the app settings.
 2. Add `.github/workflows/release_<app>.yml`, triggered by the tag
    `<package name>@*` and by `workflow_dispatch`.
 3. Add its beta version rule to `encode-prerelease-versions.mjs` and publish
-   steps to `prerelease.yml`.
+   steps to `prerelease.yml`. A PyPI app needs trusted publishers for both
+   workflows (see [PyPI Trusted Publishing](#pypi-trusted-publishing)).
 4. If its build reads the version from a file Changesets does not bump, stamp
    it before building, as `set-desktop-version.mjs` does for the desktop app, or
    add it to `sync-pyproject-versions.mjs` for a static `pyproject.toml` version.
