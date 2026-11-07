@@ -3,26 +3,26 @@
     "label": "Shared core (`packages/niivue-react`)",
     "stats": {
       "statements": 66.2,
-      "branches": 58.2,
+      "branches": 58.1,
       "functions": 62.2,
-      "lines": 67
+      "lines": 67.1
     },
     "counts": {
       "statements": {
-        "covered": 2635,
-        "total": 3983
+        "covered": 2644,
+        "total": 3991
       },
       "branches": {
-        "covered": 1750,
-        "total": 3009
+        "covered": 1757,
+        "total": 3022
       },
       "functions": {
-        "covered": 674,
-        "total": 1083
+        "covered": 676,
+        "total": 1087
       },
       "lines": {
-        "covered": 2492,
-        "total": 3721
+        "covered": 2500,
+        "total": 3728
       }
     }
   },
@@ -110,27 +110,27 @@
   "vscode-glue": {
     "label": "`apps/vscode`",
     "stats": {
-      "statements": 60.8,
-      "branches": 59.5,
-      "functions": 60.5,
-      "lines": 60.3
+      "statements": 64.1,
+      "branches": 59.6,
+      "functions": 67,
+      "lines": 63.6
     },
     "counts": {
       "statements": {
-        "covered": 214,
-        "total": 352
+        "covered": 234,
+        "total": 365
       },
       "branches": {
-        "covered": 113,
-        "total": 190
+        "covered": 115,
+        "total": 193
       },
       "functions": {
-        "covered": 49,
-        "total": 81
+        "covered": 61,
+        "total": 91
       },
       "lines": {
-        "covered": 207,
-        "total": 343
+        "covered": 224,
+        "total": 352
       }
     }
   },
@@ -164,27 +164,27 @@
   "_overall": {
     "label": "Overall",
     "stats": {
-      "statements": 64,
+      "statements": 64.4,
       "branches": 57.4,
-      "functions": 60.8,
-      "lines": 64.6
+      "functions": 61.2,
+      "lines": 64.9
     },
     "counts": {
       "statements": {
-        "covered": 3192,
-        "total": 4984
+        "covered": 3221,
+        "total": 5005
       },
       "branches": {
-        "covered": 2069,
-        "total": 3607
+        "covered": 2078,
+        "total": 3623
       },
       "functions": {
-        "covered": 800,
-        "total": 1316
+        "covered": 814,
+        "total": 1330
       },
       "lines": {
-        "covered": 3029,
-        "total": 4692
+        "covered": 3054,
+        "total": 4708
       }
     }
   }
