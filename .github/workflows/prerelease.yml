@@ -139,8 +139,13 @@ jobs:
       - name: Install Python build tools
         run: python -m pip install "jupyterlab>=4.0.0,<5" build twine
 
+      # Same production build and token as release_jupyterlab.yml.
       - name: Build
-        run: pnpm turbo build --filter=@niivue/jupyter
+        run: |
+          pnpm turbo build --filter=@niivue/jupyter^...
+          pnpm --filter @niivue/jupyter run build:prod
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
 
       - name: Build Python package
         run: python -m build

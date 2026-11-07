@@ -5,6 +5,7 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
+      "passThroughEnv": ["GITHUB_TOKEN"],
       "outputs": [
         "dist/**",
         "build/**",
