@@ -8,7 +8,7 @@
  *   node scripts/release/changelog.test.mjs
  */
 import assert from 'node:assert/strict'
-import { bumpMarker, formatEntry } from './changelog.mjs'
+import { bumpMarker, formatEntry, pullRequestFor } from './changelog.mjs'
 import { polishChangelog, polishSection, sectionBody } from './polish-changelogs.mjs'
 
 let passed = 0
@@ -43,6 +43,60 @@ test('the link closes the first paragraph of a wrapped summary', () => {
 
 test('without a pull request the entry has no link', () => {
   assert.equal(formatEntry('Fix the colorbar.', null), '- Fix the colorbar.')
+})
+
+console.log('pullRequestFor')
+
+// main: m0 - c (feature branch) merged as m1, then m2 merges another branch.
+const merge = (hash, parents, subject) => ({ hash, parents, subject })
+const afterBranchCommit = [
+  merge('b2', ['c', 'm0'], 'Merge main into claude/feature'),
+  merge('m1', ['m0', 'b2'], 'Merge pull request #335 from niivue/claude/feature'),
+  merge('m2', ['m1', 'x'], 'Merge pull request #336 from niivue/claude/other'),
+]
+
+test('a squash merge on main gives the number in its subject', () => {
+  const later = [merge('m2', ['c', 'x'], 'Merge pull request #336 from niivue/claude/other')]
+  assert.equal(pullRequestFor('c', 'fix: colormap list (#300)', later), '300')
+  assert.equal(pullRequestFor('c', 'fix: colormap list (#300)', []), '300')
+})
+
+test('a branch commit gets the pull request that merged it, not a later one', () => {
+  assert.equal(pullRequestFor('c', 'fix: colormap list', afterBranchCommit), '335')
+})
+
+test('an issue number at the end of a branch commit is not taken for the pull request', () => {
+  assert.equal(pullRequestFor('c', 'fix: int64 volumes (#90)', afterBranchCommit), '335')
+})
+
+test('a pull request that merged main into a feature branch is not the one', () => {
+  const update = [
+    merge('u', ['f0', 'c'], 'Merge pull request #340 from niivue/main'),
+    merge('m2', ['c', 'u'], 'Merge pull request #341 from niivue/feature'),
+  ]
+  assert.equal(pullRequestFor('c', 'docs: fix typo', update), null)
+})
+
+test('a merge into a side branch listed first is not the one', () => {
+  const side = [
+    merge('s1', ['o0', 'c'], 'Merge pull request #329 from niivue/base'),
+    merge('m1', ['m0', 'c'], 'Merge pull request #330 from niivue/base'),
+    merge('m2', ['m1', 's1'], 'Merge pull request #334 from niivue/other'),
+  ]
+  assert.equal(pullRequestFor('c', 'fix: colormap list', side), '330')
+})
+
+test('a stacked branch gets the pull request that brought it into main', () => {
+  const stacked = [
+    merge('s1', ['s0', 'c'], "Merge remote-tracking branch 'origin/claude/base'"),
+    merge('m1', ['m0', 's1'], 'Merge pull request #334 from niivue/claude/stacked'),
+  ]
+  assert.equal(pullRequestFor('c', 'build: pin pnpm', stacked), '334')
+})
+
+test('a commit pushed to main directly has no pull request', () => {
+  const onMain = [merge('m2', ['c', 'x'], 'Merge pull request #336 from niivue/claude/other')]
+  assert.equal(pullRequestFor('c', 'docs: fix typo', onMain), null)
 })
 
 console.log('bumpMarker')
