@@ -89,6 +89,7 @@ export const workspace = {
   fs: {
     readFile: vi.fn<(uri: Uri) => Promise<Uint8Array>>(),
     readDirectory: vi.fn(),
+    stat: vi.fn<(uri: Uri) => Promise<{ size: number }>>(),
     writeFile: vi.fn<(uri: Uri, content: Uint8Array) => Promise<void>>(),
     isWritableFileSystem: vi.fn<(scheme: string) => boolean | undefined>(),
   },
@@ -106,6 +107,7 @@ export const window = {
   showOpenDialog: vi.fn(),
   showSaveDialog: vi.fn<(options?: unknown) => Promise<Uri | undefined>>(),
   showInformationMessage: vi.fn(),
+  showWarningMessage: vi.fn(),
   showErrorMessage: vi.fn(),
 }
 
@@ -175,6 +177,8 @@ export function __resetMock() {
   workspace.workspaceFolders = undefined
   workspace.fs.readFile.mockReset()
   workspace.fs.readDirectory.mockReset()
+  workspace.fs.stat.mockReset()
+  workspace.fs.stat.mockResolvedValue({ size: 140 })
   workspace.fs.writeFile.mockReset()
   workspace.fs.isWritableFileSystem.mockReset()
   workspace.getConfiguration.mockReset()
@@ -183,5 +187,6 @@ export function __resetMock() {
   window.showOpenDialog.mockReset()
   window.showSaveDialog.mockReset()
   window.showInformationMessage.mockReset()
+  window.showWarningMessage.mockReset()
   window.showErrorMessage.mockReset()
 }
