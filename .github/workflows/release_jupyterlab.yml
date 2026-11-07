@@ -39,8 +39,15 @@ jobs:
       - name: Install Python build tools
         run: python -m pip install "jupyterlab>=4.0.0,<5" build twine
 
+      # `build` is the development build; `python -m build` keeps whatever
+      # labextension exists. The token lifts the GitHub API rate limit for the
+      # labextension builder's @jupyterlab/core-meta lookup.
       - name: Build extension
-        run: pnpm turbo build --filter=@niivue/jupyter
+        run: |
+          pnpm turbo build --filter=@niivue/jupyter^...
+          pnpm --filter @niivue/jupyter run build:prod
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
 
       - name: Build Python package
         working-directory: ./apps/jupyter

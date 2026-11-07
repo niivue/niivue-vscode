@@ -136,8 +136,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # The token is for the Jupyter labextension builder, as in test-jupyter.
       - name: Build all packages
         run: pnpm turbo build
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
 
       - name: Cache build artifacts
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
@@ -233,12 +236,16 @@ jobs:
       - name: Install Python dependencies
         run: python -m pip install -U "jupyterlab>=4.0.0,<5"
 
+      # The pip install runs build:prod; the token lifts the GitHub API rate
+      # limit for the labextension builder's @jupyterlab/core-meta lookup.
       - name: Test Jupyter extension
         run: |
           cd apps/jupyter
           python -m pip install .[test]
           jupyter labextension list
           python -m jupyterlab.browser_check
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
 
       # The only vitest run for the Jupyter extension, so a failure here must
       # fail the job (as the VS Code and desktop coverage steps do).
