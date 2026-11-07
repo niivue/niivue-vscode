@@ -15,15 +15,40 @@ import { execFileSync } from 'node:child_process'
 
 const REPO_URL = 'https://github.com/niivue/niivue-vscode'
 
-// Squash merges end their subject with the pull request number: "feat: ... (#305)".
+const git = (...args) =>
+  execFileSync('git', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
+
+/**
+ * The pull request of a commit that came into HEAD through a merge is the one named
+ * by that merge on HEAD's first-parent chain ("Merge pull request #N from ...").
+ * A commit on that chain itself is a squash merge, whose subject ends with the
+ * number ("feat: ... (#305)"), or a direct push. `descendants` are the commits
+ * between it and HEAD, oldest first and ending at HEAD, as `{ hash, parents, subject }`.
+ */
+export const pullRequestFor = (commit, subject, descendants) => {
+  const byHash = new Map(descendants.map((c) => [c.hash, c]))
+  let entry = descendants.at(-1)
+  while (entry && byHash.has(entry.parents[0])) entry = byHash.get(entry.parents[0])
+  if (entry && entry.parents[0] !== commit) {
+    return entry.subject.match(/^Merge pull request #(\d+) /)?.[1] ?? null
+  }
+  return subject.match(/\(#(\d+)\)\s*$/)?.[1] ?? null
+}
+
 const pullRequestOf = (commit) => {
   if (!commit) return null
   try {
-    const subject = execFileSync('git', ['log', '-1', '--format=%s', commit], {
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-    })
-    return subject.match(/\(#(\d+)\)\s*$/)?.[1] ?? null
+    const hash = git('rev-parse', commit).trim()
+    const subject = git('log', '-1', '--format=%s', hash)
+    const log = git('log', '--ancestry-path', '--topo-order', '--reverse', '--format=%H%x09%P%x09%s', `${hash}..HEAD`)
+    const descendants = log
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => {
+        const [h, parents, ...rest] = line.split('\t')
+        return { hash: h, parents: parents.split(' '), subject: rest.join('\t') }
+      })
+    return pullRequestFor(hash, subject, descendants)
   } catch {
     return null
   }
