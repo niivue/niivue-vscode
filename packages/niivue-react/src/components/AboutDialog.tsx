@@ -1,14 +1,16 @@
 import './AboutDialog.css'
-import { type Signal, effect } from '@preact/signals'
+import { type Signal } from '@preact/signals'
 import { useRef } from 'preact/hooks'
 import { niivueLogo } from '../assets/niivue-logo'
+import { CITATION_DOI_URL, CITATION_TEXT } from '../citation'
+import { useImmediateSignalEffect } from '../hooks/useImmediateSignalEffect'
 import type { AppInfo } from './AppProps'
 
 // Canonical source repo, used when a host doesn't supply its own `repoUrl`.
 const DEFAULT_REPO_URL = 'https://github.com/niivue/niivue-vscode'
 
 /**
- * The brand menu's "About" dialog: what niivue Viewer is, its credits, the data
+ * The brand menu's "About" dialog: what NiiVue Viewer is, its credits, the data
  * privacy guarantee, and (when the host provides `appInfo`) the build version.
  *
  * `isOpen` is a trigger signal in the HeaderDialog mold: set it true to open the
@@ -25,7 +27,7 @@ export const AboutDialog = ({
 }) => {
   const dialogRef = useRef<HTMLDialogElement | null>(null)
 
-  effect(() => {
+  useImmediateSignalEffect(() => {
     if (isOpen.value) {
       dialogRef.current?.showModal()
       isOpen.value = false
@@ -44,7 +46,7 @@ export const AboutDialog = ({
         <header className="nv-about-head">
           <img className="nv-brand-mark" src={niivueLogo} alt="" width={40} height={40} />
           <div>
-            <h2 className="nv-about-title">niivue Viewer</h2>
+            <h2 className="nv-about-title">NiiVue Viewer</h2>
             <p className="nv-about-tagline">Browser-based medical image &amp; mesh viewer</p>
           </div>
         </header>
@@ -73,6 +75,20 @@ export const AboutDialog = ({
 
         <p className="nv-about-text">
           Runs entirely on your machine. No image data is uploaded, sent, or stored remotely.
+        </p>
+
+        <p className="nv-about-text" data-testid="about-citation">
+          Using it in published work? Please cite{' '}
+          <a
+            className="nv-about-link"
+            href={CITATION_DOI_URL}
+            title={CITATION_TEXT}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Eckstein et al., Aperture Neuro 2026
+          </a>
+          .
         </p>
 
         <div className="nv-about-links">

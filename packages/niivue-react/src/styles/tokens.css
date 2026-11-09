@@ -49,7 +49,7 @@
 }
 
 .nv-form-vscode {
-  --topbar-h: 36px; --status-h: 26px; --rail-w: 40px;
+  --topbar-h: 32px; --status-h: 26px; --rail-w: 40px;
   --pad-x: 10px; --pad-y: 10px;
   --tool-size: 32px;
   --font-base: 12px;

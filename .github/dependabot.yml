@@ -1,8 +1,8 @@
 # Dependabot config for the niivue-vscode monorepo.
 # - npm at the repo root covers all pnpm workspaces (apps/*, packages/*) via the shared pnpm-lock.yaml
 # - Updates are grouped to avoid PR sprawl in a 4-app monorepo
-# - @niivue/niivue is intentionally pinned to ^0.68.x while the mono (1.x) migration is planned;
-#   ignore major bumps so they don't surface as auto-PRs
+# - @niivue/niivue core upgrades are tested and bumped by hand; ignore major bumps so they
+#   don't surface as auto-PRs
 
 version: 2
 
@@ -14,6 +14,10 @@ updates:
       interval: 'weekly'
       day: 'monday'
     open-pull-requests-limit: 5
+    # Same quarantine rationale as npm below. Action tags are not SemVer, so
+    # only the flat window applies here.
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: 'ci'
       include: 'scope'
@@ -37,6 +41,12 @@ updates:
       day: 'monday'
     open-pull-requests-limit: 3
     versioning-strategy: 'increase-if-necessary'
+    # Quarantine window against poisoned releases: a compromised version is
+    # usually yanked within hours, so waiting lets the registry clean up before
+    # we pull it in. Security updates ignore cooldown and still land at once.
+    cooldown:
+      default-days: 7
+      semver-major-days: 30
     commit-message:
       prefix: 'chore'
       prefix-development: 'chore'
@@ -45,8 +55,7 @@ updates:
       - 'dependencies'
       - 'javascript'
     ignore:
-      # @niivue/niivue 0.68.x → 1.x is a deliberate, planned migration (mono rewrite).
-      # Bump manually; don't open auto-PRs for major bumps in the meantime.
+      # @niivue/niivue major versions are adopted by hand after testing.
       - dependency-name: '@niivue/niivue'
         update-types:
           - 'version-update:semver-major'
@@ -154,6 +163,12 @@ updates:
       interval: 'weekly'
       day: 'monday'
     open-pull-requests-limit: 3
+    # Quarantine window against poisoned releases: a compromised version is
+    # usually yanked within hours, so waiting lets the registry clean up before
+    # we pull it in. Security updates ignore cooldown and still land at once.
+    cooldown:
+      default-days: 7
+      semver-major-days: 30
     commit-message:
       prefix: 'chore'
       include: 'scope'
@@ -172,6 +187,12 @@ updates:
       interval: 'weekly'
       day: 'monday'
     open-pull-requests-limit: 3
+    # Quarantine window against poisoned releases: a compromised version is
+    # usually yanked within hours, so waiting lets the registry clean up before
+    # we pull it in. Security updates ignore cooldown and still land at once.
+    cooldown:
+      default-days: 7
+      semver-major-days: 30
     commit-message:
       prefix: 'chore'
       include: 'scope'

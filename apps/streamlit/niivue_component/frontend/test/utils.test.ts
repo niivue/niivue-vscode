@@ -3,7 +3,7 @@ import { base64ToArrayBuffer, buildVoxelClickPayload, throttle } from '../src/ut
 
 describe('utils', () => {
   describe('buildVoxelClickPayload', () => {
-    // Mirrors the shape niivue v1 emits on the 'locationChange' event so the
+    // Mirrors the shape NiiVue v1 emits on the 'locationChange' event so the
     // Streamlit voxel-click feedback to Python keeps working after the
     // callback -> event migration.
     const detail = {

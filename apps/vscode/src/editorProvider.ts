@@ -1,4 +1,5 @@
 import * as vscode from 'vscode'
+import { CITATION_DOI_URL, CITATION_SHORT } from './citation'
 import { NiiVueDocument } from './document'
 import { getHtmlForWebview } from './html'
 
@@ -35,18 +36,12 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     const panel = vscode.window.createWebviewPanel(viewType, tabName, vscode.ViewColumn.One, {
       enableScripts: true,
       retainContextWhenHidden: true,
-      localResourceRoots: [
-        context.extensionUri,
-        vscode.Uri.joinPath(
-          vscode.workspace.workspaceFolders?.[0]?.uri ?? vscode.Uri.file('/'),
-          '..',
-        ),
-      ],
+      localResourceRoots: NiiVueEditorProvider.localResourceRoots(context.extensionUri),
     })
     panel.webview.html = await getHtmlForWebview(panel.webview, context.extensionUri)
     const editor = new NiiVueEditorProvider(context)
     editor.webviews.add(uri, panel)
-    NiiVueEditorProvider.addCommonListeners(panel)
+    NiiVueEditorProvider.addCommonListeners(panel, uri)
     return panel
   }
 
@@ -129,7 +124,8 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     })
   }
 
-  private static addCommonListeners(panel: vscode.WebviewPanel) {
+  /** `sourceUri` is what the panel opened; saved files default to its folder. */
+  private static addCommonListeners(panel: vscode.WebviewPanel, sourceUri: vscode.Uri) {
     panel.webview.onDidReceiveMessage(async (e) => {
       switch (e.type) {
         case 'addOverlay':
@@ -192,37 +188,180 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
               }
             })
           return
+        case 'openDocument':
+          await NiiVueEditorProvider.openDocument(panel)
+          return
+        case 'saveFile':
+          await NiiVueEditorProvider.saveFile(e.body, sourceUri)
+          return
       }
     })
   }
 
-  public static async openDcmFolder(folderUri: vscode.Uri, panel: vscode.WebviewPanel) {
-    const series = await NiiVueEditorProvider.collectDicomFolder(folderUri)
-    if (series.uris.length > 0) {
-      panel.webview.postMessage({
-        type: 'addImage',
-        body: { uri: series.uris, data: series.datas },
-      })
+  /**
+   * Let the user pick a scene document and send it to the webview like an
+   * image; the webview recognizes the name and loads it as a scene.
+   */
+  static async openDocument(panel: vscode.WebviewPanel): Promise<void> {
+    const uris = await vscode.window.showOpenDialog({
+      canSelectFiles: true,
+      canSelectFolders: false,
+      canSelectMany: false,
+      openLabel: 'Open Document',
+      filters: { 'NiiVue Documents': ['nvd', 'json'], 'All Files': ['*'] },
+    })
+    if (!uris || uris.length === 0) {
       return
     }
-    // Fallback: nothing sniffed as DICOM (e.g. files that lack the Part 10
-    // preamble). Send every file in the folder and let the loader decide.
-    const files = await vscode.workspace.fs.readDirectory(folderUri)
-    const fileUris = files
-      .filter(([, fileType]) => (fileType & vscode.FileType.File) !== 0)
-      .map(([name]) => vscode.Uri.joinPath(folderUri, name))
-    const data = await Promise.all(
-      fileUris.map((uri) =>
-        vscode.workspace.fs.readFile(uri).then((d) => NiiVueEditorProvider.toArrayBuffer(d)),
-      ),
+    try {
+      const body = await NiiVueEditorProvider.uriToImageBody(uris[0], panel.webview)
+      panel.webview.postMessage({ type: 'initCanvas', body: { n: 1 } })
+      panel.webview.postMessage({ type: 'addImage', body })
+    } catch (error) {
+      vscode.window.showErrorMessage(
+        `Could not open ${uris[0].path.split('/').pop()}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      )
+    }
+  }
+
+  private static readonly saveFilters = new Map<string, Record<string, string[]>>([
+    ['image/png', { 'PNG Image': ['png'] }],
+    ['application/json', { 'JSON Document': ['json'] }],
+  ])
+
+  /** Filters for types a MIME type does not pin down, by file extension. */
+  private static readonly saveFiltersByExtension = new Map<string, Record<string, string[]>>([
+    ['.nvd', { 'NiiVue Document': ['nvd'] }],
+  ])
+
+  /**
+   * Save a file the webview produced (e.g. a screenshot), since a webview
+   * cannot download. The dialog suggests the opened file's folder, or the
+   * first workspace folder when that file is not on a writable file system
+   * (a web link). Writing through `workspace.fs` also works remotely.
+   */
+  static async saveFile(
+    body: { filename?: unknown; mimeType?: unknown; data?: unknown; cite?: unknown } | undefined,
+    sourceUri: vscode.Uri,
+  ): Promise<void> {
+    if (typeof body?.data !== 'string') {
+      return
+    }
+    // Only a plain name is accepted; directories come from the dialog.
+    const suggested = typeof body.filename === 'string' ? body.filename.split(/[/\\]/).pop() : ''
+    const filename = suggested && !/^\.\.?$/.test(suggested) ? suggested : 'untitled'
+    const mimeType = typeof body.mimeType === 'string' ? body.mimeType : ''
+    let name = filename
+    try {
+      const folder = vscode.workspace.fs.isWritableFileSystem(sourceUri.scheme)
+        ? NiiVueEditorProvider.parentDir(sourceUri)
+        : vscode.workspace.workspaceFolders?.[0]?.uri
+      const extension = /\.[^.]+$/.exec(filename.toLowerCase())?.[0] ?? ''
+      const target = await vscode.window.showSaveDialog({
+        defaultUri: folder ? vscode.Uri.joinPath(folder, filename) : undefined,
+        filters:
+          NiiVueEditorProvider.saveFilters.get(mimeType) ??
+          NiiVueEditorProvider.saveFiltersByExtension.get(extension),
+      })
+      if (!target) {
+        return
+      }
+      name = target.path.split('/').pop() ?? filename
+      await vscode.workspace.fs.writeFile(target, NiiVueEditorProvider.base64ToBytes(body.data))
+      const saved = `Saved ${NiiVueEditorProvider.plainText(vscode.workspace.asRelativePath(target))}`
+      vscode.window.showInformationMessage(
+        body.cite === true
+          ? `${saved}. If you publish this figure, please cite [${CITATION_SHORT}](${CITATION_DOI_URL}).`
+          : saved,
+      )
+    } catch (error) {
+      vscode.window.showErrorMessage(
+        NiiVueEditorProvider.plainText(
+          `Could not save ${name}: ${error instanceof Error ? error.message : String(error)}`,
+        ),
+      )
+    }
+  }
+
+  /**
+   * Text for a notification that must not take part in a link: VS Code turns
+   * `[label](target)` into a link (command: links included), and an unmatched
+   * `[` would join the link that follows. Square brackets become full-width
+   * ones. Paths and file system errors carry folder names anyone can choose.
+   */
+  static plainText(text: string): string {
+    return text.replace(/\[/g, '\uff3b').replace(/\]/g, '\uff3d')
+  }
+
+  // atob rather than Buffer: the extension also runs in the browser (vscode.dev).
+  private static base64ToBytes(data: string): Uint8Array {
+    const binary = atob(data)
+    const bytes = new Uint8Array(binary.length)
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i)
+    }
+    return bytes
+  }
+
+  public static async openDcmFolder(folderUri: vscode.Uri, panel: vscode.WebviewPanel) {
+    try {
+      const series = await NiiVueEditorProvider.collectDicomFolder(folderUri)
+      if (series.uris.length > 0) {
+        panel.webview.postMessage({
+          type: 'addImage',
+          body: { uri: series.uris, data: series.datas },
+        })
+        return
+      }
+      // Fallback: nothing sniffed as DICOM (e.g. files that lack the Part 10
+      // preamble). Send every file in the folder and let the loader decide.
+      const files = await vscode.workspace.fs.readDirectory(folderUri)
+      const fileUris = files
+        .filter(([, fileType]) => (fileType & vscode.FileType.File) !== 0)
+        .map(([name]) => vscode.Uri.joinPath(folderUri, name))
+      await NiiVueEditorProvider.checkFolderSize(fileUris)
+      const data = await Promise.all(
+        fileUris.map((uri) =>
+          vscode.workspace.fs.readFile(uri).then((d) => NiiVueEditorProvider.toArrayBuffer(d)),
+        ),
+      )
+      panel.webview.postMessage({
+        type: 'addImage',
+        body: {
+          data,
+          uri: fileUris.map((u) => u.toString()),
+        },
+      })
+    } catch (error) {
+      panel.webview.postMessage({
+        type: 'addImage',
+        body: {
+          uri: folderUri.toString(),
+          loadError: `Could not open ${folderUri.toString(true)}: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        },
+      })
+    }
+  }
+
+  /** Folders are read into memory and posted at once; NiiVue holds at most 2 GB per image. */
+  static readonly maxFolderBytes = 2 * 1024 ** 3
+
+  /** Throws, before anything is read, when the files add up to more than `maxFolderBytes`. */
+  private static async checkFolderSize(uris: vscode.Uri[]): Promise<void> {
+    const sizes = await Promise.all(
+      uris.map((uri) => vscode.workspace.fs.stat(uri).then((stat) => stat.size, () => 0)),
     )
-    panel.webview.postMessage({
-      type: 'addImage',
-      body: {
-        data,
-        uri: fileUris.map((u) => u.toString()),
-      },
-    })
+    const total = sizes.reduce((sum, size) => sum + size, 0)
+    if (total > NiiVueEditorProvider.maxFolderBytes) {
+      throw new Error(
+        `the folder holds ${(total / 1024 ** 3).toFixed(1)} GB of files, ` +
+          'more than the 2 GB that can be loaded at once',
+      )
+    }
   }
 
   async resolveCustomEditor(
@@ -232,20 +371,14 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     this.webviews.add(document.uri, webviewPanel)
     webviewPanel.webview.options = {
       enableScripts: true,
-      localResourceRoots: [
-        this._context.extensionUri,
-        vscode.Uri.joinPath(
-          vscode.workspace.workspaceFolders?.[0]?.uri ?? vscode.Uri.file('/'),
-          '..',
-        ),
-      ],
+      localResourceRoots: NiiVueEditorProvider.localResourceRoots(this._context.extensionUri),
     }
     webviewPanel.webview.html = await getHtmlForWebview(
       webviewPanel.webview,
       this._context.extensionUri,
     )
 
-    NiiVueEditorProvider.addCommonListeners(webviewPanel)
+    NiiVueEditorProvider.addCommonListeners(webviewPanel, document.uri)
 
     webviewPanel.webview.onDidReceiveMessage(async (message) => {
       if (message.type === 'ready') {
@@ -285,6 +418,9 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     '.npy',
     '.npz',
     '.raw',
+    '.graphml',
+    '.nvd',
+    '.nvd.json',
   ]
 
   static hasKnownExtension(lowerCasePath: string): boolean {
@@ -307,8 +443,8 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
    * webview URI (so NiiVue can stream large volumes) but falls back to reading
    * the file as binary when the URI is not reachable via the webview resource
    * proxy — i.e. remote workspaces where the file sits outside
-   * `localResourceRoots`, or formats that NiiVue can only ingest as bytes
-   * (`.dcm`, `.mnc`).
+   * `localResourceRoots`, web links, or formats that NiiVue can only ingest
+   * as bytes (`.dcm`, `.ima`, `.mnc`).
    *
    * Files without a recognized extension are read and sniffed for the DICOM
    * magic bytes; matches are shipped as binary so the webview routes them
@@ -324,13 +460,14 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     const lowerCasePath = uri.path.toLowerCase()
     if (
       lowerCasePath.endsWith('.dcm') ||
+      lowerCasePath.endsWith('.ima') ||
       lowerCasePath.endsWith('.mnc') ||
-      !NiiVueEditorProvider.isUriAccessible(uri)
+      !NiiVueEditorProvider.isUriAccessible(uri, webview)
     ) {
-      const data = await vscode.workspace.fs.readFile(uri)
+      const data = await NiiVueEditorProvider.readBytes(uri)
       return {
         data: NiiVueEditorProvider.toArrayBuffer(data),
-        uri: uri.toString(),
+        uri: NiiVueEditorProvider.withoutQuery(uri).toString(),
       }
     }
     if (!NiiVueEditorProvider.hasKnownExtension(lowerCasePath)) {
@@ -354,29 +491,47 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
    *   clicked slice loads its whole series. dcm2niix groups the slices and
    *   splits a multi-series folder into one volume per series.
    * - Everything else loads as a single image.
+   * - A file that cannot be read shows the error in the viewer.
    */
   static async sendInitialImage(uri: vscode.Uri, webview: vscode.Webview): Promise<void> {
-    if (uri.path.toLowerCase().endsWith('.mhd')) {
-      await NiiVueEditorProvider.sendMhdMessage(uri, webview)
-      return
-    }
-    const name = uri.path.split('/').pop() ?? ''
-    if (NiiVueEditorProvider.isDicomCandidateName(name)) {
-      try {
-        const series = await NiiVueEditorProvider.collectDicomFolderImages(uri)
-        if (series) {
-          webview.postMessage({
-            type: 'addImage',
-            body: { uri: series.uris, data: series.datas },
-          })
-          return
-        }
-      } catch {
-        // Fall through to a single-file load if directory scanning fails.
+    try {
+      if (uri.path.toLowerCase().endsWith('.mhd')) {
+        await NiiVueEditorProvider.sendMhdMessage(uri, webview)
+        return
       }
+      const name = uri.path.split('/').pop() ?? ''
+      if (NiiVueEditorProvider.isDicomCandidateName(name)) {
+        try {
+          const series = await NiiVueEditorProvider.collectDicomFolderImages(uri)
+          if (series) {
+            webview.postMessage({
+              type: 'addImage',
+              body: { uri: series.uris, data: series.datas },
+            })
+            return
+          }
+        } catch (error) {
+          // Fall through to a single-file load if directory scanning fails.
+          vscode.window.showWarningMessage(
+            NiiVueEditorProvider.plainText(
+              `Loading only ${name}: ${error instanceof Error ? error.message : String(error)}`,
+            ),
+          )
+        }
+      }
+      const body = await NiiVueEditorProvider.uriToImageBody(uri, webview)
+      webview.postMessage({ type: 'addImage', body })
+    } catch (error) {
+      webview.postMessage({
+        type: 'addImage',
+        body: {
+          uri: NiiVueEditorProvider.withoutQuery(uri).toString(),
+          loadError: `Could not read ${NiiVueEditorProvider.withoutQuery(uri).toString(true)}: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        },
+      })
     }
-    const body = await NiiVueEditorProvider.uriToImageBody(uri, webview)
-    webview.postMessage({ type: 'addImage', body })
   }
 
   /**
@@ -403,7 +558,7 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
   /**
    * Read every DICOM file in a directory (name pre-filtered, content
    * verified) and return their URIs and bytes, sorted by URI for a stable
-   * slice order.
+   * slice order. Throws when the candidates exceed `maxFolderBytes`.
    */
   static async collectDicomFolder(
     dirUri: vscode.Uri,
@@ -414,15 +569,15 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     } catch {
       return { uris: [], datas: [] }
     }
+    const candidates = entries
+      .filter(
+        ([name, fileType]) =>
+          (fileType & vscode.FileType.File) !== 0 && NiiVueEditorProvider.isDicomCandidateName(name),
+      )
+      .map(([name]) => vscode.Uri.joinPath(dirUri, name))
+    await NiiVueEditorProvider.checkFolderSize(candidates)
     const collected: { uri: string; data: ArrayBuffer }[] = []
-    for (const [name, fileType] of entries) {
-      if ((fileType & vscode.FileType.File) === 0) {
-        continue
-      }
-      if (!NiiVueEditorProvider.isDicomCandidateName(name)) {
-        continue
-      }
-      const fileUri = vscode.Uri.joinPath(dirUri, name)
+    for (const fileUri of candidates) {
       let bytes: Uint8Array
       try {
         bytes = await vscode.workspace.fs.readFile(fileUri)
@@ -466,27 +621,28 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
   }
 
   /**
-   * Whether `uri` can be served through the webview resource proxy.  Requires
-   * the same scheme *and* authority as one of the workspace folders so that a
-   * `file://` workspace never claims to host a `vscode-remote://` file (which
-   * is what broke menu-driven Add Image / Add Overlay on SSH-remote sessions
-   * in single-file mode).
+   * Whether the webview can fetch `uri` itself: inside one of its `localResourceRoots`, with the
+   * same scheme *and* authority, so a `file://` root never claims a `vscode-remote://` file.
    */
-  static isUriAccessible(uri: vscode.Uri): boolean {
-    const workspaceFolders = vscode.workspace.workspaceFolders
-    if (!workspaceFolders) {
+  static isUriAccessible(uri: vscode.Uri, webview: vscode.Webview): boolean {
+    let roots: readonly vscode.Uri[]
+    try {
+      roots = webview.options.localResourceRoots ?? []
+    } catch {
+      // The options of a closed panel throw.
       return false
     }
-    for (const folder of workspaceFolders) {
-      if (
-        uri.scheme === folder.uri.scheme &&
-        uri.authority === folder.uri.authority &&
-        uri.path.startsWith(folder.uri.path)
-      ) {
-        return true
-      }
-    }
-    return false
+    return roots.some((root) => {
+      const rootPath = root.path.endsWith('/') ? root.path : `${root.path}/`
+      return (
+        uri.scheme === root.scheme && uri.authority === root.authority && uri.path.startsWith(rootPath)
+      )
+    })
+  }
+
+  /** Fixed when the panel opens; a workspace folder added later is served as bytes. */
+  private static localResourceRoots(extensionUri: vscode.Uri): vscode.Uri[] {
+    return [extensionUri, ...(vscode.workspace.workspaceFolders ?? []).map((folder) => folder.uri)]
   }
 
   /**
@@ -528,6 +684,40 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     return vscode.Uri.joinPath(parentDir, basename)
   }
 
+  private static isWebUri(uri: vscode.Uri): boolean {
+    return uri.scheme === 'http' || uri.scheme === 'https'
+  }
+
+  /**
+   * The webview reads the format from the name's extension, so a web link
+   * loses its query and fragment, and any credentials, once its bytes are read.
+   */
+  private static withoutQuery(uri: vscode.Uri): vscode.Uri {
+    if (!NiiVueEditorProvider.isWebUri(uri)) {
+      return uri
+    }
+    return uri.with({ authority: uri.authority.replace(/^[^@]*@/, ''), query: '', fragment: '' })
+  }
+
+  /** workspace.fs has no http(s) provider, so web links are fetched instead. */
+  private static async readBytes(uri: vscode.Uri): Promise<Uint8Array> {
+    if (!NiiVueEditorProvider.isWebUri(uri)) {
+      return vscode.workspace.fs.readFile(uri)
+    }
+    let response: Response
+    try {
+      response = await fetch(uri.toString(true))
+    } catch (error) {
+      // fetch reports every network failure as "fetch failed" and keeps the reason in cause.
+      const cause = (error as { cause?: unknown }).cause
+      throw cause instanceof Error ? cause : error
+    }
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status} ${response.statusText}`.trim())
+    }
+    return new Uint8Array(await response.arrayBuffer())
+  }
+
   private static toArrayBuffer(data: Uint8Array): ArrayBuffer {
     const buffer = new ArrayBuffer(data.byteLength)
     new Uint8Array(buffer).set(data)
@@ -544,12 +734,12 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
    * and sent as binary buffers.
    */
   static async sendMhdMessage(uri: vscode.Uri, webview: vscode.Webview): Promise<void> {
-    const mhdData = await vscode.workspace.fs.readFile(uri)
+    const mhdData = await NiiVueEditorProvider.readBytes(uri)
     const mhdText = new TextDecoder().decode(mhdData)
     const rawRef = NiiVueEditorProvider.getMhdPairedRawRef(mhdText)
     const rawUri = rawRef ? NiiVueEditorProvider.resolveMhdPairedRawUri(uri, rawRef) : null
 
-    if (NiiVueEditorProvider.isUriAccessible(uri)) {
+    if (NiiVueEditorProvider.isUriAccessible(uri, webview)) {
       const mhdWebviewUri = webview.asWebviewUri(uri).toString()
       const body: Record<string, unknown> = { uri: mhdWebviewUri }
       if (rawRef) {
@@ -563,12 +753,12 @@ export class NiiVueEditorProvider implements vscode.CustomReadonlyEditorProvider
     } else {
       const body: Record<string, unknown> = {
         data: NiiVueEditorProvider.toArrayBuffer(mhdData),
-        uri: uri.toString(),
+        uri: NiiVueEditorProvider.withoutQuery(uri).toString(),
       }
       if (rawRef) {
         if (rawUri) {
           try {
-            const rawData = await vscode.workspace.fs.readFile(rawUri)
+            const rawData = await NiiVueEditorProvider.readBytes(rawUri)
             body.pairedData = NiiVueEditorProvider.toArrayBuffer(rawData)
           } catch (error) {
             body.loadError =

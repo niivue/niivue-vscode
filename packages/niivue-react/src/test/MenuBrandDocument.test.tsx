@@ -1,7 +1,7 @@
 import { SLICE_TYPE } from '@niivue/niivue'
 import { signal } from '@preact/signals'
 import { cleanup, fireEvent, render, screen } from '@testing-library/preact'
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { AppProps, SelectionMode } from '../components/AppProps'
 import { Menu } from '../components/Menu'
 import { activeMenu } from '../components/MenuElements'
@@ -34,8 +34,8 @@ vi.mock('@niivue/niivue', () => {
 
 // Stub the download helpers so "Save" / "Save as JSON" can be asserted without a
 // real Blob/anchor.
-const downloadNvd = vi.fn()
-const downloadSceneJson = vi.fn()
+const downloadNvd = vi.fn(async (..._args: unknown[]) => {})
+const downloadSceneJson = vi.fn(async (..._args: unknown[]) => {})
 vi.mock('../document', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../document')>()),
   downloadNvd: (...args: unknown[]) => downloadNvd(...args),
@@ -63,6 +63,8 @@ afterEach(() => {
   activeMenu.value = null
 })
 
+const jsonDocument = new TextEncoder().encode('{"version":8}')
+
 function makeNv() {
   return {
     volumes: [
@@ -76,9 +78,10 @@ function makeNv() {
     ],
     meshes: [],
     opts: {},
-    // v1: serializeDocument() (CBOR bytes) replaces nv.json(); saveScene hands
-    // the bytes to the (mocked) downloadNvd / downloadSceneJson helpers.
-    serializeDocument: () => new Uint8Array([1, 2, 3]),
+    // v1: serializeDocument() (CBOR bytes, or JSON with format 'json') replaces
+    // nv.json(); the menu hands the bytes to the (mocked) save helpers.
+    serializeDocument: (options?: { format?: string }) =>
+      options?.format === 'json' ? jsonDocument : new Uint8Array([1, 2, 3]),
     drawScene: vi.fn(),
     updateGLVolume: vi.fn(),
   }
@@ -123,13 +126,14 @@ describe('NVDocument menu', () => {
     expect(downloadNvd).not.toHaveBeenCalled()
   })
 
-  it('the chevron offers a JSON export that re-opens through parseNvd', async () => {
+  it("the chevron offers a JSON export in NiiVue's JSON format", async () => {
     render(<Menu {...makeProps({ saveScene: true })} />)
 
     fireEvent.click(screen.getByTestId('menu-item-dropdown-NVDocument'))
 
     fireEvent.click(await screen.findByText('Save as JSON'))
     expect(downloadSceneJson).toHaveBeenCalledTimes(1)
+    expect(downloadSceneJson.mock.calls[0][0]).toBe(jsonDocument)
     expect(downloadSceneJson.mock.calls[0][1]).toBe('brain.nvd.json')
     expect(downloadNvd).not.toHaveBeenCalled()
   })
@@ -153,6 +157,20 @@ describe('Brand menu', () => {
 
     expect(await screen.findByText('Reset Viewer')).toBeTruthy()
     expect(await screen.findByText('About')).toBeTruthy()
+    expect(await screen.findByRole('button', { name: 'Cite NiiVue VS Code' })).toBeTruthy()
+  })
+
+  it('Cite NiiVue VS Code opens the cite dialog with the reference', async () => {
+    render(<Menu {...makeProps({ home: true })} />)
+
+    fireEvent.click(screen.getByTestId('menu-brand'))
+    fireEvent.click(await screen.findByRole('button', { name: 'Cite NiiVue VS Code' }))
+
+    expect(HTMLDialogElement.prototype.showModal).toHaveBeenCalled()
+    expect(screen.getByTestId('cite-reference').textContent).toContain('Aperture Neuro. 2026;6.')
+    expect(screen.getByTestId('cite-reference').querySelector('a')?.getAttribute('href')).toBe(
+      'https://doi.org/10.52294/001c.167815',
+    )
   })
 
   it('About opens the about dialog', async () => {
@@ -164,8 +182,48 @@ describe('Brand menu', () => {
     expect(HTMLDialogElement.prototype.showModal).toHaveBeenCalled()
   })
 
-  it('stays a static brand (no trigger) when the home flag is off', () => {
+  it('offers About and Cite NiiVue VS Code without Reset Viewer when the home flag is off', async () => {
     render(<Menu {...makeProps({ home: false })} />)
-    expect(screen.queryByTestId('menu-brand')).toBeNull()
+
+    fireEvent.click(screen.getByTestId('menu-brand'))
+
+    expect(await screen.findByText('About')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Cite NiiVue VS Code' })).toBeTruthy()
+    expect(screen.queryByText('Reset Viewer')).toBeNull()
+  })
+})
+
+describe('Brand menu in a webview host (VS Code, JupyterLab)', () => {
+  beforeAll(() => {
+    ;(globalThis as any).vscode = { postMessage: vi.fn() }
+  })
+  afterAll(() => {
+    delete (globalThis as any).vscode
+  })
+
+  it('shows NVDocument, whose Save goes through the host', () => {
+    render(<Menu {...makeProps({ saveScene: true })} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'NVDocument' }))
+
+    expect(downloadNvd).toHaveBeenCalledTimes(1)
+  })
+
+  it('offers About but not Reset Viewer, regardless of the home flag', async () => {
+    render(<Menu {...makeProps({ home: false })} />)
+
+    fireEvent.click(screen.getByTestId('menu-brand'))
+
+    expect(await screen.findByText('About')).toBeTruthy()
+    expect(screen.queryByText('Reset Viewer')).toBeNull()
+  })
+
+  it('About opens the about dialog', async () => {
+    render(<Menu {...makeProps({ home: true })} />)
+
+    fireEvent.click(screen.getByTestId('menu-brand'))
+    fireEvent.click(await screen.findByText('About'))
+
+    expect(HTMLDialogElement.prototype.showModal).toHaveBeenCalled()
   })
 })

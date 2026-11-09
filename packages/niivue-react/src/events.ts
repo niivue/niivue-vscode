@@ -1,10 +1,11 @@
 import NiiVue, { DRAG_MODE, SLICE_TYPE } from '@niivue/niivue'
 import { Signal } from '@preact/signals'
 import { AppProps } from './components/AppProps'
-import { isNvdFile, readNvdFile } from './document'
+import { DocumentSource, isNvdFile, isWebUrl } from './document'
 import { readyStateManager } from './readyState'
 import { NiiVueSettings } from './settings'
-import { buildImageMessageBodies, isImageType } from './utility'
+import { buildImageMessageBodies, isImageType, isMhaName } from './utility'
+import { loadableSource, mhaWithTransform } from './webviewResource'
 
 /**
  * Increments a global counter used by E2E tests to know when an image or
@@ -12,6 +13,24 @@ import { buildImageMessageBodies, isImageType } from './utility'
  * overlay message handlers (overlay / addMeshOverlay paths) call this so that
  * `waitForImageLoad` in tests works for all load types.
  */
+/**
+ * Detach NiiVue's own window keydown listener.
+ *
+ * v1 still ships built-in hotkeys (`NVControlBase`'s handler binds to *window*,
+ * not the canvas) and 'c' there advances `currentClipPlaneIndex` on the focused
+ * instance. The app's useKeyboardShortcuts hook already advances it for every
+ * selected canvas, so leaving both bound makes one press count twice - the
+ * regression in niivue/niivue-vscode#224. The app is the single source of truth
+ * for shortcuts, so NiiVue's listener comes off once attach has installed it.
+ */
+export function removeBuiltinKeyHandler(nv: NiiVue): void {
+  const handler = (nv as unknown as { _eventListeners?: { keydown?: EventListener } })
+    ._eventListeners?.keydown
+  if (handler) {
+    window.removeEventListener('keydown', handler)
+  }
+}
+
 export function notifyImageLoaded() {
   const w = window as any
   w.__niivue = w.__niivue || {}
@@ -50,6 +69,12 @@ export async function handleMessage(message: any, appProps: AppProps) {
           // (Volume.tsx) instead of attempting a doomed load.
           nv.loadError = body.loadError
           notifyImageLoaded()
+        } else if (typeof body.uri === 'string' && isNvdFile(body.uri)) {
+          // A scene document opened like an image: from a host's file browser
+          // or open dialog, an OS launch, a URL parameter or a drop on a tile.
+          nv.documentData = body.data
+            ? { name: body.uri, data: body.data, url: isWebUrl(body.uri) ? body.uri : undefined }
+            : { name: body.uri, url: body.uri }
         } else {
           nv.body = body
         }
@@ -57,17 +82,15 @@ export async function handleMessage(message: any, appProps: AppProps) {
       break
     case 'loadDocument':
       {
-        // Import a niivue scene document (.nvd) into a fresh canvas. The actual
+        // Import a NiiVue scene document (.nvd) into a fresh canvas. The actual
         // nv.loadDocument call is deferred to NiiVueCanvas, which fires once the
         // canvas (and its GL context) is attached - mirroring the addImage path.
+        // The message carries the document's bytes, CBOR or JSON.
         const nv = getUnitinializedNvInstance(nvArray)
         const name = body.name || 'document.nvd'
         nv.uri = name
         nv.isNew = false
-        // v1: nv.loadDocument takes a File. The message carries the .nvd CBOR
-        // bytes (Uint8Array); wrap them in a File for NiiVueCanvas to load once
-        // the canvas/GL is attached.
-        nv.documentData = new File([body.document], name)
+        nv.documentData = { name, data: body.document }
       }
       break
     case 'initCanvas':
@@ -166,6 +189,19 @@ export function addImageFromURLParams() {
     body: { n: imageURLs.length },
   })
   imageURLs.forEach(async (url) => {
+    // A scene document is fetched by its canvas, which resolves the document's
+    // relative links against its final URL. The absolute form keeps a relative
+    // URL with a query recognizable as a document.
+    let absolute = url
+    try {
+      absolute = new URL(url, window.location.href).href
+    } catch {
+      // Not a URL; fetch reports it below.
+    }
+    if (isNvdFile(absolute)) {
+      window.postMessage({ type: 'addImage', body: { data: '', uri: absolute } })
+      return
+    }
     try {
       const data = await (await fetch(url)).arrayBuffer()
       const body: Record<string, unknown> = { data, uri: url }
@@ -224,6 +260,8 @@ async function addMeshOverlay(nv: NiiVue, item: any, type: string, settings: Nii
   // addMeshLayer parses the buffer, appends the layer, and updates the mesh
   // internally, so the manual readLayer/push/updateMesh dance is gone. The old
   // `useNegativeCmap` flag is expressed by a non-empty `colormapNegative`.
+  // Set before addMeshLayer so its internal refresh picks up the flag.
+  nv.isColorbarVisible = true
   await nv.addMeshLayer(0, {
     url: new File([item.data], item.uri),
     name: item.uri,
@@ -234,8 +272,6 @@ async function addMeshOverlay(nv: NiiVue, item: any, type: string, settings: Nii
     calMax: a.calMax,
   })
 
-  nv.isColorbarVisible = true
-  await nv.updateGLVolume()
   const layerNumber = nv.meshes[0].layers.length - 1
   if (type === 'addMeshCurvature') {
     await nv.setMeshLayerProperty(0, layerNumber, { isColorbarVisible: false })
@@ -272,11 +308,12 @@ async function addOverlay(nv: NiiVue, item: any, settings: NiiVueSettings) {
     // v1: addVolume takes the load options directly. `url` is string | File.
     // No data (empty string / undefined) means load from the URL (item.uri); a
     // non-empty string is itself a URL/path; in-memory bytes wrap in a File.
-    const url = !item.data
-      ? item.uri
+    const source = !item.data
+      ? await loadableSource(item.uri)
       : typeof item.data === 'string'
         ? item.data
         : new File([toBlobPart(item.data)], item.uri)
+    const url = isMhaName(item.uri) ? await mhaWithTransform(source) : source
     await nv.addVolume({
       url,
       name: item.uri,
@@ -284,12 +321,14 @@ async function addOverlay(nv: NiiVue, item: any, settings: NiiVueSettings) {
       opacity: overlayOpacity,
     })
   } else {
-    const url = item.data ? new File([toBlobPart(item.data)], item.uri) : item.uri
+    const url = item.data
+      ? new File([toBlobPart(item.data)], item.uri)
+      : await loadableSource(item.uri)
     await nv.addMesh({ url, name: item.uri })
   }
 }
 
-// niivue's File/Blob wrapping needs a real BlobPart. ArrayBuffers and TypedArray
+// NiiVue's File/Blob wrapping needs a real BlobPart. ArrayBuffers and TypedArray
 // views pass through; a plain number[] (some postMessage bridges serialize
 // buffers this way) is repacked into a Uint8Array.
 function toBlobPart(data: ArrayBuffer | ArrayBufferView | number[]): BlobPart {
@@ -341,12 +380,7 @@ export function addImagesEvent() {
       // Scene documents (.nvd) load a whole scene; route them to the document
       // importer and let the rest flow through the image pipeline.
       for (const file of files.filter((f) => isNvdFile(f.name))) {
-        try {
-          const document = await readNvdFile(file)
-          window.postMessage({ type: 'loadDocument', body: { document, name: file.name } })
-        } catch (err) {
-          console.error(`Failed to read .nvd file ${file.name}:`, err)
-        }
+        await postDocument(file)
       }
       const imageFiles = files.filter((f) => !isNvdFile(f.name))
       if (imageFiles.length === 0) return
@@ -364,25 +398,34 @@ export function addImagesEvent() {
   }
 }
 
+/** Import a picked or dropped scene document file into a fresh canvas. */
+export async function postDocument(file: File) {
+  try {
+    const document = new Uint8Array(await file.arrayBuffer())
+    window.postMessage({ type: 'loadDocument', body: { document, name: file.name } })
+  } catch (err) {
+    console.error(`Failed to read .nvd file ${file.name}:`, err)
+  }
+}
+
 /**
- * Open a file picker for a NiiVue scene document (.nvd) and import it into a
- * fresh canvas via the `loadDocument` message. This is the browser-host
- * counterpart to `saveScene`'s download; vscode hosts persist scenes through
- * their own services, so the menu gates this to non-vscode.
+ * Pick a NiiVue scene document (.nvd, .nvd.json) and import it into a fresh
+ * canvas. Webview hosts show their own dialog, which browses the workspace
+ * (also a remote one), and send the file back like an image.
  */
 export function loadDocumentEvent() {
+  if (typeof vscode === 'object') {
+    vscode.postMessage({ type: 'openDocument' })
+    return
+  }
   const input = document.createElement('input')
   input.type = 'file'
-  input.accept = '.nvd'
+  input.accept = '.nvd,.json'
 
   input.onchange = async (e) => {
     const file = (e.target as HTMLInputElement)?.files?.[0]
-    if (!file) return
-    try {
-      const document = await readNvdFile(file)
-      window.postMessage({ type: 'loadDocument', body: { document, name: file.name } })
-    } catch (err) {
-      console.error(`Failed to read .nvd file ${file.name}:`, err)
+    if (file) {
+      await postDocument(file)
     }
   }
 
@@ -438,11 +481,12 @@ export class ExtendedNiivue extends NiiVue {
   isNew = true
   isLoaded = false
   isLoading = false // Prevent duplicate loadVolume calls during re-renders
+  attached: Promise<void> | null = null // set by NiiVueCanvas; loads await it
   loadError = ''
   uri = ''
   key = NaN
   body = null
-  documentData: File | null = null // pending .nvd import (CBOR bytes wrapped in a File), consumed by NiiVueCanvas
+  documentData: DocumentSource | null = null // pending .nvd import, consumed by NiiVueCanvas
   onVolumeUpdated = () => { }
   onFrameUpdate = (frame: number) => { }
   // v1: cross-canvas pan/3D sync is handled natively by `nv.broadcastTo(targets)`
@@ -459,15 +503,16 @@ function growNvArrayBy(nvArray: Signal<NiiVue[]>, n: number) {
       // (left) button. Mapping the old `contrast` value here suppressed it, so
       // left-click/drag no longer moved the crosshair (regression vs 0.x). Keep
       // crosshair on the left button; windowing stays on the right button via
-      // niivue's default secondaryDragMode.
+      // NiiVue's default secondaryDragMode.
       primaryDragMode: DRAG_MODE.crosshair,
       isDragDropEnabled: false, // handled by app (Volume component)
+      // A tile is only created for an image that is on its way; errors cover it.
+      placeholderText: 'Loading…',
       // 'c' (cycle clip plane) and 'v' (cycle view mode) are handled by the
       // app's useKeyboardShortcuts hook, which broadcasts to every selected
-      // canvas. v1.0 removed the built-in clip-plane / view-mode hotkey options
-      // (no built-in hotkeys remain), so niivue no longer double-acts on the
-      // focused canvas - the app is the single source of truth. See
-      // niivue/niivue-vscode#224.
+      // canvas. v1.0 still binds its own hotkeys to window during attach, so
+      // removeBuiltinKeyHandler takes that listener off once attached, leaving
+      // the app as the single source of truth. See niivue/niivue-vscode#224.
     })
     nv.key = Math.random()
     nvArray.value = [...nvArray.value, nv]

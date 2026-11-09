@@ -1,4 +1,4 @@
-/** The subset of niivue's `locationChange` event detail we read for feedback. */
+/** The subset of NiiVue's `locationChange` event detail we read for feedback. */
 export interface NiivueLocationDetail {
   vox: number[]
   mm: number[]
@@ -14,8 +14,8 @@ export interface VoxelClickPayload {
 }
 
 /**
- * Build the Streamlit feedback payload from a niivue `locationChange` detail.
- * niivue v1 delivers location updates via the DOM event (the settable
+ * Build the Streamlit feedback payload from a NiiVue `locationChange` detail.
+ * NiiVue v1 delivers location updates via the DOM event (the settable
  * `onLocationChange` callback was removed); the `NiiVueLocation` detail still
  * carries `vox` / `mm` / `values`, so the payload shape is unchanged.
  */

@@ -55,7 +55,7 @@
     "dev:types-only": "tsc --emitDeclarationOnly --declaration --outDir dist --watch",
     "build": "vite build && tsc --emitDeclarationOnly --declaration --outDir dist",
     "preview": "vite",
-    "clean": "rimraf dist",
+    "clean": "rimraf dist dist-vscode dist-jupyter",
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "type-check": "tsc --noEmit",
     "test": "vitest run",
@@ -69,23 +69,24 @@
     "@fontsource/jetbrains-mono": "^5.0.0",
     "@niivue/dcm2niix": "^1.2.0",
     "@niivue/minc-loader": "^1.0.0",
-    "@niivue/viewer-protocol": "workspace:*",
-    "cbor-x": "^1.6.0"
+    "@niivue/viewer-protocol": "workspace:*"
   },
   "devDependencies": {
+    "@preact/signals": "^2.11.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/preact": "^3.2.4",
     "@vitejs/plugin-legacy": "^8.0.2",
     "@vitest/coverage-v8": "^4.1.6",
     "@vitest/ui": "^4.1.6",
     "autoprefixer": "^10.5.0",
-    "concurrently": "^9.2.1",
+    "concurrently": "^9.2.4",
     "cross-env": "^7.0.3",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
-    "jsdom": "^26.1.0",
+    "jsdom": "^30.0.1",
     "@tailwindcss/postcss": "^4.3.0",
     "postcss": "^8.5.14",
+    "preact": "^10.29.8",
     "rimraf": "^6.1.3",
     "tailwindcss": "^4.3.0",
     "vite-plugin-virtual": "^0.5.0",
@@ -93,9 +94,8 @@
     "workbox-window": "^7.4.1"
   },
   "peerDependencies": {
-    "@niivue/dicom-loader": "^1.0.0",
-    "@niivue/niivue": "1.0.0-rc.9",
-    "@preact/signals": "^2.9.0",
-    "preact": "^10.29.2"
+    "@niivue/niivue": "1.0.0-rc.83",
+    "@preact/signals": "^2.11.2",
+    "preact": "^10.29.8"
   }
 }

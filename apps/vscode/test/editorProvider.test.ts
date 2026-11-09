@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { NiiVueEditorProvider } from '../src/editorProvider'
-import { __resetMock, FileType, Uri, workspace } from './vscode-mock'
+import { __resetMock, FileType, Uri, window, workspace } from './vscode-mock'
 
 /** 140-byte buffer with the DICOM Part 10 magic ("DICM" at offset 128). */
 function dicomBytes(): Uint8Array {
@@ -23,11 +23,17 @@ function nonDicomBytes(): Uint8Array {
  * `webview.asWebviewUri(...)` URL.
  */
 
-function makeWebview(): { asWebviewUri: ReturnType<typeof vi.fn> } {
+function makeWebview(): {
+  asWebviewUri: ReturnType<typeof vi.fn>
+  options: { localResourceRoots: Uri[] }
+} {
   // Real `webview.asWebviewUri` returns a Uri whose `.toString()` is a fully
-  // proxied https://*.vscode-cdn.net URL.  Source only calls `.toString()` on
-  // the result, so a stub with just that method is sufficient.
+  // proxied https://*.vscode-cdn.net URL; source only calls `.toString()`.
+  // The roots are the ones a panel opened now gets.
   return {
+    options: {
+      localResourceRoots: [Uri.file('/ext'), ...(workspace.workspaceFolders ?? []).map((f) => f.uri)],
+    },
     asWebviewUri: vi.fn((uri: Uri) => ({
       toString: () => `https://cdn.vscode-cdn.net${uri.path}?scheme=${uri.scheme}`,
     })),
@@ -40,45 +46,116 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.restoreAllMocks()
+  vi.unstubAllGlobals()
 })
 
 describe('NiiVueEditorProvider.isUriAccessible', () => {
   it('returns false when no workspace folder is open', () => {
     workspace.workspaceFolders = undefined
     const uri = Uri.parse('file:///home/user/data.nii.gz')
-    expect(NiiVueEditorProvider.isUriAccessible(uri)).toBe(false)
+    expect(NiiVueEditorProvider.isUriAccessible(uri, makeWebview() as any)).toBe(false)
   })
 
   it('returns true for a local file inside the workspace', () => {
     const workspaceUri = Uri.parse('file:///home/user/proj')
     workspace.workspaceFolders = [{ uri: workspaceUri }]
     const uri = Uri.parse('file:///home/user/proj/data.nii.gz')
-    expect(NiiVueEditorProvider.isUriAccessible(uri)).toBe(true)
+    expect(NiiVueEditorProvider.isUriAccessible(uri, makeWebview() as any)).toBe(true)
   })
 
   it('returns true for a remote file inside a matching remote workspace', () => {
     const workspaceUri = Uri.parse('vscode-remote://ssh-remote%2Bmyhost/home/user/proj')
     workspace.workspaceFolders = [{ uri: workspaceUri }]
     const uri = Uri.parse('vscode-remote://ssh-remote%2Bmyhost/home/user/proj/atlas.nii.gz')
-    expect(NiiVueEditorProvider.isUriAccessible(uri)).toBe(true)
+    expect(NiiVueEditorProvider.isUriAccessible(uri, makeWebview() as any)).toBe(true)
   })
 
   it('returns false when authorities differ (remote uri, local workspace)', () => {
     workspace.workspaceFolders = [{ uri: Uri.parse('file:///home/user/proj') }]
     const remoteUri = Uri.parse('vscode-remote://ssh-remote%2Bmyhost/home/user/proj/data.nii.gz')
-    expect(NiiVueEditorProvider.isUriAccessible(remoteUri)).toBe(false)
+    expect(NiiVueEditorProvider.isUriAccessible(remoteUri, makeWebview() as any)).toBe(false)
   })
 
   it('returns false when schemes differ', () => {
     workspace.workspaceFolders = [{ uri: Uri.parse('vscode-remote://ssh-remote%2Bmyhost/home') }]
     const fileUri = Uri.parse('file:///home/data.nii.gz')
-    expect(NiiVueEditorProvider.isUriAccessible(fileUri)).toBe(false)
+    expect(NiiVueEditorProvider.isUriAccessible(fileUri, makeWebview() as any)).toBe(false)
   })
 
   it('returns false for a sibling directory outside the workspace folder', () => {
     workspace.workspaceFolders = [{ uri: Uri.parse('file:///home/user/proj') }]
     const outsideUri = Uri.parse('file:///home/user/other-proj/data.nii.gz')
-    expect(NiiVueEditorProvider.isUriAccessible(outsideUri)).toBe(false)
+    expect(NiiVueEditorProvider.isUriAccessible(outsideUri, makeWebview() as any)).toBe(false)
+  })
+
+  it('returns false for a sibling directory whose name starts with the workspace folder name', () => {
+    workspace.workspaceFolders = [{ uri: Uri.parse('file:///home/user/proj') }]
+    const outsideUri = Uri.parse('file:///home/user/proj2/data.nii.gz')
+    expect(NiiVueEditorProvider.isUriAccessible(outsideUri, makeWebview() as any)).toBe(false)
+  })
+
+  it('returns false for a workspace folder added after the panel opened', () => {
+    workspace.workspaceFolders = [{ uri: Uri.parse('file:///home/user/code') }]
+    const webview = makeWebview()
+    workspace.workspaceFolders = [...workspace.workspaceFolders, { uri: Uri.parse('file:///data/study') }]
+    const uri = Uri.parse('file:///data/study/brain.nii.gz')
+    expect(NiiVueEditorProvider.isUriAccessible(uri, webview as any)).toBe(false)
+  })
+
+  it('returns false once the panel is closed', () => {
+    workspace.workspaceFolders = [{ uri: Uri.parse('file:///home/user/proj') }]
+    const webview = {
+      get options(): never {
+        throw new Error('Webview is disposed')
+      },
+    }
+    const uri = Uri.parse('file:///home/user/proj/data.nii.gz')
+    expect(NiiVueEditorProvider.isUriAccessible(uri, webview as any)).toBe(false)
+  })
+
+  it('returns true for a file in the second folder of a multi-root workspace', () => {
+    workspace.workspaceFolders = [
+      { uri: Uri.parse('file:///home/user/code') },
+      { uri: Uri.parse('file:///data/study') },
+    ]
+    const uri = Uri.parse('file:///data/study/sub-01/brain.nii.gz')
+    expect(NiiVueEditorProvider.isUriAccessible(uri, makeWebview() as any)).toBe(true)
+  })
+})
+
+describe('webview localResourceRoots', () => {
+  async function rootsOfOpenedEditor(): Promise<string[]> {
+    const webview = {
+      options: {} as { localResourceRoots?: Uri[] },
+      html: '',
+      cspSource: 'vscode-resource:',
+      asWebviewUri: (uri: Uri) => ({ toString: () => `https://cdn.vscode-cdn.net${uri.path}` }),
+      postMessage: vi.fn(),
+      onDidReceiveMessage: () => ({ dispose: () => {} }),
+    }
+    const provider = new NiiVueEditorProvider({ extensionUri: Uri.file('/ext') } as any)
+    await provider.resolveCustomEditor(
+      { uri: Uri.parse('file:///data/study/brain.nii.gz') } as any,
+      { webview, onDidDispose: () => ({ dispose: () => {} }) } as any,
+    )
+    return (webview.options.localResourceRoots ?? []).map((uri) => uri.toString())
+  }
+
+  it('cover every workspace folder', async () => {
+    workspace.workspaceFolders = [
+      { uri: Uri.parse('file:///home/user/code') },
+      { uri: Uri.parse('file:///data/study') },
+    ]
+    expect(await rootsOfOpenedEditor()).toEqual([
+      'file:///ext',
+      'file:///home/user/code',
+      'file:///data/study',
+    ])
+  })
+
+  it('hold only the extension without a workspace folder', async () => {
+    workspace.workspaceFolders = undefined
+    expect(await rootsOfOpenedEditor()).toEqual(['file:///ext'])
   })
 })
 
@@ -170,6 +247,20 @@ describe('NiiVueEditorProvider.uriToImageBody', () => {
     expect(webview.asWebviewUri).not.toHaveBeenCalled()
   })
 
+  it('forces binary for a Siemens .IMA file in the workspace', async () => {
+    // The viewer loads .ima as DICOM under a .dcm name, which a URL cannot serve.
+    workspace.workspaceFolders = [{ uri: Uri.parse('file:///home/user/proj') }]
+    workspace.fs.readFile.mockResolvedValueOnce(dicomBytes())
+    const webview = makeWebview()
+    const uri = Uri.parse('file:///home/user/proj/IM0001.IMA')
+
+    const body = await NiiVueEditorProvider.uriToImageBody(uri, webview as any)
+
+    expect(body.data).toBeInstanceOf(ArrayBuffer)
+    expect(body.uri).toBe('file:///home/user/proj/IM0001.IMA')
+    expect(webview.asWebviewUri).not.toHaveBeenCalled()
+  })
+
   it('ships binary for an extension-less file whose content is DICOM', async () => {
     // Scanner exports often have no extension (IM_0001) or a bare UID as the
     // name. The custom-editor selector can't match those, but "NiiVue: Open"
@@ -223,6 +314,19 @@ describe('NiiVueEditorProvider.uriToImageBody', () => {
     const body = await NiiVueEditorProvider.uriToImageBody(uri, webview as any)
 
     expect(body.data).toBeUndefined()
+    expect(workspace.fs.readFile).not.toHaveBeenCalled()
+  })
+
+  it('sends a scene document in the workspace as a URL without reading it', async () => {
+    workspace.workspaceFolders = [{ uri: Uri.parse('file:///home/user/proj') }]
+    const webview = makeWebview()
+
+    const body = await NiiVueEditorProvider.uriToImageBody(
+      Uri.parse('file:///home/user/proj/scene.nvd'),
+      webview as any,
+    )
+
+    expect(body).toEqual({ uri: 'https://cdn.vscode-cdn.net/home/user/proj/scene.nvd?scheme=file' })
     expect(workspace.fs.readFile).not.toHaveBeenCalled()
   })
 
@@ -324,6 +428,81 @@ describe('NiiVueEditorProvider.collectDicomFolder', () => {
   })
 })
 
+describe('folder size limit', () => {
+  const GiB = 1024 ** 3
+
+  function makePanel() {
+    return { webview: { postMessage: vi.fn() } }
+  }
+
+  it('refuses DICOM candidates that add up to more than 2 GB, before reading any', async () => {
+    workspace.fs.readDirectory.mockResolvedValue([
+      ['IM_0001', FileType.File],
+      ['IM_0002', FileType.File],
+    ])
+    workspace.fs.stat.mockResolvedValue({ size: 1.5 * GiB })
+
+    await expect(
+      NiiVueEditorProvider.collectDicomFolder(Uri.parse('file:///scan')),
+    ).rejects.toThrow('the folder holds 3.0 GB of files')
+    expect(workspace.fs.readFile).not.toHaveBeenCalled()
+  })
+
+  it('shows the error in the viewer when a folder is too large to open', async () => {
+    workspace.fs.readDirectory.mockResolvedValue([
+      ['a.nii.gz', FileType.File],
+      ['b.nii.gz', FileType.File],
+    ])
+    workspace.fs.stat.mockResolvedValue({ size: 1.5 * GiB })
+    const panel = makePanel()
+
+    await NiiVueEditorProvider.openDcmFolder(Uri.parse('file:///study'), panel as any)
+
+    expect(workspace.fs.readFile).not.toHaveBeenCalled()
+    expect(panel.webview.postMessage).toHaveBeenCalledWith({
+      type: 'addImage',
+      body: {
+        uri: 'file:///study',
+        loadError: expect.stringContaining('Could not open file:///study: the folder holds 3.0 GB'),
+      },
+    })
+  })
+
+  it('shows the error in the viewer when a file of the folder cannot be read', async () => {
+    workspace.fs.readDirectory.mockResolvedValue([['a.nii.gz', FileType.File]])
+    workspace.fs.readFile.mockRejectedValue(new Error('EACCES'))
+    const panel = makePanel()
+
+    await NiiVueEditorProvider.openDcmFolder(Uri.parse('file:///study'), panel as any)
+
+    expect(panel.webview.postMessage).toHaveBeenCalledWith({
+      type: 'addImage',
+      body: { uri: 'file:///study', loadError: 'Could not open file:///study: EACCES' },
+    })
+  })
+
+  it('loads a clicked DICOM file alone, with a warning, when its folder is too large', async () => {
+    workspace.fs.readDirectory.mockResolvedValue([
+      ['001.dcm', FileType.File],
+      ['002.dcm', FileType.File],
+    ])
+    workspace.fs.readFile.mockResolvedValue(dicomBytes())
+    workspace.fs.stat.mockResolvedValue({ size: 1.5 * GiB })
+    const webview = { ...makeWebview(), postMessage: vi.fn() }
+
+    await NiiVueEditorProvider.sendInitialImage(Uri.parse('file:///study/001.dcm'), webview as any)
+
+    expect(window.showWarningMessage).toHaveBeenCalledWith(
+      expect.stringContaining('Loading only 001.dcm: the folder holds 3.0 GB'),
+    )
+    expect(webview.postMessage).toHaveBeenCalledTimes(1)
+    const body = webview.postMessage.mock.calls[0][0].body
+    expect(body.uri).toBe('file:///study/001.dcm')
+    expect(body.data).toBeInstanceOf(ArrayBuffer)
+    expect(body.loadError).toBeUndefined()
+  })
+})
+
 describe('NiiVueEditorProvider.collectDicomFolderImages', () => {
   it('expands a clicked DICOM file to every DICOM in its folder', async () => {
     workspace.fs.readDirectory.mockResolvedValue([
@@ -351,12 +530,7 @@ describe('NiiVueEditorProvider.collectDicomFolderImages', () => {
 
 describe('NiiVueEditorProvider.sendInitialImage', () => {
   function makeWebviewWithPost() {
-    return {
-      asWebviewUri: vi.fn((uri: Uri) => ({
-        toString: () => `https://cdn.vscode-cdn.net${uri.path}?scheme=${uri.scheme}`,
-      })),
-      postMessage: vi.fn(),
-    }
+    return { ...makeWebview(), postMessage: vi.fn() }
   }
 
   it('sends the whole DICOM series when a single DICOM file is opened', async () => {
@@ -404,5 +578,406 @@ describe('NiiVueEditorProvider.sendInitialImage', () => {
     // .nii.gz is never read for DICOM sniffing
     expect(workspace.fs.readDirectory).not.toHaveBeenCalled()
     expect(workspace.fs.readFile).not.toHaveBeenCalled()
+  })
+
+  function stubFetch(responses: Record<string, Uint8Array | number>) {
+    const fetchMock = vi.fn(async (url: string) => {
+      const response = responses[url] ?? 404
+      return typeof response === 'number'
+        ? { ok: false, status: response, statusText: 'Not Found' }
+        : { ok: true, status: 200, arrayBuffer: async () => response.slice().buffer }
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    return fetchMock
+  }
+
+  it('fetches a web link in the extension host and sends its bytes', async () => {
+    const bytes = new Uint8Array([1, 2, 3])
+    const fetchMock = stubFetch({ 'https://example.org/data/mni152.nii.gz': bytes })
+    const webview = makeWebviewWithPost()
+
+    await NiiVueEditorProvider.sendInitialImage(
+      Uri.parse('https://example.org/data/mni152.nii.gz'),
+      webview as any,
+    )
+
+    expect(fetchMock).toHaveBeenCalledWith('https://example.org/data/mni152.nii.gz')
+    expect(workspace.fs.readFile).not.toHaveBeenCalled()
+    const message = webview.postMessage.mock.calls[0][0]
+    expect(message.body.uri).toBe('https://example.org/data/mni152.nii.gz')
+    expect(new Uint8Array(message.body.data)).toEqual(bytes)
+  })
+
+  it('names a fetched web link without its query, so the viewer can tell its format', async () => {
+    const fetchMock = stubFetch({ 'https://github.com/org/repo/blob/main/brain.nii.gz?raw=true': new Uint8Array([1]) })
+    const webview = makeWebviewWithPost()
+
+    await NiiVueEditorProvider.sendInitialImage(
+      Uri.parse('https://github.com/org/repo/blob/main/brain.nii.gz?raw=true'),
+      webview as any,
+    )
+
+    expect(fetchMock).toHaveBeenCalledWith('https://github.com/org/repo/blob/main/brain.nii.gz?raw=true')
+    expect(webview.postMessage.mock.calls[0][0].body.uri).toBe('https://github.com/org/repo/blob/main/brain.nii.gz')
+  })
+
+  it('reports the reason a download failed rather than a generic fetch error', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        throw new TypeError('fetch failed', { cause: new Error('getaddrinfo ENOTFOUND example.org') })
+      }),
+    )
+    const webview = makeWebviewWithPost()
+
+    await NiiVueEditorProvider.sendInitialImage(Uri.parse('https://user:secret@example.org/a.nii?sig=abc'), webview as any)
+
+    expect(webview.postMessage.mock.calls[0][0].body).toEqual({
+      uri: 'https://example.org/a.nii',
+      loadError: 'Could not read https://example.org/a.nii: getaddrinfo ENOTFOUND example.org',
+    })
+  })
+
+  it('fetches the paired data file of a web MHD', async () => {
+    stubFetch({
+      'https://example.org/data/sphere.mhd': new TextEncoder().encode('ElementDataFile = sphere.raw'),
+      'https://example.org/data/sphere.raw': new Uint8Array([7, 8]),
+    })
+    const webview = makeWebviewWithPost()
+
+    await NiiVueEditorProvider.sendInitialImage(Uri.parse('https://example.org/data/sphere.mhd'), webview as any)
+
+    const message = webview.postMessage.mock.calls[0][0]
+    expect(message.body.uri).toBe('https://example.org/data/sphere.mhd')
+    expect(new Uint8Array(message.body.pairedData)).toEqual(new Uint8Array([7, 8]))
+    expect(message.body.loadError).toBeUndefined()
+  })
+
+  it('shows a failed download in the viewer', async () => {
+    stubFetch({})
+    const webview = makeWebviewWithPost()
+
+    await NiiVueEditorProvider.sendInitialImage(Uri.parse('https://example.org/missing.nii'), webview as any)
+
+    expect(webview.postMessage.mock.calls.map((call) => call[0])).toEqual([
+      {
+        type: 'addImage',
+        body: {
+          uri: 'https://example.org/missing.nii',
+          loadError: 'Could not read https://example.org/missing.nii: HTTP 404 Not Found',
+        },
+      },
+    ])
+  })
+
+  it('shows a file it cannot read in the viewer', async () => {
+    workspace.fs.readFile.mockRejectedValue(new Error('EACCES'))
+    const webview = makeWebviewWithPost()
+
+    await NiiVueEditorProvider.sendInitialImage(Uri.parse('file:///outside/scan.mnc'), webview as any)
+
+    expect(webview.postMessage.mock.calls[0][0].body.loadError).toBe(
+      'Could not read file:///outside/scan.mnc: EACCES',
+    )
+  })
+})
+
+describe('NiiVueEditorProvider.openDocument', () => {
+  function makePanel() {
+    return { webview: { ...makeWebview(), postMessage: vi.fn() } }
+  }
+
+  it('offers scene documents and sends the picked one like an image', async () => {
+    workspace.workspaceFolders = [{ uri: Uri.parse('file:///home/user/proj') }]
+    window.showOpenDialog.mockResolvedValue([Uri.parse('file:///home/user/proj/scene.nvd')])
+    const panel = makePanel()
+
+    await NiiVueEditorProvider.openDocument(panel as any)
+
+    expect(window.showOpenDialog.mock.calls[0][0]).toMatchObject({
+      canSelectMany: false,
+      filters: { 'NiiVue Documents': ['nvd', 'json'], 'All Files': ['*'] },
+    })
+    expect(panel.webview.postMessage.mock.calls.map((call) => call[0])).toEqual([
+      { type: 'initCanvas', body: { n: 1 } },
+      {
+        type: 'addImage',
+        body: { uri: 'https://cdn.vscode-cdn.net/home/user/proj/scene.nvd?scheme=file' },
+      },
+    ])
+  })
+
+  it('does nothing when the dialog is cancelled', async () => {
+    window.showOpenDialog.mockResolvedValue(undefined)
+    const panel = makePanel()
+
+    await NiiVueEditorProvider.openDocument(panel as any)
+
+    expect(panel.webview.postMessage).not.toHaveBeenCalled()
+  })
+
+  it('reports a document it cannot read', async () => {
+    window.showOpenDialog.mockResolvedValue([
+      Uri.parse('vscode-remote://ssh-remote%2Bmyhost/data/scene.nvd'),
+    ])
+    workspace.fs.readFile.mockRejectedValue(new Error('ENOENT'))
+    const panel = makePanel()
+
+    await NiiVueEditorProvider.openDocument(panel as any)
+
+    expect(panel.webview.postMessage).not.toHaveBeenCalled()
+    expect(window.showErrorMessage).toHaveBeenCalledWith('Could not open scene.nvd: ENOENT')
+  })
+})
+
+describe('NiiVueEditorProvider.saveFile', () => {
+  // What the webview's Screenshot button sends: PNG bytes as base64.
+  const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 255])
+  const body = {
+    filename: 'brain_screenshot.png',
+    mimeType: 'image/png',
+    data: Buffer.from(png).toString('base64'),
+  }
+
+  function dialogOptions() {
+    const options = window.showSaveDialog.mock.calls[0][0] as any
+    return { defaultUri: options.defaultUri?.toString(), filters: options.filters }
+  }
+
+  it("suggests the opened file's folder and writes the decoded bytes where the user chose", async () => {
+    workspace.fs.isWritableFileSystem.mockReturnValue(true)
+    const target = Uri.parse('file:///home/user/figures/fig1.png')
+    window.showSaveDialog.mockResolvedValue(target)
+    workspace.fs.writeFile.mockResolvedValue()
+
+    await NiiVueEditorProvider.saveFile(body, Uri.parse('file:///home/user/scans/brain.nii.gz'))
+
+    expect(dialogOptions()).toEqual({
+      defaultUri: 'file:///home/user/scans/brain_screenshot.png',
+      filters: { 'PNG Image': ['png'] },
+    })
+    expect(workspace.fs.writeFile).toHaveBeenCalledTimes(1)
+    const [uri, bytes] = workspace.fs.writeFile.mock.calls[0]
+    expect(uri).toBe(target)
+    expect(Array.from(bytes)).toEqual(Array.from(png))
+    expect(window.showInformationMessage).toHaveBeenCalledWith('Saved /home/user/figures/fig1.png')
+    expect(window.showErrorMessage).not.toHaveBeenCalled()
+  })
+
+  it('shows the path relative to the workspace, and the paper to cite for a figure', async () => {
+    workspace.fs.isWritableFileSystem.mockReturnValue(true)
+    workspace.workspaceFolders = [{ uri: Uri.parse('file:///home/user/proj') }]
+    window.showSaveDialog.mockResolvedValue(Uri.parse('file:///home/user/proj/figures/fig1.png'))
+    workspace.fs.writeFile.mockResolvedValue()
+    const source = Uri.parse('file:///home/user/proj/brain.nii.gz')
+
+    await NiiVueEditorProvider.saveFile({ ...body, cite: true }, source)
+    await NiiVueEditorProvider.saveFile({ ...body, filename: 'brain.nvd', cite: false }, source)
+
+    expect(window.showInformationMessage.mock.calls.map((call) => call[0])).toEqual([
+      'Saved figures/fig1.png. If you publish this figure, please cite [Eckstein et al., Aperture Neuro 2026](https://doi.org/10.52294/001c.167815).',
+      'Saved figures/fig1.png',
+    ])
+  })
+
+  it('keeps file and folder names from forming links in the notice', async () => {
+    workspace.fs.isWritableFileSystem.mockReturnValue(true)
+    workspace.workspaceFolders = [{ uri: Uri.parse('file:///repo') }]
+    window.showSaveDialog.mockResolvedValue(
+      Uri.file('/repo/[Open paper](command:workbench.action.closeWindow)/fig.png'),
+    )
+    workspace.fs.writeFile.mockResolvedValue()
+
+    await NiiVueEditorProvider.saveFile({ ...body, cite: true }, Uri.parse('file:///repo/a.nii'))
+
+    const message = window.showInformationMessage.mock.calls[0][0] as string
+    expect(message).toBe(
+      'Saved \uff3bOpen paper\uff3d(command:workbench.action.closeWindow)/fig.png. If you publish this figure, please cite [Eckstein et al., Aperture Neuro 2026](https://doi.org/10.52294/001c.167815).',
+    )
+  })
+
+  it('keeps an unmatched bracket from joining the citation link', async () => {
+    workspace.fs.isWritableFileSystem.mockReturnValue(true)
+    workspace.workspaceFolders = [{ uri: Uri.parse('file:///repo') }]
+    window.showSaveDialog.mockResolvedValue(Uri.file('/repo/[session/fig.png'))
+    workspace.fs.writeFile.mockResolvedValue()
+
+    await NiiVueEditorProvider.saveFile({ ...body, cite: true }, Uri.parse('file:///repo/a.nii'))
+
+    const message = window.showInformationMessage.mock.calls[0][0] as string
+    // The citation is the only text in square brackets, so the only link.
+    expect(message.match(/\[/g)).toHaveLength(1)
+    expect(message).toContain('Saved \uff3bsession/fig.png.')
+  })
+
+  it('keeps a file system error from forming links in the error notice', async () => {
+    workspace.fs.isWritableFileSystem.mockReturnValue(true)
+    const target = Uri.file('/repo/[Open paper](command:workbench.action.closeWindow)/fig.png')
+    window.showSaveDialog.mockResolvedValue(target)
+    workspace.fs.writeFile.mockRejectedValue(
+      new Error(`EACCES: permission denied '${target.path}'`),
+    )
+
+    await NiiVueEditorProvider.saveFile(body, Uri.parse('file:///repo/a.nii'))
+
+    const message = window.showErrorMessage.mock.calls[0][0] as string
+    expect(message).not.toMatch(/[[\]]/)
+    expect(message).toContain('\uff3bOpen paper\uff3d(command:workbench.action.closeWindow)')
+  })
+
+  it('keeps the scheme and authority of a remote file', async () => {
+    workspace.fs.isWritableFileSystem.mockReturnValue(true)
+    window.showSaveDialog.mockResolvedValue(undefined)
+
+    await NiiVueEditorProvider.saveFile(
+      body,
+      Uri.parse('vscode-remote://ssh-remote%2Bmyhost/data/sub-01/brain.nii.gz'),
+    )
+
+    expect(workspace.fs.isWritableFileSystem).toHaveBeenCalledWith('vscode-remote')
+    expect(dialogOptions().defaultUri).toBe(
+      'vscode-remote://ssh-remote%2Bmyhost/data/sub-01/brain_screenshot.png',
+    )
+  })
+
+  it('suggests the workspace folder when the opened file is a web link', async () => {
+    workspace.fs.isWritableFileSystem.mockReturnValue(undefined)
+    workspace.workspaceFolders = [{ uri: Uri.parse('file:///home/user/proj') }]
+    window.showSaveDialog.mockResolvedValue(undefined)
+
+    await NiiVueEditorProvider.saveFile(body, Uri.parse('https://example.com/data/brain.nii.gz'))
+
+    expect(dialogOptions().defaultUri).toBe('file:///home/user/proj/brain_screenshot.png')
+  })
+
+  it('leaves the location to the dialog without a writable folder or workspace', async () => {
+    workspace.fs.isWritableFileSystem.mockReturnValue(undefined)
+    window.showSaveDialog.mockResolvedValue(undefined)
+
+    await NiiVueEditorProvider.saveFile(body, Uri.parse('https://example.com/data/brain.nii.gz'))
+
+    expect(dialogOptions().defaultUri).toBeUndefined()
+  })
+
+  it('does nothing when the dialog is cancelled', async () => {
+    workspace.fs.isWritableFileSystem.mockReturnValue(true)
+    window.showSaveDialog.mockResolvedValue(undefined)
+
+    await NiiVueEditorProvider.saveFile(body, Uri.parse('file:///scans/brain.nii.gz'))
+
+    expect(workspace.fs.writeFile).not.toHaveBeenCalled()
+    expect(window.showInformationMessage).not.toHaveBeenCalled()
+    expect(window.showErrorMessage).not.toHaveBeenCalled()
+  })
+
+  it('reports a failed write', async () => {
+    workspace.fs.isWritableFileSystem.mockReturnValue(true)
+    window.showSaveDialog.mockResolvedValue(Uri.parse('file:///readonly/fig.png'))
+    workspace.fs.writeFile.mockRejectedValue(new Error('EACCES: permission denied'))
+
+    await NiiVueEditorProvider.saveFile(body, Uri.parse('file:///scans/brain.nii.gz'))
+
+    expect(window.showErrorMessage).toHaveBeenCalledWith(
+      'Could not save fig.png: EACCES: permission denied',
+    )
+    expect(window.showInformationMessage).not.toHaveBeenCalled()
+  })
+
+  it('reports a failing save dialog and ignores a non-string MIME type', async () => {
+    workspace.fs.isWritableFileSystem.mockReturnValue(true)
+    window.showSaveDialog.mockRejectedValue(new Error('dialog unavailable'))
+
+    await NiiVueEditorProvider.saveFile(
+      { ...body, filename: 'fig.png', mimeType: { toString: 0, valueOf: 0 } },
+      Uri.parse('file:///scans/brain.nii.gz'),
+    )
+
+    expect(dialogOptions().filters).toBeUndefined()
+    expect(window.showErrorMessage).toHaveBeenCalledWith('Could not save fig.png: dialog unavailable')
+    expect(workspace.fs.writeFile).not.toHaveBeenCalled()
+  })
+
+  it('reduces a suggested name to its last path segment', async () => {
+    workspace.fs.isWritableFileSystem.mockReturnValue(true)
+    window.showSaveDialog.mockResolvedValue(undefined)
+
+    await NiiVueEditorProvider.saveFile(
+      { ...body, filename: '..\\..\\other/escape.png' },
+      Uri.parse('file:///scans/brain.nii.gz'),
+    )
+
+    expect(dialogOptions().defaultUri).toBe('file:///scans/escape.png')
+  })
+
+  it('offers no filter for types it does not know', async () => {
+    workspace.fs.isWritableFileSystem.mockReturnValue(true)
+    window.showSaveDialog.mockResolvedValue(undefined)
+
+    await NiiVueEditorProvider.saveFile(
+      { ...body, filename: 'data.bin', mimeType: 'application/octet-stream' },
+      Uri.parse('file:///scans/brain.nii.gz'),
+    )
+
+    expect(dialogOptions()).toEqual({ defaultUri: 'file:///scans/data.bin', filters: undefined })
+  })
+
+  it('offers a filter for scene documents, binary and JSON', async () => {
+    workspace.fs.isWritableFileSystem.mockReturnValue(true)
+    window.showSaveDialog.mockResolvedValue(undefined)
+    const source = Uri.parse('file:///scans/brain.nii.gz')
+
+    await NiiVueEditorProvider.saveFile(
+      { ...body, filename: 'brain.nvd', mimeType: 'application/octet-stream' },
+      source,
+    )
+    await NiiVueEditorProvider.saveFile(
+      { ...body, filename: 'brain.nvd.json', mimeType: 'application/json' },
+      source,
+    )
+
+    const filters = window.showSaveDialog.mock.calls.map((call) => (call[0] as any).filters)
+    expect(filters).toEqual([{ 'NiiVue Document': ['nvd'] }, { 'JSON Document': ['json'] }])
+  })
+
+  it('ignores a message without data', async () => {
+    await NiiVueEditorProvider.saveFile({ filename: 'x.png' }, Uri.parse('file:///scans/a.nii'))
+    await NiiVueEditorProvider.saveFile(undefined, Uri.parse('file:///scans/a.nii'))
+
+    expect(window.showSaveDialog).not.toHaveBeenCalled()
+  })
+
+  it('handles saveFile and openDocument messages from the webview of an opened document', async () => {
+    const listeners: ((message: unknown) => unknown)[] = []
+    const panel = {
+      webview: {
+        options: {},
+        html: '',
+        cspSource: 'vscode-resource:',
+        asWebviewUri: (uri: Uri) => ({ toString: () => `https://cdn.vscode-cdn.net${uri.path}` }),
+        postMessage: vi.fn(),
+        onDidReceiveMessage: (listener: (message: unknown) => unknown) => {
+          listeners.push(listener)
+          return { dispose: () => {} }
+        },
+      },
+      onDidDispose: () => ({ dispose: () => {} }),
+    }
+    const provider = new NiiVueEditorProvider({ extensionUri: Uri.file('/ext') } as any)
+    await provider.resolveCustomEditor(
+      { uri: Uri.parse('file:///study/sub-01/brain.nii.gz') } as any,
+      panel as any,
+    )
+    workspace.fs.isWritableFileSystem.mockReturnValue(true)
+    window.showSaveDialog.mockResolvedValue(undefined)
+
+    await Promise.all(listeners.map((listener) => listener({ type: 'saveFile', body })))
+
+    expect(window.showSaveDialog).toHaveBeenCalledTimes(1)
+    expect(dialogOptions().defaultUri).toBe('file:///study/sub-01/brain_screenshot.png')
+
+    window.showOpenDialog.mockResolvedValue(undefined)
+    await Promise.all(listeners.map((listener) => listener({ type: 'openDocument' })))
+
+    expect(window.showOpenDialog).toHaveBeenCalledTimes(1)
   })
 })

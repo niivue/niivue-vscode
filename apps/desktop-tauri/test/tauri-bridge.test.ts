@@ -12,6 +12,7 @@ import {
   getFileInfo,
   listDirectory,
   registerOpenedPath,
+  saveFileWithDialog,
   MEDICAL_IMAGE_EXTENSIONS,
 } from '../src/tauri-bridge'
 import { invoke, isTauri as tauriIsTauri } from '@tauri-apps/api/core'
@@ -92,6 +93,20 @@ describe('tauri-bridge', () => {
         path: '/dir',
         extensions: undefined,
       })
+    })
+  })
+
+  describe('saveFileWithDialog', () => {
+    it('sends the bytes as the request body and the encoded name in a header', async () => {
+      mockInvoke.mockResolvedValue('/home/user/gehirnü.nvd')
+      const bytes = new Uint8Array([1, 2, 3])
+
+      const saved = await saveFileWithDialog(bytes, 'gehirnü.nvd')
+
+      expect(mockInvoke).toHaveBeenCalledWith('save_file', bytes, {
+        headers: { 'x-file-name': 'gehirn%C3%BC.nvd' },
+      })
+      expect(saved).toBe('/home/user/gehirnü.nvd')
     })
   })
 

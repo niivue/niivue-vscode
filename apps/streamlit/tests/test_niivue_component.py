@@ -316,3 +316,19 @@ def test_niivue_viewer_mesh_overlay_on_second_mesh_warns():
         niivue_viewer(meshes=meshes, key="test_mesh_overlay_warn")
         assert len(w) == 1
         assert "only supported on the first mesh" in str(w[0].message)
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "expected"),
+    [({}, False), ({"load_events": True}, True), ({"load_events": 1}, True)],
+)
+def test_niivue_viewer_load_events_reach_the_frontend(monkeypatch, kwargs, expected):
+    """load_events is off by default and passed to the frontend as a bool."""
+    import niivue_component
+
+    calls = []
+    monkeypatch.setattr(
+        niivue_component, "_component_func", lambda **args: calls.append(args)
+    )
+    niivue_viewer(nifti_data=b"\x00" * 10, filename="a.nii", key="load_events", **kwargs)
+    assert calls[0]["load_events"] is expected

@@ -1,8 +1,18 @@
+import {
+  Dialog,
+  InputDialog,
+  Notification,
+  showDialog,
+  showErrorMessage,
+} from '@jupyterlab/apputils'
+import { PathExt } from '@jupyterlab/coreutils'
 import { IDocumentManager } from '@jupyterlab/docmanager'
 import { ABCWidgetFactory, DocumentRegistry, DocumentWidget } from '@jupyterlab/docregistry'
 import { FileDialog } from '@jupyterlab/filebrowser'
 import { ServerConnection } from '@jupyterlab/services'
 import { Widget } from '@lumino/widgets'
+import { CITATION_DOI_URL } from './citation'
+import { isNotFound, savedMessage, saveToWorkspace } from './save-file'
 import {
   fetchArrayBuffer,
   fetchJson,
@@ -45,7 +55,7 @@ export class NiivueWidget extends Widget {
   private _initializeViewer(): void {
     try {
       const filePath = this._context.path
-      console.log('Initializing this.onResize Niivue viewer for file:', filePath)
+      console.log('Initializing this.onResize NiiVue viewer for file:', filePath)
 
       const html = this._getHtmlForViewer()
 
@@ -69,9 +79,9 @@ export class NiivueWidget extends Widget {
         }, 100)
       }
 
-      console.log('Niivue viewer initialized successfully')
+      console.log('NiiVue viewer initialized successfully')
     } catch (error) {
-      console.error('Failed to initialize Niivue viewer:', error)
+      console.error('Failed to initialize NiiVue viewer:', error)
       this._showError(
         `Failed to initialize viewer: ${error instanceof Error ? error.message : 'Unknown error'}`,
       )
@@ -214,6 +224,94 @@ export class NiivueWidget extends Widget {
       case 'addDcmFolder':
         await this._handleAddDcmFolder()
         break
+      case 'openDocument':
+        await this._handleOpenDocument()
+        break
+      case 'saveFile':
+        await this._saveFile(message.body)
+        break
+    }
+  }
+
+  /** The workspace folder files from the viewer are saved to by default. */
+  protected _saveFolder(): string {
+    return PathExt.dirname(this._context.path)
+  }
+
+  /** Save a file from the viewer into the workspace, asking for the path. */
+  private async _saveFile(body: unknown): Promise<void> {
+    const contents = this._docManager.services.contents
+    await saveToWorkspace(body, this._saveFolder(), {
+      askPath: async (suggested) => {
+        const result = await InputDialog.getText({
+          title: 'Save File',
+          label: 'Path in the workspace',
+          text: suggested,
+          okLabel: 'Save',
+        })
+        return result.button.accept ? result.value : null
+      },
+      exists: (path) =>
+        contents.get(path, { content: false }).then(
+          () => true,
+          (error) => {
+            if (isNotFound(error)) {
+              return false
+            }
+            throw error
+          },
+        ),
+      confirmReplace: async (path) => {
+        const result = await showDialog({
+          title: 'Replace File?',
+          body: `"${path}" already exists.`,
+          buttons: [Dialog.cancelButton(), Dialog.warnButton({ label: 'Replace' })],
+        })
+        return result.button.accept
+      },
+      write: async (path, base64) => {
+        await contents.save(path, { type: 'file', format: 'base64', content: base64 })
+      },
+      saved: (path) => {
+        const cite = (body as { cite?: unknown } | null)?.cite === true
+        Notification.success(savedMessage(path, cite), {
+          autoClose: cite ? 10000 : 5000,
+          actions: cite
+            ? [
+                {
+                  label: 'Open paper',
+                  callback: () => window.open(CITATION_DOI_URL, '_blank', 'noopener'),
+                },
+              ]
+            : [],
+        })
+      },
+      failed: (path, error) => {
+        showErrorMessage(`Could not save ${path}`, error as Error)
+      },
+    })
+  }
+
+  /** Let the user pick a scene document; the viewer loads it as a scene. */
+  private async _handleOpenDocument(): Promise<void> {
+    try {
+      const result = await FileDialog.getOpenFiles({
+        manager: this._docManager,
+        filter: (model) => {
+          if (model.type === 'directory') {
+            return { score: 1 }
+          }
+          const name = model.name.toLowerCase()
+          return name.endsWith('.nvd') || name.endsWith('.nvd.json') ? { score: 1 } : null
+        },
+      })
+      const filePath = result.button.accept ? result.value?.[0]?.path : undefined
+      if (filePath && this._iframe.contentWindow) {
+        this._iframe.contentWindow.postMessage({ type: 'initCanvas', body: { n: 1 } }, '*')
+        await this._loadFileAndSend(filePath, 'addImage')
+      }
+    } catch (error) {
+      console.error('Error opening file dialog:', error)
     }
   }
 
@@ -245,7 +343,9 @@ export class NiivueWidget extends Widget {
               name.endsWith('.v') ||
               name.endsWith('.v16') ||
               name.endsWith('.mz3') ||
-              name.endsWith('.gii')
+              name.endsWith('.gii') ||
+              name.endsWith('.nvd') ||
+              name.endsWith('.nvd.json')
             ) {
               return { score: 1 }
             }
@@ -434,7 +534,7 @@ export namespace NiivueViewer {
     protected createNewWidget(
       context: DocumentRegistry.IContext<DocumentRegistry.IModel>,
     ): DocumentWidget {
-      console.log('Creating new Niivue widget for context:', context)
+      console.log('Creating new NiiVue widget for context:', context)
       const content = new NiivueWidget(context, this._docManager, this._serverSettings)
       const widget = new DocumentWidget({ content, context })
       return widget
@@ -512,6 +612,10 @@ class CompareWidget extends NiivueWidget {
     if (this._iframe.contentWindow) {
       this._iframe.onload(new Event('load') as any)
     }
+  }
+
+  protected _saveFolder(): string {
+    return PathExt.dirname(this._selectedItems[0]?.path ?? '')
   }
 
   private async _loadAllImages(): Promise<void> {

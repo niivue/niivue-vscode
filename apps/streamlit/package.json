@@ -18,6 +18,10 @@
     "release:test": "pnpm run clean && pnpm run build && python -m build && python -m twine upload --repository testpypi dist/*",
     "release:prod": "pnpm run clean && pnpm run build && python -m build && python -m twine upload dist/*"
   },
+  "dependencies": {
+    "@niivue/react": "workspace:*",
+    "niivue_viewer_frontend": "workspace:*"
+  },
   "keywords": [
     "streamlit",
     "niivue",

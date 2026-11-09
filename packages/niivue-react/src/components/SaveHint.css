@@ -1,0 +1,52 @@
+/* Transient note after saving a screenshot. Sits low over the viewer without
+   blocking it; only the note itself takes pointer events. */
+
+.nv-save-hint {
+  position: fixed;
+  left: 50%;
+  bottom: 44px;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(640px, calc(100vw - 32px));
+  padding: 8px 10px 8px 14px;
+  transform: translateX(-50%);
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius);
+  background: var(--bg-4);
+  color: var(--fg-1);
+  font-size: 12.5px;
+  line-height: 1.45;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+
+.nv-save-hint-file {
+  color: var(--fg-0);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.nv-save-hint-link {
+  color: var(--accent);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.nv-save-hint-link:hover {
+  text-decoration: underline;
+}
+
+.nv-save-hint-close {
+  flex: none;
+  padding: 0 4px;
+  border: none;
+  background: none;
+  color: var(--fg-2);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+.nv-save-hint-close:hover {
+  color: var(--fg-0);
+}

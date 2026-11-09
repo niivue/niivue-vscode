@@ -60,18 +60,21 @@
     "type-check": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "package": "pnpm run build && vsce package",
-    "publish": "pnpm run build && vsce publish",
+    "package": "pnpm run build && vsce package --no-dependencies",
+    "publish": "pnpm run build && vsce publish --no-dependencies",
     "test:coverage": "vitest run --coverage",
     "coverage": "pnpm run test:coverage"
+  },
+  "dependencies": {
+    "@niivue/react": "workspace:*"
   },
   "devDependencies": {
     "@types/vscode": "1.70.0",
     "@vitest/coverage-v8": "^4.1.6",
     "@vscode/vsce": "^3.9.1",
     "autoprefixer": "^10.5.0",
-    "concurrently": "^9.2.1",
-    "esbuild": "^0.28.0",
+    "concurrently": "^9.2.4",
+    "esbuild": "^0.28.1",
     "@tailwindcss/cli": "^4.3.0",
     "@tailwindcss/postcss": "^4.3.0",
     "ovsx": "^1.0.0",
@@ -331,6 +334,12 @@
           },
           {
             "filenamePattern": "*.npz"
+          },
+          {
+            "filenamePattern": "*.graphml"
+          },
+          {
+            "filenamePattern": "*.nvd"
           }
         ]
       }
@@ -371,7 +380,8 @@
           ".mnc",
           ".mnc.gz",
           ".npy",
-          ".npz"
+          ".npz",
+          ".graphml"
         ],
         "icon": {
           "light": "./language-icon.png",

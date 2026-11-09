@@ -135,13 +135,21 @@ export const ScalingBox = (props: any) => {
 
   const colormaps = computed(() => {
     const isVolume = nvArraySelected.value[0]?.volumes?.length > 0
-    // v1: `colormaps` is a getter property (string[]), no longer a method.
     const scales = isVolume
-      ? ['symmetric', ...nvArraySelected.value[0].colormaps]
+      ? ['symmetric', ...nvArraySelected.value[0].colormapNames('continuous')]
       : ['ge_color', 'gray', 'hsv', 'symmetric', 'warm']
     // Integer label maps render as labels; offer that as a colormap choice so
     // picking any real color scale leaves label mode.
     return labelCapable.value || labelsList.value.length > 0 ? [LABELS_COLORMAP, ...scales] : scales
+  })
+
+  // NiiVue lists colormaps capitalised but keeps the name a layer was given.
+  const selectedColormap = computed(() => {
+    const current = String(selectedOverlay.value.colormap ?? '').toLowerCase()
+    if (current === 'warm' && selectedOverlay.value.colormapNegative) return 'symmetric'
+    return (
+      colormaps.value.find((c) => c.toLowerCase() === current) ?? selectedOverlay.value.colormap
+    )
   })
 
   const changeColormap = (e: any) => {
@@ -216,7 +224,7 @@ export const ScalingBox = (props: any) => {
       <select
         className="bg-gray-600 w-24 border-2 border-gray-600 rounded-md"
         onChange={changeColormap}
-        value={labelsList.value.length > 0 ? LABELS_COLORMAP : selectedOverlay.value.colormap}
+        value={labelsList.value.length > 0 ? LABELS_COLORMAP : selectedColormap.value}
       >
         {colormaps.value.map((c) => (
           <option key={c} value={c}>
@@ -339,28 +347,23 @@ function isVolumeOverlay(nv: ExtendedNiivue) {
 
 function handleOverlayInvert(nv: ExtendedNiivue, layerNumber: number, invert: boolean) {
   if (isVolumeOverlay(nv)) {
+    // isColormapInverted is not a VolumeUpdate field, so it needs a manual refresh.
     const overlay = nv.volumes[layerNumber]
     if (overlay) {
       overlay.isColormapInverted = invert
     }
+    nv.updateGLVolume()
   } else {
-    // v1: setMeshLayerProperty(meshIndex, layerIndex, { camelCaseKey }); meshIndex 0.
     nv.setMeshLayerProperty(0, layerNumber, { isColormapInverted: invert })
   }
-  nv.updateGLVolume()
 }
 
 function handleOverlayScaling(nv: ExtendedNiivue, layerNumber: number, scaling: ScalingOpts) {
   if (isVolumeOverlay(nv)) {
-    const overlay = nv.volumes[layerNumber]
-    if (overlay) {
-      overlay.calMin = scaling.min
-      overlay.calMax = scaling.max
-    }
+    nv.setVolume(layerNumber, { calMin: scaling.min, calMax: scaling.max })
   } else {
     nv.setMeshLayerProperty(0, layerNumber, { calMin: scaling.min, calMax: scaling.max })
   }
-  nv.updateGLVolume()
 }
 
 function handleOpacity(nv: ExtendedNiivue, layerNumber: number, opacity: number) {
@@ -371,7 +374,6 @@ function handleOpacity(nv: ExtendedNiivue, layerNumber: number, opacity: number)
   } else {
     nv.setMeshLayerProperty(0, layerNumber, { opacity })
   }
-  nv.updateGLVolume()
 }
 
 function handleOverlayColormap(nv: ExtendedNiivue, layerNumber: number, colormap: string) {
@@ -380,21 +382,17 @@ function handleOverlayColormap(nv: ExtendedNiivue, layerNumber: number, colormap
   } else {
     setMeshColormap(nv, layerNumber, colormap)
   }
-  nv.updateGLVolume()
 }
 
 function setVolumeColormap(nv: ExtendedNiivue, layerNumber: number, colormap: string) {
-  const overlay = nv.volumes?.[layerNumber]
-  if (!overlay) {
+  if (!nv.volumes?.[layerNumber]) {
     return
   }
-  if (colormap === 'symmetric') {
-    overlay.colormap = 'warm'
-    overlay.colormapNegative = 'winter'
-  } else {
-    overlay.colormap = colormap
-    overlay.colormapNegative = ''
-  }
+  const props =
+    colormap === 'symmetric'
+      ? { colormap: 'warm', colormapNegative: 'winter' }
+      : { colormap, colormapNegative: '' }
+  nv.setVolume(layerNumber, props)
 }
 
 function setMeshColormap(nv: ExtendedNiivue, layerNumber: number, colormap: string) {

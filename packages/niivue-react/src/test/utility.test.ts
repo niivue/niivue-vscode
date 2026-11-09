@@ -2,11 +2,16 @@ import { gzipSync } from 'node:zlib'
 import { describe, expect, it } from 'vitest'
 import {
   buildImageMessageBodies,
+  ensureMhaTransform,
   getMetadataString,
   getNames,
   getNumberOfPoints,
+  graphmlToConnectome,
+  imageBaseName,
   isDicomData,
   isImageType,
+  isMhaName,
+  rawHeaderMHA,
 } from '../utility'
 
 describe('isImageType', () => {
@@ -49,6 +54,26 @@ describe('isImageType', () => {
   it('preserves preceding path components — only inspects the suffix', () => {
     expect(isImageType('/some/path/scan.nii.gz')).toBe('.nii.gz')
     expect(isImageType('http://host/img.nrrd')).toBe('.nrrd')
+  })
+})
+
+describe('imageBaseName', () => {
+  it.each([
+    ['brain.nii.gz', 'brain'],
+    ['sub-01_T1w.NII', 'sub-01_T1w'],
+    ['data/scans/brain.mgz', 'brain'],
+    ['C:\\data\\brain.nii', 'brain'],
+    ['https://host/my%20scan.nrrd', 'my scan'],
+    ['csi_template_zf.mnc', 'csi_template_zf'],
+    ['labels.npy', 'labels'],
+    ['vessels.graphml', 'vessels'],
+    ['lh.pial', 'lh.pial'],
+    ['100%.nii', '100%'],
+    ['.nii.gz', ''],
+    ['', ''],
+    [undefined, ''],
+  ])('given %s, returns %j', (name, expected) => {
+    expect(imageBaseName(name)).toBe(expected)
   })
 })
 
@@ -157,8 +182,138 @@ describe('getNumberOfPoints', () => {
   })
 })
 
+describe('graphmlToConnectome', () => {
+  // Mirrors the GraphML that igraph writes (used by SkelHub): nodes carry
+  // world-space X/Y/Z plus a name, edges reference nodes by their `source`/
+  // `target` ids, and every <data> points at a <key> declaring its attr.name.
+  const igraphGraphml = `<?xml version="1.0" encoding="UTF-8"?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns">
+  <key id="v_name" for="node" attr.name="name" attr.type="string"/>
+  <key id="v_X" for="node" attr.name="X" attr.type="double"/>
+  <key id="v_Y" for="node" attr.name="Y" attr.type="double"/>
+  <key id="v_Z" for="node" attr.name="Z" attr.type="double"/>
+  <key id="e_proto_edge_id" for="edge" attr.name="proto_edge_id" attr.type="double"/>
+  <graph edgedefault="undirected">
+    <node id="n0"><data key="v_name">a</data><data key="v_X">1</data><data key="v_Y">2</data><data key="v_Z">3</data></node>
+    <node id="n1"><data key="v_name">b</data><data key="v_X">4</data><data key="v_Y">5</data><data key="v_Z">6</data></node>
+    <node id="n2"><data key="v_name">c</data><data key="v_X">7</data><data key="v_Y">8</data><data key="v_Z">9</data></node>
+    <edge source="n0" target="n2"><data key="e_proto_edge_id">0</data></edge>
+    <edge source="n1" target="n2"><data key="e_proto_edge_id">1</data></edge>
+  </graph>
+</graphml>`
+
+  it('parses nodes with world coordinates and names', () => {
+    const c = graphmlToConnectome(igraphGraphml)
+    expect(c.nodes).toEqual([
+      { name: 'a', x: 1, y: 2, z: 3, colorValue: 1, sizeValue: 1 },
+      { name: 'b', x: 4, y: 5, z: 6, colorValue: 1, sizeValue: 1 },
+      { name: 'c', x: 7, y: 8, z: 9, colorValue: 1, sizeValue: 1 },
+    ])
+  })
+
+  it('maps edge source/target ids to node indices (not assuming order)', () => {
+    const c = graphmlToConnectome(igraphGraphml)
+    // n0->n2 and n1->n2 become index pairs 0-2 and 1-2.
+    expect(c.edges).toEqual([
+      { first: 0, second: 2, colorValue: 1 },
+      { first: 1, second: 2, colorValue: 1 },
+    ])
+  })
+
+  it('keeps node and edge color ranges collapsed so nothing is thresholded away', () => {
+    // The connectome renderer hides edges whose colorValue < edgeMin. Equal
+    // min/max guards every node and edge against being culled.
+    const c = graphmlToConnectome(igraphGraphml)
+    expect(c.nodeMinColor).toBe(c.nodeMaxColor)
+    expect(c.edgeMin).toBe(c.edgeMax)
+  })
+
+  it('accepts lowercase x/y/z coordinate attributes', () => {
+    const lower = `<graphml xmlns="http://graphml.graphdrawing.org/xmlns">
+      <key id="kx" for="node" attr.name="x" attr.type="double"/>
+      <key id="ky" for="node" attr.name="y" attr.type="double"/>
+      <key id="kz" for="node" attr.name="z" attr.type="double"/>
+      <graph>
+        <node id="a"><data key="kx">1.5</data><data key="ky">2.5</data><data key="kz">3.5</data></node>
+      </graph>
+    </graphml>`
+    const c = graphmlToConnectome(lower)
+    expect(c.nodes).toEqual([{ name: 'a', x: 1.5, y: 2.5, z: 3.5, colorValue: 1, sizeValue: 1 }])
+  })
+
+  it('falls back to the node id when no name attribute is present', () => {
+    const noName = `<graphml xmlns="http://graphml.graphdrawing.org/xmlns">
+      <key id="kx" for="node" attr.name="X" attr.type="double"/>
+      <key id="ky" for="node" attr.name="Y" attr.type="double"/>
+      <key id="kz" for="node" attr.name="Z" attr.type="double"/>
+      <graph><node id="root"><data key="kx">0</data><data key="ky">0</data><data key="kz">0</data></node></graph>
+    </graphml>`
+    expect(graphmlToConnectome(noName).nodes[0].name).toBe('root')
+  })
+
+  it('skips edges that reference an unknown node id', () => {
+    const danglingEdge = `<graphml xmlns="http://graphml.graphdrawing.org/xmlns">
+      <key id="kx" for="node" attr.name="X" attr.type="double"/>
+      <key id="ky" for="node" attr.name="Y" attr.type="double"/>
+      <key id="kz" for="node" attr.name="Z" attr.type="double"/>
+      <graph>
+        <node id="a"><data key="kx">0</data><data key="ky">0</data><data key="kz">0</data></node>
+        <node id="b"><data key="kx">1</data><data key="ky">1</data><data key="kz">1</data></node>
+        <edge source="a" target="b"/>
+        <edge source="a" target="missing"/>
+      </graph>
+    </graphml>`
+    expect(graphmlToConnectome(danglingEdge).edges).toEqual([{ first: 0, second: 1, colorValue: 1 }])
+  })
+
+  it('throws when a node has no coordinates', () => {
+    const noCoords = `<graphml xmlns="http://graphml.graphdrawing.org/xmlns">
+      <key id="v_name" for="node" attr.name="name" attr.type="string"/>
+      <graph><node id="n0"><data key="v_name">a</data></node></graph>
+    </graphml>`
+    expect(() => graphmlToConnectome(noCoords)).toThrow(/X\/Y\/Z/)
+  })
+
+  it('treats an empty coordinate value as missing rather than 0', () => {
+    // Number('') is 0; without the guard this node would silently land at the
+    // origin instead of reporting the missing coordinate.
+    const emptyCoord = `<graphml xmlns="http://graphml.graphdrawing.org/xmlns">
+      <key id="kx" for="node" attr.name="X" attr.type="double"/>
+      <key id="ky" for="node" attr.name="Y" attr.type="double"/>
+      <key id="kz" for="node" attr.name="Z" attr.type="double"/>
+      <graph><node id="n0"><data key="kx"></data><data key="ky">1</data><data key="kz">2</data></node></graph>
+    </graphml>`
+    expect(() => graphmlToConnectome(emptyCoord)).toThrow(/X\/Y\/Z/)
+  })
+
+  it('does not hoist nodes from a nested subgraph into the top-level graph', () => {
+    const nested = `<graphml xmlns="http://graphml.graphdrawing.org/xmlns">
+      <key id="kx" for="node" attr.name="X" attr.type="double"/>
+      <key id="ky" for="node" attr.name="Y" attr.type="double"/>
+      <key id="kz" for="node" attr.name="Z" attr.type="double"/>
+      <graph>
+        <node id="outer">
+          <data key="kx">0</data><data key="ky">0</data><data key="kz">0</data>
+          <graph><node id="inner"><data key="kx">9</data><data key="ky">9</data><data key="kz">9</data></node></graph>
+        </node>
+      </graph>
+    </graphml>`
+    const c = graphmlToConnectome(nested)
+    expect(c.nodes).toEqual([{ name: 'outer', x: 0, y: 0, z: 0, colorValue: 1, sizeValue: 1 }])
+  })
+
+  it('throws when the graph has no nodes', () => {
+    const empty = `<graphml xmlns="http://graphml.graphdrawing.org/xmlns"><graph></graph></graphml>`
+    expect(() => graphmlToConnectome(empty)).toThrow(/no nodes/)
+  })
+
+  it('throws on malformed XML', () => {
+    expect(() => graphmlToConnectome('<graphml><graph></graphml>')).toThrow(/not valid XML/)
+  })
+})
+
 describe('getNames', () => {
-  // The source treats each `item` as a Niivue instance with `volumes` and `meshes` arrays.
+  // The source treats each `item` as a NiiVue instance with `volumes` and `meshes` arrays.
   // We synthesize the minimum shape that getNames inspects.
   const makeVol = (name: string) => ({ name })
   const makeMesh = (name: string, layers: { name: string }[] = []) => ({ name, layers })
@@ -388,5 +543,73 @@ describe('buildImageMessageBodies (oversized NIfTI guard)', () => {
     expect(bodies).toHaveLength(1)
     expect(bodies[0].loadError).toBeUndefined()
     expect(bodies[0].data).toBeDefined()
+  })
+})
+
+describe('rawHeaderMHA', () => {
+  const text = (header: ArrayBuffer | null) => (header ? new TextDecoder().decode(header) : null)
+
+  it('puts the sizes in DimSize and the type in ElementType', () => {
+    const header = text(rawHeaderMHA('58 58 21 float'))
+    expect(header).toContain('NDims = 3')
+    expect(header).toContain('DimSize = 58 58 21\n')
+    expect(header).toContain('ElementType = MET_FLOAT')
+  })
+
+  it('defaults the type to float and tolerates extra spaces', () => {
+    const header = text(rawHeaderMHA('  64  64 39 '))
+    expect(header).toContain('DimSize = 64 64 39\n')
+    expect(header).toContain('ElementType = MET_FLOAT')
+  })
+
+  it('refuses input without valid sizes', () => {
+    expect(rawHeaderMHA('')).toBeNull()
+    expect(rawHeaderMHA('float')).toBeNull()
+    expect(rawHeaderMHA('64 x 39 float')).toBeNull()
+    expect(rawHeaderMHA('64 0 39 float')).toBeNull()
+  })
+})
+
+describe('ensureMhaTransform', () => {
+  const encode = (s: string) => new TextEncoder().encode(s).buffer as ArrayBuffer
+  const decode = (b: ArrayBuffer) => new TextDecoder('latin1').decode(b)
+  const base = 'ObjectType = Image\nNDims = 3\nDimSize = 64 64 64\nElementType = MET_UCHAR\n'
+
+  it('adds an identity TransformMatrix before ElementDataFile when it is missing', () => {
+    const out = decode(ensureMhaTransform(encode(`${base}ElementDataFile = sphere.raw\n`)))
+    expect(out).toContain('TransformMatrix = 1 0 0 0 1 0 0 0 1\nElementDataFile = sphere.raw')
+  })
+
+  it('leaves a header with a TransformMatrix unchanged', () => {
+    const bytes = encode(`${base}TransformMatrix = -1 0 0 0 -1 0 0 0 1\nElementDataFile = sphere.raw\n`)
+    expect(ensureMhaTransform(bytes)).toBe(bytes)
+  })
+
+  it('takes the matrix from the Orientation synonym', () => {
+    const out = decode(ensureMhaTransform(encode(`${base}Orientation = 0 1 0 1 0 0 0 0 1\nElementDataFile = x.raw\n`)))
+    expect(out).toContain('TransformMatrix = 0 1 0 1 0 0 0 0 1\nElementDataFile')
+  })
+
+  it('keeps the voxel data of a single-file .mha intact', () => {
+    const header = new TextEncoder().encode(`${base}ElementDataFile = LOCAL\n`)
+    const bytes = new Uint8Array(header.length + 3)
+    bytes.set(header)
+    bytes.set([0, 255, 128], header.length)
+    const out = new Uint8Array(ensureMhaTransform(bytes.buffer))
+    expect(Array.from(out.slice(-3))).toEqual([0, 255, 128])
+    expect(out.length).toBe(bytes.length + 'TransformMatrix = 1 0 0 0 1 0 0 0 1\n'.length)
+  })
+
+  it('recognises .mhd and .mha names, also in URLs', () => {
+    expect(isMhaName('scan.MHD')).toBe(true)
+    expect(isMhaName('https://host/scan.mha?x=1')).toBe(true)
+    expect(isMhaName('scan.raw')).toBe(false)
+  })
+})
+
+describe('rawHeaderMHA orientation and types', () => {
+  it('writes an identity TransformMatrix and refuses unsupported type names', () => {
+    expect(new TextDecoder().decode(rawHeaderMHA('4 4 4 short')!)).toContain('TransformMatrix = 1 0 0 0 1 0 0 0 1')
+    expect(rawHeaderMHA('4 4 4 uint8')).toBeNull()
   })
 })

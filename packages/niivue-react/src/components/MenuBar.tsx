@@ -134,11 +134,11 @@ const ProxyForm = ({ item }: { item: BarItem }) => {
   if (item.type === 'menu') {
     return (
       <div className="relative" data-proxy>
-        <button className="nv-topbtn" tabIndex={-1}>
+        <button className="nv-topbtn nv-topbtn-label" tabIndex={-1}>
           {item.label}
         </button>
-        <button className="nv-topbtn" tabIndex={-1}>
-          <Caret />
+        <button className="nv-topbtn nv-topbtn-caret" tabIndex={-1}>
+          <svg className="w-2.5 h-2.5" aria-hidden="true" />
         </button>
       </div>
     )

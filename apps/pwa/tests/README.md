@@ -21,7 +21,7 @@ Keep in **e2e** (real browser genuinely required):
 - DOM geometry that depends on real layout/CSS - tiles fit their container, menus
   overflow at a real viewport width.
 - Cross-component wiring through the real `postMessage` bus + signals - e.g. 4D
-  frame sync across two real niivue instances.
+  frame sync across two real NiiVue instances.
 
 Push to a **unit test** (`packages/niivue-react/src/test/**`):
 
@@ -52,7 +52,7 @@ things caused that, and both are now designed out:
 2. **Fixed sleeps.** ~29 `page.waitForTimeout(...)` calls waited a guessed number
    of ms and hoped state had settled.
 
-> **Myth, busted:** niivue does **not** run a continuous `requestAnimationFrame`
+> **Myth, busted:** NiiVue does **not** run a continuous `requestAnimationFrame`
 > render loop. The installed `@niivue/niivue@0.68.2` bundle has exactly three
 > `requestAnimationFrame` calls - two coalesce resize events, one yields a frame
 > during volume-chunk streaming. Rendering is **on-demand** (`drawScene()` gated

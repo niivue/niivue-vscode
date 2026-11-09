@@ -2,6 +2,12 @@
   "$schema": "https://unpkg.com/syncpack@13.0.4/dist/schema.json",
   "versionGroups": [
     {
+      "label": "pnpm override selectors - parent>child and name@range keys are not package names",
+      "dependencies": ["*>*", "*>*/*", "*/*>*", "*/*>*/*", "*@*", "*/*@*"],
+      "dependencyTypes": ["pnpmOverrides"],
+      "isIgnored": true
+    },
+    {
       "label": "JupyterLab ecosystem - pinned for compatibility",
       "dependencies": ["@jupyterlab/**", "@lumino/**"],
       "packages": ["**"],

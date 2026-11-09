@@ -1,7 +1,8 @@
 export interface MenuItems {
-  /** Gates the brand "viewer" dropdown (Reset Viewer / About). Named `home`
-   *  for back-compat: it formerly toggled the standalone Home button, whose
-   *  Reset action now lives in the brand menu. */
+  /** Gates the brand "viewer" dropdown (Reset Viewer / About) on standalone
+   *  hosts; webview hosts (VS Code, JupyterLab) always get About only. Named
+   *  `home` for back-compat: it formerly toggled the standalone Home button,
+   *  whose Reset action now lives in the brand menu. */
   home: boolean
   addImage: boolean
   view: boolean
@@ -11,6 +12,7 @@ export interface MenuItems {
   header: boolean
   navigation?: boolean
   saveScene?: boolean
+  screenshot?: boolean
 }
 
 export interface NiiVueSettings {
@@ -54,5 +56,6 @@ export const defaultSettings: NiiVueSettings = {
     header: true,
     navigation: true,
     saveScene: true,
+    screenshot: true,
   },
 }

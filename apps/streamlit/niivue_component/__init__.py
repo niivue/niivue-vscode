@@ -46,16 +46,18 @@ def niivue_viewer(
     styled=True,
     settings=None,
     update_interval_ms=100,
-    key=None
+    key=None,
+    load_events=False,
 ):
     """Create a NiiVue viewer component.
 
     Parameters:
     -----------
     nifti_data : bytes or None
-        Raw NIFTI file data for the main image
+        Raw file data for the main image (NIfTI or another supported format),
+        or a NiiVue scene document (.nvd, .nvd.json)
     filename : str
-        Name of the file being displayed
+        Name of the file being displayed; its extension selects the format
     paired_data : bytes or None
         Raw voxel data for detached formats. Required when ``nifti_data`` is
         an MHD header with ``ElementDataFile`` pointing to a separate file
@@ -95,16 +97,32 @@ def niivue_viewer(
         and is recommended whenever the return value is not consumed.
     key : str or None
         Unique key for the component
-        
+    load_events : bool
+        If True, also report when loading finishes (default: False). The
+        viewer then returns ``{'type': 'base_loaded', ...}`` once the main
+        image (or first mesh) is shown, and ``{'type': 'fully_loaded', ...}``
+        once every overlay and mesh passed with it has finished loading too,
+        or ``{'type': 'load_error', ...}`` if the main image fails to load
+        (a failed overlay or mesh still ends in ``fully_loaded``).
+        Each event re-runs the script, like a click, so pass the same
+        arguments on every run (cache rebuilt image bytes). The return value only
+        holds the latest event and keeps it across re-runs, so give each
+        image its own ``key`` to wait for that image's events.
+
     Returns:
     --------
     dict or None
-        Component return value with click event data if any:
+        The latest event from the viewer, if any. A click:
         - type: 'voxel_click'
         - voxel: [x, y, z] voxel coordinates
         - mm: [x, y, z] mm coordinates
         - value: voxel value at click position
         - filename: name of the file
+        With ``load_events=True``, also a finished load:
+        - type: 'base_loaded', 'fully_loaded' or 'load_error'
+        - filename: name of the file
+        - timestamp: time in the browser, in milliseconds since the epoch
+        - error: the error message, only for 'load_error'
     """
     # Convert nifti_data to base64 if provided
     nifti_base64 = ""
@@ -191,6 +209,7 @@ def niivue_viewer(
         styled=styled,
         settings=settings or {},
         update_interval_ms=update_interval_ms,
+        load_events=bool(load_events),
         default=None,
         key=key
     )

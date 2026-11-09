@@ -1,0 +1,65 @@
+cff-version: 1.2.0
+message: If you use this software in published work, please cite the article below.
+title: "niivue-vscode: NiiVue viewers for VS Code, JupyterLab, the web and Streamlit"
+type: software
+authors:
+  - family-names: Eckstein
+    given-names: Korbinian
+    orcid: "https://orcid.org/0000-0002-4538-7072"
+repository-code: "https://github.com/niivue/niivue-vscode"
+url: "https://niivue.github.io/niivue-vscode"
+license: BSD-2-Clause
+keywords:
+  - neuroimaging
+  - medical imaging
+  - visualization
+  - NIfTI
+  - DICOM
+  - NiiVue
+preferred-citation:
+  type: article
+  title: "Seamless neuroimaging visualization: The NiiVue wrapper ecosystem"
+  authors:
+    - family-names: Eckstein
+      given-names: Korbinian
+      orcid: "https://orcid.org/0000-0002-4538-7072"
+    - family-names: Androulakis
+      given-names: Anthony
+    - family-names: Dao
+      given-names: Thuy T.
+      orcid: "https://orcid.org/0000-0003-0715-3555"
+    - family-names: Drake
+      given-names: Chris
+    - family-names: Hanayik
+      given-names: Taylor
+      orcid: "https://orcid.org/0000-0003-0751-9844"
+    - family-names: "O'Reilly"
+      given-names: Christian
+      orcid: "https://orcid.org/0000-0002-3149-4934"
+    - family-names: Prahm
+      given-names: Cosima
+      orcid: "https://orcid.org/0000-0001-9379-5110"
+    - family-names: Wang
+      given-names: Zhengjia
+      orcid: "https://orcid.org/0000-0001-5629-1116"
+    - family-names: Wighton
+      given-names: Paul
+      orcid: "https://orcid.org/0000-0002-6787-3856"
+    - family-names: Dalca
+      given-names: Adrian
+      orcid: "https://orcid.org/0000-0002-8422-0136"
+    - family-names: Bollmann
+      given-names: Steffen
+      orcid: "https://orcid.org/0000-0002-2909-0906"
+    - family-names: Rorden
+      given-names: Chris
+      orcid: "https://orcid.org/0000-0002-7554-6142"
+  journal: Aperture Neuro
+  volume: 6
+  year: 2026
+  month: 9
+  issn: 2957-3963
+  publisher:
+    name: Organization for Human Brain Mapping
+  doi: 10.52294/001c.167815
+  url: "https://doi.org/10.52294/001c.167815"

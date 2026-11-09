@@ -1,6 +1,6 @@
 # JupyterLab NiiVue
 
-**WebGL 2.0 medical image viewer for JupyterLab**
+**WebGPU/WebGL2 medical image viewer for JupyterLab**
 
 A JupyterLab extension that uses [NiiVue](https://github.com/niivue/niivue) to display neuroimaging files directly in JupyterLab. View NIfTI files, meshes, tractography, and DICOM images with an interactive, hardware-accelerated viewer integrated into your JupyterLab environment.
 
@@ -19,6 +19,10 @@ pip install jupyterlab-niivue
 1. **File Browser**: Simply double-click any supported neuroimaging file in the JupyterLab file browser
 2. **Right-click Menu**: Right-click on a file and select "Open With" → "NiiVue Viewer"
 3. **Compare Multiple Files**: Select multiple files (2 or more), right-click, and choose "Compare in NiiVue" to view them side-by-side in a multi-panel layout
+
+### Saving Scenes and Figures
+
+**NVDocument** in the menu bar saves the selected tile as a NiiVue scene document (`.nvd`, or readable `.nvd.json` with **Save as JSON**): its images with their display settings and the view. **Screenshot** saves the visible tiles as a PNG. Both ask for a path in the workspace, starting in the opened file's folder. Double-click a `.nvd` in the file browser to open the scene again, or use **NVDocument > Load**.
 
 ## Screenshots
 
@@ -43,8 +47,8 @@ pip install jupyterlab-niivue
 
 ### Crosshair Movement
 
-- **H**: Move crosshair to R (Right)
-- **L**: Move crosshair to L (Left)
+- **H**: Move crosshair to L (Left)
+- **L**: Move crosshair to R (Right)
 - **J**: Move crosshair to P (Posterior)
 - **K**: Move crosshair to A (Anterior)
 - **Ctrl+U**: Move crosshair to S (Superior)
@@ -62,7 +66,7 @@ NiiVue can open several formats popular with brain imaging:
 ## Requirements
 
 - JupyterLab >= 4.0.0
-- A modern web browser with WebGL 2.0 support (Chrome, Firefox, Edge, Safari)
+- A modern web browser with WebGPU or WebGL2 support (Chrome, Firefox, Edge, Safari)
 
 ## Troubleshooting
 
@@ -93,6 +97,12 @@ If files don't open when double-clicked:
 This extension is part of the [NiiVue monorepo](https://github.com/niivue/niivue-vscode). Contributions are welcome!
 
 If you encounter issues or have feature requests, please [open an issue on GitHub](https://github.com/niivue/niivue-vscode/issues).
+
+## Citation
+
+If you use this extension in published work, please cite:
+
+Eckstein K, Androulakis A, Dao TT, et al. Seamless neuroimaging visualization: The NiiVue wrapper ecosystem. _Aperture Neuro_. 2026;6. [doi:10.52294/001c.167815](https://doi.org/10.52294/001c.167815)
 
 ## Support This Project
 

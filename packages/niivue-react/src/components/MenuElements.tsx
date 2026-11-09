@@ -1,5 +1,6 @@
-import { Signal, computed, effect, signal, useSignal } from '@preact/signals'
+import { Signal, computed, signal, useSignal } from '@preact/signals'
 import { useRef } from 'preact/hooks'
+import { useImmediateSignalEffect } from '../hooks/useImmediateSignalEffect'
 
 export const activeMenu = signal<string | null>(null)
 
@@ -177,7 +178,7 @@ export const HeaderDialog = ({ nvArraySelected, isOpen }: any) => {
     }
   }
 
-  effect(() => {
+  useImmediateSignalEffect(() => {
     if (isOpen.value) {
       showHeader()
       toggle(isOpen)()
@@ -185,7 +186,7 @@ export const HeaderDialog = ({ nvArraySelected, isOpen }: any) => {
   })
 
   return (
-    <dialog className="text-sm p-2 bg-gray-200 rounded-md" ref={headerDialog}>
+    <dialog className="text-sm p-2 m-auto bg-gray-200 rounded-md" ref={headerDialog}>
       <form>
         {headerInfo.value.split('\n').map((line, index) => (
           <p key={index}>{line}</p>

@@ -1,10 +1,10 @@
 import preact from '@preact/preset-vite'
-import fs from 'fs'
-import path, { resolve } from 'path'
+import { resolve } from 'path'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import { execSync } from 'child_process'
 import virtual from 'vite-plugin-virtual'
+import { dcm2niixWorkerModule } from '../../packages/niivue-react/vite/dcm2niix-worker'
 
 function getGitRepoUrl() {
   try {
@@ -44,7 +44,7 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ['@niivue/niivue', '@preact/signals', 'preact'],
-    exclude: ['@niivue/dicom-loader', '@niivue/react'], // Exclude local package from pre-bundling
+    exclude: ['@niivue/react'], // Exclude local package from pre-bundling
   },
   resolve: {
     alias: {
@@ -56,8 +56,8 @@ export default defineConfig({
       // working in dev and the E2E production build.
       '@niivue/viewer-protocol': resolve(__dirname, '../../packages/viewer-protocol/src'),
     },
-    // react-router-dom specifies "module" field in package.json for ESM entry
-    // if it's not mapped, it uses the "main" field which is CommonJS that redirects to CJS preact
+    // Resolve packages through their ESM "module" entry; a CommonJS "main"
+    // entry can pull in the CJS build of preact
     mainFields: ['module'],
   },
   server: {
@@ -79,48 +79,7 @@ export default defineConfig({
   plugins: [
     preact(),
     virtual({
-      'dcm2niix-worker': (() => {
-        const workerPath = path.resolve(__dirname, 'node_modules/@niivue/dcm2niix/dist/worker.js')
-        const dcm2niixPath = path.resolve(path.dirname(workerPath), 'dcm2niix.js')
-        const wasmPath = path.resolve(path.dirname(workerPath), 'dcm2niix.wasm')
-
-        // Check if all required files exist
-        if (fs.existsSync(workerPath) && fs.existsSync(dcm2niixPath) && fs.existsSync(wasmPath)) {
-          try {
-            // Read all required files
-            const workerContent = fs.readFileSync(workerPath, 'utf8')
-            const dcm2niixContent = fs.readFileSync(dcm2niixPath, 'utf8')
-            const wasmContent = fs.readFileSync(wasmPath)
-            const wasmBase64 = wasmContent.toString('base64')
-
-            // Create a modified dcm2niix module that uses inline WASM
-            const modifiedDcm2niix = dcm2niixContent.replace(
-              'function findWasmBinary(){if(Module["locateFile"]){var f="dcm2niix.wasm";if(!isDataURI(f)){return locateFile(f)}return f}return new URL("dcm2niix.wasm",import.meta.url).href}',
-              `function findWasmBinary(){return "data:application/wasm;base64,${wasmBase64}"}`,
-            )
-
-            // Create self-contained worker with inlined dependencies
-            const selfContainedWorker = workerContent.replace(
-              `import Module from './dcm2niix.js';`,
-              `// Inlined dcm2niix module\n${modifiedDcm2niix}\n// Use the inlined Module`,
-            )
-
-            return `
-              const workerCode = ${JSON.stringify(selfContainedWorker)};
-              const blob = new Blob([workerCode], { type: 'application/javascript' });
-              export default URL.createObjectURL(blob);
-            `
-          } catch (error) {
-            console.warn('Failed to create self-contained worker, using fallback:', error)
-          }
-        }
-
-        // Simple fallback that doesn't use problematic worker syntax
-        return `
-          console.warn('dcm2niix worker not available in this build');
-          export default null;
-        `
-      })(),
+      'dcm2niix-worker': dcm2niixWorkerModule(),
     }),
     VitePWA({
       disable: !!prNumber, // Disable service worker for PR previews (temporary, no offline needed)
@@ -134,7 +93,10 @@ export default defineConfig({
       },
       includeAssets: ['favicon.ico', '*.png'],
       workbox: {
-        maximumFileSizeToCacheInBytes: 3000000,
+        // The main chunk inlines the dcm2niix worker and its WASM. Files above
+        // this limit are left out of the precache, so the app would not start
+        // offline.
+        maximumFileSizeToCacheInBytes: 4000000,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,wasm}'],
         // Don't intercept navigations that aren't part of the PWA. `/pr-N/`
         // is the per-PR PWA preview; `/coverage/` is the Istanbul report,
@@ -170,7 +132,7 @@ export default defineConfig({
             name: 'Open Example Image',
             short_name: 'Example',
             description: 'Load MNI152 example image',
-            url: `${baseUrl}?example=mni152`,
+            url: `${baseUrl}?images=https://niivue.github.io/niivue-demo-images/mni152.nii.gz`,
             icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }],
           },
         ],
@@ -196,6 +158,7 @@ export default defineConfig({
                 '.gii',
                 '.mz3',
               ],
+              'application/x-niivue-document': ['.nvd'],
             },
           },
         ],

@@ -11,7 +11,7 @@
 // same file. The desktop bundle's multi-format .icns/.ico are produced by the
 // Tauri CLI instead (see `pnpm generate:icons:tauri`).
 //
-// The master is the upstream niivue brand mark (a neon brain on a near-black
+// The master is the upstream NiiVue brand mark (a neon brain on a near-black
 // field, 1024x1024, no alpha). Two derivations are made from it:
 //   - transparent: the dark field is keyed out via luminance -> alpha, so the
 //     mark sits flush on any surface (Explorer/Jupyter file icons, viewer logo).
@@ -105,7 +105,7 @@ function logoModule(buf, masterSha) {
 // Do not edit by hand; run \`pnpm generate:icons\` to refresh.
 // icon-master-sha256: ${masterSha}
 //
-// The niivue brand mark shown in the top bar (see Menu.tsx). Inlined as a
+// The NiiVue brand mark shown in the top bar (see Menu.tsx). Inlined as a
 // base64 data URI rather than a *.png import: @niivue/react is type-checked
 // *from source* by the PWA and Streamlit frontends, which do not all declare an
 // ambient *.png module. A plain string sidesteps that while still inlining.

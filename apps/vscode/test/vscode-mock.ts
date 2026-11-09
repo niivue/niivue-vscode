@@ -89,14 +89,26 @@ export const workspace = {
   fs: {
     readFile: vi.fn<(uri: Uri) => Promise<Uint8Array>>(),
     readDirectory: vi.fn(),
+    stat: vi.fn<(uri: Uri) => Promise<{ size: number }>>(),
+    writeFile: vi.fn<(uri: Uri, content: Uint8Array) => Promise<void>>(),
+    isWritableFileSystem: vi.fn<(scheme: string) => boolean | undefined>(),
   },
   getConfiguration: vi.fn(),
+  /** Like VS Code: relative to the containing workspace folder, else the path. */
+  asRelativePath: (uri: Uri) => {
+    const folder = workspace.workspaceFolders?.find((f) => uri.path.startsWith(`${f.uri.path}/`))
+    return folder ? uri.path.slice(folder.uri.path.length + 1) : uri.path
+  },
 }
 
 export const window = {
   registerCustomEditorProvider: vi.fn(),
   createWebviewPanel: vi.fn(),
   showOpenDialog: vi.fn(),
+  showSaveDialog: vi.fn<(options?: unknown) => Promise<Uri | undefined>>(),
+  showInformationMessage: vi.fn(),
+  showWarningMessage: vi.fn(),
+  showErrorMessage: vi.fn(),
 }
 
 export const ViewColumn = { One: 1 }
@@ -165,8 +177,16 @@ export function __resetMock() {
   workspace.workspaceFolders = undefined
   workspace.fs.readFile.mockReset()
   workspace.fs.readDirectory.mockReset()
+  workspace.fs.stat.mockReset()
+  workspace.fs.stat.mockResolvedValue({ size: 140 })
+  workspace.fs.writeFile.mockReset()
+  workspace.fs.isWritableFileSystem.mockReset()
   workspace.getConfiguration.mockReset()
   window.registerCustomEditorProvider.mockReset()
   window.createWebviewPanel.mockReset()
   window.showOpenDialog.mockReset()
+  window.showSaveDialog.mockReset()
+  window.showInformationMessage.mockReset()
+  window.showWarningMessage.mockReset()
+  window.showErrorMessage.mockReset()
 }

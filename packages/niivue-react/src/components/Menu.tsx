@@ -3,10 +3,10 @@ import './Menu.css'
 import { niivueLogo } from '../assets/niivue-logo'
 import { DRAG_MODE, SLICE_TYPE } from '@niivue/niivue'
 import type { SceneDocument } from '@niivue/viewer-protocol'
-import { Signal, computed, effect, useSignal } from '@preact/signals'
+import { Signal, computed, useSignal } from '@preact/signals'
 import { useMemo } from 'preact/hooks'
 import { NIIVUE_CORE_SHORTCUTS, UI_SHORTCUTS, formatShortcut } from '../constants/keyboardShortcuts'
-import { downloadNvd, downloadSceneJson } from '../document'
+import { downloadNvd, downloadSceneJson, saveFile } from '../document'
 import {
     ExtendedNiivue,
     addDcmFolderEvent,
@@ -15,9 +15,12 @@ import {
     loadDocumentEvent,
     openImageFromURL,
 } from '../events'
+import { useImmediateSignalEffect } from '../hooks/useImmediateSignalEffect'
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
-import { getImageMetadata } from '../utility'
+import { captureScreenshot } from '../screenshot'
+import { getImageMetadata, imageBaseName } from '../utility'
 import { AboutDialog } from './AboutDialog'
+import { CiteDialog } from './CiteDialog'
 import { AppInfo, AppProps, SelectionMode } from './AppProps'
 import { HeaderBox } from './HeaderBox'
 import {
@@ -32,6 +35,7 @@ import {
 import { BarItem, MenuBar } from './MenuBar'
 import { DEFAULT_TILE_SPACING } from '../settings'
 import { ScalingBox } from './ScalingBox'
+import { SaveHint, type SavedFigure } from './SaveHint'
 
 export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
   const { selection, selectionMode, nvArray, sliceType, hideUI, settings, appInfo } = props
@@ -40,6 +44,8 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
   // State
   const headerDialog = useSignal(false)
   const aboutDialog = useSignal(false)
+  const citeDialog = useSignal(false)
+  const savedFigure = useSignal<SavedFigure | null>(null)
   const selectedOverlayNumber = useSignal(0)
   const overlayMenu = useSignal(false)
   const setHeaderMenu = useSignal(false)
@@ -85,16 +91,16 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
   )
 
   // Effects that occur when state or computed changes
-  effect(() => applySelectionModeChange(selectionMode, selectionActive, selectMultiple))
-  effect(() => ensureValidSelection(selection, nvArray, selectionMode))
-  effect(() => applyInterpolation(nvArray, interpolation))
-  effect(() => applyCrosshairWidth(nvArray, crosshair))
-  effect(() => applyRadiologicalConvention(nvArray, radiologicalConvention))
-  effect(() => applyColorbar(nvArray, colorbar))
-  effect(() => applyDragMode(nvArray, zoomDragMode))
+  useImmediateSignalEffect(() => applySelectionModeChange(selectionMode, selectionActive, selectMultiple))
+  useImmediateSignalEffect(() => ensureValidSelection(selection, nvArray, selectionMode))
+  useImmediateSignalEffect(() => applyInterpolation(nvArray, interpolation))
+  useImmediateSignalEffect(() => applyCrosshairWidth(nvArray, crosshair))
+  useImmediateSignalEffect(() => applyRadiologicalConvention(nvArray, radiologicalConvention))
+  useImmediateSignalEffect(() => applyColorbar(nvArray, colorbar))
+  useImmediateSignalEffect(() => applyDragMode(nvArray, zoomDragMode))
 
   // Sync settings global value to local signals (e.g. for Streamlit)
-  effect(() => {
+  useImmediateSignalEffect(() => {
     interpolation.value = settings.value.interpolation
     crosshair.value = settings.value.showCrosshairs
     radiologicalConvention.value = settings.value.radiologicalConvention
@@ -104,7 +110,7 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
   })
 
   // Sync local signal changes back to global settings
-  effect(() => {
+  useImmediateSignalEffect(() => {
     if (
       settings.value.interpolation !== interpolation.value ||
       settings.value.showCrosshairs !== crosshair.value ||
@@ -209,7 +215,7 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
     nvArraySelected.value.forEach((nv) => {
       // v1: "Multiplanar + Render" shows the planes without the 4D graph.
       nv.isGraphVisible = false
-      nv.updateGLVolume()
+      nv.drawScene()
     })
   }
 
@@ -224,7 +230,7 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
       nv.isGraphVisible = true
       nv.graphNormalizeValues = false
       nv.graphLineAlpha = 1.0
-      nv.updateGLVolume()
+      nv.drawScene()
     })
   }
 
@@ -262,19 +268,14 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
     alert('Settings saved!')
   }
 
-  // Export the active canvas as a niivue scene document. v1 scope is a single
+  // Export the active canvas as a NiiVue scene document. v1 scope is a single
   // canvas: the last selected one (VHP plan section 10). Two formats: native
-  // CBOR `.nvd`, and a readable JSON `.nvd.json` that re-opens through parseNvd.
+  // CBOR `.nvd`, and NiiVue's readable JSON form as `.nvd.json`.
   const sceneTarget = () => {
     const list = nvArraySelected.value
     const nv = list[list.length - 1]
     if (!nv) return null
-    const rawName = nv.volumes?.[0]?.name || nv.meshes?.[0]?.name || (nv as any).uri || 'scene'
-    const base =
-      (decodeURIComponent(String(rawName)).split('/').pop() || 'scene').replace(
-        /\.(nii\.gz|nii|gz|mgz|mgh|mz3|gii|dcm|mhd|mha|nrrd|nhdr|nvd)$/i,
-        '',
-      ) || 'scene'
+    const base = imageBaseName(nv.volumes?.[0]?.name || nv.meshes?.[0]?.name || (nv as any).uri)
     return { nv, base }
   }
 
@@ -283,13 +284,35 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
     if (!t) return
     // v1: serializeDocument() returns the .nvd as CBOR bytes (nv.json() is gone).
     const doc: SceneDocument = t.nv.serializeDocument()
-    downloadNvd(doc, `${t.base}.nvd`)
+    downloadNvd(doc, `${t.base || 'scene'}.nvd`).catch((error) =>
+      console.error('Saving the scene failed:', error),
+    )
   }
 
   const exportSceneJson = () => {
     const t = sceneTarget()
     if (!t) return
-    downloadSceneJson(t.nv.serializeDocument(), `${t.base}.nvd.json`)
+    downloadSceneJson(
+      t.nv.serializeDocument({ format: 'json' }),
+      `${t.base || 'scene'}.nvd.json`,
+    ).catch((error) => console.error('Saving the scene failed:', error))
+  }
+
+  // PNG of the tiles as laid out on screen: all of them, or just the scene
+  // target. Either way the file is named after the scene target.
+  const saveScreenshot = async (scope: 'all' | 'selected') => {
+    const t = sceneTarget()
+    if (!t) return
+    try {
+      const panels = scope === 'all' ? nvArray.value : [t.nv]
+      const png = await captureScreenshot(panels, nvArray.value[0]?.backgroundColor)
+      if (!png) return
+      const name = `${t.base || 'niivue'}_screenshot.png`
+      const location = await saveFile(png, name, 'image/png', { cite: true })
+      if (location) savedFigure.value = { location }
+    } catch (error) {
+      console.error('Screenshot failed:', error)
+    }
   }
 
   const cycleUIVisibility = () => {
@@ -420,6 +443,20 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
     })
   }
 
+  // H/L/J/K keep NiiVue's own key mapping: in the 3D render view they turn the
+  // camera, elsewhere they step the crosshair one voxel.
+  const keyStep = (di: number, dj: number) => () => {
+    nvArraySelected.value.forEach((nv) => {
+      if (nv.sliceType === SLICE_TYPE.RENDER) {
+        nv.azimuth = (((nv.azimuth + di) % 360) + 360) % 360
+        nv.elevation = Math.max(-90, Math.min(90, nv.elevation - dj))
+      } else {
+        nv.moveCrosshairInVox(di, dj, 0)
+      }
+      nv.drawScene()
+    })
+  }
+
   // Signal sync handlers
   const toggleInterpolation = () => {
     interpolation.value = !interpolation.value
@@ -482,6 +519,10 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
     onShowHeader: toggle(headerDialog),
     onCrosshairSuperior: crosshairSuperior,
     onCrosshairInferior: crosshairInferior,
+    onCrosshairRight: keyStep(1, 0),
+    onCrosshairLeft: keyStep(-1, 0),
+    onCrosshairAnterior: keyStep(0, 1),
+    onCrosshairPosterior: keyStep(0, -1),
   }), [
     sliceType,
     setMultiplanar,
@@ -535,17 +576,37 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
     {
       // NVDocument (.nvd) scene file. The label is the default action (Save);
       // the chevron opens Save / Load. Load is also reachable by dropping a
-      // `.nvd`, but the explicit entry pairs naturally with Save here.
+      // `.nvd` or opening one like an image, but the explicit entry pairs
+      // naturally with Save here. Webview hosts save and pick files themselves.
       key: 'saveScene',
       type: 'menu',
       label: 'NVDocument',
-      visible: !!settings.value.menuItems?.saveScene && !isVscode && isVolumeOrMesh.value,
+      visible: !!settings.value.menuItems?.saveScene && isVolumeOrMesh.value,
       onClick: saveScene,
       children: (
         <>
           <MenuEntry label="Save" onClick={saveScene} />
           <MenuEntry label="Save as JSON" onClick={exportSceneJson} />
           <MenuEntry label="Load" onClick={loadDocumentEvent} />
+        </>
+      ),
+    },
+    {
+      // Figure export. The label captures every tile; the chevron can narrow
+      // it to the selected tile once there is more than one.
+      key: 'screenshot',
+      type: 'menu',
+      label: 'Screenshot',
+      visible: !!settings.value.menuItems?.screenshot && isVolumeOrMesh.value,
+      onClick: () => saveScreenshot('all'),
+      children: (
+        <>
+          <MenuEntry label="All tiles" onClick={() => saveScreenshot('all')} />
+          <MenuEntry
+            label="Selected tile"
+            onClick={() => saveScreenshot('selected')}
+            visible={multipleVolumes}
+          />
         </>
       ),
     },
@@ -704,6 +765,11 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
       shortcut: formatShortcut(UI_SHORTCUTS.SHOW_HEADER),
       children: (
         <>
+          <MenuEntry
+            label="Show Header"
+            onClick={toggle(headerDialog)}
+            shortcut={formatShortcut(UI_SHORTCUTS.SHOW_HEADER)}
+          />
           <MenuEntry label="Set Headers to 1" onClick={setVoxelSize1AndOrigin0} />
           <MenuEntry label="Set Header" onClick={toggle(setHeaderMenu)} />
         </>
@@ -778,9 +844,10 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
         <div className="nv-topbar-left">
           <BrandMenu
             showSubtext={!isVscode}
-            interactive={!isVscode && !!settings.value.menuItems?.home}
+            showReset={!isVscode && !!settings.value.menuItems?.home}
             onReset={homeEvent}
             onAbout={() => (aboutDialog.value = true)}
+            onCite={() => (citeDialog.value = true)}
           />
           <MenuBar items={barItems} />
         </div>
@@ -800,6 +867,8 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
       <HeaderBox nvArraySelected={nvArraySelected} nvArray={nvArray} visible={setHeaderMenu} />
       <HeaderDialog nvArraySelected={nvArraySelected} isOpen={headerDialog} />
       <AboutDialog isOpen={aboutDialog} appInfo={appInfo} />
+      <CiteDialog isOpen={citeDialog} />
+      <SaveHint saved={savedFigure} />
     </>
   )
 }
@@ -807,34 +876,33 @@ export const Menu = (props: AppProps & { appInfo?: AppInfo }) => {
 // activeMenu key reserved for the brand dropdown.
 const BRAND_KEY = '__brand__'
 
-// The niivue logo + wordmark. On standalone hosts (`interactive`) it doubles as
-// a dropdown trigger for viewer-level actions (Reset Viewer, About); elsewhere
-// (vscode, embedded Streamlit) it renders as a static brand, unchanged.
+// The NiiVue logo + wordmark, a dropdown trigger for viewer-level actions:
+// About and Cite NiiVue VS Code everywhere, plus Reset Viewer on standalone hosts
+// (`showReset`), since reloading a webview host (VS Code, JupyterLab) or an
+// embedded Streamlit component would drop the files it was given.
 const BrandMenu = ({
   showSubtext,
-  interactive,
+  showReset,
   onReset,
   onAbout,
+  onCite,
 }: {
   showSubtext: boolean
-  interactive: boolean
+  showReset: boolean
   onReset: () => void
   onAbout: () => void
+  onCite: () => void
 }) => {
   const open = computed(() => activeMenu.value === BRAND_KEY)
   const inner = (
     <>
       <img className="nv-brand-mark" src={niivueLogo} alt="" width={26} height={26} />
       <div className="nv-brand-text">
-        <span className="nv-brand-name">niivue</span>
+        <span className="nv-brand-name">NiiVue</span>
         {showSubtext && <span className="nv-brand-sub">Viewer</span>}
       </div>
     </>
   )
-
-  if (!interactive) {
-    return <div className="nv-brand">{inner}</div>
-  }
 
   return (
     <div className="relative group">
@@ -855,8 +923,9 @@ const BrandMenu = ({
       </button>
       {open.value && (
         <div className="nv-menu-panel absolute left-0 z-50 min-w-[180px]">
-          <MenuEntry label="Reset Viewer" onClick={onReset} />
+          {showReset && <MenuEntry label="Reset Viewer" onClick={onReset} />}
           <MenuEntry label="About" onClick={onAbout} />
+          <MenuEntry label="Cite NiiVue VS Code" onClick={onCite} />
         </div>
       )}
     </div>

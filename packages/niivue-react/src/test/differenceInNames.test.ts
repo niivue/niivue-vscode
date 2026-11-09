@@ -1,6 +1,11 @@
 import { expect, test } from 'vitest'
 import { differenceInNames } from '../utility'
 
+test('a single name is shown as its file name, not as an empty difference', () => {
+  expect(differenceInNames(['csi_template_zf.mnc'])).toEqual(['csi_template_zf.mnc'])
+  expect(differenceInNames(['/data/sub-01/anat/T1w.nii.gz'])).toEqual(['T1w.nii.gz'])
+})
+
 test('diff names of test and test2', () => {
   expect(differenceInNames(['test', 'test2'])).toEqual(['test', 'test2'])
   expect(differenceInNames(['test1', 'test2'])).toEqual(['test1', 'test2'])

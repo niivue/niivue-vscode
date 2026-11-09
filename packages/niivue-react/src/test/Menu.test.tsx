@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AppProps, SelectionMode } from '../components/AppProps'
 import { Menu } from '../components/Menu'
 
-// Mock canvas and niivue to avoid webgl context issues in jsdom.
+// Mock canvas and NiiVue to avoid webgl context issues in jsdom.
 // v1 surface: the package's default export is the NiiVueGPU class (events.ts does
 // `import NiiVue from '@niivue/niivue'` and `extends NiiVue`), plus the DRAG_MODE
 // and SLICE_TYPE value enums. NVImage/NVMesh are types-only now, so they are not
@@ -169,5 +169,52 @@ describe('Menu keyboard wiring (key -> view / UI value)', () => {
     expect(props.hideUI.value).toBe(0)
     pressKey('u')
     expect(props.hideUI.value).toBe(3)
+  })
+})
+
+// Menu's signal effects must start once, not once per render.
+describe('Menu effects', () => {
+  it('apply a change once, however often Menu re-rendered', () => {
+    let reads = 0
+    const nv = makeKbNv()
+    Object.defineProperty(nv, 'volumeIsNearestInterpolation', {
+      get: () => {
+        reads++
+        return false
+      },
+      set: () => {},
+    })
+    const props = makeKbProps({ nvArray: signal([nv]) })
+    const { rerender } = render(<Menu {...(props as unknown as AppProps)} />)
+    // A new appInfo each time; with unchanged props Preact skips the render.
+    for (let i = 0; i < 5; i++) {
+      rerender(<Menu {...(props as unknown as AppProps)} appInfo={{ version: `v${i}` }} />)
+    }
+
+    reads = 0
+    props.nvArray.value = [nv]
+    expect(reads).toBe(1)
+  })
+})
+
+describe('Header menu', () => {
+  it('lists Show Header, which opens the header of the selected image', async () => {
+    const showModal = vi.fn()
+    HTMLDialogElement.prototype.showModal = showModal
+    const nv = { ...makeKbNv(), volumes: [{ hdr: { toFormattedString: () => 'sizeof_hdr: 348' } }] }
+    render(
+      <Menu
+        {...(makeKbProps({
+          nvArray: signal([nv]),
+          settings: signal({ ...makeKbProps().settings.value, menuItems: { header: true } }),
+        }) as unknown as AppProps)}
+      />,
+    )
+
+    fireEvent.click(screen.getByTestId('menu-item-dropdown-Header'))
+    fireEvent.click(await screen.findByText('Show Header'))
+
+    expect(showModal).toHaveBeenCalled()
+    expect(await screen.findByText(/sizeof_hdr: 348/)).toBeTruthy()
   })
 })

@@ -38,7 +38,7 @@ export const HomeScreen = () => (
               }
             })();"
       >
-        <b> Niivue-ify </b>
+        <b> NiiVue-ify </b>
       </a>
       ⇦ to your bookmarks bar. When you click the bookmark, all links to NIfTI files on the current
       web page will be redirected to niivue-vscode web. Link to test:

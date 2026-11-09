@@ -3,6 +3,8 @@
 
 .nv-about {
   width: min(440px, 92vw);
+  /* Tailwind's preflight zeroes the UA `margin: auto` that centers a modal. */
+  margin: auto;
   padding: 0;
   border: 1px solid var(--line-2);
   border-radius: var(--radius);

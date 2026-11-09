@@ -25,6 +25,14 @@ code --install-extension KorbinianEckstein.niivue
 2. **Compare Multiple Files**: Select multiple files in Explorer, right-click → "NiiVue: Compare"
 3. **Add Overlays**: Click the Overlay menu
 
+### Saving Figures
+
+Click **Screenshot** in the menu bar to save the visible tiles as a PNG at twice the on-screen resolution. The save dialog starts in the opened file's folder.
+
+### Saving and Opening Scenes
+
+**NVDocument** in the menu bar saves the selected tile as a NiiVue scene document: its images with their display settings and the view. **Save** writes a `.nvd` file, **Save as JSON** a readable `.nvd.json`. Click a `.nvd` file in the Explorer to open the scene again, or use **NVDocument > Load**; a `.nvd.json` opens with right-click → "NiiVue: Open".
+
 ### Remote Development
 
 NiiVue works with VS Code's remote development features:
@@ -56,7 +64,7 @@ All keyboard shortcuts are displayed in menus and button tooltips throughout the
 
 ### Core NiiVue Shortcuts (Built-in)
 
-These shortcuts are handled by the niivue.js library and cannot be customized:
+These are NiiVue's default keys and cannot be customized:
 
 **Navigation:**
 
@@ -66,8 +74,8 @@ These shortcuts are handled by the niivue.js library and cannot be customized:
 
 **Crosshair Movement:**
 
-- **H**: Move crosshair to R (Right)
-- **L**: Move crosshair to L (Left)
+- **H**: Move crosshair to L (Left)
+- **L**: Move crosshair to R (Right)
 - **J**: Move crosshair to P (Posterior)
 - **K**: Move crosshair to A (Anterior)
 - **Ctrl+U**: Move crosshair to S (Superior)
@@ -107,14 +115,15 @@ These shortcuts can be customized in VS Code's Keyboard Shortcuts editor (File �
 
 ## Supported Formats
 
-- **Voxel-based**: [NIfTI](https://brainder.org/2012/09/23/the-nifti-file-format/) (.nii, .nii.gz), [NRRD](http://teem.sourceforge.net/nrrd/format.html) (.nrrd, .nhdr), [MRtrix MIF](https://mrtrix.readthedocs.io/en/latest/getting_started/image_data.html#mrtrix-image-formats) (.mif), [AFNI HEAD/BRIK](https://afni.nimh.nih.gov/pub/dist/doc/program_help/README.attributes.html), [MGH/MGZ](https://surfer.nmr.mgh.harvard.edu/fswiki/FsTutorial/MghFormat), [ITK MHD](https://itk.org/Wiki/ITK/MetaIO/Documentation) (.mhd, .mha), [ECAT7](https://github.com/openneuropet/PET2BIDS/tree/28aae3fab22309047d36d867c624cd629c921ca6/ecat_validation/ecat_info) (.v), [DICOM](https://dicom.nema.org/medical/dicom/current/output/chtml/part10/chapter_7.html) (.dcm)
+- **Voxel-based**: [NIfTI](https://brainder.org/2012/09/23/the-nifti-file-format/) (.nii, .nii.gz), [NRRD](http://teem.sourceforge.net/nrrd/format.html) (.nrrd, .nhdr), [MRtrix MIF](https://mrtrix.readthedocs.io/en/latest/getting_started/image_data.html#mrtrix-image-formats) (.mif, .mih), [AFNI HEAD/BRIK](https://afni.nimh.nih.gov/pub/dist/doc/program_help/README.attributes.html), [MGH/MGZ](https://surfer.nmr.mgh.harvard.edu/fswiki/FsTutorial/MghFormat), [ITK MHD](https://itk.org/Wiki/ITK/MetaIO/Documentation) (.mhd, .mha), [ECAT7](https://github.com/openneuropet/PET2BIDS/tree/28aae3fab22309047d36d867c624cd629c921ca6/ecat_validation/ecat_info) (.v), [DICOM](https://dicom.nema.org/medical/dicom/current/output/chtml/part10/chapter_7.html) (.dcm), MINC (.mnc, .mnc.gz), BrainVoyager (.vmr, .v16), NumPy (.npy, .npz)
 - **Mesh-based**: [GIfTI](https://www.nitrc.org/projects/gifti/) (.gii), [FreeSurfer](http://www.grahamwideman.com/gw/brain/fs/surfacefileformats.htm) (pial, white, inflated), [MZ3](https://github.com/neurolabusc/surf-ice/tree/master/mz3) (.mz3), [STL](https://medium.com/3d-printing-stories/why-stl-format-is-bad-fea9ecf5e45) (.stl), [Wavefront OBJ](https://brainder.org/tag/obj/) (.obj), [PLY](<https://en.wikipedia.org/wiki/PLY_(file_format)>) (.ply), [BrainSuite DFS](http://brainsuite.org/formats/dfs/) (.dfs), [Legacy VTK](https://vtk.org/wp-content/uploads/2015/04/file-formats.pdf) (.vtk), [X3D](https://3dprint.nih.gov/) (.x3d), and others (ASC, BYU, GEO, ICO, TRI, OFF, SRF, NV)
 - **Mesh Overlays**: [GIfTI](https://www.nitrc.org/projects/gifti/) (.gii), [CIfTI-2](https://balsa.wustl.edu/about/fileTypes) (.nii), [MZ3](https://github.com/neurolabusc/surf-ice/tree/master/mz3) (.mz3), FreeSurfer (CURV, ANNOT), SMP, STC
 - **Tractography**: [TCK](https://mrtrix.readthedocs.io/en/latest/getting_started/image_data.html#tracks-file-format-tck) (.tck), [TRK](http://trackvis.org/docs/?subsect=fileformat) (.trk), [TRX](https://github.com/frheault/tractography_file_format) (.trx), VTK (.vtk), AFNI (.niml.tract)
+- **Graphs**: GraphML (.graphml) node/edge graphs, shown as a connectome
 
 ## Web Version
 
-A standalone [web version](https://korbinian90.github.io/niivue-vscode) is also available that can be installed as a Progressive Web App with file associations (Chrome/Edge only).
+A standalone [web version](https://niivue.github.io/niivue-vscode) is also available that can be installed as a Progressive Web App with file associations (Chrome/Edge only).
 
 ## Troubleshooting
 
@@ -148,6 +157,12 @@ This extension is part of the [niivue-vscode monorepo](https://github.com/niivue
 For development instructions, see [DEVELOPMENT.md](DEVELOPMENT.md).
 
 If you encounter issues or have feature requests, please [open an issue on GitHub](https://github.com/niivue/niivue-vscode/issues).
+
+## Citation
+
+If you use this extension in published work, please cite:
+
+Eckstein K, Androulakis A, Dao TT, et al. Seamless neuroimaging visualization: The NiiVue wrapper ecosystem. _Aperture Neuro_. 2026;6. [doi:10.52294/001c.167815](https://doi.org/10.52294/001c.167815)
 
 ## Support This Project
 

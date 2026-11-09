@@ -45,6 +45,9 @@ describe('getHtmlForWebview', () => {
     expect(csp).toContain('img-src data: blob: https://test.vscode-cdn.net')
     expect(csp).toContain("style-src https://test.vscode-cdn.net 'unsafe-inline'")
     expect(csp).toContain('connect-src data: blob: https://test.vscode-cdn.net')
+    // The viewer's CSS inlines its fonts as data: URIs; default-src 'none'
+    // would block them.
+    expect(csp).toContain('font-src data:')
     // ...and there's no `*` anywhere in the CSP. This is intentionally strict:
     // `https://*`, `*.example.com`, `data: *`, or a bare `*` would all loosen
     // the policy. The current CSP contains none, and any future change that
