@@ -161,7 +161,9 @@ jobs:
               echo "::error::invalid pr_head_sha '$pr_head_sha' for PR build"
               exit 1
             fi
-            api_sha=$(gh api "repos/${{ github.repository }}/pulls/$pr_number" --jq '.head.sha' 2>/dev/null || echo "")
+            pr_info=$(gh api "repos/${{ github.repository }}/pulls/$pr_number" --jq '"\(.head.sha) \(.user.login)"' 2>/dev/null || echo "")
+            api_sha=${pr_info%% *}
+            pr_author=${pr_info#* }
             if [ -z "$api_sha" ]; then
               echo "::warning::could not resolve PR #$pr_number; skipping deploy"
               echo "skip=true" >> "$GITHUB_OUTPUT"
@@ -180,6 +182,7 @@ jobs:
             echo "event=$event"
             echo "dest=$dest"
             echo "pr_number=$pr_number"
+            echo "pr_author=$pr_author"
             echo "head_sha=$pr_head_sha"
           } >> "$GITHUB_OUTPUT"
           rm -f "$meta_file"
@@ -196,11 +199,13 @@ jobs:
           user_email: 'github-actions[bot]@users.noreply.github.com'
           commit_message: 'Publish coverage report to ${{ steps.meta.outputs.dest }}'
 
+      # Dependabot PRs get only the commit status below, to keep mail volume down.
       - name: Comment coverage summary on PR
         if: |
           steps.meta.outputs.skip == 'false' &&
           steps.meta.outputs.pr_number != '' &&
-          steps.meta.outputs.pr_number != 'null'
+          steps.meta.outputs.pr_number != 'null' &&
+          steps.meta.outputs.pr_author != 'dependabot[bot]'
         uses: marocchino/sticky-pull-request-comment@5770ad5eb8f42dd2c4f34da00c94c5381e49af88 # v3
         with:
           number: ${{ steps.meta.outputs.pr_number }}

@@ -1,6 +1,6 @@
 # Dependabot config for the niivue-vscode monorepo.
 # - npm at the repo root covers all pnpm workspaces (apps/*, packages/*) via the shared pnpm-lock.yaml
-# - Updates are grouped to avoid PR sprawl in a 4-app monorepo
+# - Updates run monthly and are grouped to keep PR and notification volume low
 # - @niivue/niivue core upgrades are tested and bumped by hand; ignore major bumps so they
 #   don't surface as auto-PRs
 
@@ -11,8 +11,7 @@ updates:
   - package-ecosystem: 'github-actions'
     directory: '/'
     schedule:
-      interval: 'weekly'
-      day: 'monday'
+      interval: 'monthly'
     open-pull-requests-limit: 5
     # Same quarantine rationale as npm below. Action tags are not SemVer, so
     # only the flat window applies here.
@@ -37,8 +36,7 @@ updates:
   - package-ecosystem: 'npm'
     directory: '/'
     schedule:
-      interval: 'weekly'
-      day: 'monday'
+      interval: 'monthly'
     open-pull-requests-limit: 3
     versioning-strategy: 'increase-if-necessary'
     # Quarantine window against poisoned releases: a compromised version is
@@ -67,50 +65,8 @@ updates:
       # not something to auto-PR. Bump manually when dropping Win7 support.
       - dependency-name: '@types/vscode'
     groups:
-      # Type definitions — almost always safe to batch
-      types:
-        patterns:
-          - '@types/*'
-      # Prettier + format tooling — must be declared BEFORE the eslint group
-      # so that eslint-config-prettier / eslint-plugin-prettier match here
-      # (Dependabot assigns each dep to its first matching group).
-      prettier:
-        patterns:
-          - 'prettier'
-          - 'prettier-*'
-          - 'eslint-config-prettier'
-          - 'eslint-plugin-prettier'
-      # ESLint + linting stack (eslint-plugin-prettier already grabbed above)
-      eslint:
-        patterns:
-          - 'eslint'
-          - '@eslint/*'
-          - '@typescript-eslint/*'
-          - 'typescript-eslint'
-          - 'eslint-plugin-*'
-      # Vitest unit tests
-      vitest:
-        patterns:
-          - 'vitest'
-          - '@vitest/*'
-      # Playwright E2E
-      playwright:
-        patterns:
-          - 'playwright'
-          - '@playwright/*'
-      # Vite + plugins
-      vite:
-        patterns:
-          - 'vite'
-          - '@vitejs/*'
-          - 'vite-plugin-*'
-          - 'vite-tsconfig-paths'
-      # Turborepo
-      turbo:
-        patterns:
-          - 'turbo'
-          - '@turbo/*'
-      # JupyterLab extension framework (apps/jupyter)
+      # Frameworks whose packages must move together, majors included.
+      # Dependabot assigns each dep to its first matching group.
       jupyterlab:
         patterns:
           - '@jupyterlab/*'
@@ -125,31 +81,19 @@ updates:
           - 'react-dom'
           - 'preact'
           - '@preact/*'
-      # Tailwind + PostCSS
-      tailwind:
+      # Dev tooling cannot reach users, so its minor/patch bumps share one
+      # PR that dependabot_auto_merge.yml can merge unattended.
+      dev-dependencies:
+        dependency-type: 'development'
         patterns:
-          - 'tailwindcss'
-          - 'tailwindcss-*'
-          - '@tailwindcss/*'
-          - 'postcss'
-          - 'postcss-*'
-          - 'autoprefixer'
-      # esbuild (used by apps/vscode)
-      esbuild:
-        patterns:
-          - 'esbuild'
-          - 'esbuild-*'
-          - '@esbuild/*'
-      # Changesets
-      changesets:
-        patterns:
-          - '@changesets/*'
-      # Catch-all for the long tail of minor/patch bumps that don't belong
-      # to a tool-specific group. Folds quiet weekly updates (e.g. workbox-*,
-      # @testing-library/*, concurrent utility libs) into one PR so the
-      # 3-PR limit isn't wasted on individual minor bumps. Major bumps fall
-      # through and get their own PRs — which is what we want for bisecting.
-      minor-and-patch:
+          - '*'
+        update-types:
+          - 'minor'
+          - 'patch'
+      # Runtime minor/patch bumps, reviewed by hand. Majors of either kind
+      # fall through and get their own PRs, which keeps them bisectable.
+      runtime-dependencies:
+        dependency-type: 'production'
         patterns:
           - '*'
         update-types:
@@ -160,8 +104,7 @@ updates:
   - package-ecosystem: 'pip'
     directory: '/apps/streamlit'
     schedule:
-      interval: 'weekly'
-      day: 'monday'
+      interval: 'monthly'
     open-pull-requests-limit: 3
     # Quarantine window against poisoned releases: a compromised version is
     # usually yanked within hours, so waiting lets the registry clean up before
@@ -184,8 +127,7 @@ updates:
   - package-ecosystem: 'pip'
     directory: '/apps/jupyter'
     schedule:
-      interval: 'weekly'
-      day: 'monday'
+      interval: 'monthly'
     open-pull-requests-limit: 3
     # Quarantine window against poisoned releases: a compromised version is
     # usually yanked within hours, so waiting lets the registry clean up before
