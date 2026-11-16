@@ -82,7 +82,9 @@ jobs:
           if ! [[ "$pr_head_sha" =~ ^[0-9a-f]{40}$ ]]; then
             echo "::error::invalid pr_head_sha '$pr_head_sha'"; exit 1
           fi
-          api_sha=$(gh api "repos/${{ github.repository }}/pulls/$pr_number" --jq '.head.sha' 2>/dev/null || echo "")
+          pr_info=$(gh api "repos/${{ github.repository }}/pulls/$pr_number" --jq '"\(.head.sha) \(.user.login)"' 2>/dev/null || echo "")
+          api_sha=${pr_info%% *}
+          pr_author=${pr_info#* }
           if [ -z "$api_sha" ]; then
             echo "::warning::could not resolve PR #$pr_number via API; skipping deploy"
             echo "skip=true" >> "$GITHUB_OUTPUT"
@@ -94,6 +96,7 @@ jobs:
           fi
           {
             echo "number=$pr_number"
+            echo "pr_author=$pr_author"
             echo "head_sha=$pr_head_sha"
           } >> "$GITHUB_OUTPUT"
           rm -f "$meta"
@@ -110,8 +113,11 @@ jobs:
           user_email: 'github-actions[bot]@users.noreply.github.com'
           commit_message: 'Deploy PR #${{ steps.meta.outputs.number }} preview'
 
+      # Dependabot PRs get only the commit status below, to keep mail volume down.
       - name: Comment preview URL on PR
-        if: steps.meta.outputs.skip != 'true'
+        if: |
+          steps.meta.outputs.skip != 'true' &&
+          steps.meta.outputs.pr_author != 'dependabot[bot]'
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         env:
           PR_NUMBER: ${{ steps.meta.outputs.number }}
